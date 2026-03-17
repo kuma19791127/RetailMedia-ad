@@ -113,7 +113,9 @@ module.exports = {
 
         const currentTemp = weatherData.temperature ?? 20;
         const wCode = weatherData.weathercode ?? 0;
-        const currentHour = new Date().getHours();
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: 'numeric', hour12: false });
+        const currentHour = parseInt(formatter.format(now), 10);
 
         // 1. Initialize Baseline Impact
         let impact = {
