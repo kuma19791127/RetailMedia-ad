@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>どこでもレジ - スマホで完結する新しいお買い物体験 | LiteAdプラットフォーム</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--light);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 700;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .hero {
+            padding: 140px 20px 80px;
+            background: linear-gradient(135deg, #1e293b, var(--dark));
+            color: white;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .hero .btn {
+            background: var(--primary);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .hero .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            color: var(--dark);
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .card-danger {
+            border-left: 5px solid var(--danger);
+        }
+
+        .card-success {
+            border-left: 5px solid var(--secondary);
+        }
+
+        .card-primary {
+            border-left: 5px solid var(--primary);
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .danger-text {
+            color: var(--danger);
+        }
+
+        .success-text {
+            color: var(--secondary);
+        }
+
+        .primary-text {
+            color: var(--primary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .highlight {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 60px 20px 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="main_lp.html" class="logo">
+            <span style="font-size:28px;">📱</span> どこでもレジ
+        </a>
+        <nav class="nav-links">
+            <a href="#problem">店舗の課題</a>
+            <a href="#solution">どこでもレジの解決策</a>
+            <a href="#simulation">収益化シミュレーション</a>
+            <a href="anywhere_regi.html"
+                style="color:var(--primary); background:#eff6ff; padding:8px 15px; border-radius:20px;">アプリを起動</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>レジ待ちゼロ、場所を選ばない新しいお買い物</h1>
+        <p>初期導入費用0円。お客様ご自身のスマートフォンや店員のモバイル端末で、いつでもどこでもバーコードスキャンと決済（GMOペイメント連動）が完了。<br>POSデータと連携し、すぐに利用開始できます。</p>
+
+        <div
+            style="margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; text-align: left; max-width: 900px; margin-inline: auto;">
+            <div
+                style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">👤📱</div>
+                <h3 style="color: white; font-size: 1.25rem;">モデル1: 顧客アプリ提供</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem;">
+                    お客様のスマートフォンに「どこでもレジ」専用アプリを提供。店内を自由に歩きながら商品をスキャンし、自分のペースで決済を完了できます。レジの混雑や行列ストレスを完全に解消します。</p>
+            </div>
+            <div
+                style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🧑‍💼💳</div>
+                <h3 style="color: white; font-size: 1.25rem;">モデル2: 店員モバイル決済</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem;">
+                    店員がモバイル端末を片手に持ち歩き、その場で直接お客様のお会計を行います。駐車場や特設コーナーなど、固定レジが配置できない場所での接客・決済を強力にサポートします。</p>
+            </div>
+        </div>
+
+        <a href="anywhere_regi.html" class="btn" style="margin-top: 30px;">今すぐデモアプリを試す</a>
+    </section>
+
+    <section id="problem" class="section">
+        <h2 class="section-title">従来のセルフレジが抱える「見えないコスト」</h2>
+
+        <div class="card card-danger">
+            <h3 class="danger-text">⚠️ どこでもレジを顧客に提供した場合の「デメリット」とは？</h3>
+            <p style="font-size: 1.1rem; margin-bottom: 15px;">
+                最新の「全国万引被害実態調査」や業界推計を参考にすると、スーパーマーケットの万引き被害規模は以下のようになります：<br>
+                <strong style="font-size: 1.3rem; color: var(--danger);">1店舗あたりの年間被害額: 約200万円〜500万円</strong>
+            </p>
+            <p>
+                顧客のスマホアプリを利用した「どこでもレジ（スマホレジ）」を導入する場合、スタッフの目が届きにくくなるため、従来の有人レジに比べて**スキャン漏れや意図的な未精算（万引きリスク）が増加**するという拭いきれないデメリットが存在します。
+            </p>
+            <p style="margin-top: 15px; font-weight: bold;">
+                しかし、私たちはこの「コスト」を根本から覆し、店舗の圧倒的な「資産」へと転換するソリューションを提案します。
+            </p>
+        </div>
+    </section>
+
+    <section id="solution" class="section">
+        <h2 class="section-title">スペースの「コスト」を「資産」へ転換する</h2>
+
+        <div class="card card-primary">
+            <h3 class="primary-text">💡 セルフレジを縮小し、収益化スペースへ</h3>
+            <p style="margin-bottom: 15px;">従来のセルフレジは「場所を取る」「監視員が必要」「万引きリスク」というコストがあります。</p>
+            <ul style="margin-left: 20px; margin-bottom: 20px; line-height: 1.8;">
+                <li><strong>スペースの解放:</strong>
+                    数台の巨大なセルフレジを撤去し、そこを「新商品紹介や高回転なピックアップ棚」や「大型デジタルサイネージ（リテアド）」を設置した収益スペースに変えます。
+                </li>
+                <li><strong>設備コストの削減:</strong>
+                    セルフレジ1台あたり数百万円の導入コストと年間保守費（1台月額約3万円）を、安価なタブレットやモバイル決済「どこでもレジ」に置き換えることで、固定費を大幅に削減します。</li>
+            </ul>
+        </div>
+
+        <div class="card card-success">
+            <h3 class="success-text">🚀 「どこでもレジ」の多様な活用シーン</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>利用シーンを選ばない:</strong> 年末年始の混雑時、POSデータと連携して駐車場前など「どこでもモバイルレジ」として店員が片手で直接決済可能です。</li>
+                <li><strong>見えない損失の回避:</strong> 顧客がレジの長蛇の列を見てカゴを置いて帰ってしまう「決済離脱」を劇的に回避します。</li>
+                <li style="margin-bottom: 20px;"><strong>イベントやフェスへ出張:</strong>
+                    電源やLANケーブルが必要なレジを設置できない大規模音楽フェスの物販や、屋外の催事販売現場でも即座にレジが開設できます。</li>
+            </ul>
+            <img src="file:///C:/Users/one/.gemini/antigravity/brain/3502b5ea-9779-49ab-8933-4e8a3b174dde/festival_mobile_pos_1772978580401.png"
+                alt="屋外フェスでの出張レジ活用シーン"
+                style="width:100%; max-height:400px; object-fit:cover; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+        </div>
+    </section>
+
+    <section id="simulation" class="section">
+        <h2 class="section-title">収益化のシミュレーション（1店舗/月間）</h2>
+        <p style="text-align: center; font-size: 1.1rem; margin-bottom: 30px;">
+            月間20万〜50万円のロス（万引き・スキャン漏れリスク）をどう埋めるか、そしてそれを上回る利益をどう生み出すかの具体例です。<br>
+            ※小売り企業様の店舗のPOSデータと連携できればすぐにご活用いただけます。
+        </p>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>収益/削減の見込み（月間）</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>① レジ維持コスト削減</strong></td>
+                        <td class="success-text highlight">180,000円</td>
+                        <td>従来のセルフレジ6台分の保守・システム利用料を撤廃</td>
+                    </tr>
+                    <tr>
+                        <td><strong>② 広告枠販売収益</strong></td>
+                        <td class="success-text highlight">150,000 〜 300,000円</td>
+                        <td>撤去跡地の大型サイネージ活用 ＋ 「どこでもレジ」画面内の広告出稿</td>
+                    </tr>
+                    <tr>
+                        <td><strong>③ 人件費削減</strong></td>
+                        <td class="success-text highlight">100,000 〜 200,000円</td>
+                        <td>固定レジ監視員（アテンダント）の配置体制を機動的に最適化</td>
+                    </tr>
+                    <tr>
+                        <td><strong>④ 客単価向上（リフト）</strong></td>
+                        <td class="success-text highlight">50,000 〜 100,000円</td>
+                        <td>待つ時間解消による買い物離脱の防止、「ついで買い」の促進</td>
+                    </tr>
+                    <tr style="background-color: #f1f5f9;">
+                        <td style="font-size: 1.2rem; color: var(--dark);"><strong>合計メリット（①〜④）</strong></td>
+                        <td class="primary-text highlight" style="font-size: 1.5rem;">480,000 〜 780,000円</td>
+                        <td style="font-weight: bold;">月間で店舗にもたらされる「新しい原資」と「純利益」</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div
+            style="background: var(--dark); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-top: 40px;">
+            <h3 style="color: var(--warning); margin-bottom: 15px;">💡 どこでもレジの導入費用について</h3>
+            <p style="font-size: 1.2rem;">
+                「どこでもレジ」サービスは<strong>初期費用一切なし</strong>でご提供します。<br>
+                月額固定費も不要。売上の中から、システム利用手数料として<strong>ご利用分の1.2%</strong>を翌月徴収させていただくのみの、完全な成果報酬型モデルです。
+            </p>
+            <a href="anywhere_regi.html" class="btn"
+                style="background: white; color: var(--dark); margin-top: 20px;">アプリデモはこちら</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 non-logi株式会社. LiteAd Platform - Anywhere Register.</p>
+    </footer>
+</body>
+
+</html>

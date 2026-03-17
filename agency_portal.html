@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Portal | LiteAd</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            color: #1e293b;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Mobile Container */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            padding-bottom: 80px;
+            /* For bottom nav */
+        }
+
+        /* Header */
+        header {
+            background: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .agent-id {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+            color: var(--secondary);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #475569;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* List Items */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .tag-pending {
+            background: #fef9c3;
+            color: #b45309;
+        }
+
+        .tag-approved {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            text-align: center;
+            color: var(--secondary);
+            font-size: 0.7rem;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+
+        /* Responsive Desktop Layout - Bottom Nav Strategy */
+        @media (min-width: 1024px) {
+            body {
+                justify-content: center;
+                background: #f8fafc;
+            }
+
+            .app-container {
+                max-width: 1000px;
+                /* Comfortable reading width */
+                width: 100%;
+                box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+                border-left: 1px solid #e2e8f0;
+                border-right: 1px solid #e2e8f0;
+                min-height: 100vh;
+                background: white;
+            }
+
+            /* Improve Grid Layout for Desktop Content */
+            .content-section {
+                padding: 40px;
+            }
+
+            .card {
+                padding: 30px;
+            }
+
+            /* Keep Bottom Nav but style for Desktop */
+            .bottom-nav {
+                max-width: 1000px;
+                /* Match container */
+                padding: 15px 0;
+                border-top: 1px solid #e2e8f0;
+            }
+
+            .nav-item {
+                font-size: 0.8rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .nav-icon {
+                font-size: 1.5rem;
+                margin: 0;
+            }
+
+            /* Hide Sidebar Logo pseudo-element from previous attempt */
+            .bottom-nav::before {
+                display: none;
+            }
+
+            /* Header */
+            header {
+                padding: 20px 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <div>
+                <div class="header-title">Ad Agency Pro</div>
+                <div class="agent-id">ID: 8829-X</div>
+            </div>
+            <button onclick="if(confirm('ログアウトしますか？')) location.href='/'"
+                style="background:white; border:1px solid #cbd5e1; border-radius:8px; padding:5px 10px; cursor:pointer; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:5px;"
+                title="ログアウト">
+                🚪 ログアウト
+            </button>
+        </header>
+
+        <!-- DASHBOARD SECTION -->
+        <section id="sec-dashboard" class="content-section active">
+            <div class="card">
+                <h3>今月の獲得コミッション</h3>
+                <div class="stat-value" id="dashboard-commission">¥0</div>
+                <div class="stat-label">↑ 案件登録から20%を自動計算</div>
+            </div>
+
+            <div class="card">
+                <h3>進行中のキャンペーン</h3>
+                <div id="campaign-list">
+                    <p style="font-size: 0.9rem; color: var(--secondary);">現在稼働中の案件はありません</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLIENTS (REGISTRATION) SECTION -->
+        <section id="sec-clients" class="content-section">
+            <h2 style="margin-top:0;">広告主 / 案件登録</h2>
+            <p style="font-size:0.9rem; color:#64748b;">紹介した広告主情報を登録してください。管理画面で照合後、コミッションが確定します。</p>
+
+            <div class="card">
+                <div class="form-group">
+                    <label class="form-label">広告主メールアドレス (Advertiser Email)</label>
+                    <input type="email" id="client-email" class="form-input" placeholder="client@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">代理店メールアドレス (Agency Email)</label>
+                    <input type="email" id="agency-email" class="form-input" placeholder="ag-001@demo.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">配信開始日 (Delivery Date)</label>
+                    <input type="date" id="delivery-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">契約金額 (Price)</label>
+                    <input type="number" id="price" class="form-input" placeholder="¥ 0">
+                </div>
+                <button class="btn-submit" onclick="submitAgencyRequest()">申請登録</button>
+            </div>
+        </section>
+
+        <!-- PAYOUTS SECTION -->
+        <section id="sec-payouts" class="content-section">
+            <h2 style="margin-top:0;">報酬支払い設定</h2>
+
+            <div class="card" style="background:#f0f9ff; border:1px solid #bae6fd;">
+                <h3>現在の未払い報酬残高</h3>
+                <div class="stat-value" id="payout-balance" style="color:#0284c7;">¥0</div>
+                <p style="font-size:0.85rem; color:#64748b; margin-top:10px;">
+                    ※ 案件登録の金額からコミッション20％が自動計算されています。
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>🏦 売上センター用振込先銀行</h3>
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:15px;">※ 広告収益の分配金はこちらに振り込まれます。</p>
+
+                <div class="form-group">
+                    <label class="form-label">銀行名 (Bank Name)</label>
+                    <input type="text" class="form-input" placeholder="例: みずほ銀行">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">支店名 (Branch)</label>
+                    <input type="text" class="form-input" placeholder="例: 渋谷支店">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">口座番号 (Account Number)</label>
+                    <input type="text" class="form-input" placeholder="例: 普通 1234567">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">口座名義 (Account Holder)</label>
+                    <input type="text" class="form-input" placeholder="例: ヤマダ タロウ">
+                </div>
+                <button class="btn-submit" style="background:#64748b;">口座情報を保存</button>
+            </div>
+        </section>
+
+        <!-- BOTTOM NAV -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('dashboard', this)">
+                <span class="nav-icon">📊</span>
+                <div>ホーム</div>
+            </div>
+            <div class="nav-item" onclick="switchTab('clients', this)">
+                <span class="nav-icon">🤝</span>
+                <div>案件登録</div>
+            </div>
+            <div class="nav-item" onclick="switchTab('payouts', this)">
+                <span class="nav-icon">💰</span>
+                <div>報酬設定</div>
+            </div>
+            <div class="nav-item" onclick="window.open('agency_lp.html', '_blank')">
+                <span class="nav-icon">📖</span>
+                <div>解説LP</div>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        function switchTab(tabId, el) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            // Show target
+            document.getElementById('sec-' + tabId).classList.add('active');
+
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+
+            // Refresh actions
+            if (tabId === 'dashboard' || tabId === 'payouts') {
+                loadAgencyStats();
+            }
+        }
+
+        const API_BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+
+        async function loadAgencyStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/agency`);
+                const referrals = await res.json();
+                let totalContract = 0;
+                let listHtml = '';
+
+                referrals.forEach(r => {
+                    totalContract += r.price;
+                    const statusClass = r.status === 'Pending' ? 'tag-pending' : 'tag-approved';
+                    listHtml += `
+                        <div class="list-item">
+                            <div>
+                                <div style="font-weight:bold;">${r.advertise}</div>
+                                <div style="font-size:0.8rem; color:#64748b;">¥${(r.price).toLocaleString()} / ${r.date || '-'}</div>
+                            </div>
+                            <span class="tag ${statusClass}">${r.status}</span>
+                        </div>
+                    `;
+                });
+
+                if (listHtml === '') {
+                    listHtml = '<p style="font-size: 0.9rem; color: var(--secondary);">現在稼働中の案件はありません</p>';
+                }
+                
+                const listEl = document.getElementById('campaign-list');
+                if(listEl) listEl.innerHTML = listHtml;
+
+                const commission = Math.floor(totalContract * 0.2); // 20% calculation
+
+                document.getElementById('dashboard-commission').innerText = '¥' + commission.toLocaleString();
+                document.getElementById('payout-balance').innerText = '¥' + commission.toLocaleString();
+            } catch (e) {
+                console.error("Stats load Error", e);
+            }
+        }
+
+        // Initial load
+        window.addEventListener('DOMContentLoaded', loadAgencyStats);
+
+        // Init Chart Removed
+
+        async function submitAgencyRequest() {
+            const agencyEmail = document.getElementById('agency-email').value;
+            const advertiseEmail = document.getElementById('client-email').value;
+            const price = document.getElementById('price').value;
+            const date = document.getElementById('delivery-date').value;
+
+            if (!agencyEmail || !advertiseEmail || !price || !date) {
+                return alert('すべての必要な項目を入力してください。');
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/agency-submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agency: agencyEmail, advertise: advertiseEmail, price: parseInt(price), date: date })
+                });
+
+                if (response.ok) {
+                    alert('申請を登録しました。\n管理者の承認をお待ちください。');
+                    // Reset form
+                    document.getElementById('client-email').value = "";
+                    document.getElementById('price').value = "";
+                    document.getElementById('delivery-date').value = "";
+                } else {
+                    alert('エラーが発生しました。もう一度お試しください。');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('サーバーとのつうしんにエラーが発生しました');
+            }
+        }
+    </script>
+
+</body>
+
+</html>

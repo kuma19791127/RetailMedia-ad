@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>AI Shift Manager(Mobile & Monthly) | RetailMedia</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- LOGIN SCREEN --- */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-box h2 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+
+        .login-box input,
+        .login-box select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: row;
+            transition: 0.3s;
+        }
+
+        /* --- LEFT PANEL: Chat --- */
+        .chat-panel {
+            width: 380px;
+            background: #fff;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background: var(--primary);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .staff-info {
+            padding: 12px 20px;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border);
+            font-size: 1.05rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #e5edd2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .msg-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 95%;
+            position: relative;
+        }
+
+        .msg-staff {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .msg-ai {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .msg-bubble {
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: relative;
+            word-break: break-all;
+        }
+
+        .msg-staff .msg-bubble {
+            background: #dcf8c6;
+            border-top-right-radius: 2px;
+        }
+
+        .msg-ai .msg-bubble {
+            background: white;
+            border-top-left-radius: 2px;
+        }
+
+        .msg-name {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        /* Edit btn in chat */
+        .edit-btn {
+            font-size: 0.7rem;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: absolute;
+            right: 100%;
+            bottom: 0;
+            padding: 5px;
+            white-space: nowrap;
+            outline: none;
+            display: none;
+        }
+
+        .msg-staff:hover .edit-btn {
+            display: block;
+        }
+
+        .chat-input {
+            padding: 10px;
+            background: #fff;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .preset-btns {
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            width: 100%;
+            white-space: nowrap;
+        }
+
+        .preset-btns button {
+            background: #f1f5f9;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .input-row {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+        }
+
+        .input-row input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .input-row button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* --- RIGHT PANEL: Board --- */
+        .board-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .board-header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .cal-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .cal-controls button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        .cal-controls select {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .board-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .shift-table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .shift-table th,
+        .shift-table td {
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .shift-table th {
+            background: var(--dark);
+            color: white;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        .dept-title {
+            background: #f8fafc;
+            font-weight: bold;
+            color: #334155;
+            text-align: left !important;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .dept-title:hover {
+            background: #e2e8f0;
+            color: var(--primary);
+        }
+
+        .cell-staff {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin: 2px;
+            cursor: pointer;
+        }
+
+        .shortage-warn {
+            color: var(--danger);
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        .shortage-ok {
+            color: var(--success);
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 3px;
+        }
+
+        /* --- MONTHLY PRINT VIEW --- */
+        #monthly-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 3000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .print-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            float: right;
+        }
+
+        .monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #ccc;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+
+        .monthly-day {
+            background: white;
+            min-height: 100px;
+            padding: 5px;
+        }
+
+        .monthly-date {
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        /* --- GANTT CHART VIEW --- */
+        #gantt-view {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 5%;
+            width: 90%;
+            height: 80%;
+            background: white;
+            z-index: 3000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+        }
+
+        .gantt-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 15px;
+        }
+
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .gantt-name {
+            width: 140px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .gantt-timeline {
+            flex: 1;
+            display: flex;
+            height: 30px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .gantt-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            transition: 0.3s;
+        }
+
+        .gantt-header {
+            display: flex;
+            margin-left: 140px;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+
+        .gantt-hour {
+            flex: 1;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #888;
+            border-left: 1px solid #eee;
+        }
+
+        .mobile-bottom-tabs {
+            display: none;
+        }
+
+        /* --- RESPONSIVE MOBILE (縦型) --- */
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: 65px;
+                /* Leave space for true bottom tabs */
+            }
+
+            .container {
+                flex-direction: column;
+                height: 100%;
+            }
+
+            /* True Mobile Tab Bar */
+            .mobile-bottom-tabs {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100vw;
+                height: 65px;
+                background: #fff;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                z-index: 9999;
+                border-top: 1px solid #e2e8f0;
+            }
+
+            .mobile-bottom-tabs button {
+                flex: 1;
+                background: transparent;
+                border: none;
+                font-weight: bold;
+                font-size: 0.85rem;
+                color: #64748b;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                border-right: 1px solid #f1f5f9;
+            }
+
+            body.view-chat .mobile-bottom-tabs .tab-chat {
+                color: var(--primary);
+                background: #f0f9ff;
+            }
+
+            body.view-board .mobile-bottom-tabs .tab-board {
+                color: var(--primary);
+                background: #f0f9ff;
+            }
+
+            body.view-monthly .mobile-bottom-tabs .tab-monthly {
+                color: var(--primary);
+                background: #f0f9ff;
+            }
+
+            /* Toggle Panels */
+            body.view-board .chat-panel,
+            body.view-monthly .chat-panel {
+                display: none !important;
+            }
+
+            body.view-chat .board-panel,
+            body.view-monthly .board-panel {
+                display: none !important;
+            }
+
+            body.view-chat #monthly-view,
+            body.view-board #monthly-view {
+                display: none !important;
+            }
+
+            body.view-monthly #monthly-view {
+                display: block !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: max(calc(100vh - 65px), calc(100dvh - 65px)) !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                background: white;
+                z-index: 10;
+                padding-bottom: 20px;
+                box-sizing: border-box;
+            }
+
+            body.view-monthly .btn-back {
+                display: none !important;
+            }
+
+            .chat-panel,
+            .board-panel {
+                width: 100%;
+                /* Use dynamic viewport height support to prevent overlap on iOS */
+                height: max(calc(100vh - 65px), calc(100dvh - 65px)) !important;
+                border-right: none;
+                overflow-y: auto;
+            }
+
+            .chat-messages {
+                height: 25vh !important;
+                max-height: 25vh !important;
+                flex: none !important;
+            }
+
+            /* Board Header Restored to Normal Layout for Mobile */
+            .board-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px;
+                gap: 10px;
+                position: static;
+                height: auto;
+            }
+
+            .board-header h1 {
+                font-size: 1.1rem !important;
+                display: block !important;
+            }
+
+            /* Emphasize custom preset in mobile so it lands in the middle */
+            .mobile-center-preset {
+                display: block;
+                width: 100%;
+                padding: 15px !important;
+                font-size: 1.2rem !important;
+                margin-bottom: 15px !important;
+                background: #bae6fd !important;
+                text-align: center;
+                border-radius: 8px;
+            }
+
+            .cal-controls {
+                width: 100%;
+                justify-content: space-between;
+                padding: 10px 0;
+            }
+
+            .btn-generate {
+                width: 100%;
+                padding: 20px !important;
+                font-size: 1.15rem !important;
+                border-radius: 12px;
+                margin-bottom: 5px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .shift-table {
+                font-size: 0.8rem;
+            }
+
+            .login-box {
+                padding: 20px;
+            }
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #monthly-view,
+            #monthly-view * {
+                visibility: visible;
+            }
+
+            #monthly-view {
+                position: absolute;
+                left: 0;
+                top: 0;
+                padding: 0;
+            }
+
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="view-chat">
+
+    <!-- 4. LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>シフト管理システム ログイン</h2>
+            <input type="text" id="login-name" placeholder="氏名を入力 (例: Aさん)" required>
+            <select id="login-dept">
+                <option value="meat">🥩 畜産</option>
+                <option value="fresh">🐟 生鮮</option>
+                <option value="grocery">🥫 食品</option>
+                <option value="deli">🍱 惣菜</option>
+                <option value="bakery">🍞 ベーカリー</option>
+            </select>
+            <input type="email" id="login-email" placeholder="メールアドレス" value="staff@demo.com">
+            <input type="password" id="login-pass" placeholder="パスワード" value="1234">
+            <button onclick="doLogin()">ログインして進む</button>
+        </div>
+    </div>
+
+    <div class="container" id="main-app" style="display:none;">
+
+        <!-- LEFT: AI Chat App -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <span>📱 新AIシフト申請</span>
+                <button onclick="logout()"
+                    style="background:none; border:none; color:white; font-size:0.8rem; cursor:pointer;">ログアウト</button>
+            </div>
+            <div class="staff-info" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>ログイン中: <b id="current-user-name">未設定</b> (<span id="current-user-dept">未設定</span>)</span>
+                <button onclick="editUserInfo()"
+                    style="font-size:0.9rem; padding:6px 12px; font-weight:bold; cursor:pointer; background:#3b82f6; color:white; border:none; border-radius:6px;">✏️
+                    編集</button>
+            </div>
+
+            <div class="chat-messages" id="chat-box">
+                <div class="msg-container msg-ai">
+                    <div class="msg-name">AI シフトマネージャー🤖</div>
+                    <div class="msg-bubble">お疲れ様です！お休みの希望や、時短勤務（早上がり）があればチャットで教えてくださいね✨<br>
+                        <span style="font-size:0.8rem; color:#888;">送られた内容はシステムへ自動連携されます。</span>
+                    </div>
+                </div>
+                <!-- Dynamic -->
+            </div>
+
+            <!-- 2. Preset Snippets -->
+            <div class="chat-input" style="flex-direction: column;">
+                <div style="font-size:0.75rem; color:#f59e0b; font-weight:bold; margin-bottom:5px;">
+                    ※有給や特殊勤務(5分単位)は追加・編集してください↓</div>
+                <button onclick="customPreset()" class="mobile-center-preset"
+                    style="background:#bae6fd; font-weight:bold; width:100%; padding:8px; margin-bottom:8px; border:1px solid #7dd3fc; border-radius:6px; cursor:pointer;">➕
+                    カスタム時間</button>
+                <div class="preset-btns">
+                    <button onclick="setInput('「月曜日と火曜日休み」')">月火 休み</button>
+                    <button onclick="setInput('「木曜日と金曜日休み」')">木金 休み</button>
+                    <button onclick="setInput('「08:45 - 17:30 出勤希望」')">08:45 - 17:30</button>
+                    <button onclick="setInput('「09:15 - 17:30 出勤希望」')">09:15 - 17:30</button>
+                    <button onclick="setInput('「土日フル出勤」')">土日フル</button>
+                    <button onclick="setInput('「水曜日は有給休暇です」')">有給休暇</button>
+                </div>
+                <div class="input-row" style="margin-top:5px;">
+                    <input type="text" id="chat-input-text" placeholder="希望を入力..."
+                        onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button onclick="sendMessage()">送信</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Manager Dashboard -->
+        <div class="board-panel">
+            <div class="board-header">
+                <div>
+                    <h1 id="desktop-board-title" style="margin:0; font-size:1.3rem; color:var(--dark);">🗓️ 部門別シフト表
+                        (動的カレンダー)</h1>
+                </div>
+
+                <!-- 1. Real Calendar Scroller (Months/Weeks) -->
+                <div class="cal-controls">
+                    <button onclick="changeWeek(-1)">◀</button>
+                    <select id="month-selector" onchange="jumpToMonth()">
+                        <option value="1">1月</option>
+                        <option value="2" selected>2月</option>
+                        <option value="3">3月</option>
+                        <option value="4">4月</option>
+                        <option value="5">5月</option>
+                        <option value="6">6月</option>
+                        <option value="7">7月</option>
+                        <option value="8">8月</option>
+                        <option value="9">9月</option>
+                        <option value="10">10月</option>
+                        <option value="11">11月</option>
+                        <option value="12">12月</option>
+                    </select>
+                    <span id="week-label" style="font-weight:bold; color:#334155;">第3週</span>
+                    <button onclick="changeWeek(1)">▶</button>
+                </div>
+
+                <button class="btn-generate" onclick="addDepartment()" style="background:#f59e0b; color:white;">➕
+                    部門追加</button>
+                <button class="btn-generate" onclick="openGanttView()" style="background:#8b5cf6; color:white;">📊
+                    1日の横表(ガント)</button>
+                <button class="btn-generate" onclick="openTotalHours()" style="background:#0f172a; color:white;">⏱️
+                    総労働時間 (管理者)</button>
+                <button class="btn-generate" onclick="generateShift()">✨ AI最適化 (反映)</button>
+            </div>
+
+            <div class="board-content">
+                <p style="font-size:0.8rem; color:#64748b; margin-top:0;">※部門名をクリックすると、その部門の「1ヶ月分カレンダー(印刷用)」が開きます。</p>
+                <div style="overflow-x:auto;">
+                    <table class="shift-table" id="shift-table">
+                        <thead>
+                            <tr id="table-header"></tr>
+                        </thead>
+                        <tbody id="shift-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. TRUE MOBILE BOTTOM TAB BAR -->
+        <div class="mobile-bottom-tabs">
+            <button class="tab-chat" onclick="document.body.className='view-chat';">
+                <span style="font-size:1.2rem;">💬</span> 申請・チャット
+            </button>
+            <button class="tab-board" onclick="document.body.className='view-board';">
+                <span style="font-size:1.2rem;">🗓️</span> シフト表管理
+            </button>
+            <button class="tab-monthly" onclick="openMonthlyTab();">
+                <span style="font-size:1.2rem;">📅</span> 1ヶ月カレンダー
+            </button>
+        </div>
+    </div>
+
+    <!-- 7. Monthly Print View -->
+    <div id="monthly-view">
+        <button class="print-btn" onclick="window.print()">🖨️ カレンダー印刷</button>
+        <button class="print-btn btn-back" onclick="document.getElementById('monthly-view').style.display='none'"
+            style="background:#64748b; margin-right:10px;">戻る</button>
+        <h1 id="monthly-title" style="border-bottom: 2px solid #333; padding-bottom:10px;">部門シフト表 (月間)</h1>
+        <div class="monthly-grid" id="monthly-grid"></div>
+    </div>
+
+    <!-- 8. Gantt Chart View -->
+    <div id="gantt-view">
+        <button class="print-btn" onclick="closeGantt()" style="background:#64748b;">閉じる</button>
+        <button class="print-btn" onclick="window.print()">🖨️ 1日のガント表を印刷</button>
+        <h1 style="border-bottom: 2px solid #ccc; padding-bottom:10px; margin-bottom:5px;">📊 1日の勤務シフト表 <span
+                id="gantt-title-date" style="color:#3b82f6;"></span></h1>
+
+        <!-- Day Tabs for Gantt -->
+        <div id="gantt-tabs" style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;"></div>
+
+        <p style="color:#666; font-size:0.9rem;">※稼働状況を視覚的に表示しています。印刷の際は1日ごと印刷してください。</p>
+        <div id="gantt-content"></div>
+    </div>
+
+    <script>
+        // --- Tab routing helper --
+        function openMonthlyTab() {
+            document.body.className = 'view-monthly';
+            openMonthlyView(currentUser.dept);
+        }
+
+        // --- APP STATE ---
+        let currentUser = { name: "未設定", dept: "grocery" };
+
+        // Time tracking
+        let currentDate = new Date(); // Holds current view date
+        let today = new Date(); // To compare past months
+        // (Removed strict demo month override)
+        const dayNames = { mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日' };
+        const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+        const DEPARTMENTS = [
+            { id: 'meat', name: '🥩 畜産 (精肉)', req: { mon: 2, tue: 2, wed: 2, thu: 2, fri: 3, sat: 4, sun: 4 } },
+            { id: 'fresh', name: '🐟 生鮮 (青果・鮮魚)', req: { mon: 3, tue: 3, wed: 3, thu: 3, fri: 4, sat: 5, sun: 5 } },
+            { id: 'grocery', name: '🥫 食品 (日配・グロサリ)', req: { mon: 2, tue: 2, wed: 2, thu: 2, fri: 3, sat: 3, sun: 3 } },
+            { id: 'deli', name: '🍱 惣菜 (デリカ)', req: { mon: 4, tue: 4, wed: 4, thu: 4, fri: 5, sat: 6, sun: 6 } },
+            { id: 'bakery', name: '🍞 インストアベーカリー', req: { mon: 2, tue: 2, wed: 2, thu: 2, fri: 3, sat: 4, sun: 4 } }
+        ];
+
+        let savedStaffDB = localStorage.getItem('shift_mgr_staff_db');
+        let STAFF = savedStaffDB ? JSON.parse(savedStaffDB) : []; // Empty array for production
+
+        let chatHistory = JSON.parse(localStorage.getItem('shift_chat_history')) || [];
+
+        // 自動で過去の架空データ（Aさん〜Zさん、佐藤、鈴木など）をパージする処理
+        let beforeStaffLen = STAFF.length;
+        STAFF = STAFF.filter(s => !/^[A-Z]さん$/.test(s.name) && !['佐藤', '鈴木', 'テスト'].includes(s.name));
+
+        let beforeChatLen = chatHistory.length;
+        chatHistory = chatHistory.filter(msg => !/^[A-Z]さん/.test(msg.name));
+
+        function saveStaffDB() {
+            localStorage.setItem('shift_mgr_staff_db', JSON.stringify(STAFF));
+        }
+
+        if (beforeStaffLen !== STAFF.length || beforeChatLen !== chatHistory.length) {
+            saveStaffDB();
+            localStorage.setItem('shift_chat_history', JSON.stringify(chatHistory));
+        }
+
+        let currentShifts = null;
+        let msgIdCounter = 0;
+
+        // --- LOGIN LOGIC ---
+        function doLogin() {
+            const nameNode = document.getElementById('login-name');
+            const emailNode = document.getElementById('login-email');
+            if (!nameNode.value) return Swal.fire('エラー', '名前を入力してください', 'error');
+
+            currentUser.name = nameNode.value;
+            currentUser.dept = document.getElementById('login-dept').value;
+            currentUser.email = emailNode.value;
+
+            // Use Email as a pseudo-unique ID to prevent multiple users stepping on the same generic "shift_name"
+            if (!STAFF.find(s => s.name === currentUser.name)) {
+                STAFF.push({ name: currentUser.name, dept: currentUser.dept, email: currentUser.email, reqOff: [], reqOffDates: [], customTimes: {} });
+            }
+            saveStaffDB();
+
+            // Save specifically with email context where possible or default
+            localStorage.setItem('shift_last_email', currentUser.email);
+            localStorage.setItem(`shift_name_${currentUser.email}`, currentUser.name);
+            localStorage.setItem(`shift_dept_${currentUser.email}`, currentUser.dept);
+
+            // Backwards compatibility fallbacks
+            localStorage.setItem('shift_name', currentUser.name);
+            localStorage.setItem('shift_dept', currentUser.dept);
+            localStorage.setItem('shift_email', currentUser.email);
+
+            document.getElementById('current-user-name').innerText = currentUser.name;
+            document.getElementById('current-user-dept').innerText = DEPARTMENTS.find(d => d.id === currentUser.dept)?.name || '新規部門';
+
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+
+            cleanupPastData(); // Clear old logs on login
+            renderChatHistory(); // Load saved chats
+            updateCalendarUI();
+            generateShift(true);
+            renderBoard();
+        }
+
+        function logout() {
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('main-app').style.display = 'none';
+        }
+
+        // --- CALENDAR LOGIC ---
+        function getWeekDates(d) {
+            let firstDay = new Date(d);
+            // adjust to Monday start
+            let dt = firstDay.getDay();
+            if (dt === 0) dt = 7;
+            firstDay.setDate(firstDay.getDate() - dt + 1);
+
+            let dates = {};
+            let temp = new Date(firstDay);
+            dayKeys.forEach(day => {
+                dates[day] = `${temp.getMonth() + 1}/${temp.getDate()}(${dayNames[day]})`;
+                temp.setDate(temp.getDate() + 1);
+            });
+            return dates;
+        }
+
+        function updateCalendarUI() {
+            document.getElementById('month-selector').value = (currentDate.getMonth() + 1).toString();
+
+            // Adjust to exact Monday of standard week
+            let tempDate = new Date(currentDate);
+            let dt = tempDate.getDay();
+            if (dt === 0) dt = 7;
+            tempDate.setDate(tempDate.getDate() - dt + 1);
+
+            let weekNo = Math.ceil(tempDate.getDate() / 7) || 1;
+            document.getElementById('week-label').innerText = `第${weekNo}週 (${tempDate.getMonth() + 1}/${tempDate.getDate()}〜)`;
+        }
+
+        function changeWeek(delta) {
+            currentDate.setDate(currentDate.getDate() + (delta * 7));
+            updateCalendarUI();
+            currentShifts = null; // reset shifts for new week
+            renderBoard();
+        }
+
+        function jumpToMonth() {
+            const m = parseInt(document.getElementById('month-selector').value) - 1;
+            currentDate.setMonth(m);
+            currentDate.setDate(1); // Jump to first week
+            updateCalendarUI();
+            currentShifts = null;
+            renderBoard();
+        }
+
+        // --- BOARD RENDER ---
+        function renderBoard() {
+            const weekDates = getWeekDates(currentDate);
+
+            let headHtml = `<th style="width:14%;">部門・人員(増減可)</th>`;
+            dayKeys.forEach(day => {
+                const bg = day === 'sat' ? 'background:#1e3a8a;' : (day === 'sun' ? 'background:#7f1d1d;' : '');
+                headHtml += `<th style="width:12%; ${bg}">${weekDates[day]}</th>`;
+            });
+            document.getElementById('table-header').innerHTML = headHtml;
+
+            let html = '';
+            DEPARTMENTS.forEach(dept => {
+                // 7. Click dept to open monthly print view
+                html += `<tr><td colspan="8" class="dept-title" onclick="openMonthlyView('${dept.id}')" style="font-size:1.1rem; padding:10px; cursor:pointer;"><b>📊 ${dept.name}</b> <span style="font-size:0.85rem; font-weight:normal; color:#666;">(クリックで月間カレンダー展開)</span></td></tr>`;
+                html += `<tr><td style="background:#f8fafc; font-size:0.8rem;">必要枠</td>`;
+
+                dayKeys.forEach(day => {
+                    let required = dept.req[day];
+                    let assignedStaff = shiftsObjSafe(dept.id, day);
+
+                    // 3. Calculate hourly shortages (Simulated)
+                    let shortageFull = -required;
+                    let shortTimeAlert = '';
+
+                    if (currentShifts) {
+                        shortageFull = assignedStaff.length - required;
+                        // Check for short shifts to generate 17:00-18:00 shortage
+                        let earlyLeavers = assignedStaff.filter(s => s.time && s.time.includes('17:00'));
+                        if (earlyLeavers.length > 0 && shortageFull >= 0) {
+                            shortTimeAlert = `<span style="color:#ef4444; font-size:0.75rem; font-weight:bold; display:block;">17:00~18:00 不足: -${earlyLeavers.length}人</span>`;
+                        }
+                    }
+
+                    let staffHtml = assignedStaff.map((s, idx) => `
+                    <div class="cell-staff" onclick="editTime('${dept.id}', '${day}', ${idx})">
+                        ${s.name} <br> <span style="font-size:0.7rem; color:#555;">[${s.time}]</span>
+                    </div>
+                `).join('');
+                    if (!currentShifts) staffHtml = '<span style="color:#aaa; font-size:0.7rem;">未生成</span>';
+
+                    let shortageHtml = '';
+                    if (currentShifts) {
+                        if (shortageFull < 0) shortageHtml = `<span class="shortage-warn">日中全体 不足: ${shortageFull}人</span>`;
+                        else if (!shortTimeAlert) shortageHtml = `<span class="shortage-ok">✅ 適正</span>`;
+                    }
+
+                    html += `
+                    <td>
+                        <div style="font-size:0.8rem; display:flex; justify-content:center; align-items:center; gap:3px;">
+                            <button onclick="changeReq('${dept.id}', '${day}', -1)" style="border:1px solid #ccc; background:#fff; cursor:pointer;">-</button>
+                            <b>${required}</b>人
+                            <button onclick="changeReq('${dept.id}', '${day}', 1)" style="border:1px solid #ccc; background:#fff; cursor:pointer;">+</button>
+                        </div>
+                        <div style="margin:5px 0;">${staffHtml}</div>
+                        ${shortageHtml}
+                        ${shortTimeAlert}
+                    </td>
+                `;
+                });
+                html += `</tr>`;
+            });
+            document.getElementById('shift-body').innerHTML = html;
+        }
+
+        function shiftsObjSafe(deptId, day) {
+            if (currentShifts && currentShifts[deptId] && currentShifts[deptId][day]) return currentShifts[deptId][day];
+            return [];
+        }
+
+        function changeReq(deptId, day, delta) {
+            let dept = DEPARTMENTS.find(d => d.id === deptId);
+            if (dept) {
+                dept.req[day] = Math.max(0, dept.req[day] + delta);
+                renderBoard();
+            }
+        }
+
+        async function editTime(deptId, day, idx) {
+            const obj = currentShifts[deptId][day][idx];
+            const { value: time } = await Swal.fire({
+                title: '出退勤・編集',
+                input: 'text',
+                inputValue: obj.time,
+                showCancelButton: true
+            });
+            if (time) {
+                obj.time = time;
+                renderBoard();
+            }
+        }
+
+        // --- MONTHLY VIEW (Print) ---
+        function openMonthlyView(deptId) {
+            const dept = DEPARTMENTS.find(d => d.id === deptId);
+
+            let tempMonthStart = new Date(currentDate);
+            let offsetDt = tempMonthStart.getDay() === 0 ? 7 : tempMonthStart.getDay();
+            tempMonthStart.setDate(tempMonthStart.getDate() - offsetDt + 1); // Exact start Monday of selected view
+
+            document.getElementById('monthly-title').innerText = `${tempMonthStart.getFullYear()}年 ${tempMonthStart.getMonth() + 1}月 - ${dept.name} シフト表`;
+
+            let grid = document.getElementById('monthly-grid');
+            let html = '';
+
+            // render days names
+            dayKeys.forEach(d => html += `<div class="monthly-day" style="background:#333; color:white; min-height:auto; text-align:center;">${dayNames[d]}</div>`);
+
+            let d = new Date(tempMonthStart); // Start exactly from the current dashboard week
+
+            for (let i = 0; i < 35; i++) {
+                let dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+                let staffNodes = '';
+
+                // Dynamically build cells for ALL real registered staff in this department
+                let realStaffInDept = STAFF.filter(s => s.dept === deptId);
+
+                realStaffInDept.forEach(st => {
+                    let myReqOffDates = st.reqOffDates || [];
+                    let myReqOffDays = st.reqOff || [];
+                    let myCustomTimes = st.customTimes || {};
+                    let dayKeyMap = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat', 0: 'sun' };
+                    let currentDayKey = dayKeyMap[d.getDay()];
+
+                    let isRequestedOff = myReqOffDates.includes(dateStr) || myReqOffDays.includes(currentDayKey);
+                    let myExactTime = myCustomTimes[dateStr] || myCustomTimes[currentDayKey] || myCustomTimes["default"];
+
+                    // Highlight the logged-in user with a distinct background marker
+                    let isMe = (st.name === currentUser.name);
+                    let myStyle = isMe ? 'background:#3b82f6; color:white; padding:2px 4px; border-radius:4px; display:inline-block;' : '';
+                    let baseColor = 'color:#ef4444;'; // default Red (Weekday)
+                    if (isRequestedOff) baseColor = 'color:#aaaaaa;'; // Off
+                    else if (myExactTime && myExactTime !== "有給") baseColor = 'color:#8b5cf6;'; // Custom Time
+                    else if (d.getDay() === 0 || d.getDay() === 6) baseColor = 'color:#10b981;'; // Weekend Green
+
+                    let valSpan = '';
+                    if (isRequestedOff) valSpan = '(休)';
+                    else if (myExactTime && myExactTime !== "有給") valSpan = `(${myExactTime})`;
+                    else if (d.getDay() === 0 || d.getDay() === 6) valSpan = '(10:00-19:00)';
+                    else valSpan = '(9:00-18:00)';
+
+                    if (isMe) {
+                        staffNodes += `<div style="font-size:0.8rem; font-weight:bold; margin-bottom:2px; ${myStyle}">${st.name} ${valSpan}</div>`;
+                    } else {
+                        staffNodes += `<div style="font-size:0.8rem; font-weight:bold; ${baseColor}">${st.name} ${valSpan}</div>`;
+                    }
+                });
+
+                html += `<div class="monthly-day">
+                <div class="monthly-date">${dateStr}</div>
+                ${staffNodes}
+            </div>`;
+                d.setDate(d.getDate() + 1);
+            }
+
+            grid.innerHTML = html;
+            document.getElementById('monthly-view').style.display = 'block';
+        }
+
+        // --- CHAT & AI NLP LOGIC ---
+        function setInput(text) { document.getElementById('chat-input-text').value = text; }
+
+        // 5. Chat message edit/delete logic
+        async function editMessage(msgId) {
+            const msgNode = document.getElementById(`msg-${msgId}`);
+            if (!msgNode) return;
+            const oldTextNode = msgNode.querySelector('.msg-bubble').childNodes[0];
+
+            const result = await Swal.fire({
+                title: '送信内容の編集/取消',
+                input: 'text',
+                inputValue: oldTextNode.textContent.trim(),
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: '更新',
+                denyButtonText: '削除',
+                cancelButtonText: 'キャンセル',
+                denyButtonColor: '#ef4444'
+            });
+
+            if (result.isConfirmed && result.value) {
+                oldTextNode.textContent = result.value;
+                // update in history
+                let histMsg = chatHistory.find(m => m.id === msgId);
+                if (histMsg) {
+                    histMsg.text = result.value;
+                    localStorage.setItem('shift_chat_history', JSON.stringify(chatHistory));
+                }
+                processNLP(result.value);
+            } else if (result.isDenied) {
+                msgNode.outerHTML = `<div style="font-size:0.8rem; color:#aaa; text-align:right; margin-bottom:5px;">🗑️ メッセージを取り消しました</div>`;
+                chatHistory = chatHistory.filter(m => m.id !== msgId);
+                localStorage.setItem('shift_chat_history', JSON.stringify(chatHistory));
+                let s = STAFF.find(st => st.name === currentUser.name);
+                if (s) { s.reqOff = []; s.reqOffDates = []; s.customTimes = {}; }
+                saveStaffDB();
+                generateShift(); // 常に自動反映
+            }
+        }
+
+        function appendChat(name, text, type, saveToHistory = true) {
+            const box = document.getElementById('chat-box');
+            const isStaff = type === 'staff';
+            msgIdCounter++;
+            let editHtml = isStaff ? `<button class="edit-btn" onclick="editMessage(${msgIdCounter})">✏️ 編集/取消</button>` : '';
+
+            const msgHtml = `
+            <div class="msg-container ${isStaff ? 'msg-staff' : 'msg-ai'}" id="msg-${msgIdCounter}" data-text="${text.replace(/"/g, '&quot;')}">
+                <div class="msg-name">${name}</div>
+                <div class="msg-bubble">${text} ${editHtml}</div>
+            </div>`;
+            box.innerHTML += msgHtml;
+            box.scrollTop = box.scrollHeight;
+
+            if (saveToHistory) {
+                chatHistory.push({
+                    id: msgIdCounter,
+                    name: name,
+                    text: text,
+                    type: type,
+                    timestamp: new Date().getTime(),
+                    month: new Date().getMonth() + 1
+                });
+                localStorage.setItem('shift_chat_history', JSON.stringify(chatHistory));
+            }
+        }
+
+        function renderChatHistory() {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = `
+                <div class="msg-container msg-ai">
+                    <div class="msg-name">AI シフトマネージャー🤖</div>
+                    <div class="msg-bubble">お疲れ様です！お休みの希望や、時短勤務（早上がり）があればチャットで教えてくださいね✨<br>
+                        <span style="font-size:0.8rem; color:#888;">送られた内容はシステムへ自動連携されます。</span>
+                    </div>
+                </div>`;
+            chatHistory.forEach(msg => {
+                const isStaff = msg.type === 'staff';
+                let editHtml = isStaff ? `<button class="edit-btn" onclick="editMessage(${msg.id})">✏️ 編集/取消</button>` : '';
+                box.innerHTML += `
+                    <div class="msg-container ${isStaff ? 'msg-staff' : 'msg-ai'}" id="msg-${msg.id}" data-text="${msg.text.replace(/"/g, '&quot;')}">
+                        <div class="msg-name">${msg.name}</div>
+                        <div class="msg-bubble">${msg.text} ${editHtml}</div>
+                    </div>`;
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Cleanup past month data logic
+        function cleanupPastData() {
+            let currentMonth = today.getMonth() + 1; // e.g. March = 3
+            let currentYear = today.getFullYear();
+            let changed = false;
+
+            // 1. Clear chat history older than current month
+            let initialLength = chatHistory.length;
+            chatHistory = chatHistory.filter(msg => {
+                let msgDate = new Date(msg.timestamp);
+                let mc = (msgDate.getFullYear() * 12) + msgDate.getMonth();
+                let tc = (currentYear * 12) + today.getMonth();
+                return mc >= tc; // Keep current and future months
+            });
+            if (chatHistory.length !== initialLength) changed = true;
+
+            // 2. Clear old custom times and requested days
+            STAFF.forEach(st => {
+                let before = JSON.stringify(st);
+                if (st.reqOffDates) {
+                    st.reqOffDates = st.reqOffDates.filter(d => {
+                        let [m, day] = d.split('/').map(Number);
+                        // Very rough approximation: if the month is before 'currentMonth' and not like Nov/Dec wrapping to Jan.
+                        // Assuming data is within the current year for simplicity.
+                        return m >= currentMonth;
+                    });
+                }
+                if (st.customTimes) {
+                    Object.keys(st.customTimes).forEach(key => {
+                        if (key.includes('/')) {
+                            let [m, day] = key.split('/').map(Number);
+                            if (m < currentMonth) { // past month
+                                delete st.customTimes[key];
+                            }
+                        }
+                    });
+                }
+                if (JSON.stringify(st) !== before) changed = true;
+            });
+
+            if (changed) {
+                localStorage.setItem('shift_chat_history', JSON.stringify(chatHistory));
+                saveStaffDB();
+                console.log("Past month data cleared");
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input-text');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 6. Sender syncs with login name
+            appendChat(`${currentUser.name} (${DEPARTMENTS.find(d => d.id === currentUser.dept).name})`, text, 'staff');
+            input.value = '';
+
+            setTimeout(() => { processNLP(text); }, 600);
+        }
+
+        function processNLP(text) {
+            let processed = false;
+            let s = STAFF.find(st => st.name === currentUser.name);
+            if (!s) return;
+
+            let textLower = text.replace(/曜/g, '');
+            let isOffRequest = textLower.includes('休') || textLower.includes('やすみ') || textLower.includes('出られない') || textLower.includes('有給');
+
+            // 1. Extract ALL explicit Dates: "2/25" or "2月25日" or just "25日"
+            let dateMatches = [...text.matchAll(/([0-9]{1,2})[\/\月]([0-9]{1,2})/g)];
+            let exactDates = dateMatches.map(m => {
+                let month = parseInt(m[1]);
+                let day = parseInt(m[2]);
+                let tempD = new Date(currentDate.getFullYear(), month - 1, day);
+                let map = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat', 0: 'sun' };
+                return { str: `${month}/${day}`, dayKey: map[tempD.getDay()] };
+            });
+
+            // Fallback for "23日" "24日" independent of month
+            if (exactDates.length === 0) {
+                let dayOnlyMatches = [...text.matchAll(/([0-9]{1,2})日/g)];
+                exactDates = dayOnlyMatches.map(m => {
+                    let month = currentDate.getMonth() + 1; // Default to currently viewed calendar month
+                    let day = parseInt(m[1]);
+                    let tempD = new Date(currentDate.getFullYear(), month - 1, day);
+                    let map = { 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat', 0: 'sun' };
+                    return { str: `${month}/${day}`, dayKey: map[tempD.getDay()] };
+                });
+            }
+
+            // 2. Extract ALL explicit Times: "08:45 - 17:30" or "08:45〜17:30"
+            let timeMatches = [...text.matchAll(/([0-9]{1,2}:[0-9]{2}).*?([0-9]{1,2}:[0-9]{2})/g)];
+            let exactTimes = timeMatches.map(m => `${m[1]} - ${m[2]}`);
+
+            let daysOff = [];
+            let exactDatesOff = [];
+
+            // General Weekday extraction (if no exact dates)
+            if (exactDates.length === 0) {
+                if (textLower.includes('月')) daysOff.push('mon');
+                if (textLower.includes('火')) daysOff.push('tue');
+                if (textLower.includes('水')) daysOff.push('wed');
+                if (textLower.includes('木')) daysOff.push('thu');
+                if (textLower.includes('金')) daysOff.push('fri');
+                if (textLower.includes('土')) daysOff.push('sat');
+                if (textLower.includes('日')) daysOff.push('sun');
+            }
+
+            if (exactDates.length > 0 || exactTimes.length > 0 || daysOff.length > 0 || isOffRequest || textLower.includes('特殊') || textLower.includes('早上がり')) {
+                processed = true;
+
+                // Handle Time Mapping First If Present
+                if (exactTimes.length > 0 && !isOffRequest) {
+                    if (exactDates.length > 0) {
+                        // "2/26と2/27に08:45-17:30" => exactTimes[0] goes to both.
+                        // "2/26は9-18、2/27は10-19" => paired sequentially
+                        exactDates.forEach((d, idx) => {
+                            let t = exactTimes[idx] || exactTimes[0];
+                            s.customTimes[d.str] = t;
+                            // Remove from days off if previously set
+                            s.reqOffDates = s.reqOffDates.filter(x => x !== d.str);
+                        });
+                        appendChat("AI マネージャー🤖", `承知しました！\n指定日 (${exactDates.map(d => d.str).join(', ')}) の時間を「${exactTimes.join(' / ')}」として各々登録しました🙆‍♀️`, 'ai');
+                    } else {
+                        // Weekday times
+                        if (daysOff.length === 0) s.customTimes["default"] = exactTimes[0];
+                        else {
+                            daysOff.forEach(d => {
+                                s.customTimes[d] = exactTimes[0];
+                                s.reqOff = s.reqOff.filter(x => x !== d); // Clear off flag
+                            });
+                        }
+                        appendChat("AI マネージャー🤖", `承知しました！指定した曜日の時間を「${exactTimes[0]}」として登録しました🙆‍♀️`, 'ai');
+                    }
+                } else if (isOffRequest) {
+                    // Handle Days Off / Paid Leave
+                    if (exactDates.length > 0) {
+                        exactDates.forEach(d => {
+                            exactDatesOff.push(d.str);
+                            delete s.customTimes[d.str]; // Clear custom time if set
+                        });
+                    }
+                    if (daysOff.length === 0 && exactDates.length === 0) daysOff.push('mon'); // fallback
+
+                    s.reqOff = Array.from(new Set([...s.reqOff, ...daysOff]));
+                    s.reqOffDates = Array.from(new Set([...s.reqOffDates, ...exactDatesOff]));
+
+                    daysOff.forEach(d => { delete s.customTimes[d]; });
+
+                    if (textLower.includes('有給')) {
+                        if (exactDates.length > 0) exactDates.forEach(d => s.customTimes[d.str] = "有給");
+                        else daysOff.forEach(d => s.customTimes[d] = "有給");
+                        appendChat("AI マネージャー🤖", `承知しました！指定日の「有給休暇」をシステムに登録しました🌴✅`, 'ai');
+                    } else {
+                        appendChat("AI マネージャー🤖", `承知しました！指定日のお休み希望をカレンダーに登録しました🗓️✅`, 'ai');
+                    }
+                } else {
+                    // Check for keywords
+                    if (textLower.includes('特殊') || textLower.includes('15時出勤')) {
+                        if (exactDates.length > 0) exactDates.forEach(d => s.customTimes[d.str] = "15:00 - 22:00");
+                        else s.customTimes["default"] = "15:00 - 22:00";
+                        appendChat("AI マネージャー🤖", `承知しました！15時出勤で登録しました🙆‍♀️`, 'ai');
+                    } else if (textLower.includes('早上がり') || textLower.includes('17時')) {
+                        if (exactDates.length > 0) exactDates.forEach(d => s.customTimes[d.str] = "9:00 - 17:00");
+                        else s.customTimes["default"] = "9:00 - 17:00";
+                        appendChat("AI マネージャー🤖", `承知しました！早上がり枠で登録しました🙆‍♀️`, 'ai');
+                    } else {
+                        appendChat("AI マネージャー🤖", `承知しました！希望をシステムに記録しました✅`, 'ai');
+                    }
+                }
+
+                saveStaffDB();
+                generateShift(); // 常に自動反映
+            } else {
+                appendChat("AI マネージャー🤖", `メッセージを受け付けました。\n※複数の日付や時間を同時に送信できます。（例：「2/26と2/27は08:45-17:30希望」など）`, 'ai');
+            }
+        }
+
+        // --- AUTO GENERATOR ---
+        function generateShift(silent = false) {
+            currentShifts = {};
+            DEPARTMENTS.forEach(dept => {
+                currentShifts[dept.id] = {};
+                dayKeys.forEach(day => { currentShifts[dept.id][day] = []; });
+            });
+
+            dayKeys.forEach(day => {
+                DEPARTMENTS.forEach(dept => {
+                    let needed = dept.req[day];
+
+                    // Calculate exact date for this cell to check both reqOffDates and customTimes mapping
+                    let tempDate = new Date(currentDate);
+                    let dtStart = tempDate.getDay();
+                    if (dtStart === 0) dtStart = 7;
+                    tempDate.setDate(tempDate.getDate() - dtStart + 1); // Get Monday
+                    let offsetIdx = dayKeys.indexOf(day);
+                    tempDate.setDate(tempDate.getDate() + offsetIdx);
+                    let exactDateKeyStr = `${tempDate.getMonth() + 1}/${tempDate.getDate()}`;
+
+                    // Filter pool by dept, excluding those who requested off today OR exactly on this date
+                    let pool = STAFF.filter(s => s.dept === dept.id && !s.reqOff.includes(day) && !s.reqOffDates.includes(exactDateKeyStr));
+
+                    // Instead of cutting off staff arbitrarily, ensure all available logged-in/mock staff in the pool are shown.
+                    for (let i = 0; i < pool.length; i++) {
+                        let st = pool[i];
+                        // default time
+                        let workTime = (day === 'sat' || day === 'sun') ? "10:00 - 19:00" : "9:00 - 18:00";
+
+                        // Apply short time if requested for THIS specific date string or weekday
+                        if (st.customTimes[exactDateKeyStr]) workTime = st.customTimes[exactDateKeyStr];
+                        else if (st.customTimes[day]) workTime = st.customTimes[day];
+                        else if (st.customTimes["default"]) workTime = st.customTimes["default"];
+
+                        currentShifts[dept.id][day].push({ name: st.name, time: workTime });
+                    }
+                });
+            });
+
+            renderBoard();
+            if (silent !== true) {
+                Swal.fire({ title: 'AI編成完了', text: 'カレンダー日付と希望データに沿って再計算しました。', icon: 'success', timer: 1500, showConfirmButton: false });
+            }
+        }
+
+        // --- ADD DEPARTMENT ---
+        async function addDepartment() {
+            const { value: deptName } = await Swal.fire({
+                title: '新規部門の追加',
+                input: 'text',
+                inputLabel: '部門名を入力してください (例: 🍣 寿司)',
+                showCancelButton: true
+            });
+            if (deptName) {
+                const newId = 'dept_' + Date.now();
+                DEPARTMENTS.push({ id: newId, name: deptName, req: { mon: 2, tue: 2, wed: 2, thu: 2, fri: 3, sat: 4, sun: 4 } });
+
+                // Add option to login screen dynamically
+                const sel = document.getElementById('login-dept');
+                const opt = document.createElement('option');
+                opt.value = newId; opt.text = deptName;
+                sel.add(opt);
+
+                renderBoard();
+                if (currentShifts) generateShift();
+                Swal.fire('追加完了', `${deptName} を新たに追加しました！`, 'success');
+            }
+        }
+
+        // --- EDIT PROFILE ---
+        async function editUserInfo() {
+            const { value: formValues } = await Swal.fire({
+                title: '名前・店舗の変更',
+                html:
+                    `<input id="swal-edit-name" class="swal2-input" placeholder="名前" value="${currentUser.name}">` +
+                    `<select id="swal-edit-dept" class="swal2-input" style="width:75%; margin-top:10px;">` +
+                    DEPARTMENTS.map(d => `<option value="${d.id}" ${d.id === currentUser.dept ? 'selected' : ''}>${d.name}</option>`).join('') +
+                    `</select>`,
+                focusConfirm: false,
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('swal-edit-name').value,
+                        dept: document.getElementById('swal-edit-dept').value
+                    }
+                }
+            });
+
+            if (formValues && formValues.name) {
+                // Update Staff array lookup
+                let s = STAFF.find(st => st.name === currentUser.name);
+                if (s) {
+                    s.name = formValues.name;
+                    s.dept = formValues.dept;
+                } else {
+                    STAFF.push({ name: formValues.name, dept: formValues.dept, email: currentUser.email, reqOff: [], reqOffDates: [], customTimes: {} });
+                }
+                saveStaffDB();
+
+                currentUser.name = formValues.name;
+                currentUser.dept = formValues.dept;
+
+                localStorage.setItem('shift_name', currentUser.name);
+                localStorage.setItem('shift_dept', currentUser.dept);
+
+                document.getElementById('current-user-name').innerText = currentUser.name;
+                document.getElementById('current-user-dept').innerText = DEPARTMENTS.find(d => d.id === currentUser.dept)?.name || '未設定';
+
+                generateShift();
+                Swal.fire('更新完了', 'ユーザー情報を更新しました', 'success');
+            }
+        }
+
+        // --- CUSTOM PRESETS AND HOURLY ---
+        async function customPreset() {
+            const { value: formValues } = await Swal.fire({
+                title: '高度なスケジュール入力',
+                html: `
+                    <div style="font-size:1.1rem; text-align:left; margin-bottom:5px;">📅 対象日 (例: 「月火水木」や「23日と24日」など)</div>
+                    <input type="text" id="swal-dates" class="swal2-input" placeholder="例: 月火水" style="margin-top:0; width:90%; font-size:1.1rem;">
+                    
+                    <div style="font-size:1.1rem; text-align:left; margin-bottom:5px; margin-top:20px;">⚙️ 登録の種類</div>
+                    <select id="swal-type" class="swal2-input" style="margin-top:0; width:90%; font-size:1.1rem;">
+                        <option value="time">⏰ 特殊な出勤時間を指定する</option>
+                        <option value="off">休 休み(または有給)を指定する</option>
+                    </select>
+
+                    <div id="swal-time-box">
+                        <div style="font-size:1.1rem; text-align:left; margin-bottom:5px; margin-top:20px;">⏰ 出勤 / 退勤時間 (5分単位)</div>
+                        <input type="time" id="swal-in1" value="09:00" class="swal2-input" step="300" style="width:120px; margin-top:0; font-size:1.1rem;"> 〜 
+                        <input type="time" id="swal-in2" value="18:00" class="swal2-input" step="300" style="width:120px; margin-top:0; font-size:1.1rem;">
+                    </div>
+                `,
+                didOpen: () => {
+                    const typeSel = document.getElementById('swal-type');
+                    const timeBox = document.getElementById('swal-time-box');
+                    typeSel.addEventListener('change', () => {
+                        timeBox.style.display = typeSel.value === 'time' ? 'block' : 'none';
+                    });
+                },
+                showCancelButton: true,
+                cancelButtonText: 'キャンセル',
+                focusConfirm: false,
+                preConfirm: () => {
+                    return {
+                        dates: document.getElementById('swal-dates').value.trim(),
+                        type: document.getElementById('swal-type').value,
+                        timeStr: document.getElementById('swal-in1').value + ' - ' + document.getElementById('swal-in2').value
+                    }
+                }
+            });
+
+            if (formValues) {
+                let text = "";
+                if (formValues.type === "time") {
+                    text = formValues.dates ? `「${formValues.dates} は ${formValues.timeStr} 出勤希望」` : `「${formValues.timeStr} 出勤希望」`;
+                } else {
+                    text = formValues.dates ? `「${formValues.dates} は 休み希望」` : `「休み希望」`;
+                }
+                setInput(text);
+                sendMessage(); // Auto send to save clicks
+            }
+        }
+
+        function openTotalHours() {
+            if (!currentShifts) return Swal.fire('エラー', 'シフトが生成されていません', 'error');
+            let totals = {};
+
+            dayKeys.forEach(day => {
+                DEPARTMENTS.forEach(dept => {
+                    let staffArr = currentShifts[dept.id][day];
+                    staffArr.forEach(s => {
+                        let parts = s.time.split('-');
+                        if (parts.length === 2) {
+                            let [h1, m1] = parts[0].trim().split(':').map(Number);
+                            let [h2, m2] = parts[1].trim().split(':').map(Number);
+
+                            let startDec = h1 + (isNaN(m1) ? 0 : m1) / 60;
+                            let endDec = h2 + (isNaN(m2) ? 0 : m2) / 60;
+
+                            if (endDec < startDec) endDec += 24; // overnight
+                            let hrs = Math.max(0, endDec - startDec);
+
+                            if (!totals[s.name]) totals[s.name] = 0;
+                            totals[s.name] += hrs;
+                        } else if (s.time === "有給") {
+                            if (!totals[s.name]) totals[s.name] = 0;
+                            totals[s.name] += 8; // Assumed basic hours for paid leave
+                        }
+                    });
+                });
+            });
+
+            let html = '<div style="text-align:left; max-height:400px; overflow-y:auto;">';
+            html += '<table style="width:100%; border-collapse:collapse; text-align:left;">';
+            html += '<tr style="background:#f1f5f9; border-bottom:2px solid #ccc;"><th>スタッフ名(概算計算)</th><th>週次・総労働時間</th></tr>';
+            Object.keys(totals).sort().forEach(name => {
+                let color = totals[name] > 40 ? 'color:red; font-weight:bold;' : 'color:#333;';
+                html += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">${name}</td><td style="padding:8px; ${color}">${totals[name].toFixed(1)} 時間</td></tr>`;
+            });
+            html += '</table></div>';
+
+            Swal.fire({
+                title: '⏱️ 週次・総労働時間算出',
+                html: html,
+                width: 500
+            });
+        }
+
+        // --- GANTT CHART VIEW ---
+        function openGanttView(dayOffsetIndex = 0) {
+            if (!currentShifts) {
+                return Swal.fire('エラー', '先に「AI最適化」を実行してシフトを作成してください', 'error');
+            }
+
+            // Calc exact date for Gantt Header based on week's Monday + offset
+            let temp = new Date(currentDate);
+            let dt = temp.getDay();
+            if (dt === 0) dt = 7;
+            temp.setDate(temp.getDate() - dt + 1); // Exact Monday
+
+            // Build Tabs (Mon-Sun)
+            let tabsHtml = '';
+            let targetDayKey = 'mon'; // default
+            let iterDate = new Date(temp);
+
+            for (let i = 0; i < 7; i++) {
+                let dKey = dayKeys[i];
+                let loopDateStr = `${iterDate.getMonth() + 1}/${iterDate.getDate()}`;
+                let isSelected = (i === dayOffsetIndex);
+                if (isSelected) {
+                    targetDayKey = dKey;
+                    const gDateNode = document.getElementById('gantt-title-date');
+                    if (gDateNode) gDateNode.innerText = `${iterDate.getFullYear()}年 ${loopDateStr} (${dayNames[dKey]}曜日)`;
+                }
+
+                let btnStyle = isSelected ? "background:#3b82f6;color:white;border:none;" : "background:#f1f5f9;color:#333;border:1px solid #ccc;";
+                tabsHtml += `<button onclick="openGanttView(${i})" style="padding:5px 15px; cursor:pointer; font-weight:bold; ${btnStyle}">${loopDateStr} (${dayNames[dKey]})</button>`;
+                iterDate.setDate(iterDate.getDate() + 1);
+            }
+            document.getElementById('gantt-tabs').innerHTML = tabsHtml;
+
+            let html = `<div class="gantt-header">`;
+            for (let i = 8; i <= 22; i++) { // 08:00 to 22:00
+                html += `<div class="gantt-hour">${i}:00</div>`;
+            }
+            html += `</div><div class="gantt-grid">`;
+
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+            let colorIdx = 0;
+
+            DEPARTMENTS.forEach(dept => {
+                const staffList = currentShifts[dept.id][targetDayKey] || [];
+                const c = colors[colorIdx % colors.length]; colorIdx++;
+
+                staffList.forEach(s => {
+                    let parts = s.time.split('-');
+                    if (parts.length < 2) return;
+
+                    let sTime = parseInt(parts[0].split(':')[0]);
+                    let eTime = parseInt(parts[1].split(':')[0]);
+
+                    if (sTime < 8) sTime = 8;
+                    if (eTime > 22) eTime = 22;
+
+                    let totalHoursSpan = 22 - 8;
+                    let leftPercent = ((sTime - 8) / totalHoursSpan) * 100;
+                    let widthPercent = ((eTime - sTime) / totalHoursSpan) * 100;
+
+                    html += `<div class="gantt-row">
+                        <div class="gantt-name">${s.name} <br><span style="font-size:0.6rem; color:#888;">${dept.name.split(' ')[0]}</span></div>
+                        <div class="gantt-timeline">
+                            <div class="gantt-bar" style="background:${c}; left:${leftPercent}%; width:${widthPercent}%;">
+                                ${s.time}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            });
+
+            html += `</div>`;
+            document.getElementById('gantt-content').innerHTML = html;
+            document.getElementById('gantt-view').style.display = 'block';
+        }
+
+        function closeGantt() {
+            document.getElementById('gantt-view').style.display = 'none';
+        }
+
+        // Initialize Login UI setup
+        window.onload = () => {
+            const savedEmail = localStorage.getItem('shift_last_email') || localStorage.getItem('shift_email');
+
+            if (savedEmail) {
+                document.getElementById('login-email').value = savedEmail;
+
+                // Lookup specifics by email context to prevent user overlap
+                const savedName = localStorage.getItem(`shift_name_${savedEmail}`) || localStorage.getItem('shift_name');
+                const savedDept = localStorage.getItem(`shift_dept_${savedEmail}`) || localStorage.getItem('shift_dept');
+
+                if (savedName) document.getElementById('login-name').value = savedName;
+                if (savedDept) document.getElementById('login-dept').value = savedDept;
+            }
+        };
+    </script>
+
+</body>
+
+</html>

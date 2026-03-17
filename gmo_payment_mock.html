@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お支払い | GMO Payment Gateway (Mock)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f9f9f9;
+            color: #333;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+            color: #0056b3;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #004494;
+        }
+
+        .btn-gpay {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-gpay:hover {
+            opacity: 0.9;
+        }
+
+        .amount {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>クレジットカード決済</h2>
+        <div class="amount">¥<span id="amount">0</span></div>
+
+        <form onsubmit="event.preventDefault(); doPay();">
+            <div class="form-group">
+                <label>カード番号</label>
+                <input type="text" name="cardnumber" placeholder="1234 5678 1234 5678" autocomplete="cc-number"
+                    required>
+            </div>
+            <div class="form-group">
+                <label>有効期限</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" name="cc-exp-month" placeholder="月 (MM)" autocomplete="cc-exp-month"
+                        style="width: 80px;" required>
+                    <input type="text" name="cc-exp-year" placeholder="年 (YY)" autocomplete="cc-exp-year"
+                        style="width: 80px;" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>セキュリティコード</label>
+                <input type="text" name="cvc" placeholder="123" autocomplete="cc-csc" required>
+            </div>
+            <div class="form-group">
+                <label>カード名義人</label>
+                <input type="text" name="cc-name" placeholder="TARO YAMADA" autocomplete="cc-name">
+            </div>
+
+            <button class="btn" type="submit">支払う</button>
+        </form>
+
+        <div style="margin: 15px 0; border-top: 1px solid #ddd; position: relative;">
+            <span
+                style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 10px; color: #7f8c8d; font-size: 12px;">または</span>
+        </div>
+
+        <button class="btn-gpay" onclick="doGooglePay()">
+            <span style="font-family: 'Product Sans', sans-serif; font-weight: bold;">G</span> Pay で支払う
+        </button>
+
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="#" onclick="doCancel()" style="color: #666; text-decoration: none;">キャンセルして戻る</a>
+        </div>
+    </div>
+
+    <script>
+        // URLパラメータから金額と戻り先を取得
+        const params = new URLSearchParams(window.location.search);
+        const amount = params.get('amount') || 0;
+        document.getElementById('amount').innerText = Number(amount).toLocaleString();
+
+        function doPay() {
+            const btn = document.querySelector('.btn');
+            btn.innerText = "処理中...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // 決済成功として元の画面に戻る
+                window.location.href = "index.html?result=success&amount=" + amount + "&method=credit";
+            }, 1000);
+        }
+
+        function doGooglePay() {
+            const btn = document.querySelector('.btn-gpay');
+            btn.innerHTML = "Google Pay 処理中...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // 決済成功として元の画面に戻る (Method: GooglePay)
+                window.location.href = "index.html?result=success&amount=" + amount + "&method=google_pay";
+            }, 1500);
+        }
+
+        function doCancel() {
+            window.location.href = "index.html?result=cancel";
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiteAd - サイネージ メディアビジネスモデル解説</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8e44ad;
+            /* Purple representing Creators/Synergy */
+            --dark: #2c3e50;
+            --light: #ffffff;
+            --accent: #f39c12;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --background: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--background);
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--dark) 0%, #2f3640 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 900;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: -40px auto 50px;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+            display: inline-block;
+            margin-top: 0;
+            color: var(--dark);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media(max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .box {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        .box h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .vs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .vs-table th,
+        .vs-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .vs-table th {
+            background: #f1f5f9;
+            width: 33%;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .danger-text {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .success-text {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .diagram {
+            background: #2f3640;
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .diagram-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .flow-step {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            width: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #732d91;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>あなたの動画が、街の体験を変える。<br>リアルで届ける新しい動画ステージ</h1>
+        <p>「あなたのクリエイティビティ」×「最新AI」が生み出す、<br>YouTubeの枠を超えた全く新しいファン獲得＆収益モデル。</p>
+    </div>
+
+    <div class="container">
+        <!-- Section 1 -->
+        <div class="card">
+            <h2>街の巨大スクリーンで、新しいファンに出会おう！</h2>
+            <p>スマホの中だけじゃない！あなたの魅力あふれるショート動画が、実際にお店で買い物をしている人々の足を止め、日常にワクワクを届けます。リアルな視聴体験から、全く新しいファンを獲得するチャンスです。</p>
+
+            <div class="grid">
+                <div class="box">
+                    <h3>🎨 クリエイターにとって</h3>
+                    <ul style="padding-left:20px;">
+                        <li><b>高単価な報酬:</b> メーカー直販の「短尺広告」の場合、<span
+                                class="highlight">1再生あたり約0.5円</span>というSNSの数十倍の高単価。さらに、Google AdSense枠で動画が流れた場合は<span
+                                class="highlight">広告収益の10%</span>が還元されるハイブリッド収益モデルです。</li>
+                        <li><b>新しい視聴者層:</b> スマホを見ていない「実際の買い物客」という全く新しい層にリーチ可能。</li>
+                        <li><b>影響力の実証:</b> 自分の動画が「実際のPOS売上」をどれだけ動かしたか、具体的なデータ（影響力）として証明できる。</li>
+                    </ul>
+                </div>
+                <div class="box">
+                    <h3>👔 広告主・店舗にとって</h3>
+                    <ul style="padding-left:20px;">
+                        <li><b>注視率の劇的向上:</b> 単なるCMではなく、面白い動画を見るために足を止めるため、<span
+                                class="success-text">CMへのバトンパス（注視力維持）</span>が圧倒的。</li>
+                        <li><b>リスク排除:</b> 「どのインフルエンサーを使えば売れるか」を悩む必要ゼロ。AIが自動でテストし、最も相性の良い動画だけを勝手に残す。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="card">
+            <h2>💰 あなたのクリエイティビティに、大きなリターンを</h2>
+            <p>「YouTubeに公開する前のお宝動画」や「お気に入りのショート動画」をシステムにアップロードするだけ！いつもの活動を邪魔せず、通常のプラットフォームを大きく上回る新たなハイブリッド収益源を生み出します！
+            </p>
+
+            <table class="vs-table">
+                <tr>
+                    <th>比較項目</th>
+                    <th>📱 通常のSNS (YouTube Shorts等)</th>
+                    <th>🛒 本サイネージ・システム</th>
+                </tr>
+                <tr>
+                    <td><b>報酬相場</b></td>
+                    <td>約 0.01円 〜 0.05円 (1再生)</td>
+                    <td class="highlight" style="font-size:1.1rem;">メーカー広告: 約0.5円/再生<br>AdSense広告: 収益の10%</td>
+                </tr>
+                <tr>
+                    <td><b>評価の基準</b></td>
+                    <td>アルゴリズムによる「クリック率・視聴維持率」</td>
+                    <td>AIカメラによる<b>「実利用者の注視」と「広告離脱率」</b></td>
+                </tr>
+                <tr>
+                    <td><b>収益の源泉</b></td>
+                    <td>プラットフォームの広告費分配</td>
+                    <td>広告主が支払う<b>「店舗での実売上貢献（CPA）予算」</b>からの直接分配</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="card">
+            <h2>📈 AIがあなたの動画の「リアルな熱量」を分析！</h2>
+            <p>再生回数だけじゃない！AIカメラが「どれだけ人が足を止めて見入ったか」というリアルな熱量をスコア化します。街の人を惹きつける素晴らしい動画ほど、全国のお店へ自動でどんどん広がっていくシステムです。</p>
+
+            <div class="diagram">
+                <h3 style="color:var(--accent); margin-top:0;">🔄 Synergy AI 最適化ループ</h3>
+                <div class="diagram-flow">
+                    <div class="flow-step">
+                        <h4>① テスト配信</h4>
+                        <p style="font-size:0.8rem;">アップロードされた動画を数店舗で試験配信。</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="flow-step">
+                        <h4>② AIスコア測定</h4>
+                        <p style="font-size:0.8rem;">カメラで「視認維持率」とCMへの「離脱率」を計測。</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="flow-step">
+                        <h4>③ 自動最適化</h4>
+                        <p style="font-size:0.8rem;">優秀なものは全国へ。視聴者層に合わないものは<b>配信頻度を調整</b>。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div>
+                    <h3 style="color:var(--success);">✨ 全国のお店でバズる！高評価な動画のヒミツ</h3>
+                    <ul>
+                        <li><b>足を止める引力がある:</b><br>動画が流れた瞬間、「おっ？」と思わず立ち止まって最後まで見入ってしまうような、ワクワク感のある映像。</li>
+                        <li><b>CMへの「神バトンパス」:</b><br>あなたの面白さで温まったお客さんが、そのまま次の企業のCMまでニコニコしながら見てくれる。これこそ最高のクリエイターパワー！</li>
+                        <li><b>実際にお店の商品が売れる:</b> 楽しさを伝えたことで、お店の商品の売上がグンと上がる。あなたの影響力が数字で証明されます。</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color:var(--danger);">🌱 AIからのフィードバック（伸びしろと改善のヒント）</h3>
+                    <ul>
+                        <li><span
+                                class="danger-text">「お店のお客さん層」とマッチしていないかも？</span><br>最後まで見られなかった時は、システムが自動で配信回数を調整します。「お店の雰囲気や客層」と合っていなかっただけの可能性もあります。
+                        </li>
+                        <li><b>新しい表現方法を試す大チャンス！</b><br>普段のSNSとはちょっと違う「お買い物中」という特殊な環境。これまでのセオリーが通用しないからこそ、新しいファン層を獲得する大チャンスです。
+                        </li>
+                        <li>配信が制限されてもペナルティはありません！AIのリアルな反応を分析結果として受け取り、次なる「バズる動画」のヒントにしちゃいましょう！
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center; padding-bottom:50px;">
+            <a href="login_portal.html" class="btn">ポータルに戻る</a>
+        </div>
+    </div>
+
+</body>
+
+</html>

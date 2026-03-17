@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>LiteAd Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f7f6;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            /* Prevent scrolling when login is active */
+        }
+
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 350px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .login-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Hide main content initially */
+        #main-app {
+            display: none;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            /* Flex required for layout */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #1a252f;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #34495e;
+        }
+
+        .nav-item.active {
+            background: #34495e;
+            border-left-color: #3498db;
+        }
+
+        .nav-section {
+            font-size: 12px;
+            color: #7f8c8d;
+            padding: 20px 20px 5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        /* Tab Panels */
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards & Tables */
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #ecf0f1;
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #ecf0f1;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .badge-pending {
+            background: #f1c40f;
+            color: #fff;
+        }
+
+        .badge-sent {
+            background: #27ae60;
+            color: #fff;
+        }
+
+        .badge-unpaid {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .btn-action {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-view {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 5px;
+        }
+
+        .highlight-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .billing-highlight {
+            color: #e74c3c;
+        }
+
+        /* Red for Fees logic */
+        .payout-highlight {
+            color: #27ae60;
+        }
+
+        /* Green for Payout logic */
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #main-app {
+                flex-direction: column;
+                height: 100vh;
+                /* Ensure full height */
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 0;
+                background: #2c3e50;
+                flex-shrink: 0;
+                /* Prevent shrinking */
+
+                /* Hide scrollbar but keep functionality */
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+
+            .sidebar::-webkit-scrollbar {
+                display: none;
+            }
+
+            .logo {
+                display: none;
+                /* Simplify header to save space */
+            }
+
+            .nav-section {
+                display: none;
+            }
+
+            /* Hide section labels */
+
+            .nav-item {
+                flex: 0 0 auto;
+                border-left: none;
+                border-bottom: 4px solid transparent;
+                padding: 15px;
+                font-size: 14px;
+            }
+
+            .nav-item.active {
+                background: #34495e;
+                border-left: none;
+                border-bottom-color: #3498db;
+            }
+
+            .main {
+                padding: 15px;
+                overflow-y: auto;
+                /* Scroll main content */
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            /* Make tables scrollable */
+            .card {
+                padding: 15px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 600px;
+                /* Force horizontal scroll for tables */
+            }
+
+            /* Adjust login overlay for mobile */
+            .login-box {
+                width: 85%;
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login Overlay -->
+    <!-- Fix: Explicitly set aria-hidden="false" and role="dialog" to prevent accessibility tools from hiding the focused element -->
+    <div id="login-overlay" role="dialog" aria-modal="true" aria-hidden="false" aria-labelledby="login-title">
+        <div class="login-box">
+            <h2 id="login-title" style="margin-top:0; color:#2c3e50;">Admin Portal</h2>
+
+            <!-- Tabs -->
+            <div style="display:flex; justify-content:center; margin-bottom:20px; border-bottom:1px solid #eee;">
+                <div id="tab-login" onclick="switchLoginTab('login')"
+                    style="padding:10px 20px; cursor:pointer; font-weight:bold; color:#2c3e50; border-bottom:2px solid #3498db;">
+                    Login</div>
+                <div id="tab-signup" onclick="switchLoginTab('signup')"
+                    style="padding:10px 20px; cursor:pointer; color:#95a5a6;">Sign Up</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="event.preventDefault(); handleLogin();" autocomplete="on">
+                <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID"
+                    autocomplete="username">
+                <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password"
+                    autocomplete="current-password">
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="form-signup" style="display:none;" onsubmit="event.preventDefault(); handleRegister();"
+                autocomplete="on">
+                <input type="email" id="reg-email" name="username" class="login-input" placeholder="New Admin Email"
+                    autocomplete="username">
+                <input type="password" id="reg-pass" name="new-password" class="login-input"
+                    placeholder="Create Password" autocomplete="new-password">
+                <button type="submit" class="login-btn" style="background:#27ae60;">Create Account</button>
+            </form>
+
+            <p style="margin-top:15px; font-size:12px; color:#7f8c8d; line-height:1.6;">
+                <b>Demo Account:</b><br>
+                ID: admin@demo.com<br>
+                Pass: DemoPass2026!
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Application Content (Hidden Initially) -->
+    <div id="main-app">
+
+        <div class="sidebar">
+            <div class="logo">🏢 リテアド管理画面</div>
+
+            <div class="nav-section">支払債務（支払い）</div>
+            <div class="nav-item active" onclick="switchTab('payout')">
+                📊 収益センター管理者
+            </div>
+
+            <div class="nav-section">売掛金（請求）</div>
+            <div class="nav-item" onclick="switchTab('billing')">
+                📱 どこでもレジ管理者
+            </div>
+
+            <div class="nav-section">クリエイター・収益管理</div>
+            <div class="nav-item" onclick="switchTab('creators')">
+                🎬 クリエイター報酬一覧
+            </div>
+
+            <div class="nav-section">代理店管理</div>
+            <div class="nav-item" onclick="switchTab('agency')">
+                🤝 代理店申請一覧
+            </div>
+        </div>
+
+        <div class="main">
+
+            <!-- PAYOUT DASHBOARD (Revenue Center) - Default Active -->
+            <div id="panel-payout" class="panel active">
+                <div class="header">
+                    <div>
+                        <h1>📊 収益センター管理者</h1>
+                        <p style="color:#7f8c8d; margin-top:5px;">支払管理ダッシュボード: 店舗への広告収益分配 (50%)</p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="validateSquareData()" class="btn-action" style="background:#2c3e50;">🛡️ Square データ整合性チェック</button>
+                        <button onclick="loadData()" class="btn-action">🔄 データ更新</button>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
+                    <h3>広告・AdSense 収益分配一覧</h3>
+                    <button onclick="sendAllPayoutEmails()" class="btn-action" style="background:#8e44ad;">📨
+                        支払通知メール自動一括送信 (全店舗)</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>店舗情報</th>
+                            <th>リテアド収益<br><span style="font-size:10px;color:#95a5a6;">(企業広告等)</span></th>
+                            <th>AdSense収益<br><span style="font-size:10px;color:#95a5a6;">(合算)</span></th>
+                            <th>代理店コミッション<br><span style="font-size:10px;color:#95a5a6;">(20%)</span></th>
+                            <th>クリエイター報酬<br><span style="font-size:10px;color:#95a5a6;">(10%+α)</span></th>
+                            <th>運営費用</th>
+                            <th>差引純売上<br><span style="font-size:10px;color:#95a5a6;">(支払対象総額)</span></th>
+                            <th>支払額 (50%)<br><span
+                                    style="font-size:10px;color:#27ae60;font-weight:bold;">店舗への実質振込額</span></th>
+                            <th>銀行情報</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payout-table-body">
+                        <!-- Data injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" style="background:#d4edda; border-left:4px solid #28a745;">
+                <h4 style="margin-top:0; color:#155724;">💡 経理メモ</h4>
+                <p style="font-size:13px; color:#155724; margin:0; line-height:1.6;">
+                    店舗への支払額計算式:
+                    <code>((リテアド収益 ＋ Google AdSense収益) － 代理店へのコミッション(20％) － クリエイター報酬(10％+ボーナス) － 運営費用) × 50%</code><br>
+                    ※「支払通知メール」を一括送信すると、各店舗の登録メールアドレスに「今月の広告収益振込額と内訳」が自動送信され、AdSenseとアドマネージャーの確定レポートのリンクが添付されます。振込手続き完了後、ステータスを「支払済」に変更してください。
+                </p>
+            </div>
+        </div>
+
+        <!-- BILLING DASHBOARD (Anywhere Regi) -->
+        <div id="panel-billing" class="panel">
+            <div class="header">
+                <div>
+                    <h1>📱 どこでもレジ管理者</h1>
+                    <p style="color:#7f8c8d; margin-top:5px;">請求管理ダッシュボード: 店舗売上の監視・手数料 (1.2%) 徴収</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="sendAllInvoices()" class="btn-action" style="background:#e67e22;">🚀
+                        請求書一括自動送信</button>
+                    <button onclick="loadData()" class="btn-action">🔄 データ更新</button>
+                </div>
+            </div>
+
+            <!-- Admin Settings: Sender Email -->
+            <div class="card" style="border-left: 4px solid #3498db;">
+                <h3 style="margin-top:0;">⚙️ 管理者設定 (送信元)</h3>
+                <div style="display:flex; gap:10px; align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">担当経理メールアドレス</label>
+                        <input type="email" id="admin-email" placeholder="admin-accounting@anywhere-regi.com"
+                            style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-top:5px;">
+                    </div>
+                    <button onclick="saveAdminSettings()" class="btn-action">保存</button>
+                </div>
+                <p style="font-size:12px; color:#7f8c8d; margin-top:5px;">
+                    * 請求書はこのアドレスから自動送信されます。
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>月次請求概要 (翌月請求)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>店舗名</th>
+                            <th>POS総売上</th>
+                            <th>手数料率</th>
+                            <th>請求額 (1.2%)</th>
+                            <th>請求先メール</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billing-table-body">
+                        <!-- Data injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" style="background:#fff3cd; border-left:4px solid #f1c40f;">
+                <h4 style="margin-top:0; color:#856404;">💡 経理メモ</h4>
+                <p style="font-size:13px; color:#856404; margin:0; line-height:1.6;">
+                    店舗への請求額計算式: <code>POS総売上 × 1.2% (システム利用手数料)</code><br>
+                    ※「請求書一括自動送信」を実行すると、各店舗が「どこでもレジ（Forgot
+                    Password）」などから登録した請求先メールアドレス宛に、当月のシステム利用料の請求書と内訳（POSデータ連携レポート）が自動送信されます。期日までの入金が確認でき次第、ステータスを「支払済」に変更してください。
+                </p>
+            </div>
+        </div>
+
+        <!-- CREATOR MANAGEMENT DASHBOARD -->
+        <div id="panel-creators" class="panel">
+            <div class="header">
+                <div style="flex:1;">
+                    <h1>🎬 クリエイター報酬管理</h1>
+                    <p style="color:#7f8c8d; margin-top:5px;">サイネージクリエイターへの広告収益分配と振込先口座情報</p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <button onclick="sendAllCreatorEmails()" class="btn-action" style="background:#8e44ad;">📨
+                        支払通知メール一括送信</button>
+                    <button onclick="loadCreatorData()" class="btn-action">🔄 データ更新</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>支払待ちクリエイター一覧</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>クリエイター情報 (Email/名義)</th>
+                            <th>銀行名 / 支店名</th>
+                            <th>口座番号</th>
+                            <th>メーカー広告<br><span style="font-size:10px;color:#95a5a6;">(1再生0.5円)</span></th>
+                            <th>AdSense連携<br><span style="font-size:10px;color:#95a5a6;">(収益の10%)</span></th>
+                            <th>CM誘導ボーナス</th>
+                            <th>代理店手数料<br><span style="font-size:10px;color:#e74c3c;">(20%控除)</span></th>
+                            <th>支払い報酬総額</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="creator-table-body">
+                        <!-- JS injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="panel-agency" class="panel">
+            <div class="header">
+                <div>
+                    <h1>🤝 代理店申請一覧</h1>
+                    <p style="color:#7f8c8d; margin-top:5px;">代理店からの広告主紹介・コミッション管理</p>
+                </div>
+                <button onclick="loadAgencyData()" class="btn-action">🔄 データ更新</button>
+            </div>
+
+            <div class="card">
+                <h3>申請済み案件リスト</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>申請日</th>
+                            <th>代理店 (Agency)</th>
+                            <th>広告主 (Advertiser)</th>
+                            <th>契約金額</th>
+                            <th>コミッション (20%)</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agency-table-body">
+                        <!-- JS injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById('panel-' + tabId);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            // Map logical ID to visual index
+            const map = { 'payout': 0, 'billing': 1, 'creators': 2, 'agency': 3 };
+            if (map[tabId] !== undefined) {
+                const items = document.querySelectorAll('.nav-item');
+                if (items[map[tabId]]) items[map[tabId]].classList.add('active');
+            }
+
+            if (tabId === 'agency') loadAgencyData();
+            if (tabId === 'creators') loadCreatorData();
+        }
+
+        async function loadCreatorData() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/creators`);
+                const data = await res.json();
+                const tbody = document.getElementById('creator-table-body');
+
+                if (data.list && data.list.length > 0) {
+                    tbody.innerHTML = data.list.map(c => `
+                        <tr>
+                            <td><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.email}</span></td>
+                            <td>${c.bank}<br><span style="font-size:11px; color:#aaa;">${c.branch}</span></td>
+                            <td>${c.account}</td>
+                            <td>¥${c.manufacturer_ad.toLocaleString()}</td>
+                            <td style="color:#4285F4;">¥${c.adsense_share.toLocaleString()}</td>
+                            <td style="color:#e1b12c;">¥${c.cm_bonus.toLocaleString()}</td>
+                            <td style="color:#e74c3c; font-weight:bold;">-¥${c.agency_fee.toLocaleString()}</td>
+                            <td class="highlight-value payout-highlight" style="font-size:16px;">¥${c.payout.toLocaleString()}</td>
+                            <td><span class="badge badge-unpaid">未払</span></td>
+                            <td style="display:flex; gap:5px; flex-direction:column;">
+                                <button onclick="sendCreatorEmail('${c.email}', ${c.payout}, this)" class="btn-action send-email-btn" style="background:#9b59b6; font-size:11px;">📩 確定メール</button>
+                                <button class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">登録されている口座データはありません</td></tr>';
+                }
+            } catch (e) { console.error("Creator list failed", e); }
+        }
+
+        async function sendCreatorEmail(email, amount, btnElement) {
+            if (amount <= 0) {
+                Swal.fire('情報', '支払額が0円のため送信しません', 'info');
+                return;
+            }
+            try {
+                await fetch(`${API_BASE}/api/admin/creators/send-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: email, amount: amount })
+                });
+
+                if (btnElement) {
+                    btnElement.innerText = "🚀 送信済!";
+                    btnElement.disabled = true;
+                    btnElement.style.background = "#27ae60";
+                    btnElement.style.cursor = "default";
+                }
+            } catch (e) {
+                console.error("Email send failed", e);
+            }
+        }
+
+        async function sendAllCreatorEmails() {
+            const buttons = document.querySelectorAll('.send-email-btn:not([disabled])');
+            let sentCount = 0;
+
+            if (buttons.length === 0) {
+                return Swal.fire('情報', '送信可能な確定メールがありません。', 'info');
+            }
+
+            // Confirm before bulk action
+            const result = await Swal.fire({
+                title: '一斉送信の確認',
+                text: `${buttons.length}件のクリエイターへ報酬確定メールを送信しますか？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '送信する',
+                cancelButtonText: 'キャンセル'
+            });
+
+            if (!result.isConfirmed) return;
+
+            for (let btn of buttons) {
+                btn.click();
+                sentCount++;
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '自動送信完了',
+                text: `${sentCount} 件の支払通知メールを自動送信しました。`
+            });
+        }
+
+        async function loadAgencyData() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/agency`);
+                const referrals = await res.json();
+
+                const tbody = document.getElementById('agency-table-body');
+                if (tbody) {
+                    tbody.innerHTML = [...referrals].reverse().map(r => `
+                        <tr>
+                            <td>${r.date}</td>
+                            <td>${r.agency}</td>
+                            <td>${r.advertise}</td>
+                            <td>¥${r.price.toLocaleString()}</td>
+                            <td style="color:#e67e22; font-weight:bold;">¥${Math.floor(r.price * 0.2).toLocaleString()}</td>
+                            <td><span class="badge badge-pending">${r.status}</span></td>
+                            <td><button class="btn-action" onclick="alert('承認しました')">Verify</button></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error("Error loading agency data", e);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/dashboard`);
+                const data = await res.json();
+
+                if (data.accounting_email) {
+                    document.getElementById('admin-email').value = data.accounting_email;
+                }
+
+                // Render Billing Table
+                const billingRows = data.billing.map(store => `
+                < tr >
+                    <td><b>${store.name}</b><br><span style="font-size:11px; color:#aaa;">${store.id}</span></td>
+                    <td>¥${store.sales.toLocaleString()}</td>
+                    <td><span class="badge badge-pending">1.2%</span></td>
+                    <td class="highlight-value billing-highlight">¥${store.fee_1_2_percent.toLocaleString()}</td>
+                    <td>${store.email || '<span style="color:red">未設定</span>'}</td>
+                    <td><span class="badge badge-pending">${store.status}</span></td>
+                    <td>
+                        <button onclick="sendInvoice('${store.email}', ${store.fee_1_2_percent}, this)" class="btn-action" ${!store.email ? 'disabled' : ''}>📧 請求書送信</button>
+                    </td>
+                </tr >
+                `).join('');
+                document.getElementById('billing-table-body').innerHTML = billingRows;
+
+                // Render Payout Table
+                const payoutRows = data.payouts.map(store => `
+                < tr >
+                    <td><b>${store.name}</b><br><span style="font-size:11px; color:#aaa;">ID: ${store.id}</span></td>
+                    <td>¥${store.retail_ad_revenue.toLocaleString()}</td>
+                    <td style="color:#4285F4; font-weight:bold;">¥${store.adsense_revenue.toLocaleString()}</td>
+                    <td style="color:#e67e22;">-¥${store.agency_commission.toLocaleString()}</td>
+                    <td style="color:#e74c3c;">-¥${store.creator_reward.toLocaleString()}</td>
+                    <td style="color:#e74c3c;">-¥${store.operating_cost.toLocaleString()}</td>
+                    <td style="font-weight:bold; background:rgba(0,0,0,0.02);">¥${store.total_net_revenue.toLocaleString()}</td>
+                    <td class="highlight-value payout-highlight" style="font-size:16px;">¥${store.ad_revenue_share.toLocaleString()}</td>
+                    <td>
+                        <button onclick="viewBankInfo('${escape(JSON.stringify(store.bank_info))}')" class="btn-view">🏦 銀行情報確認</button>
+                    </td>
+                    <td><span class="badge badge-unpaid">${store.status}</span></td>
+                    <td style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="sendPayoutEmail('${store.email}', ${store.ad_revenue_share}, this)" class="btn-action payout-email-btn" style="background:#8e44ad; font-size:11px;">📩 確定メール</button>
+                        <button onclick="markAsPaid('${store.id}', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
+                    </td>
+                </tr >
+                `).join('');
+                document.getElementById('payout-table-body').innerHTML = payoutRows;
+
+            } catch (e) {
+                console.error("Failed to load admin data", e);
+            }
+        }
+
+        async function validateSquareData() {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: '整合性の確認中...',
+                    text: 'Square APIを通じて実処理金額とローカルデータ(SSoT)を照合しています',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const res = await fetch(`${API_BASE}/api/admin/system/validate-square`);
+                const result = await res.json();
+
+                if (result.success && result.isMatch) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '整合性チェック合格',
+                        html: `
+                        <div style="text-align:left; font-size:14px; background:#f8fafc; padding:15px; border-radius:8px;">
+                            <p>✅ SSoTデータとSquare集計値は完全に一致しています。</p>
+                            <p><b>ローカルリテアド収益:</b> ¥${result.localAdAmount.toLocaleString()}</p>
+                            <p><b>Square API 実績(Ad):</b> ¥${result.squareAdAmount.toLocaleString()}</p>
+                            <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
+                            <p><b>ローカルレジ売上(POS):</b> ¥${result.localPosAmount.toLocaleString()}</p>
+                            <p><b>Square API 実績(POS):</b> ¥${result.squarePosAmount.toLocaleString()}</p>
+                        </div>
+                        `
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '不一致を検知しました',
+                        text: '連携エラーや未処理の決済データが存在する可能性があります。ログを確認してください。'
+                    });
+                }
+            } catch (e) {
+                Swal.fire('通信エラー', 'Square API との通信に失敗しました', 'error');
+            }
+        }
+
+        async function sendPayoutEmail(email, amount, btnElement) {
+            try {
+                // Mock endpoint, same logic as Creator/Billing
+                await fetch(`${API_BASE}/api/admin/creators/send-email`, { // Reusing mock email endpoint
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: email, amount: amount, type: 'store_payout' })
+                });
+
+                if (btnElement) {
+                    btnElement.innerText = "🚀 送信済";
+                    btnElement.disabled = true;
+                    btnElement.style.background = "#27ae60";
+                    btnElement.style.cursor = "default";
+                }
+            } catch (e) {
+                console.error("Payout Email send failed", e);
+            }
+        }
+
+        async function sendAllPayoutEmails() {
+            const buttons = document.querySelectorAll('.payout-email-btn:not([disabled])');
+            let sentCount = 0;
+
+            if (buttons.length === 0) {
+                return Swal.fire('情報', '送信可能な確定メールがありません。', 'info');
+            }
+
+            const result = await Swal.fire({
+                title: '一斉送信の確認',
+                text: `${buttons.length}件の店舗へ「広告収益・AdSense収益支払通知メール」を送信しますか？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '送信する',
+                cancelButtonText: 'キャンセル'
+            });
+
+            if (!result.isConfirmed) return;
+
+            for (let btn of buttons) {
+                btn.click();
+                sentCount++;
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '自動送信完了',
+                text: `${sentCount} 件の支払通知メールを各店舗に自動送信しました。`
+            });
+        }
+
+        async function saveAdminSettings() {
+            const email = document.getElementById('admin-email').value;
+            if (!email) return Swal.fire('エラー', 'メールアドレスを入力してください', 'error');
+
+            await fetch(`${API_BASE}/api/admin/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accounting_email: email })
+            });
+            Swal.fire('保存', '担当経理メールアドレスを更新しました。', 'success');
+        }
+
+        async function sendInvoice(storeEmail, amount, btnElement) {
+            const senderEmail = document.getElementById('admin-email').value || "system@default.com";
+
+            // No Confirm - Automatic Send with PDF content
+            try {
+                await fetch(`${API_BASE}/api/admin/billing/send-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: storeEmail, from: senderEmail, amount: amount })
+                });
+
+                // Visual Feedback
+                if (btnElement) {
+                    btnElement.innerText = "🚀 送信済!";
+                    btnElement.disabled = true;
+                    btnElement.style.background = "#27ae60";
+                    btnElement.style.cursor = "default";
+                }
+            } catch (e) {
+                console.error("Send failed", e);
+            }
+        }
+
+        async function sendAllInvoices() {
+            const buttons = document.querySelectorAll('#billing-table-body button');
+            let sentCount = 0;
+
+            for (let btn of buttons) {
+                if (!btn.disabled) {
+                    btn.click();
+                    sentCount++;
+                    await new Promise(r => setTimeout(r, 200)); // Small delay for effect
+                }
+            }
+
+            if (sentCount > 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '自動送信完了',
+                    text: `${sentCount} 件の請求書を自動送信しました。`
+                });
+            } else {
+                Swal.fire('情報', '送信可能な請求書がありませんでした。', 'info');
+            }
+        }
+
+        function viewBankInfo(jsonStr) {
+            const info = JSON.parse(unescape(jsonStr));
+            Swal.fire({
+                title: '銀行口座情報',
+                html: `
+            < div style = "text-align:left; font-size:14px;" >
+                    <p><b>銀行名:</b> ${info.bank_name || '--'}</p>
+                    <p><b>支店名:</b> ${info.branch_name || '--'}</p>
+                    <p><b>口座番号:</b> ${info.account_number || '--'}</p>
+                    <p><b>名義:</b> ${info.account_holder || '--'}</p>
+                </div >
+                `,
+                icon: 'info'
+            });
+        }
+
+        function escape(str) {
+            return str.replace(/'/g, "\\'");
+        }
+
+        // Initial Load - Removed, moved to after login
+        // loadData();
+
+        // --- Login Logic ---
+        function handleLogin() {
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
+
+            // Simple client-side check for demo
+            if ((user === 'admin' || user === 'admin@demo.com') && pass === 'DemoPass2026!') {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                window.dispatchEvent(new Event('resize'));
+                loadData(); // Load data only after login
+            } else {
+                Swal.fire('Error', 'Invalid Admin Credentials', 'error');
+            }
+        }
+
+        function switchLoginTab(mode) {
+            const loginForm = document.getElementById('form-login');
+            const signupForm = document.getElementById('form-signup');
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
+
+            if (mode === 'login') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                tabLogin.style.borderBottom = '2px solid #3498db';
+                tabLogin.style.fontWeight = 'bold';
+                tabLogin.style.color = '#2c3e50';
+                tabSignup.style.borderBottom = 'none';
+                tabSignup.style.fontWeight = 'normal';
+                tabSignup.style.color = '#95a5a6';
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                tabSignup.style.borderBottom = '2px solid #27ae60';
+                tabSignup.style.fontWeight = 'bold';
+                tabSignup.style.color = '#2c3e50';
+                tabLogin.style.borderBottom = 'none';
+                tabLogin.style.fontWeight = 'normal';
+                tabLogin.style.color = '#95a5a6';
+            }
+        }
+
+        function handleRegister() {
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            if (!email || !pass) return Swal.fire('Error', 'Please fill all fields', 'warning');
+
+            // For demo context, simulate success
+            Swal.fire({
+                title: 'Account Created',
+                text: `Demo Admin account created for ${email}.Logging in...`,
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                window.dispatchEvent(new Event('resize'));
+                loadData();
+            });
+        }
+
+        // Accessibility Fix: Ensure login overlay is not hidden from screen readers
+        document.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) overlay.removeAttribute('aria-hidden');
+        });
+    </script>
+    </div> <!-- End of #main-app -->
+</body>
+
+</html>

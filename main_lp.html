@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiteAd (リテアド) - 独自のリテールメディアネットワークで利益を最大化 | non-logi株式会社</title>
+    <meta name="description"
+        content="LiteAdは、店舗のデジタルサイネージ、広告主、クリエイター、そして代理店を繋ぐ、新しいリテールメディア・プラットフォームです。初期費用0円で店舗の収益化を実現します。">
+    <!-- 独自ドメイン移行後のURL (Canonical) -->
+    <link rel="canonical" href="https://example-litead-domain.com/">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap');
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--light);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 700;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .hero {
+            padding: 140px 20px 80px;
+            background: linear-gradient(135deg, #1e293b, var(--dark));
+            color: white;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .hero .btn {
+            background: var(--primary);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .hero .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            color: var(--dark);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        /* Forms */
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            height: 150px;
+            resize: vertical;
+        }
+
+        button[type="submit"] {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background: #1d4ed8;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 60px 20px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-col h4 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #94a3b8;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-col a {
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .footer-col a:hover {
+            color: white;
+        }
+
+        .legal-text {
+            font-size: 0.85rem;
+            color: #64748b;
+            border-top: 1px solid #1e293b;
+            padding-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="#" class="logo">
+            <img src="logo_white.png" alt="LiteAd Logo" style="width:30px; height:30px; border-radius:50%;">
+            LiteAd Platform
+        </a>
+        <nav class="nav-links">
+            <a href="#about">サービス概要</a>
+            <a href="#features">対象とメリット</a>
+            <a href="#company">運営会社</a>
+            <a href="#contact">お問い合わせ</a>
+            <a href="login_portal.html" style="color:var(--primary);">ログイン</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>リアルとデジタルを繋ぐ、<br>次世代のリテールメディア</h1>
+        <p>単なる「サイネージの設置」ではなく、「売り場のYouTube化」による共同運用プラットフォーム。広告主、クリエイター、代理店を一つのエコシステムに統合し、三方良しの関係を築き上げます。</p>
+        <a href="#contact" class="btn">資料請求・お問い合わせ</a>
+    </section>
+
+    <section id="about" class="section">
+        <h2 class="section-title">LiteAdが提供する価値（サービス詳細）</h2>
+        <div
+            style="font-size:1.1rem; color:var(--gray); text-align:center; max-width:800px; margin: 0 auto 50px; line-height: 1.8;">
+            <p>
+                これまで分断されていた「店舗の販促」「外部企業の広告」「クリエイターのコンテンツ」を一つのプラットフォームにまとめ上げました。<br>
+                AIを用いたコンテキスト解析により<br>
+                スーパーマーケットや小売店の来店客に対して、一番関連性の高い情報を適切なタイミングで提示します。
+            </p>
+            <p style="margin-top:20px;">
+                さらに、Google AdSenseやGoogle Ad Manager(MCM)などの外部配信ネットワークとAPIで強固に連携。<br>
+                「サイネージパネル」が収益を生む強力なメディアへと変貌します。
+            </p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>高度なターゲティングと効果測定</h3>
+                <p>位置情報、時間帯、天候、そして店舗のPOSデータ（確定された強力な購買データ）とリアルタイムに連動。惣菜コーナーで「餃子・からあげの動画」と一緒に「ビールのCM」を流すようなクロスセル配信や、A/Bテストによる純粋な効果測定（リフト値の可視化）を実現します。
+                </p>
+            </div>
+            <div class="card">
+                <h3>透明性の高い収益分配モデル</h3>
+                <p>広告の再生回数やインプレッションに基づき、各プレイヤーへ売上を自動分配。店舗には広告収益の50%、コンテンツを提供するクリエイターには10%など、関わる全ての人がWin-Winとなるエコシステムを形成します。
+                </p>
+            </div>
+            <div class="card">
+                <h3>圧倒的な広告配信ネットワーク</h3>
+                <p>Googleの持つ広告インベントリをサイネージに組み込み可能。また、リテアドは一企業の店舗サイネージを単体で終わらせず、多数の小売企業が参加する広告ネットワーク（計30,000パネル規模）へと拡大し、単独店舗では実現不可能なスケールメリットを生み出します。
+                </p>
+                <div
+                    style="font-size: 0.95rem; color: #64748b; background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #e2e8f0; text-align: left;">
+                    <strong style="color: #334155;">【全国30,000パネルの実現シナリオ】</strong><br>
+                    <strong>ターゲット：</strong> 大手・中堅チェーン中心（1社平均 100店舗）<br>
+                    <strong>総店舗数：</strong> 60社 × 100店舗 = <strong>6,000店舗</strong><br>
+                    <strong>最大パネル数：</strong> 6,000店舗 × 5台(1店舗) = <strong style="color:var(--primary);">30,000
+                        パネル</strong><br>
+                    <span
+                        style="font-size: 0.85rem; color: #94a3b8; display:inline-block; margin-top:8px;">※（参考）既存の目標値である「8,000パネル」は、このモデルの「初期（約30社展開）」で十分に達成できる、極めて現実的なマイルストーンです。</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section"
+        style="background: white; max-width: 100%; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <h2 class="section-title">プラットフォームに参加する4つの柱</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h3 style="color:#10b981;">🏢 店舗様（Store）</h3>
+                    <p>初期費用ゼロで高性能なサイネージを導入可能。「自社で運用しているサイネージパネルが、ただの販促のパネルになっていませんか？」
+                        本システムを導入することで、ただの画面が「収益を生み出すメディア」に変わります。Googleアド広告との連携による自動収益化機能も搭載。</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="color:#f43f5e;">📢 広告主様（Advertiser）</h3>
+                    <p>店舗の「一等地」であるレジ横や入口に、ターゲットを絞って直接アプローチ。1再生1円〜の明瞭会計システム。自社API連動により、オウンドメディアやシステムから直接広告の入稿、予約までをシームレスに行えます。
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3 style="color:#8b5cf6;">🎨 クリエイター（Creator）</h3>
+                    <p>あなたが作成したショート動画を、全国のスーパーや小売店のサイネージで配信可能。再生回数とPOS売上貢献度（シナジースコア）に基づいて、正当な報酬をお支払いします。新しい視聴者層を獲得するチャンスです。
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3 style="color:#f59e0b;">🤝 代理店様（Agency）</h3>
+                    <p>広告主をプラットフォームにご紹介いただくことで、継続的なコミッション（広告費の20%）を獲得できるパートナープログラムを用意。専用の代理店ダッシュボードで、紹介企業の利用状況をリアルタイムに確認できます。
+                    </p>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 80px; background: #f8fafc; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                <h2 style="font-size: 2rem; color: var(--dark); text-align: center; margin-bottom: 20px;">
+                    💰 1,000億円の広告予算が投下された場合の収支分配
+                </h2>
+                <p
+                    style="text-align: center; font-size: 1.2rem; font-weight: bold; color: var(--gray); margin-bottom: 40px;">
+                    総広告費（広告主の支払い総額）: <span style="color: var(--primary); font-size: 1.4rem;">1,000億円</span>
+                </p>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                    <div
+                        style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid #f59e0b; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <h4 style="font-size: 1.2rem; color: #f59e0b; margin-top: 0; margin-bottom: 10px;">1.
+                            広告代理店（Agency）</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">約 200億円 <span
+                                style="font-size: 1rem; color: #64748b; font-weight: normal;">(20%)</span></div>
+                        <p style="font-size: 0.95rem; color: #475569; margin-bottom: 10px;"><strong>役割:</strong>
+                            広告主に対する営業、予算の獲得、出稿に向けた全体プランニング。</p>
+                        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                            一般的なメディアマージン（手数料15%〜20%）として支払われます。残り800億円がリテアドのプラットフォームへ実質的に流入します。</p>
+                    </div>
+
+                    <div
+                        style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid #10b981; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <h4 style="font-size: 1.2rem; color: #10b981; margin-top: 0; margin-bottom: 10px;">2. 店舗（Retail
+                            Stores）</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">約 400億円 <span
+                                style="font-size: 1rem; color: #64748b; font-weight: normal;">(ネットの50%)</span></div>
+                        <p style="font-size: 0.95rem; color: #475569; margin-bottom: 10px;"><strong>役割:</strong>
+                            サイネージ設置場所、顧客の「面」、POSデータの提供。</p>
+                        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5;"><strong>インパクト:</strong>
+                            初期投資ゼロで場所を提供しただけで、数百億円規模の新しい純利益（本業以外の収益）が業界全体にもたらされます。</p>
+                    </div>
+
+                    <div
+                        style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid #8b5cf6; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <h4 style="font-size: 1.2rem; color: #8b5cf6; margin-top: 0; margin-bottom: 10px;">3.
+                            クリエイター（Creators）</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">約 500億円規模 
+                        </div>
+                        <p style="font-size: 0.95rem; color: #475569; margin-bottom: 10px;"><strong>役割:</strong>
+                            メーカー広告: 約0.5円/再生 AdSense広告: 収益の10%</p>
+                        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5;"><strong>インパクト:</strong>
+                            YouTube等に代わる、「スーパーで動画が流れて商品が売れる」という巨大な新しい収益市場を創出します。</p>
+                    </div>
+
+                    <div
+                        style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid #3b82f6; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <h4 style="font-size: 1.2rem; color: #3b82f6; margin-top: 0; margin-bottom: 10px;">4.
+                            リテアド（LiteAd / 運営）</h4>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">-
+                        </div>
+                        <p style="font-size: 0.95rem; color: #475569; margin-bottom: 10px;"><strong>役割:</strong>
+                            プラットフォーム提供、AIによる広告最適化配信、インフラ維持。</p>
+                        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                            店舗とクリエイターへ還元した残りがシステム運用費となります。</p>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1.4rem; text-align: center; margin-bottom: 20px;">📊 分配のまとめグラフ（総額：1,000億円）</h3>
+                <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+                                <th style="padding: 15px; font-weight: bold; color: var(--dark);">プレイヤー</th>
+                                <th style="padding: 15px; font-weight: bold; color: var(--dark);">収益額</th>
+                                <th style="padding: 15px; font-weight: bold; color: var(--dark);">シェア</th>
+                                <th style="padding: 15px; font-weight: bold; color: var(--dark);">役割</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 15px; font-weight: bold; color: #10b981;">🏢 店舗 (Retail)</td>
+                                <td style="padding: 15px; font-weight: bold; font-size: 1.2rem;">400億円</td>
+                                <td style="padding: 15px; font-weight: bold; color: #64748b;">40%</td>
+                                <td style="padding: 15px; font-size: 0.9rem; color: #475569;">パネルの設置、販売データ、顧客の提供</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0; display:none;">
+                                <td style="padding: 15px; font-weight: bold; color: #3b82f6;">🌐 リテアド (LiteAd)</td>
+                                <td style="padding: 15px; font-weight: bold; font-size: 1.2rem;">-</td>
+                                <td style="padding: 15px; font-weight: bold; color: #64748b;">-</td>
+                                <td style="padding: 15px; font-size: 0.9rem; color: #475569;">システム提供・AIの最適化・エコシステム運営
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 15px; font-weight: bold; color: #f59e0b;">👔 代理店 (Agency)</td>
+                                <td style="padding: 15px; font-weight: bold; font-size: 1.2rem;">200億円</td>
+                                <td style="padding: 15px; font-weight: bold; color: #64748b;">20%</td>
+                                <td style="padding: 15px; font-size: 0.9rem; color: #475569;">広告主からの予算獲得・広告運用サポート</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 15px; font-weight: bold; color: #8b5cf6;">🎥 クリエイター</td>
+                                <td style="padding: 15px; font-weight: bold; font-size: 1.2rem;">変動（約500億円枠）</td>
+                                <td style="padding: 15px; font-weight: bold; color: #64748b;">（再生数に依存）</td>
+                                <td style="padding: 15px; font-size: 0.9rem; color: #475569;">メーカー広告: 約0.5円/再生 AdSense広告: 収益の10%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="company" class="section">
+        <h2 class="section-title">運営会社・特商法に基づく表記</h2>
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <tbody>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <th style="padding: 15px; width: 30%; color: var(--gray);">会社名</th>
+                        <td style="padding: 15px; font-weight:bold;">non-logi株式会社</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <th style="padding: 15px; color: var(--gray);">所在地</th>
+                        <td style="padding: 15px;">神奈川県</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <th style="padding: 15px; color: var(--gray);">代表者</th>
+                        <td style="padding: 15px;">代表取締役 熊澤一</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <th style="padding: 15px; color: var(--gray);">事業内容</th>
+                        <td style="padding: 15px;">リテールメディアシステムの開発・運営、広告代理業、システムコンサルティング</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <th style="padding: 15px; color: var(--gray);">連絡先</th>
+                        <td style="padding: 15px;">info@retail-ad.awsapps.com（詳細は下記フォームよりお問い合わせください）</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 15px; color: var(--gray);">販売価格/支払い時期</th>
+                        <td style="padding: 15px;">クレジット決済</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="contact" class="section" style="background: white; max-width: 100%;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <h2 class="section-title">お問い合わせ窓口</h2>
+            <div class="contact-form">
+                <p style="margin-bottom: 30px; color: var(--gray); text-align: center;">
+                    サービスに関するご質問、資料請求、導入のご相談については、以下のフォームよりお気軽にご連絡ください。<br>
+                    担当者より2営業日以内にご返信申し上げます。
+                </p>
+                <form action="mailto:info@retail-ad.awsapps.com" method="POST" enctype="text/plain">
+                    <div class="form-group">
+                        <label>会社名・店舗名</label>
+                        <input type="text" name="company" required placeholder="例: 株式会社〇〇">
+                    </div>
+                    <div class="form-group">
+                        <label>お名前</label>
+                        <input type="text" name="name" required placeholder="例: 山田 太郎">
+                    </div>
+                    <div class="form-group">
+                        <label>メールアドレス (連絡先)</label>
+                        <input type="email" name="email" required placeholder="例: yamada@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>お問い合わせ種別</label>
+                        <select name="type"
+                            style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; background:white;">
+                            <option>店舗へのサイネージ導入について</option>
+                            <option>広告出稿について</option>
+                            <option>クリエイター登録について</option>
+                            <option>代理店契約について</option>
+                            <option>その他・取材等</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>お問い合わせ内容</label>
+                        <textarea name="message" required placeholder="ご要望やご質問を詳細にご記入ください..."></textarea>
+                    </div>
+                    <button type="submit">送信する</button>
+                    <p style="font-size:0.8rem; color:var(--gray); margin-top:15px; text-align:center;">
+                        ※送信いただいた個人情報は、当社の<a href="#privacy" style="color:var(--primary);">プライバシーポリシー</a>に基づき適切に管理されます。
+                    </p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer id="privacy">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h4 style="color: white; font-weight: 900; font-size: 1.5rem; letter-spacing: 1px;">LiteAd</h4>
+                <p style="color:#94a3b8; font-size: 0.9rem; margin-top: 15px;">
+                    店舗・広告主・クリエイターの三方良しを実現する<br>次世代リテールメディアネットワーク
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>サービスリンク</h4>
+                <ul>
+                    <li><a href="advertiser_lp.html">広告主様向け</a></li>
+                    <li><a href="store_lp.html">店舗様向け</a></li>
+                    <li><a href="creator_lp.html">クリエイター様向け</a></li>
+                    <li><a href="agency_lp.html">代理店様向け</a></li>
+                    <li><a href="anywhere_lp.html">どこでもレジ (スマホ決済)</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>法的情報・ポリシー</h4>
+                <ul>
+                    <li><a href="#" onclick="alert('利用規約モーダルを表示');">利用規約 (Terms of Service)</a></li>
+                    <li>
+                        <h5 style="color:white; margin-top:10px; margin-bottom:5px;">プライバシーポリシー（個人情報保護方針）</h5>
+                        <p style="font-size:0.8rem; line-height:1.4;">
+                            当社は、取得した個人情報を以下の目的でのみ利用します。<br>
+                            1. サービスの提供および運営のため<br>
+                            2. ユーザーへのお知らせやサポートのため<br>
+                            3. Google AdSense等の広告配信・効果測定のため<br>
+                            ※法令に基づく場合を除き、第三者へ提供することはありません。
+                        </p>
+                    </li>
+                    <li><a href="#company">特定商取引法に基づく表記</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="legal-text">
+            © 2026 non-logi株式会社 All Rights Reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

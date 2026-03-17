@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailMedia Connect | Gateway</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;800&family=Noto+Sans+JP:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff;
+            --accent-color: #00d2ff;
+            --card-hover: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: #0f172a;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Dynamic Background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 30%, #1e40af 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, #9f1239 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, #111827 0%, #000000 100%);
+            z-index: -1;
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 40px;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -2px;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-top: 10px;
+            font-weight: 300;
+        }
+
+        /* Grid Layout */
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            animation: fadeInUp 1s ease-out 0.3s backwards;
+        }
+
+        /* Glass Card */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: var(--card-hover);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin: 0 0 20px 0;
+            line-height: 1.4;
+        }
+
+        .btn-link {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            transition: 0.3s;
+        }
+
+        .card:hover .btn-link {
+            opacity: 1;
+            letter-spacing: 2px;
+        }
+
+        /* System Status Area */
+        .system-status {
+            margin-top: 60px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #64748b;
+            animation: fadeIn 2s ease-out 1s backwards;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        button.action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button.action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <header>
+            <h1>RetailOver<span style="color:var(--accent-color)">.Connect</span></h1>
+            <p class="subtitle">Next-Generation Retail Media Ecosystem Portal</p>
+        </header>
+
+        <div class="portal-grid">
+            <!-- Store Owner -->
+            <a href="/business-lp" class="card">
+                <div class="icon">🏪</div>
+                <h2>Store Partner</h2>
+                <p>収益化と来店分析<br>店舗オーナー様はこちら</p>
+                <span class="btn-link">Enter Portal →</span>
+            </a>
+
+            <!-- Advertiser -->
+            <a href="/advertiser_lp.html" class="card">
+                <div class="icon">📢</div>
+                <h2>Advertiser</h2>
+                <p>リアルタイム広告出稿<br>マーケティング分析</p>
+                <span class="btn-link">Start Campaign →</span>
+            </a>
+
+            <!-- Agency Partner -->
+            <a href="/agency-dashboard" class="card">
+                <div class="icon">🤝</div>
+                <h2>Agency Partner</h2>
+                <p>クライアント管理<br>コミッション報酬確認</p>
+                <span class="btn-link">Partner Login →</span>
+            </a>
+
+            <!-- Administration -->
+            <a href="/admin_portal.html" class="card" style="border-color: rgba(244, 63, 94, 0.3);">
+                <div class="icon">🛡️</div>
+                <h2>System Admin</h2>
+                <p>システム設定・監視<br>全体統制管理</p>
+                <span class="btn-link" style="color:#f43f5e;">Admin Access →</span>
+            </a>
+        </div>
+
+        <div class="system-status">
+            <div>
+                <span class="status-dot"></span> System Operational | v2.4.0-beta
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span id="batch-msg">Inventory Sync Ready</span>
+                <button class="action-btn" onclick="runBatch()">Run Sync</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function runBatch() {
+            const msg = document.getElementById('batch-msg');
+            msg.innerText = "Connecting to SP-API...";
+            msg.style.color = "#fbbf24";
+
+            try {
+                // Assuming the original script functionality
+                const res = await fetch('/api/batch/morning', { method: 'POST' });
+                const data = await res.json();
+                msg.innerText = "Sync Active: " + data.processedOrders + " orders";
+                msg.style.color = "#22c55e";
+            } catch (e) {
+                msg.innerText = "Sync Failed (Demo Mode)";
+                msg.style.color = "#f87171";
+            }
+        }
+    </script>
+</body>
+
+</html>

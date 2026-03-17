@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プライバシーポリシー | AIカメラデータの取り扱いについて</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            margin: 0;
+            background: #f9fafb;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            font-size: 24px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #1e40af;
+            margin-top: 30px;
+            border-left: 4px solid #2563eb;
+            padding-left: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        ul {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        li {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .highlight-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .icon {
+            font-size: 20px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>プライバシーポリシー（AIカメラデータの取り扱い指針）</h1>
+
+        <p>株式会社リテアド（以下「当社」）は、提供するデジタルサイネージ広告配信サービス（以下「本サービス」）において、AIカメラを用いて取得するデータの取り扱いについて、以下の通り方針を定めます。</p>
+
+        <div class="highlight-box">
+            <strong>🛡️ プライバシー・バイ・デザイン (Privacy by Design)</strong>
+            <p style="margin-bottom:0;">
+                当社システムは、設計段階からプライバシー保護を最優先事項として構築されています。個人の特定を行わず、統計データのみを活用することで、お客様のプライバシーを侵害することなく、最適な広告配信を実現します。</p>
+        </div>
+
+        <h2>1. 取得する情報の項目と取り扱い</h2>
+        <p>本サービスでは、サイネージに設置されたAIカメラを通じて以下の情報を処理しますが、<strong>個人を特定できる映像データは一切保存しません。</strong></p>
+        <ul>
+            <li><strong>映像データ（即時破棄）:</strong> AIカメラが撮影した映像は、端末内（エッジ）で瞬時に属性データへ変換され、即座にメモリから削除されます。サーバーへの送信は行われません。</li>
+            <li><strong>属性データ（統計情報）:</strong> 推定される「性別」「年代」「視聴時間」「表情（笑顔度など）」の数値データのみを利用します。</li>
+            <li><strong>端末ID・IPアドレス（匿名化）:</strong> システム管理上必要な端末識別子は、即座にハッシュ化（復元不可能な文字列への変換）を行い、個人と紐付かない状態で保存します。</li>
+        </ul>
+
+        <h2>2. 個人情報の非特定化措置</h2>
+        <p>当社は、顔認証技術（特定の個人である「田中さん」を識別する技術）を使用しません。あくまで「20代男性と思われる人物」といった分類（属性推定）のみを行います。</p>
+        <ul>
+            <li>顔の特徴量（Face Embedding）等の生体認証データは生成・保存しません。</li>
+            <li>特定の個人を追跡（トラッキング）する目的での利用は行いません。</li>
+        </ul>
+
+        <h2>3. データの利用目的</h2>
+        <p>取得した統計データは、以下の目的のみに利用します。</p>
+        <ul>
+            <li>広告視聴者層の分析（例：どの時間帯にどのような層が見ているか）</li>
+            <li>コンテンツの最適化（例：雨の日に適した広告の配信）</li>
+            <li>広告効果測定レポートの作成（広告主への統計情報の提供）</li>
+        </ul>
+
+        <h2>4. 安全管理措置</h2>
+        <p>データ漏洩リスクを根本から排除するため、以下の技術的措置を講じています。</p>
+        <ul>
+            <li><strong>エッジコンピューティングの徹底:</strong> 画像解析は全てサイネージ端末内で完結させ、外部ネットワークに映像を出さない仕組みを採用しています。</li>
+            <li><strong>データサニタイズ:</strong> 万が一、サーバーに不正な画像データが送信された場合でも、自動的に検知し即座に破棄するフィルターを実装しています。</li>
+        </ul>
+
+        <h2>5. お問い合わせ・オプトアウト</h2>
+        <p>本件に関するご質問、またはデータの利用停止（オプトアウト）をご希望の場合は、以下の窓口までご連絡ください。</p>
+        <p>📧 privacy@litead.demo.jp</p>
+
+        <div class="footer">
+            &copy; 2026 LiteAd Inc. All rights reserved.<br>
+            <a href="/" class="btn-back">← トップページに戻る</a>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+node_modules/
+.env
+aws_domain_contact.json
+RetailMedia-WebSG
+UserData.txt
+uploads/
+.DS_Store
+*.json
+Googleapi.txt

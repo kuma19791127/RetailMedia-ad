@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiteAd Login | Retail Media Platform</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg-base: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --input-border: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 20%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Floating Background Particles - Adjusted for Light Mode */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: #e0e7ff;
+            top: -100px;
+            left: -100px;
+            opacity: 0.8;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #fce7f3;
+            bottom: -50px;
+            right: -50px;
+            opacity: 0.8;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 200px;
+            height: 200px;
+            background: #cffafe;
+            top: 40%;
+            left: 60%;
+            opacity: 0.6;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(30px, -50px);
+            }
+        }
+
+        /* Login Card */
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.05), 0 8px 16px -4px rgba(0, 0, 0, 0.02);
+            position: relative;
+            z-index: 10;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brand-icon {
+            /* font-size removed as it is now img */
+            margin-bottom: 10px;
+            display: inline-block;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-sub);
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            padding-left: 5px;
+            font-weight: 600;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            background: white;
+        }
+
+        ::placeholder {
+            color: #94a3b8;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
+        a {
+            color: var(--text-sub);
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        a:hover {
+            color: var(--primary);
+        }
+
+        /* Demo Accounts */
+        .demo-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .demo-title {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+            text-align: center;
+            background: white;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 10px;
+            position: relative;
+            top: -28px;
+        }
+
+        .demo-chips {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: -10px;
+        }
+
+        .chip {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .chip:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            color: #334155;
+        }
+
+        .chip i {
+            font-style: normal;
+            font-size: 1.1em;
+        }
+
+        /* Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #475569;
+            margin-top: 20px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Elements -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="toast" id="toast">✅ Demo Account Auto-filled!</div>
+
+    <div class="login-card">
+        <div class="header">
+            <img src="./ロゴ.png" alt="Logo" class="brand-icon" style="width:100px; height:auto;">
+            <h1>リテアド</h1>
+            <p class="subtitle">Retail Media Platform</p>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Email Address</label>
+                <div class="input-wrapper">
+                    <input type="email" id="email" placeholder="user@example.com" required autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" placeholder="••••••••" required
+                        autocomplete="current-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Login</button>
+
+            <div class="links">
+                <a href="javascript:void(0)" onclick="handleSignUp()">Sign Up</a>
+                <a href="javascript:void(0)" onclick="handleForgotPassword()">Forgot Password?</a>
+            </div>
+        </form>
+
+        <div class="demo-section">
+            <!-- Title removed -->
+            <div class="demo-chips">
+                <div class="chip" onclick="fillDemo('store')">
+                    <i>🏪</i> Store Owner
+                </div>
+                <div class="chip" onclick="fillDemo('advertiser')">
+                    <i>👔</i> Advertiser
+                </div>
+                <div class="chip" onclick="fillDemo('agency')">
+                    <i>🕴️</i> Agency
+                </div>
+                <div class="chip" onclick="fillDemo('creator')">
+                    <i>🎨</i> Creator
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            本サービスを利用することで、プライバシーポリシーに同意したものとみなされます。<br>
+            <span style="color:#2ecc71">🔒</span> We handle your data securely.
+        </div>
+    </div>
+
+    <script>
+        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+            ? 'http://localhost:3000'
+            : ''; // For relative paths on deployed server, or put prod URL here
+
+        function fillDemo(role) {
+            let email, pass;
+            if (role === 'store') { email = 'store@demo.com'; pass = 'DemoPass2026!'; }
+            if (role === 'advertiser') { email = 'advertiser@demo.com'; pass = 'DemoPass2026!'; }
+            if (role === 'agency') { email = 'agency@demo.com'; pass = 'DemoPass2026!'; }
+            if (role === 'creator') { email = 'creator@demo.com'; pass = 'DemoPass2026!'; }
+
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = pass;
+
+            // Show Toast
+            const roleJp = role === 'store' ? '店舗' : (role === 'advertiser' ? '広告主' : (role === 'agency' ? '代理店' : 'クリエイター'));
+            const toast = document.getElementById('toast');
+            toast.innerText = `✅ ${roleJp}用デモ: アドレス＆パスワードを入力しました`;
+            toast.style.opacity = '1';
+            toast.style.top = '30px';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.top = '20px';
+            }, 2000);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.querySelector('.btn-primary');
+
+            // Loading State
+            btn.innerText = 'Verifying...';
+            btn.style.opacity = '0.7';
+
+            try {
+                const res = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    btn.innerText = 'Redirecting...';
+                    window.location.href = data.redirect;
+                } else {
+                    btn.innerText = 'Login';
+                    btn.style.opacity = '1';
+                    alert('Login Failed: ' + (data.error || 'Unknown Error'));
+                }
+            } catch (err) {
+                console.error(err);
+                // Fallback for demo without server if needed
+                let redirect = 'store_portal.html';
+                if (email.includes('advertiser')) redirect = 'ad_dashboard.html';
+                if (email.includes('agency')) redirect = 'agency_portal.html';
+                if (email.includes('creator')) redirect = 'creator_portal.html';
+
+                window.location.href = redirect;
+            }
+        }
+
+
+        async function handleSignUp() {
+            const { value: formValues } = await Swal.fire({
+                title: '新規登録 (Sign Up)',
+                html:
+                    '<input id="swal-email" class="swal2-input" placeholder="Email">' +
+                    '<input id="swal-password" type="password" class="swal2-input" placeholder="Password">' +
+                    '<select id="swal-role" class="swal2-input" style="width:80%; margin:1em auto;">' +
+                    '<option value="store">店舗オーナー (Store Owner)</option>' +
+                    '<option value="advertiser">広告主 (Advertiser)</option>' +
+                    '<option value="agency">代理店 (Agency)</option>' +
+                    '</select>',
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '登録 (Register)',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-email').value,
+                        document.getElementById('swal-password').value,
+                        document.getElementById('swal-role').value
+                    ]
+                }
+            });
+
+            if (formValues) {
+                const [email, password, role] = formValues;
+                if (!email || !password) return;
+
+                try {
+                    const res = await fetch(`${API_URL}/api/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, role })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire('Success', '登録完了しました！', 'success').then(() => {
+                            window.location.href = data.redirect;
+                        });
+                    } else {
+                        Swal.fire('Error', data.error, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Connection Failed', 'error');
+                }
+            }
+        }
+
+        async function handleForgotPassword() {
+            const { value: email } = await Swal.fire({
+                title: 'パスワード再設定',
+                input: 'email',
+                inputLabel: '登録メールアドレスを入力してください',
+                inputPlaceholder: 'user@example.com',
+                showCancelButton: true
+            });
+
+            if (email) {
+                const { value: newPass } = await Swal.fire({
+                    title: '新しいパスワード',
+                    input: 'password',
+                    inputLabel: '新しいパスワードを入力してください',
+                    inputPlaceholder: 'New Password',
+                    confirmButtonText: '再設定 (Reset)',
+                    showCancelButton: true
+                });
+
+                if (newPass) {
+                    try {
+                        const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password: newPass })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            Swal.fire('Success', 'パスワードを再設定しました。<br>新しいパスワードでログインしてください。', 'success');
+                        } else {
+                            Swal.fire('Error', data.error, 'error');
+                        }
+                    } catch (e) {
+                        Swal.fire('Error', 'Connection Failed', 'error');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リテアド | Advertiser Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://pay.google.com/gp/p/js/pay.js"></script>
+    <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
+    <script src="square_integration.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg-base: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #334155;
+            --text-sub: #64748b;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --accent: #ec4899;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 20%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        /* Sidebar (Desktop) */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 20;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            color: var(--text-sub);
+            font-weight: 500;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: #e0e7ff;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Cards */
+        .dashboard-card,
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            margin-bottom: 20px;
+        }
+
+        h2,
+        h3 {
+            color: var(--text-main);
+            margin-top: 0;
+        }
+
+        /* Stats Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        /* Mobile Bottom Nav */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 10px 0;
+            justify-content: space-around;
+            z-index: 100;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+
+        .nav-btn i {
+            font-style: normal;
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding-bottom: 60px;
+                /* Space for nav */
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            /* Hide Sidebar */
+            .mobile-nav {
+                display: flex;
+            }
+
+            /* Show Bottom Nav */
+            .main-content {
+                padding: 15px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Utility */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* --- MOBILE RESPONSIVE FIX --- */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+                /* Enable page scroll on mobile */
+            }
+
+            .sidebar {
+                width: 100% !important;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                overflow-y: visible;
+                padding: 10px;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .main-content {
+                padding: 15px;
+                overflow-y: visible;
+                /* Let body handle scroll */
+            }
+
+            /* Simplify Sidebar for Mobile: Show Logo + Hamburger or just vertical stack */
+            /* For this quick fix, we stack everything vertically but fit width */
+            .sidebar {
+                display: block;
+                /* Stack items */
+            }
+
+            .campaign-controls {
+                grid-template-columns: 1fr !important;
+                /* Stack columns */
+            }
+
+            .grid {
+                grid-template-columns: 1fr !important;
+                /* Stack charts */
+            }
+
+            .media-selector,
+            .content-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-info div {
+                margin-top: 10px;
+            }
+
+            #mobile-nav-toggle {
+                display: block;
+            }
+
+            /* Adjust chart heights */
+            canvas {
+                max-height: 250px;
+            }
+        }
+
+        /* Layout */
+        .sidebar {
+            width: 300px;
+            background: rgba(44, 62, 80, 0.5);
+            /* Semi-transparent */
+            backdrop-filter: blur(10px);
+            /* Glassmorphism */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Sidebar Elements */
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .edit-profile-btn {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #bdc3c7;
+            margin-left: auto;
+        }
+
+        .edit-profile-btn:hover {
+            color: white;
+        }
+
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* Payment Widget in Sidebar */
+        #card-form {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #card-form input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid #34495e;
+            color: white;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #card-form input::placeholder {
+            color: #7f8c8d;
+        }
+
+        /* Header (Main Content Top) */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- Existing Styles Preserved below --- */
+
+        .upload-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px dashed #bdc3c7;
+            text-align: center;
+        }
+
+        .upload-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        /* New Campaign Controls */
+        .campaign-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            /* 4 columns for dense layout */
+            gap: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .control-label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #34495e;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Radio Group */
+        .radio-group label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        /* Slot Selector */
+        select.slot-select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #bdc3c7;
+            margin-bottom: 5px;
+        }
+
+        .price-tag {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        /* Media Source Tabs */
+        .media-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 8px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #3498db;
+            color: #2c3e50;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* File Drop */
+        .upload-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .drop-zone {
+            flex: 1;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .drop-zone:hover {
+            background: #eef2f7;
+            border-color: #3498db;
+        }
+
+        .drop-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .zone-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* YouTube Input */
+        .youtube-input-container {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .yt-input {
+            width: 60%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #bdc3c7;
+        }
+
+        .yt-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Metrics & Charts */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .grid-forecast {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            color: #2c3e50;
+        }
+
+        .metric {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-small {
+            height: 200px;
+        }
+
+        .region-select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .live-badge {
+            background: #e74c3c;
+            color: white;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            vertical-align: middle;
+            margin-left: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Switch */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: auto;
+            /* Push to bottom of sidebar if flex */
+        }
+
+        .switch-label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #bdc3c7;
+            font-size: 12px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #95a5a6;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #e74c3c;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Visualization */
+        .temp-max {
+            color: #e74c3c;
+            font-size: 10px;
+        }
+
+        .visualizer-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
+            padding-top: 20px;
+        }
+
+        .impact-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            width: 30%;
+            background: #ecf0f1;
+            transition: 0.3s;
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+
+        .impact-item.active {
+            opacity: 1;
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            color: white;
+            font-weight: bold;
+        }
+
+        .impact-icon {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .impact-label {
+            font-size: 14px;
+        }
+
+        .impact-badge {
+            background: white;
+            color: #e74c3c;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-top: 5px;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .forecast-day {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .forecast-date {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .forecast-icon {
+            font-size: 24px;
+            margin: 5px 0;
+        }
+
+        .forecast-temp {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .temp-min {
+            color: #3498db;
+            font-size: 10px;
+        }
+
+        /* --- FORCE BOTTOM NAV LAYOUT (Mobile First) --- */
+        .sidebar {
+            display: none !important;
+        }
+
+        .main {
+            padding-bottom: 80px;
+            /* Space for bottom nav */
+        }
+
+        .mobile-nav {
+            display: flex !important;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #0f172a;
+            color: white;
+            padding: 10px 0;
+            justify-content: space-around;
+            z-index: 100;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .nav-btn i {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+            font-style: normal;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 1. Left Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <span style="font-size:20px;">📡 リテアド</span>
+            <span class="edit-profile-btn" onclick="editProfile()">EDIT</span>
+        </div>
+        <div style="font-size:12px; color:#bdc3c7; margin-bottom:20px;">
+            広告主ダッシュボード
+            <div id="brand-name" style="font-size:16px; font-weight:bold; color:white; margin-top:5px;">My Brand</div>
+            <div id="user-email" style="font-size:11px; color:#bdc3c7; margin-top:2px;"></div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="nav-menu" style="margin-bottom:20px;">
+            <!-- Added Advertiser LP Link -->
+            <div class="nav-item" onclick="scrollToCampaign()"
+                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; color:#fff; background:linear-gradient(45deg, #2980b9, #3498db); font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                📢 新規配信作成
+            </div>
+
+            <div class="nav-item active" onclick="showPanel('dashboard')"
+                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; background:rgba(255,255,255,0.1);">
+                📊 ダッシュボード
+            </div>
+            <div class="nav-item" onclick="showPanel('api')"
+                style="padding:10px; cursor:pointer; border-radius:4px; color:#bdc3c7;">
+                ⚙️ API & SDK 設定
+            </div>
+            <a href="advertiser_dashboard.html" target="_blank" class="nav-item"
+                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; display:block; text-decoration:none; color:#bdc3c7;">
+                📊 詳しい分析
+            </a>
+            <div class="nav-item" onclick="registerCreditCard()"
+                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; color:#bdc3c7;">
+                💳 クレジット情報登録
+            </div>
+            <div class="nav-item" onclick="handleSupport()"
+                style="padding:10px; cursor:pointer; border-radius:4px; color:#bdc3c7;">
+                📞 お問い合わせ
+            </div>
+        </div>
+
+        <!-- Region Selector moved here -->
+        <!-- Region Selector Removed as per request (Default National) -->
+        <!-- <div class="sidebar-section">...</div> -->
+
+        <!-- Payment Function moved here -->
+        <div class="sidebar-section">
+            <div class="sidebar-label">お支払い設定</div>
+            <div style="font-size:11px; color:#bdc3c7; display:flex; align-items:center; gap:5px; margin-bottom:10px;">
+                <span style="color:#2ecc71;">🔒</span> 広告料金の決済カードを設定
+            </div>
+            <button onclick="registerCreditCard()" style="width:100%; padding:12px; background:#fff; color:#34495e; border:none; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                💳 Square 決済登録・更新
+            </button>
+        </div>
+
+        <div style="flex:1;"></div>
+
+        <!-- Removed LP link from sidebar as per request -->
+        <div style="margin-top:10px; text-align:center;">
+            <a href="/"
+                style="display:block; background:#c0392b; color:white; padding:10px; border-radius:6px; text-decoration:none; font-weight:bold; border:1px solid #e74c3c;">
+                🚪 ログアウト
+            </a>
+        </div>
+    </nav>
+
+    <!-- 2. Main Content -->
+    <main class="main-content">
+        <div class="container">
+
+            <!-- Panel: Dashboard -->
+            <div id="panel-dashboard" class="panel active">
+                <div class="content-header" style="justify-content:space-between; flex-wrap:wrap; gap:15px;">
+                    <div>
+                        <h2 style="margin:0; color:#2c3e50;">ダッシュボード概要</h2>
+                        <div style="margin-top:5px; display:flex; gap:10px; align-items:center;">
+                            <span id="current-date-text"
+                                style="font-size:15px; font-weight:bold; color:#34495e; background:#e0e7ff; padding:4px 10px; border-radius:6px; border:1px solid #c7d2fe;">📅
+                                今日: --/--/-- (--)</span>
+                            <span id="current-weather-text" style="color:#7f8c8d; font-size:14px;">現在の環境情報を取得中...</span>
+                        </div>
+                    </div>
+                    
+                    <div style="background:white; padding:10px 20px; border-radius:8px; display:flex; gap:20px; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                        <div>
+                            <span style="font-size:0.8rem; color:#64748b;">アカウント残高 (Budget)</span>
+                            <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">1,000,000</span></div>
+                        </div>
+                        <div>
+                            <span style="font-size:0.8rem; color:#64748b;">総消化額 (Spend)</span>
+                            <div style="font-size:1.2rem; font-weight:bold; color:#e74c3c;">¥<span id="account-spend-display">0</span></div>
+                        </div>
+                        <button onclick="registerCreditCard()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem;">➕ 予算追加 (決済)</button>
+                    </div>
+
+                    <div style="display:flex; align-items:center;">
+                        <a href="/"
+                            style="background:#c0392b; color:white; padding:8px 15px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:14px; display:inline-flex; align-items:center; gap:5px;">
+                            🚪 ログアウト
+                        </a>
+                    </div>
+                </div>
+
+                <div class="upload-section" id="campaign-creation-section">
+                    <div class="upload-title" id="upload-title">📢 新規配信作成 (キャンペーン登録)</div>
+                    <p style="color:#7f8c8d; font-size:14px; margin-bottom:20px;">
+                        目的に合わせたプランを選択してください。詳細設定画面が開きます。
+                    </p>
+
+                    <div class="grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+
+                        <!-- CPM -->
+                        <div class="card" onclick="initiateCampaign('cpm')"
+                            style="cursor:pointer; border-left: 5px solid #2980b9; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                            <h3 style="margin-top:0; font-size:16px; color:#2980b9;">👁️ エンゲージメント</h3>
+                            <p style="font-size: 12px; color: #7f8c8d;">CPM型。認知拡大に。</p>
+                            <div style="text-align:right; margin-top:5px;"><span
+                                    style="color:#2980b9; font-size:12px; font-weight:bold;">作成 &rarr;</span></div>
+                        </div>
+
+                        <!-- CPA -->
+                        <div class="card" onclick="initiateCampaign('cpa')"
+                            style="cursor:pointer; border-left: 5px solid #27ae60; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                            <h3 style="margin-top:0; font-size:16px; color:#27ae60;">🛒 成果報酬型 (POS)</h3>
+                            <p style="font-size: 12px; color: #7f8c8d;">購入時のみ課金。</p>
+                            <div style="text-align:right; margin-top:5px;"><span
+                                    style="color:#27ae60; font-size:12px; font-weight:bold;">作成 &rarr;</span></div>
+                        </div>
+
+                        <!-- Moment -->
+                        <div class="card" onclick="initiateCampaign('moment')"
+                            style="cursor:pointer; border-left: 5px solid #e67e22; background:#fffaf0; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                            <h3 style="margin-top:0; font-size:16px; color:#d35400;">☔ モーメント配信</h3>
+                            <p style="font-size: 12px; color: #7f8c8d;">天気等シチュエーション連動。</p>
+                            <div style="text-align:right; margin-top:5px;"><span
+                                    style="color:#d35400; font-size:12px; font-weight:bold;">設定 &rarr;</span></div>
+                        </div>
+
+                        <!-- Impression -->
+                        <div class="card" onclick="initiateCampaign('impression')"
+                            style="cursor:pointer; border-left: 5px solid #8e44ad; background:#f8f9fa; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                            <h3 style="margin-top:0; font-size:16px; color:#8e44ad;">📈 インプレッション</h3>
+                            <p style="font-size: 12px; color: #7f8c8d;">再生数保証型。</p>
+                            <div style="text-align:right; margin-top:5px;"><span
+                                    style="color:#8e44ad; font-size:12px; font-weight:bold;">設定 &rarr;</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    function scrollToCampaign() {
+                        document.getElementById('campaign-creation-section').scrollIntoView({ behavior: 'smooth' });
+                    }
+                </script>
+
+                <!-- Metrics -->
+                <div class="grid">
+                    <div class="card">
+                        <h3>広告効果 (売上貢献)</h3>
+                        <div class="metric" style="color:#27ae60;" id="revenue-display">¥--</div>
+                        <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">
+                            CPA: <span id="cpa-display" style="font-weight:bold; color:#e67e22;">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top:20px;">
+                    <h3>7日間の天気予報 <span style="font-size:14px; font-weight:normal; color:#7f8c8d;">(広告配信プランの参考に)</span>
+                    </h3>
+                    <div class="grid-forecast" id="forecast-container">
+                        <div class="forecast-day">Loading...</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:20px;">リアルタイム環境モニター <span class="live-badge">LIVE API</span></h3>
+                <div class="grid-3">
+                    <div class="card">
+                        <h3>時間帯効果 (現在)</h3>
+                        <div id="time-visualizer" class="visualizer-container"></div>
+                    </div>
+                    <div class="card">
+                        <h3>天気の影響 (現在)</h3>
+                        <div class="chart-container chart-small"><canvas id="chartWeather"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <h3>気温の影響 (現在)</h3>
+                        <div id="temp-visualizer" class="visualizer-container"></div>
+                    </div>
+                </div>
+            </div> <!-- End Panel Dashboard -->
+
+            <!-- Panel: API & SDK Settings -->
+            <div id="panel-api" class="panel" style="display:none;">
+                <div class="content-header">
+                    <div>
+                        <h2 style="margin:0; color:#2c3e50;">⚙️ API & SDK Integration</h2>
+                        <span style="color:#7f8c8d; font-size:14px;">Connect your POS, EC, or DSP to LiteAd</span>
+                    </div>
+                </div>
+
+                <!-- API Key Section -->
+                <div class="card" style="margin-bottom:20px;">
+                    <h3 style="margin-top:0;">🔑 Your API Key</h3>
+                    <div
+                        style="background:#f8f9fa; padding:15px; border-radius:6px; font-family:monospace; display:flex; justify-content:space-between; align-items:center; border:1px solid #bdc3c7;">
+                        <span style="color:#e67e22; font-weight:bold;">LITEAD_API_KEY_7A9B3C2D_TEST</span>
+                        <button
+                            onclick="navigator.clipboard.writeText('LITEAD_API_KEY_7A9B3C2D_TEST'); alert('Copied!')"
+                            style="background:#34495e; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Copy</button>
+                    </div>
+                    <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">
+                        ※ This key is for <b>Development / Testing</b>. Do not share it publicly.
+                        Include header: <code>Authorization: Bearer LITEAD_API_KEY...</code>
+                    </p>
+                </div>
+
+                <!-- API Documentation -->
+                <div class="card" style="margin-bottom:20px;">
+                    <h3 style="margin-top:0;">📡 External API Endpoints</h3>
+
+                    <div style="margin-bottom:20px;">
+                        <span
+                            style="background:#27ae60; color:white; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold;">POST</span>
+                        <code style="font-size:16px; font-weight:bold; margin-left:10px;">/api/external/v1/event</code>
+                        <p style="font-size:14px; margin:5px 0 0 0;">
+                            <b>POS Connect:</b> Send sales/conversion data to update dashboard metrics (Real-time
+                            CPA).<br>
+                            Payload: <code>{ "transactionId": "TX123", "amount": 1500, "items": [...] }</code>
+                        </p>
+                    </div>
+
+                    <div>
+                        <span
+                            style="background:#3498db; color:white; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold;">GET</span>
+                        <code
+                            style="font-size:16px; font-weight:bold; margin-left:10px;">/api/external/v1/inventory</code>
+                        <p style="font-size:14px; margin:5px 0 0 0;">
+                            <b>DSP Connect:</b> Retrieve available ad slots and estimated CPM/Impressions.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SDK Section -->
+                <div class="card">
+                    <h3 style="margin-top:0;">📦 POS Connect SDK (JavaScript)</h3>
+                    <p>Easily integrate LiteAd conversion tracking into your web-based POS or E-Commerce site.</p>
+
+                    <div
+                        style="background:#2c3e50; color:white; padding:20px; border-radius:8px; font-family:monospace; margin-bottom:15px;">
+                        <div style="color:#bdc3c7; margin-bottom:5px;">// 1. Install via NPM (Coming Soon)</div>
+                        <div style="margin-bottom:15px;">
+                            $ <span style="color:#f1c40f;">npm install @litead/pos-connect-sdk</span>
+                        </div>
+
+                        <div style="color:#bdc3c7; margin-bottom:5px;">// 2. Or Include Script (Direct Download)</div>
+                        <div style="margin-bottom:15px;">
+                            &lt;script src="<a href="/pos_connect_sdk.js" target="_blank"
+                                style="color:#4ca1af;">/pos_connect_sdk.js</a>"&gt;&lt;/script&gt;
+                        </div>
+
+                        <div style="color:#bdc3c7; margin-bottom:5px;">// 3. Usage</div>
+                        <div>
+                            const client = new <span style="color:#f1c40f;">LiteAdPOS</span>('LITEAD_API_KEY_...');<br>
+                            client.<span style="color:#e67e22;">trackSale</span>({<br>
+                            &nbsp;&nbsp;transactionId: 'ORDER_001',<br>
+                            &nbsp;&nbsp;amount: 2500,<br>
+                            &nbsp;&nbsp;items: ['premium_plan']<br>
+                            }).then(res => console.log('Tracked!', res));
+                        </div>
+                    </div>
+
+                    <a href="/pos_connect_sdk.js" download
+                        style="background:#e67e22; color:white; text-decoration:none; padding:10px 20px; border-radius:5px; font-weight:bold; display:inline-block;">
+                        ⬇️ Download SDK (pos_connect_sdk.js)
+                    </a>
+                </div>
+
+            </div> <!-- End Panel API -->
+
+            <!-- Panel: Support -->
+            <div id="panel-support" class="panel" style="display:none;">
+                <div class="content-header">
+                    <div>
+                        <h2 style="margin:0; color:#2c3e50;">📞 お問い合わせ (Support)</h2>
+                        <span style="color:#7f8c8d; font-size:14px;">困ったときはいつでもご連絡ください。24時間以内にサポートチームが返信いたします。</span>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>✉️ お問い合わせフォーム</h3>
+                        <div style="display:flex; flex-direction:column; gap:15px; max-width:600px; margin:0 auto;">
+                            <input type="text" id="contact-subject" placeholder="件名 (例: 広告配信について)"
+                                style="padding:10px; border:1px solid #bdc3c7; border-radius:4px;">
+                            <textarea id="contact-message" placeholder="お問い合わせ内容をご記入ください..."
+                                style="height:150px; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-family:sans-serif;"></textarea>
+
+                            <button onclick="sendSupportEmail()"
+                                style="background:#3498db; color:white; border:none; padding:12px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                                送信する (メール作成)
+                            </button>
+                            <p style="font-size:12px; color:#95a5a6; text-align:center;">
+                                ※ お使いのメールソフトが起動します。<br>
+                                直接メールを送る場合: <b style="color:#2c3e50;">buzzkun0807@gmail.com</b>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>💡 よくある質問</h3>
+                        <div style="text-align:left; font-size:14px; color:#2c3e50;">
+                            <p><b>Q. YouTubeが再生されません。</b><br>
+                                A. ブラウザのセキュリティ設定により、初回のみ画面のどこかをクリックする必要があります。</p>
+
+                            <p><b>Q. 請求のタイミングは？</b><br>
+                                A. 広告が表示された回数に応じて、月末にまとめて請求書が発行されます。</p>
+
+                            <p><b>Q. 配信エリアを変更したい。</b><br>
+                                A. ダッシュボードの「配信時間帯」設定から変更可能ですが、エリア設定は管理者への申請が必要です。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // API Configuration for Local Execution
+        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+            ? 'http://localhost:3000'
+            : '';
+
+        // --- Data Handling ---
+        // Panel Switching Logic
+        function showPanel(panelId) {
+            // Hide all panels
+            document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+            // Show target
+            document.getElementById('panel-' + panelId).style.display = 'block';
+
+            // Update Sidebar Active State
+            const items = document.querySelectorAll('.nav-item');
+            items.forEach(i => i.classList.remove('active')); // Use class classList logic if possible, or manual style reset
+
+            // Manual Reset for inline styles (from previous code)
+            items.forEach(i => {
+                i.style.background = 'transparent';
+                i.style.color = '#bdc3c7';
+            });
+
+            // Highlight Logic
+            let activeIndex = 0;
+            if (panelId === 'dashboard') activeIndex = 0;
+            if (panelId === 'api') activeIndex = 1;
+            if (panelId === 'support') activeIndex = 2; // New
+
+            if (items[activeIndex]) {
+                items[activeIndex].style.background = 'rgba(255,255,255,0.1)';
+                items[activeIndex].style.color = 'white';
+            }
+        }
+
+        function sendSupportEmail() {
+            const subject = document.getElementById('contact-subject').value;
+            const body = document.getElementById('contact-message').value;
+            const targetEmail = "buzzkun0807@gmail.com";
+
+            if (!subject || !body) {
+                Swal.fire('Error', '件名と本文を入力してください。', 'warning');
+                return;
+            }
+
+            // Create Mailto Link
+            const mailtoLink = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+            // Open
+            window.location.href = mailtoLink;
+        }
+    </script>
+
+    <script>
+        // Check for file protocol
+        if (window.location.protocol === 'file:') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Connection Error',
+                html: 'You are viewing this file directly.<br>Please access via the server URL:<br><b>http://localhost:3000/advertiser</b>',
+                footer: 'APIs will not work in this mode.'
+            });
+        }
+
+        let charts = {};
+
+        const PREFECTURES = [
+            "Hokkaido", "Aomori", "Iwate", "Miyagi", "Akita", "Yamagata", "Fukushima",
+            "Ibaraki", "Tochigi", "Gunma", "Saitama", "Chiba", "Tokyo", "Kanagawa",
+            "Niigata", "Toyama", "Ishikawa", "Fukui", "Yamanashi", "Nagano", "Gifu",
+            "Shizuoka", "Aichi", "Mie", "Shiga", "Kyoto", "Osaka", "Hyogo", "Nara",
+            "Wakayama", "Tottori", "Shimane", "Okayama", "Hiroshima", "Yamaguchi",
+            "Tokushima", "Kagawa", "Ehime", "Kochi", "Fukuoka", "Saga", "Nagasaki",
+            "Kumamoto", "Oita", "Miyazaki", "Kagoshima", "Okinawa"
+        ];
+
+        // Initialize Dashboard Components
+
+
+        // Initialize Dashboard Components
+
+        // Helper: Get Video Duration
+        function getVideoDuration(file) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = () => {
+                    window.URL.revokeObjectURL(video.src);
+                    resolve(video.duration);
+                };
+                video.onerror = () => reject("Invalid video file");
+                video.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Helper: Convert File to Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // --- Google Pay Integration ---
+        const baseRequest = { apiVersion: 2, apiVersionMinor: 0 };
+        const allowedCardNetworks = ["AMEX", "DISCOVER", "INTERAC", "JCB", "MASTERCARD", "VISA"];
+        const allowedCardAuthMethods = ["PAN_ONLY", "CRYPTOGRAM_3DS"];
+        const tokenizationSpecification = {
+            type: 'PAYMENT_GATEWAY',
+            parameters: { 'gateway': 'example', 'gatewayMerchantId': 'exampleGatewayMerchantId' }
+        };
+        const baseCardPaymentMethod = {
+            type: 'CARD',
+            parameters: { allowedAuthMethods: allowedCardAuthMethods, allowedCardNetworks: allowedCardNetworks }
+        };
+        const cardPaymentMethod = Object.assign({}, baseCardPaymentMethod, { tokenizationSpecification: tokenizationSpecification });
+        let paymentsClient = null;
+
+        function getGoogleIsReadyToPayRequest() {
+            return Object.assign({}, baseRequest, { allowedPaymentMethods: [baseCardPaymentMethod] });
+        }
+
+        function getGooglePaymentDataRequest() {
+            const paymentDataRequest = Object.assign({}, baseRequest);
+            paymentDataRequest.allowedPaymentMethods = [cardPaymentMethod];
+            paymentDataRequest.transactionInfo = {
+                totalPriceStatus: 'FINAL',
+                totalPrice: '5000', // Example Amount
+                currencyCode: 'JPY',
+                countryCode: 'JP'
+            };
+            return paymentDataRequest;
+        }
+
+        function onGooglePayLoaded() {
+            paymentsClient = new google.payments.api.PaymentsClient({ environment: 'TEST' });
+            paymentsClient.isReadyToPay(getGoogleIsReadyToPayRequest())
+                .then(function (response) {
+                    if (response.result) {
+                        const button = paymentsClient.createButton({ onClick: onGooglePaymentButtonClicked });
+                        document.getElementById('gpay-container').appendChild(button);
+                    }
+                })
+                .catch(function (err) { console.error(err); });
+        }
+
+        function onGooglePaymentButtonClicked() {
+            const paymentDataRequest = getGooglePaymentDataRequest();
+            paymentsClient.loadPaymentData(paymentDataRequest)
+                .then(function (paymentData) {
+                    processPayment(paymentData);
+                })
+                .catch(function (err) { console.error(err); });
+        }
+
+        function processPayment(paymentData) {
+            console.log("Google Pay Success:", paymentData);
+            Swal.fire({
+                icon: 'success',
+                title: 'Google Pay Success',
+                text: 'Payment Authorized Securely!',
+                timer: 2000
+            });
+            // Auto-fill card data hidden or just verify logic
+            // In real app, send paymentData.paymentMethodData.tokenizationData.token to backend
+        }
+
+        if (window.google && window.google.payments) {
+            onGooglePayLoaded();
+        } else {
+            // Wait for script to load
+            window.addEventListener('load', () => {
+                if (window.google && window.google.payments) onGooglePayLoaded();
+            });
+        }
+        // ------------------------------
+
+        // Excel / Voice Logic
+        async function handleExcelUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Simple parser: Assume Row 1 is header, Rows 2+ are [Product, Price]
+                let script = "お客様にご案内いたします。本日の特売情報です。";
+                let count = 0;
+
+                for (let i = 1; i < json.length; i++) {
+                    const row = json[i];
+                    if (row && row.length >= 2) {
+                        const product = row[0];
+                        const price = row[1];
+                        if (product && price) {
+                            script += `${product}が、${price}円。`;
+                            count++;
+                        }
+                    }
+                    if (count >= 3) break; // Limit to 3 items for demo
+                }
+                script += "ぜひお買い求めください。";
+
+                document.getElementById('voice-script').value = script;
+                document.getElementById('excel-preview-area').style.display = 'block';
+                Swal.fire({ icon: 'success', title: 'Excel読込完了', text: '放送原稿を作成しました。編集して放送してください。', timer: 2000 });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function broadcastVoice() {
+            const text = document.getElementById('voice-script').value;
+            if (!text) return;
+
+            // Use simulateUpload logic but with specific text payload
+            // We use 'standard' ratio, no specific media (server will use placeholder if needed), and attached AI text
+            // Actually, we can just hit the demo endpoint directly
+
+            Swal.fire({
+                title: '放送中...',
+                text: '店内アナウンスを行っています',
+                timer: 5000,
+                didOpen: () => Swal.showLoading()
+            });
+
+            // Hack: Use simulateUpload logic but force ai_text
+            // format=image to show a placeholder "On Air" image?
+            const params = `?ratio=16:9&format=image&ai_text=${encodeURIComponent(text)}&duration=15`;
+            await fetch(`/api/ad/demo/boost${params}`);
+        }
+
+        async function editProfile() {
+            const { value: name } = await Swal.fire({
+                title: 'Edit Brand Name',
+                input: 'text',
+                inputLabel: 'Your Brand / Advertiser Name',
+                inputValue: document.getElementById('brand-name').innerText,
+                showCancelButton: true
+            });
+            if (name) {
+                document.getElementById('brand-name').innerText = name;
+                Swal.fire('Updated', `Welcome, ${name}!`, 'success');
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (tabName === 'file') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('tab-file').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('tab-youtube').classList.add('active');
+            }
+        }
+
+        async function handleYouTubeUpload() {
+            let url = document.getElementById('yt-url').value;
+            if (!url) return Swal.fire('Error', 'Please enter a YouTube URL', 'error');
+
+            // Handle YouTube Shorts URL conversion
+            // https://www.youtube.com/shorts/VIDEO_ID -> https://www.youtube.com/watch?v=VIDEO_ID
+            if (url.includes('/shorts/')) {
+                const videoId = url.split('/shorts/')[1].split('?')[0]; // Extract ID
+                url = `https://www.youtube.com/watch?v=${videoId}`;
+            }
+
+            // Logic for YouTube aspect ratio? Assume 16:9 for now unless keyword 'shorts' found
+            let ratio = url.includes('shorts') ? '9:16' : '16:9';
+
+            await simulateUpload(ratio, url, null, null, false);
+        }
+        // Collect new params for all upload types
+        // Collect new params for all upload types
+        function getCampaignParams() {
+            // Scope was removed from UI, defaulting to national
+            const scope = "national";
+
+            // New Plan Type Logic
+            const planTypeInput = document.querySelector('input[name="plan-type"]:checked');
+            const planType = planTypeInput ? planTypeInput.value : "engagement";
+
+            const format = document.getElementById('ad-format').value;
+            const slot = document.getElementById('ad-slot').value;
+            const brand = document.getElementById('brand-name').innerText;
+
+            // Collect Card Data if present in Sidebar
+            let cardParams = "";
+            const no = document.getElementById('card-no').value;
+            const date = document.getElementById('card-date').value; // MM/YY
+            const cvc = document.getElementById('card-cvc').value;
+
+            if (no) {
+                // Simple Format Conversion MM/YY -> YYMM
+                let expire = "";
+                if (date && date.includes('/')) {
+                    const [mm, yy] = date.split('/');
+                    expire = yy + mm;
+                }
+                cardParams = `&cardNo=${no}&expire=${expire}&cvc=${cvc}`;
+            }
+
+            return `&scope=${scope}&slot=${slot}&brand=${encodeURIComponent(brand)}&planType=${planType}&format=${format}` + cardParams;
+        }
+
+        // Initialize Drag & Drop
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZones = document.querySelectorAll('.drop-zone');
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.style.background = '#eef2f7';
+                    zone.style.borderColor = '#3498db';
+                });
+                zone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    zone.style.background = '#f8f9fa';
+                    zone.style.borderColor = 'transparent';
+                });
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.style.background = '#f8f9fa';
+                    zone.style.borderColor = 'transparent';
+
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        handleFile(files[0]);
+                    }
+                });
+            });
+        });
+
+        function handleFile(file) {
+            // Check file type
+            if (!file.type.startsWith('video/') && !file.type.startsWith('image/')) {
+                Swal.fire('Error', 'Only Video or Image files are allowed.', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Uploading ' + file.name + '...',
+                html: 'Processing media...',
+                timer: 1000,
+                timerProgressBar: true,
+                didOpen: () => Swal.showLoading()
+            }).then(() => {
+                // No AI Analysis - Manual Input Only
+                const defaultText = ""; // Default empty
+
+                Swal.fire({
+                    title: '📱 QRコード・食材情報の登録',
+                    html: `
+                        <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:6px; font-size:14px; margin-bottom:10px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:5px; color:#2c3e50;">配信プラン:</label>
+                            <select id="swal-plan" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+                                <option value="cpm">👁️ エンゲージメント向上 (CPM型)</option>
+                                <option value="cpa">🛒 成果報酬型広告 (CPA/POS連携)</option>
+                                <option value="moment">☔ モーメント配信（状況連動）</option>
+                                <option value="imp">👁️ インプレッション配信</option>
+                            </select>
+                        </div>
+                        <p style="font-size:13px; color:#7f8c8d;">動画に関連する食材を入力してください。<br>この内容がサイネージのQRコードと食材リストに反映されます。</p>
+                        <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:6px; font-size:14px; margin-top:10px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:5px; color:#2c3e50;">表示する食材リスト (編集可):</label>
+                            <textarea id="ai-ingredients" placeholder="例：スパゲティ、ミートソース、粉チーズ" style="width:100%; height:80px; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-family:sans-serif; font-size:16px;">${defaultText}</textarea>
+                            <p style="font-size:11px; color:#2c3e50; margin-top:5px;">※ 複数の食材は読点（、）やスペースで区切ってください。</p>
+                        </div>
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: '確定して配信登録',
+                    cancelButtonText: 'キャンセル',
+                    preConfirm: () => {
+                        return document.getElementById('ai-ingredients').value;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const ingredients = result.value;
+                        const ratio = file.name.includes('shorts') ? '9:16' : '16:9';
+                        const isImage = file.type.startsWith('image/');
+                        simulateUpload(ratio, null, null, ingredients, isImage);
+                    }
+                });
+            });
+        }
+
+        // Smart Analysis Logic
+        function analyzeFilename(filename) {
+            const name = filename.toLowerCase().replace(/[-_.]/g, " ");
+            const keywords = {
+                "spaghetti": "スパゲティ", "pasta": "パスタ", "noodle": "麺",
+                "meat": "ミートソース", "bolognese": "ミートソース", "beef": "牛肉",
+                "cheese": "粉チーズ", "parmesan": "粉チーズ", "mozarella": "チーズ",
+                "tomato": "トマト", "sauce": "ソース", "basil": "バジル",
+                "salad": "レタス", "vegetable": "野菜ミックス", "oil": "オリーブオイル",
+                "steak": "ステーキ", "grill": "焼肉", "pepper": "黒胡椒",
+                "salt": "岩塩", "onion": "玉ねぎ", "garlic": "ニンニク"
+            };
+
+            let detected = [];
+            for (let k in keywords) {
+                if (name.includes(k) && !detected.includes(keywords[k])) detected.push(keywords[k]);
+            }
+            // Enhance Bolognese specifically if partial match
+            if (name.includes("bolognese") && !detected.includes("スパゲティ")) detected.unshift("スパゲティ");
+
+            return detected.length > 0 ? detected : [];
+        }
+
+        async function handleUpload(ratio, variant = null) {
+            // Always allow file selection to simulate the "upload experience"
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'video/*,image/*';
+            input.onchange = (e) => {
+                if (e.target.files.length > 0) handleFile(e.target.files[0], variant, ratio);
+            };
+            input.click();
+        }
+
+        async function handleFile(file, variant = null, ratio = '16:9') {
+            // Check if image or video, ask for BGM (maybe irrelevant for video but consistent UI) 
+            let bgm = null;
+            let ingredients = "";
+            let promptTitle = file.type.startsWith('image/') ? '🖼️ 画像配信設定' : '🎥 動画配信設定';
+
+            // Only show prompt if Image (for BGM). Videos upload directly.
+            if (file.type.startsWith('image/')) {
+                const result = await Swal.fire({
+                    title: promptTitle,
+                    html: `
+                        <div style="text-align:left; font-size:14px;">
+                            <p style="margin-bottom:5px; font-weight:bold;">BGMの選択 (画像のみ有効)</p>
+                            <select id="swal-bgm" style="width:100%; padding:8px; margin-bottom:15px; border-radius:4px; border:1px solid #ccc;">
+                                <option value="">(なし) 無音</option>
+                                <option value="upbeat">🎵 アップビート (セール・活気)</option>
+                                <option value="relaxing">🌿 リラクシング (高級感・落ち着き)</option>
+                                <option value="cooking">🍳 クッキング (料理・レシピ)</option>
+                                <option value="cafe">☕ カフェ (おしゃれ・BGM)</option>
+                            </select>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'アップロード',
+                    preConfirm: () => {
+                        return {
+                            bgm: document.getElementById('swal-bgm').value
+                        };
+                    }
+                });
+
+                if (!result.isConfirmed) return;
+                bgm = result.value.bgm;
+            }
+
+            Swal.fire({
+                title: variant ? `Uploading Variant ${variant}...` : 'Uploading...',
+                text: 'Please wait while we upload your media directly to the server.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                // Determine Query Params
+                let query = '?filename=' + encodeURIComponent(file.name);
+                if (bgm) query += '&bgm=' + encodeURIComponent(bgm);
+                if (ingredients) query += '&ingredients=' + encodeURIComponent(ingredients);
+
+                const res = await fetch('/api/ad/upload' + query, {
+                    method: 'POST',
+                    headers: { 'Content-Type': file.type },
+                    body: file
+                });
+
+                if (res.ok) {
+                    if (variant === 'A') {
+                        Swal.fire({ icon: 'info', title: 'Variant A Uploaded', text: 'Now upload Variant B to start comparison.' });
+                    } else if (variant === 'B') {
+                        showABResults();
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'Upload Complete', text: 'Media is now queued for playback!' });
+                        loadData();
+                    }
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Upload Error', text: e.message });
+            }
+        }
+
+        async function simulateUpload(aspectRatio, ytUrl = null, variant = null, ingredients = null, isImage = false) {
+            // If image, prompt for BGM here too if strictly demo mode calls this?
+            // Actually, handleFile calls simulateUpload only in Demo Mode via 'input.onchange' logic above? 
+            // Wait, handleUpload calls simulateUpload directly in Demo Mode without file input.
+            // We need to update simulateUpload logic too if we want text-based BGM simulation.
+            // For now, let's focus on handleFile which is used for Real/local file handling.
+
+            const params = getCampaignParams();
+            let finalUrl = `/api/ad/demo/boost?ratio=${aspectRatio}${params}`;
+
+            if (ingredients) finalUrl += `&ingredients=${encodeURIComponent(ingredients)}`;
+
+            if (isImage) finalUrl += `&format=image`;
+
+            if (ytUrl) finalUrl += `&youtube=${encodeURIComponent(ytUrl)}`;
+            if (variant) finalUrl += `&variant=${variant}`;
+
+            let title = 'Broadcasting...';
+            if (variant) title = `Uploading Variant ${variant}...`;
+
+            Swal.fire({ title: title, timer: 1500, timerProgressBar: true, didOpen: () => Swal.showLoading() }).then(async () => {
+                await fetch(finalUrl);
+
+                if (variant === 'B') {
+                    // If uploading B, assume A is done, show comparison
+                    showABResults();
+                } else if (variant === 'A') {
+                    Swal.fire({ icon: 'info', title: 'Variant A Uploaded', text: 'Now upload Variant B to start comparison.' });
+                } else {
+                    Swal.fire({ icon: 'success', title: 'On Air!', text: 'Media Broadcasted.' });
+                    loadData();
+                }
+            });
+        }
+
+        // Global chart instance for A/B
+        let abChartInstance = null;
+
+        async function showABResults() {
+            // Fetch latest real data
+            let abStats = { A: { views: 0, scans: 0, sales: 0 }, B: { views: 0, scans: 0, sales: 0 } };
+            try {
+                const res = await fetch('/api/ad/analytics');
+                const data = await res.json();
+                if (data.ab_stats) abStats = data.ab_stats;
+            } catch (e) { console.error("Failed to fetch AB stats", e); }
+
+            // Calculate Engagement Rate (Sales per Scan)
+            const cvrA = abStats.A.scans > 0 ? ((abStats.A.sales / abStats.A.scans) * 100).toFixed(1) : 0;
+            const cvrB = abStats.B.scans > 0 ? ((abStats.B.sales / abStats.B.scans) * 100).toFixed(1) : 0;
+
+            let winner = 'Waiting for interaction...';
+            if (abStats.A.sales > 0 || abStats.B.sales > 0) {
+                if (Number(cvrB) > Number(cvrA)) winner = 'Variant B is Winning 🚀';
+                else if (Number(cvrA) > Number(cvrB)) winner = 'Variant A is Winning 🏆';
+                else winner = 'It\'s a Tie ⚖️';
+            }
+
+            Swal.fire({
+                title: '📊 A/B Performance (Scan vs Sales)',
+                html: `
+                    <div style="margin-bottom:10px; font-size:14px; font-weight:bold; color:#2c3e50;">${winner}</div>
+                    <div style="height:250px; width:100%;">
+                        <canvas id="abChartCanvas"></canvas>
+                    </div>
+                    <div style="display:flex; gap:20px; justify-content:center; margin-top:15px; font-size:12px;">
+                        <div style="text-align:center;">
+                            <strong style="color:#e67e22;">🅰️ Variant A</strong><br>
+                            Scans: <span id="ab-scans-a">${abStats.A.scans}</span><br>
+                            Sales: <span id="ab-sales-a">${abStats.A.sales}</span>
+                        </div>
+                        <div style="text-align:center;">
+                            <strong style="color:#9b59b6;">🅱️ Variant B</strong><br>
+                            Scans: <span id="ab-scans-b">${abStats.B.scans}</span><br>
+                            Sales: <span id="ab-sales-b">${abStats.B.sales}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; font-size:11px; color:#95a5a6;">
+                        * Compares real interactions (QR Scans) & conversions (POS Sales).
+                    </div>
+                `,
+                width: 600,
+                showConfirmButton: true,
+                confirmButtonText: 'Refresh Data',
+                didOpen: () => {
+                    renderABChart(abStats);
+                },
+                preConfirm: () => {
+                    return false;
+                }
+            }).then((result) => {
+                if (result.isDismissed) return;
+                showABResults();
+            });
+        }
+
+
+        function renderABChart(stats) {
+            const ctx = document.getElementById('abChartCanvas').getContext('2d');
+            if (abChartInstance) abChartInstance.destroy();
+
+            abChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['QR Scans', 'POS Sales'],
+                    datasets: [
+                        {
+                            label: 'Variant A',
+                            data: [stats.A.scans, stats.A.sales],
+                            backgroundColor: '#e67e22'
+                        },
+                        {
+                            label: 'Variant B',
+                            data: [stats.B.scans, stats.B.sales],
+                            backgroundColor: '#9b59b6'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function showLogicDetails() {
+            Swal.fire({
+                title: '🛒 POS Data Correlation',
+                html: `
+                    <div style="text-align:left; font-size:13px; color:#2c3e50;">
+                        <p>We analyze real-time sales data from the store's POS system correlated with ad broadcast times:</p>
+                        <ul style="padding-left:20px;">
+                            <li><b>Broadcast A (10:00-11:00):</b> 12 Units Sold</li>
+                            <li><b>Broadcast B (11:00-12:00):</b> 18 Units Sold</li>
+                            <li><b>Control Group:</b> 8 Units (Average)</li>
+                        </ul>
+                        <hr style="border:0; border-top:1px dashed #ccc;">
+                        <p><b>Result Analysis:</b><br>
+                        Variant B's "Short & Punchy" style led to a <span style="color:#e74c3c; font-weight:bold;">50% uplift</span> in immediate product purchases compared to Variant A.</p>
+                        <p style="font-size:11px; color:#7f8c8d; margin-top:5px;">* Privacy Safe: No cameras or personal data used.</p>
+                    </div>
+                `,
+                icon: 'info'
+            });
+        }
+
+        async function loadData() {
+            const contextText = document.getElementById('current-weather-text');
+            contextText.innerText = "📡 Locating device...";
+
+            // 1. Get Geolocation (Skip if file protocol or insecure, as it usually fails)
+            if (!navigator.geolocation || location.protocol === 'file:') {
+                console.log("Geo skipped (File/Insecure)");
+                fetchAnalytics();
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    contextText.innerText = `📍 Found (${lat.toFixed(2)}, ${lon.toFixed(2)}) - Fetching Weather...`;
+                    await fetchAnalytics(lat, lon);
+                },
+                (error) => {
+                    console.warn("Geo Error:", error);
+                    contextText.innerText = "⚠️ Location Denied (Using Default)";
+                    fetchAnalytics(); // Fallback
+                }
+            );
+        }
+
+        async function fetchAnalytics(lat = null, lon = null) {
+            let data = null;
+            try {
+                // Determine API base URL
+                const API_PREFIX = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+                let url = `${API_PREFIX}/api/ad/analytics?`;
+                if (lat && lon) url += `lat=${lat}&lon=${lon}`;
+                else url += 'region=Tokyo';
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API Error');
+                data = await res.json();
+            } catch (e) {
+                console.warn("API Failed, using Mock Data:", e);
+                // Fallback Mock Data
+                data = {
+                    context: {
+                        current_condition: { region: "Tokyo (Demo)", weather_code: 1, temp: 24 },
+                        active_factors: ['Lunch', 'Mild'],
+                        weather_impact: { 'Sunny': 85, 'Rain': 40 },
+                        weekly_forecast: [
+                            { date: '2026-05-10', code: 1, max: 25, min: 18 },
+                            { date: '2026-05-11', code: 3, max: 22, min: 17 },
+                            { date: '2026-05-12', code: 51, max: 20, min: 16 }
+                        ]
+                    },
+                    attribution: { revenue: 1250000, cpa: 450 }
+                };
+            }
+
+            // Render Logic
+            const weather = data.context.current_condition;
+            const locationName = lat ? "Current Location" : (weather.region || "Tokyo");
+            const contextText = document.getElementById('current-weather-text');
+            if (contextText) contextText.innerText = `📍 ${locationName}: ${weather.weather_code <= 1 ? 'Sunny' : 'Cloudy'}, ${weather.temp}°C`;
+
+            // Metrics
+            const revDisplay = document.getElementById('revenue-display');
+            if (revDisplay && data.attribution.revenue) revDisplay.innerText = '¥' + data.attribution.revenue.toLocaleString();
+
+            const cpaDisplay = document.getElementById('cpa-display');
+            if (cpaDisplay && data.attribution.cpa) cpaDisplay.innerText = '¥' + data.attribution.cpa.toLocaleString();
+
+            const activeFactors = data.context.active_factors || [];
+
+            // Dynamic Date Update
+            const dateText = document.getElementById('current-date-text');
+            if (dateText) {
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const day = ['日', '月', '火', '水', '木', '金', '土'][now.getDay()];
+                dateText.innerText = `📅 今日: ${yyyy}/${mm}/${dd} (${day})`;
+            }
+
+            // Charts Rendering (Protected)
+            try {
+                renderChart('chartWeather', 'doughnut', Object.keys(data.context.weather_impact), Object.values(data.context.weather_impact), 'Index', activeFactors);
+                renderVisualizer('time-visualizer', ['Morning', 'Lunch', 'Evening'], activeFactors, { 'Morning': '🌅', 'Lunch': '🍱', 'Evening': '🌙' });
+                renderVisualizer('temp-visualizer', ['Hot', 'Mild', 'Cold'], activeFactors, { 'Hot': '🔥', 'Mild': '🍃', 'Cold': '❄️' });
+                renderForecast(data.context.weekly_forecast);
+            } catch (e) { console.error("Chart Render Failed", e); }
+        }
+
+        function renderVisualizer(containerId, labels, activeFactors, icons) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            labels.forEach(label => {
+                const isActive = activeFactors.includes(label);
+                const div = document.createElement('div');
+                div.className = `impact-item ${isActive ? 'active' : ''}`;
+                if (isActive) {
+                    if (label === 'Hot') div.style.background = '#e74c3c';
+                    if (label === 'Cold') div.style.background = '#3498db';
+                    if (label === 'Mild') div.style.background = '#2ecc71';
+                    if (label === 'Lunch') div.style.background = '#f1c40f';
+                    if (label === 'Evening') div.style.background = '#8e44ad';
+                }
+                div.innerHTML = `<div class="impact-icon">${icons[label] || '●'}</div><div class="impact-label">${label}</div>${isActive ? '<div class="impact-badge">Target!</div>' : ''}`;
+                container.appendChild(div);
+            });
+        }
+
+        function renderChart(id, type, labels, values, label, activeFactors) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (charts[id]) charts[id].destroy();
+            const bgColors = labels.map(l => activeFactors.includes(l) ? '#e74c3c' : '#bdc3c7');
+
+            charts[id] = new Chart(ctx, {
+                type: type,
+                data: { labels: labels, datasets: [{ label: label, data: values, backgroundColor: (type === 'bar') ? bgColors : ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e'] }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: (type === 'bar') ? { y: { beginAtZero: true } } : {} }
+            });
+        }
+
+        function renderForecast(forecast) {
+            const container = document.getElementById('forecast-container');
+            container.innerHTML = '';
+            if (!forecast) return;
+            const wmoCodes = { 0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 51: '🌦️', 61: '☔', 71: '☃️', 95: '⛈️' };
+            forecast.forEach(day => {
+                const date = new Date(day.date);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const icon = wmoCodes[day.code] || '❓';
+                const card = document.createElement('div');
+                card.className = 'forecast-day';
+                card.innerHTML = `<div class="forecast-date">${dayName}</div><div class="forecast-icon">${icon}</div><div class="forecast-temp"><span class="temp-max">Max ${day.max}°</span><br><span class="temp-min">Min ${day.min}°</span></div>`;
+                container.appendChild(card);
+            });
+        }
+
+        // A/B Test Details Modal
+        function showABDetails() {
+            Swal.fire({
+                title: 'A/Bテスト分析の詳細',
+                html: `
+                    <div style="text-align:left; font-size:14px; line-height:1.6; color:#2c3e50;">
+                        <div style="margin-bottom:15px;">
+                            <strong style="color:#e67e22;">1. 購買転換率（コンバージョンレート）の比較</strong><br>
+                            パターンA（例：通常のCM素材） と パターンB（例：短尺でインパクト重視の素材） を交互に配信し、それぞれの放映時間帯に「どれくらい商品が売れたか」をPOSデータと突き合わせて比較します。<br>
+                            <span style="background:#f0f0f0; padding:2px 5px; font-family:monospace;">結果例: Aは3.2%、Bは4.8%</span>
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <strong style="color:#3498db;">2. 売上アップ率（Uplift）の測定</strong><br>
+                            効果の高かった動画が、もう一方に比べて「何倍の売上を作ったか」を表示します（例：「パターンBの方が1.5倍売れました」）。<br>
+                            これにより、感覚ではなく数字に基づいたクリエイティブの評価が可能になります。
+                        </div>
+                        <div>
+                            <strong style="color:#27ae60;">3. 自動最適化の提案</strong><br>
+                            テスト終了後、AIが<strong>「今後は効果の高いパターンBを優先的に配信すべきです」</strong>といった具体的なアクションプランを提案します。これにより、配信中に自動的に広告効果を最大化させることができます。
+                        </div>
+                    </div>
+                `,
+                width: 700,
+                confirmButtonText: '閉じる',
+                confirmButtonColor: '#34495e'
+            });
+        }
+
+        loadData();
+    </script>
+
+    <!-- Section Removed (Moved to Main Content Area) -->
+
+    <script>
+        async function initiateCampaign(plan) {
+            let title = 'キャンペーン設定';
+            let extraFields = '';
+
+            // Dynamic Form Fields based on Plan
+            if (plan === 'moment') {
+                title = '☔ モーメント配信設定';
+                extraFields = `
+                    <div style="background:#fffaf0; padding:10px; border-radius:6px; margin-bottom:10px;">
+                        <label style="display:block; text-align:left; font-weight:bold; color:#d35400;">⚡ 配信トリガー条件</label>
+                        <select id="swal-trigger" class="swal2-input" style="font-size:14px; margin-top:5px;">
+                            <option value="rain">☔ 雨天時 (Rain)</option>
+                            <option value="hot">☀️ 猛暑 (30℃+)</option>
+                            <option value="cold">❄️ 寒冷 (10℃-)</option>
+                            <option value="crowded">👥 混雑時 (High Traffic)</option>
+                        </select>
+                    </div>`;
+            } else if (plan === 'impression') {
+                title = '📈 インプレッション配信設定';
+                extraFields = `
+                    <div style="background:#f8f9fa; padding:10px; border-radius:6px; margin-bottom:10px;">
+                        <label style="display:block; text-align:left; font-weight:bold; color:#8e44ad;">🎯 目標再生回数</label>
+                        <input type="number" id="swal-target" class="swal2-input" value="10000" placeholder="10000" style="margin-top:5px;">
+                    </div>`;
+            } else if (plan === 'cpa') {
+                title = '🛒 成果報酬型キャンペーン設定';
+                extraFields = `
+                    <div style="background:#f0fff4; padding:10px; border-radius:6px; margin-bottom:10px;">
+                        <label style="display:block; text-align:left; font-weight:bold; color:#27ae60;">💰 目標CPA (獲得単価)</label>
+                        <input type="number" id="swal-cpa-target" class="swal2-input" placeholder="例: 500" style="margin-top:5px;">
+                    </div>`;
+            }
+
+            // Common Targeting Fields (New Request)
+            const targetingFields = `
+                <div style="text-align:left; margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
+                    <label style="font-size:12px; font-weight:bold; color:#555;">🎯 ターゲティング設定 (任意)</label>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:5px;">
+                        <select id="swal-gender" class="swal2-select" style="font-size:14px; margin:0; padding:8px;">
+                            <option value="all">性別: 指定なし</option>
+                            <option value="female">👩 女性</option>
+                            <option value="male">👨 男性</option>
+                        </select>
+                        <select id="swal-age" class="swal2-select" style="font-size:14px; margin:0; padding:8px;">
+                            <option value="all">年代: 指定なし</option>
+                            <option value="20s">20代 (F1/M1)</option>
+                            <option value="30s">30代 (F2/M2)</option>
+                            <option value="40s">40代</option>
+                            <option value="senior">50代以上</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <select id="swal-time" class="swal2-select" style="width:100%; font-size:14px; margin:0; padding:8px;">
+                            <option value="all">🕒 配信時間: 指定なし (終日)</option>
+                            <option value="00">00:00 - 01:00</option>
+                            <option value="01">01:00 - 02:00</option>
+                            <option value="02">02:00 - 03:00</option>
+                            <option value="03">03:00 - 04:00</option>
+                            <option value="04">04:00 - 05:00</option>
+                            <option value="05">05:00 - 06:00</option>
+                            <option value="06">06:00 - 07:00</option>
+                            <option value="07">07:00 - 08:00</option>
+                            <option value="08">08:00 - 09:00</option>
+                            <option value="09">09:00 - 10:00</option>
+                            <option value="10">10:00 - 11:00</option>
+                            <option value="11">11:00 - 12:00</option>
+                            <option value="12">12:00 - 13:00</option>
+                            <option value="13">13:00 - 14:00</option>
+                            <option value="14">14:00 - 15:00</option>
+                            <option value="15">15:00 - 16:00</option>
+                            <option value="16">16:00 - 17:00</option>
+                            <option value="17">17:00 - 18:00</option>
+                            <option value="18">18:00 - 19:00</option>
+                            <option value="19">19:00 - 20:00</option>
+                            <option value="20">20:00 - 21:00</option>
+                            <option value="21">21:00 - 22:00</option>
+                            <option value="22">22:00 - 23:00</option>
+                            <option value="23">23:00 - 24:00</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            // New Media & Format Fields
+            const mediaFields = `
+                <div style="text-align:left; margin-top:15px; border-top:1px dashed #ddd; padding-top:10px;">
+                    <label style="font-size:12px; font-weight:bold; color:#555;">📺 フォーマットと長さ (参考価格・1再生1円〜)</label>
+                    <select id="swal-format" class="swal2-select" style="width:100%; font-size:14px; margin-top:5px; padding:8px;">
+                        <option value="standard">📺 標準動画 (最大30秒) - ¥10,000~ / 月</option>
+                        <option value="short">⚡ ショート動画 (最大15秒) - ¥5,000~ / 月</option>
+                        <option value="youtube">▶️ YouTube動画リンク - ¥10,000~ / 月</option>
+                        <option value="shorts">📱 YouTube Shortsリンク - ¥5,000~ / 月</option>
+                        <option value="image">🖼️ 画像スライド (10秒) - ¥3,000~ / 月</option>
+                    </select>
+
+                    <div style="margin-top:10px;">
+                        <label style="font-size:12px; font-weight:bold; color:#555;">🔗 YouTubeリンク (任意)</label>
+                        <input id="swal-yt-url" class="swal2-input" placeholder="https://youtu.be/... (ショート動画も可)" style="margin-top:5px; font-size:14px;">
+                        <div style="font-size:10px; color:#999;">※ファイルアップロードの代わりに使用</div>
+                    </div>
+                </div>
+            `;
+
+            const { value: formValues } = await Swal.fire({
+                title: title,
+                width: 600,
+                html: `
+                    <div style="text-align:left; font-size:12px; color:#666; margin-bottom:5px;">キャンペーン名</div>
+                    <input id="swal-name" class="swal2-input" placeholder="例: Summer Sale 2026" style="margin-top:0;">
+                    
+                    <div style="text-align:left; font-size:12px; color:#666; margin-top:10px; margin-bottom:5px;">予算 (円)</div>
+                    <input id="swal-budget" type="number" class="swal2-input" placeholder="例: 100000" style="margin-top:0;">
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                        <div>
+                            <label style="font-size:11px; display:block; text-align:left;">開始日</label>
+                            <input id="swal-start" type="date" class="swal2-input" style="font-size:14px; margin:0;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; display:block; text-align:left;">終了日</label>
+                            <input id="swal-end" type="date" class="swal2-input" style="font-size:14px; margin:0;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:15px;">${extraFields}</div>
+                    ${mediaFields}
+                    ${targetingFields}
+
+                    <div style="margin-top:15px; text-align:left; border-top:1px solid #eee; padding-top:10px;">
+                        <label style="font-weight:bold; font-size:12px;">🎥 動画/画像ファイル (※動画は .mp4 / .mov 推奨)</label>
+                        <div id="swal-dropzone" style="border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-top: 10px; cursor: pointer; background: #f8f9fa; transition: 0.3s;">
+                            <div style="font-size: 24px; color: #3498db; margin-bottom: 5px;">📥</div>
+                            <div style="font-size: 13px; font-weight: bold; color: #2c3e50;" id="swal-filename">クリックまたはドラッグ＆ドロップでアップロード</div>
+                            <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov / 画像ファイル (最大30秒)</div>
+                        </div>
+                        <input type="file" id="swal-file" accept="video/mp4,video/webm,video/quicktime,image/*" style="display:none;">
+                        <div style="font-size:10px; color:#e74c3c; margin-top:5px;">※iPhoneで撮影した .mov 等の高圧縮ファイルはサイネージ端末では再生できない場合があります</div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '配信登録',
+                confirmButtonColor: '#3498db',
+                didOpen: () => {
+                    const dropzone = document.getElementById('swal-dropzone');
+                    const fileInput = document.getElementById('swal-file');
+                    const filenameDisplay = document.getElementById('swal-filename');
+
+                    // Click to open dialog
+                    dropzone.addEventListener('click', () => fileInput.click());
+
+                    // Drag over styling
+                    dropzone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#2ecc71';
+                        dropzone.style.background = '#eafaf1';
+                    });
+                    dropzone.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#3498db';
+                        dropzone.style.background = '#f8f9fa';
+                    });
+
+                    // Handle drop
+                    dropzone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#3498db';
+                        dropzone.style.background = '#f8f9fa';
+
+                        if (e.dataTransfer.files.length > 0) {
+                            fileInput.files = e.dataTransfer.files; // Assign to hidden input
+                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${e.dataTransfer.files[0].name}</span>`;
+                        }
+                    });
+
+                    // Handle classic selection
+                    fileInput.addEventListener('change', () => {
+                        if (fileInput.files.length > 0) {
+                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${fileInput.files[0].name}</span>`;
+                        }
+                    });
+                },
+                preConfirm: async () => {
+                    const name = document.getElementById('swal-name').value;
+                    const budget = document.getElementById('swal-budget').value;
+                    const fileInput = document.getElementById('swal-file');
+                    const format = document.getElementById('swal-format').value;
+
+                    if (!name || !budget) {
+                        Swal.showValidationMessage('名前と予算は必須です');
+                        return false;
+                    }
+
+                    // Validate Video Duration / Image Type
+                    if (fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+
+                        if (format === 'image') {
+                            if (!file.type.startsWith('image/')) {
+                                Swal.showValidationMessage('画像スライドプランには画像ファイルをアップロードしてください');
+                                return false;
+                            }
+                        } else if (file.type.startsWith('video/')) {
+                            try {
+                                const duration = await getVideoDuration(file);
+                                let isValid = true;
+                                let expected = "";
+
+                                if (format === 'standard' && (duration < 14 || duration > 46)) {
+                                    isValid = false; expected = "最大45秒";
+                                } else if (format === 'short' && (duration < 4 || duration > 10)) { // 5-8s but slightly lenient
+                                    isValid = false; expected = "5~8秒";
+                                }
+
+                                if (!isValid) {
+                                    Swal.showValidationMessage(`動画の長さが一致しません。\n現在: ${duration.toFixed(1)}秒 / プラン規定: ${expected}`);
+                                    return false;
+                                }
+                            } catch (e) {
+                                Swal.showValidationMessage('動画ファイルの検証に失敗しました');
+                                return false;
+                            }
+                        }
+                    }
+
+                    // Convert to Base64 if file is present
+                    let fileUrl = null;
+                    if (fileInput.files.length > 0) {
+                        try {
+                            fileUrl = await fileToBase64(fileInput.files[0]);
+                        } catch (e) {
+                            console.error("File Read Error:", e);
+                            Swal.showValidationMessage('ファイルの読み込みに失敗しました');
+                            return false;
+                        }
+                    }
+
+                    return {
+                        name: name,
+                        budget: budget,
+                        start: document.getElementById('swal-start').value,
+                        end: document.getElementById('swal-end').value,
+                        trigger: document.getElementById('swal-trigger')?.value,
+                        target: document.getElementById('swal-target')?.value,
+                        gender: document.getElementById('swal-gender').value,
+                        age: document.getElementById('swal-age').value,
+                        time: document.getElementById('swal-time').value,
+                        format: format,
+                        ytUrl: document.getElementById('swal-yt-url').value,
+                        fileUrl: fileUrl, // Send Base64
+                        fileName: fileInput.files.length > 0 ? fileInput.files[0].name : null // Send Filename
+                    }
+                }
+            });
+
+            if (formValues) {
+                // Call API with shared logic
+                try {
+                    // Try to get logged in user's email
+                    let adEmail = "client@example.com"; 
+                    try {
+                        const meRes = await fetch(`${API_URL}/api/user/me`);
+                        const meData = await meRes.json();
+                        if (meData && meData.user && meData.user.email) {
+                            adEmail = meData.user.email;
+                        }
+                    } catch(e) {}
+
+                    const res = await fetch(`${API_URL}/api/campaigns`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: formValues.name,
+                            budget: formValues.budget,
+                            start: formValues.start,
+                            end: formValues.end,
+                            plan: plan,
+                            trigger: (plan === 'moment') ? { weather: formValues.trigger } : null,
+                            target_imp: (plan === 'impression') ? parseInt(formValues.target) : null,
+                            targeting: {
+                                gender: formValues.gender,
+                                age: formValues.age,
+                                time: formValues.time
+                            },
+                            youtube_url: formValues.ytUrl,
+                            url: formValues.fileUrl, // Pass Base64 as main URL
+                            filename: formValues.fileName, // Store original filename
+                            format: formValues.format,
+                            ad_email: adEmail
+                        })
+                    });
+
+                    if (res.ok) {
+                        let targetInfo = "";
+                        if (formValues.gender !== 'all' || formValues.age !== 'all' || formValues.time !== 'all') {
+                            const genderMap = { 'female': '女性', 'male': '男性', 'all': '指定なし' };
+                            const ageMap = { '20s': '20代', '30s': '30代', '40s': '40代', 'senior': '50代+', 'all': '指定なし' };
+                            const timeMap = { 'morning': '朝', 'lunch': '昼', 'evening': '夕方', 'night': '夜', 'all': '終日' };
+
+                            targetInfo = `<br><div style="margin-top:10px; padding:10px; background:#f0f8ff; border-radius:4px; text-align:left; font-size:12px;">
+                                <b>🎯 ターゲティング設定:</b><br>
+                                ・性別: ${genderMap[formValues.gender] || formValues.gender}<br>
+                                ・年代: ${ageMap[formValues.age] || formValues.age}<br>
+                                ・時間: ${timeMap[formValues.time] || formValues.time}
+                            </div>`;
+                        }
+
+                        Swal.fire({
+                            title: '配信設定完了！',
+                            html: `キャンペーン「${formValues.name}」を作成しました。${targetInfo}<br>
+                                   <div style="margin-top:10px; font-size:14px; color:#555;">
+                                   データは分析ダッシュボード(Advertiser Dashboard)に連携されます。
+                                   <br><b>※費用はアカウント残高（Budget）から消費されます</b>
+                                   </div>`,
+                            icon: 'success',
+                            showCancelButton: true,
+                            confirmButtonText: '分析ダッシュボードへ移動',
+                            cancelButtonText: '閉じる'
+                        }).then(async (result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/advertiser/analytics';
+                            } else {
+                                if (typeof loadData === 'function') loadData();
+                            }
+                        });
+                    } else {
+                        throw new Error('API Error');
+                    }
+                } catch (e) {
+                    console.error("Campaign Creation Failed:", e);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '配信エラー (詳細)',
+                        html: `
+                             <div style="text-align:left; font-size:12px;">
+                                 <b>エラー内容:</b> ${e.message}<br>
+                                 <details style="margin-top:5px; color:#555;">
+                                     <summary>技術詳細 (Stack Trace)</summary>
+                                     <pre style="background:#eee; padding:5px; overflow:auto; max-height:100px;">${e.stack || 'No stack trace'}</pre>
+                                 </details>
+                                 <br>
+                                 ※ サーバー(http://localhost:3000)が起動しているか確認してください。<br>
+                                 ※ ファイルサイズが大きすぎる可能性があります(Max 50MB)。
+                             </div>
+                         `,
+                        confirmButtonText: '閉じる'
+                    });
+                }
+            }
+        }
+
+
+        // --- NEW FEATURES ---
+        window.currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            function updateDashboardDate() {
+                const dateSpan = document.getElementById('current-date-text');
+                if (dateSpan) {
+                    const now = new Date();
+                    const days = ['日', '月', '火', '水', '木', '金', '土'];
+                    const year = now.getFullYear();
+                    const month = now.getMonth() + 1;
+                    const d = now.getDate();
+                    const dayStr = days[now.getDay()];
+                    dateSpan.innerText = `📅 今日: ${year}/${month.toString().padStart(2, '0')}/${d.toString().padStart(2, '0')} (${dayStr})`;
+                }
+            }
+            updateDashboardDate();
+
+            // Check past midnight crossing every hour
+            setInterval(updateDashboardDate, 3600000);
+
+            try {
+                // Fetch User Info
+                const res = await fetch(`${API_URL}/api/user/me`);
+                const data = await res.json();
+                if (data.success && data.user) {
+                    window.currentUser = data.user;
+
+                    // Update Sidebar Email
+                    const emailEl = document.getElementById('user-email');
+                    if (emailEl) emailEl.innerText = data.user.email;
+                }
+            } catch (e) {
+                console.error("Failed to fetch user info", e);
+            }
+
+            // Ensure loadData is called if not already triggered by other means
+            if (typeof loadData === 'function') setTimeout(loadData, 500);
+        });
+
+        async function registerCreditCard() {
+            const { value: amount } = await Swal.fire({
+                title: '予算チャージ (Square決済)',
+                html: 'チャージする金額（円）を入力してください。',
+                input: 'number',
+                inputAttributes: { min: 1000, step: 1000 },
+                inputValue: 100000,
+                showCancelButton: true,
+                confirmButtonText: '決済ページへ進む'
+            });
+
+            if (amount) {
+                Swal.fire({
+                    title: '決済情報の入力',
+                    html: `
+                        <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px;">
+                            <div id="google-pay-button"></div>
+                            <div id="sq-card-container"></div>
+                            <button id="sq-creditcard" style="padding:10px; background:#0f172a; color:white; border-radius:5px; border:none; cursor:pointer;">クレジットカードで決済</button>
+                            <div id="sq-status" style="color:#ef4444; font-weight:bold; font-size:12px; margin-top:5px;"></div>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    showCancelButton: true,
+                    didOpen: () => {
+                        initializeSquarePayment(amount, 'sq-card-container', () => {
+                            const b = parseInt(localStorage.getItem('accountBudget') || "1000000");
+                            localStorage.setItem('accountBudget', b + parseInt(amount));
+                            updateBudgetDisplays();
+                            Swal.fire('成功', '決済が完了し、アカウントの予算が追加されました', 'success');
+                        });
+                    }
+                });
+            }
+        }
+
+        async function updateBudgetDisplays() {
+            try {
+                const res = await fetch(`${API_URL}/api/campaigns`);
+                if(res.ok) {
+                    const camps = await res.json();
+                    let totalSpend = 0;
+                    camps.forEach(c => totalSpend += Number(c.spend || 0));
+                    const spendEl = document.getElementById('account-spend-display');
+                    if(spendEl) spendEl.innerText = totalSpend.toLocaleString();
+                }
+                const b = parseInt(localStorage.getItem('accountBudget') || "1000000");
+                const budgetEl = document.getElementById('account-budget-display');
+                if(budgetEl) budgetEl.innerText = b.toLocaleString();
+            } catch(e) { console.error(e) }
+        }
+
+        // Call update on load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(updateBudgetDisplays, 1000);
+        });
+
+        function handleSupport() {
+            const email = window.currentUser ? window.currentUser.email : 'Guest';
+            Swal.fire({
+                title: 'お問い合わせ',
+                html: `
+                    <p style="font-size:14px; color:#555; margin-bottom:15px; text-align:left;">
+                        サポート等のご連絡はこちらから送信してください。<br>
+                        <span style="color:#7f8c8d; font-size:12px;">From: <b>${email}</b></span><br>
+                        <span style="color:#7f8c8d; font-size:12px;">To: <b>info@retail-ad.awsapps.com</b></span>
+                    </p>
+                    <textarea id="support-msg" class="swal2-textarea" placeholder="お問い合わせ内容を入力してください..." style="margin-top:5px;"></textarea>
+                `,
+                confirmButtonText: '送信 (Send)',
+                showCancelButton: true,
+                preConfirm: () => {
+                    const msg = document.getElementById('support-msg').value;
+                    if (!msg) Swal.showValidationMessage('メッセージを入力してください');
+                    return msg;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Simulation
+                    Swal.fire({
+                        icon: 'success',
+                        title: '送信完了',
+                        html: `お問い合わせを受け付けました。<br>担当者より <b>${email}</b> 宛にご連絡いたします。`
+                    });
+                }
+            });
+        }
+
+        // Override editProfile to show email
+        const originalEditProfile = window.editProfile;
+        window.editProfile = function () {
+            const email = window.currentUser ? window.currentUser.email : 'Unknown';
+            const currentBrand = document.getElementById('brand-name').innerText;
+
+            Swal.fire({
+                title: 'プロフィール編集',
+                html: `
+                    <label style="display:block; text-align:left; font-size:12px; color:#7f8c8d;">Login Email (Read-only)</label>
+                    <input class="swal2-input" value="${email}" disabled style="background:#f1f1f1; color:#7f8c8d;">
+                    <label style="display:block; text-align:left; font-size:12px; margin-top:10px;">Brand Name</label>
+                    <input id="edit-brand" class="swal2-input" value="${currentBrand === 'My Brand' ? '' : currentBrand}" placeholder="Enter Brand Name">
+                `,
+                confirmButtonText: '保存 (Save)',
+                showCancelButton: true,
+                preConfirm: () => {
+                    return document.getElementById('edit-brand').value;
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    document.getElementById('brand-name').innerText = result.value;
+                    Swal.fire('Saved', 'Brand name updated!', 'success');
+                }
+            });
+        }
+    </script>
+
+    <nav class="mobile-nav">
+        <div class="nav-btn" onclick="window.open('business_lp.html', '_blank')">
+            <i>📖</i><span>ビジネスモデル解説 (LP)</span>
+        </div>
+        <div class="nav-btn" onclick="showPanel('api')">
+            <i>⚙️</i><span>設定</span>
+        </div>
+        <div class="nav-btn" onclick="window.open('advertiser_dashboard.html', '_blank')">
+            <i>📈</i><span>分析</span>
+        </div>
+        <div class="nav-btn" onclick="handleSupport()">
+            <i>📞</i><span>サポート</span>
+        </div>
+        <div class="nav-btn" onclick="showFullMenu()">
+            <i>≡</i><span>メニュー</span>
+        </div>
+    </nav>
+    <script>
+        // Feature Parity: Sidebar features in one menu
+        function showFullMenu() {
+            Swal.fire({
+                title: 'その他メニュー',
+                html: `
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center;">
+                        <button onclick="scrollToCampaign(); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#3498db;">📢 新規配信作成</button>
+                        <button onclick="editProfile();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#95a5a6;">👤 My Brand編集</button>
+                    </div>
+                    <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                        <p style="font-size:12px; color:#999; margin-bottom:5px;">お支払い設定</p>
+                        <button onclick="handlePayment(); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2ecc71;">💳 支払い方法管理</button>
+                    </div>
+                    <div style="margin-top:15px;">
+                         <button onclick="location.href='login_portal.html';" class="swal2-cancel swal2-styled" style="background:#555;">🚪 ログアウト</button>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+
+        function handlePayment() {
+            // Clone the form from hidden sidebar
+            const originalForm = document.getElementById('card-form');
+            if (!originalForm) {
+                Swal.fire('Error', 'Payment form not found', 'error');
+                return;
+            }
+            const formClone = originalForm.cloneNode(true);
+            formClone.style.display = 'block';
+
+            Swal.fire({
+                title: 'お支払い設定 (Payment)',
+                html: formClone,
+                showConfirmButton: true,
+                confirmButtonText: '保存 (Save)',
+                didOpen: () => {
+                    // Logic to handle inputs if needed
+                }
+            }).then(async (res) => {
+                if (res.isConfirmed) {
+                    Swal.fire({
+                        title: '接続中...',
+                        text: 'GMOペイメントゲートウェイに接続しています。',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    try {
+                        Swal.fire({
+                            title: '決済情報の登録',
+                            html: `
+                                <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px; width: 300px; margin: 0 auto;">
+                                    <div id="google-pay-button"></div>
+                                    <div id="sq-card-container"></div>
+                                    <button id="sq-creditcard" style="padding:10px; background:#10B981; color:white; border-radius:5px; border:none; cursor:pointer;">クレジットカードで登録</button>
+                                    <div id="sq-status" style="color:#ef4444; font-weight:bold; font-size:12px; margin-top:5px;"></div>
+                                </div>
+                            `,
+                            showConfirmButton: false,
+                            showCancelButton: true,
+                            didOpen: () => {
+                                initializeSquarePayment(100, 'sq-card-container', () => {
+                                    Swal.fire('成功', '支払い情報の登録が完了し、システムに連携されました。', 'success');
+                                });
+                            }
+                        });
+                    } catch (e) {
+                        Swal.fire('エラー', '決済機能の呼び出しに失敗しました', 'error');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

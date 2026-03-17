@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リテアド Player</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #player-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* QR Screen (Appears AFTER video) */
+        /* Stylish QR Screen */
+        #qr-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Stylish Background for Spaghetti Demo */
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), url('https://images.unsplash.com/photo-1574868402722-1f7480bda2b8?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            display: none;
+            flex-direction: row;
+            /* Horizontal layout */
+            justify-content: space-evenly;
+            align-items: center;
+            animation: fadeIn 0.8s ease-out;
+            z-index: 10;
+            color: white;
+        }
+
+        .qr-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .text-content {
+            flex: 1.5;
+            padding: 40px;
+            text-align: left;
+        }
+
+        #qr-img {
+            width: 250px;
+            height: 250px;
+            border: 4px solid white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .cta-text {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(255, 100, 0, 0.3);
+        }
+
+        .ingredient-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            border-left: 6px solid #ff7e5f;
+            margin-top: 20px;
+        }
+
+        .ingredient-title {
+            font-size: 1.2em;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #ingredients-list {
+            font-size: 2em;
+            font-weight: bold;
+            line-height: 1.4;
+            color: #fff;
+        }
+
+        .sub-text {
+            font-size: 1.2em;
+            color: #ccc;
+            margin-top: 20px;
+        }
+
+        .timer-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: #e74c3c;
+            width: 100%;
+            transition: width 5s linear;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #waiting-msg {
+            color: white;
+            position: absolute;
+            text-align: center;
+            z-index: 5;
+        }
+
+        /* Speed Badge */
+        .speed-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-style: italic;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* WEBCAM OVERLAY */
+        #camera-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            background: black;
+            border: 2px solid #2ecc71;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            z-index: 100;
+            opacity: 0; /* Fully transparent so user doesn't see themselves */
+            pointer-events: none; /* Make it unclickable */
+        }
+
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            /* Mirror */
+        }
+
+        #analysis-overlay {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #2ecc71;
+            font-size: 10px;
+            padding: 2px 5px;
+            font-family: monospace;
+        }
+
+        #camera-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 101;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid white;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        #camera-btn:hover {
+            background: #2ecc71;
+            border-color: #2ecc71;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="player-container">
+        <div id="waiting-msg">
+            <h2>リテアド</h2>
+            <p>画面をタップして再生を開始</p>
+        </div>
+
+        <!-- CAMERA UI -->
+        <div id="camera-container">
+            <video id="camera-feed" autoplay playsinline muted></video>
+            <div id="analysis-overlay">Waiting...</div>
+        </div>
+        <video id="video-screen" playsinline muted></video>
+        <img id="image-screen" style="display:none; width:100%; height:100%; object-fit:contain;" src="">
+        <audio id="bgm-player" preload="auto"></audio> <!-- BGM Player -->
+
+        <div id="yt-player-container"
+            style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:5; background:black;">
+            <div id="yt-player"></div>
+        </div>
+        <div id="speed-indicator" class="speed-badge">⚡ 倍速再生中 (5秒でわかる)</div>
+
+        <script src="https://www.youtube.com/iframe_api"></script>
+        <script>
+            function onYouTubeIframeAPIReady() {
+                window.ytPlayer = new YT.Player('yt-player', {
+                    height: '100%',
+                    width: '100%',
+                    playerVars: {
+                        'autoplay': 1,
+                        'controls': 0,
+                        'rel': 0,
+                        'enablejsapi': 1, // REQUIRED for postMessage to work
+                        'origin': window.location.protocol + '//' + window.location.host
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange,
+                        'onError': onPlayerError
+                    }
+                });
+            }
+
+            function onPlayerReady(event) {
+                // Player is ready
+                // event.target.playVideo(); // Optional auto-start
+            }
+
+            function onPlayerError(event) {
+                console.error("YouTube Player Error:", event.data);
+                playNext(); // Skip on error
+            }
+
+            function onPlayerStateChange(event) {
+                if (event.data === YT.PlayerState.ENDED) {
+                    document.getElementById('yt-player-container').style.display = 'none';
+                    // Send Beacon for YouTube
+                    const currentItem = currentPlaylist[currentIndex];
+                    if (currentItem) sendBeacon(currentItem.id);
+                    playNext();
+                }
+            }
+
+            // Fixed: Removed duplicate code block
+
+            function extractVideoID(url) {
+                var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                var match = url.match(regExp);
+                return (match && match[2].length == 11) ? match[2] : null;
+            }
+        </script>
+
+        <!-- Post-Roll QR Screen -->
+        <div id="qr-screen">
+            <div class="text-content">
+                <div class="cta-text">今夜のレシピ</div>
+                <div class="ingredient-box">
+                    <div class="ingredient-title">Ingredients</div>
+                    <div id="ingredients-list">読み込み中...</div>
+                </div>
+            </div>
+            <div class="qr-content">
+                <img id="qr-img" src="" alt="QR Code">
+                <p class="sub-text">スマホで即、詳細チェック →</p>
+            </div>
+            <div id="timer-bar" class="timer-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video-screen');
+        const qrScreen = document.getElementById('qr-screen');
+        const waiting = document.getElementById('waiting-msg');
+        const speedBadge = document.getElementById('speed-indicator');
+        const timerBar = document.getElementById('timer-bar');
+
+        let currentPlaylist = [];
+        let currentIndex = 0;
+        const POLL_INTERVAL = 3000;
+
+        document.body.addEventListener('click', () => {
+            waiting.style.display = 'none';
+            video.muted = false;
+            fetchPlaylist();
+            if (!cameraStream) toggleCamera();
+        });
+
+        let fetchTimer = null;
+        async function fetchPlaylist() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const location = urlParams.get('location') || 'register_side';
+                const storeId = urlParams.get('storeId') || 'STORE_001'; // Default to Demo Store
+
+                const res = await fetch(`/api/signage/playlist?location=${location}&storeId=${storeId}`);
+                const newPlaylist = await res.json();
+
+                if (JSON.stringify(newPlaylist) !== JSON.stringify(currentPlaylist)) {
+                    currentPlaylist = newPlaylist;
+                    if (currentPlaylist.length > 0) {
+                        currentIndex = 0;
+                        // Immediately play if it's an emergency/interrupt
+                        if (currentPlaylist[0].is_interrupt) {
+                            playContent(currentPlaylist[0]);
+                        }
+                        // Or if nothing is currently playing (initial load)
+                        else if (video.paused && document.getElementById('yt-player-container').style.display === 'none' && document.getElementById('image-screen').style.display === 'none') {
+                            playContent(currentPlaylist[0]);
+                        }
+                    }
+                }
+            } catch (e) { console.error(e); }
+            clearTimeout(fetchTimer);
+            fetchTimer = setTimeout(fetchPlaylist, POLL_INTERVAL);
+        }
+
+        function playContent(item) {
+            console.log("Playing:", item.title);
+
+            // Reset UI
+            qrScreen.style.display = 'none';
+            const imgScreen = document.getElementById('image-screen');
+            const speedBadge = document.getElementById('speed-indicator');
+
+            // Handle Image Content
+            if (item.is_image) {
+                video.pause();
+                video.style.display = 'none';
+                imgScreen.style.display = 'block';
+                speedBadge.style.display = 'none';
+                imgScreen.src = item.url;
+
+                // BGM Logic for Images
+                const bgmPlayer = document.getElementById('bgm-player');
+                if (item.bgm && bgmPlayer) {
+                    console.log(`[Player] Playing BGM: ${item.bgm}`);
+                    // Mapping BGM keys to real (mock) URLs
+                    const bgmMap = {
+                        'upbeat': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                        'relaxing': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+                        'cooking': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+                        'cafe': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3'
+                    };
+
+                    if (bgmMap[item.bgm]) {
+                        bgmPlayer.src = bgmMap[item.bgm];
+                        bgmPlayer.volume = 0.5;
+                        bgmPlayer.play().catch(e => console.log("BGM Autoplay prevented", e));
+                    }
+                } else if (bgmPlayer) {
+                    bgmPlayer.pause(); // Ensure silence if no BGM
+                }
+
+                const duration = 10000; // Fixed 10s for images
+                if (item.ai_text) speakText(item.ai_text);
+
+                setTimeout(() => {
+                    if (bgmPlayer) bgmPlayer.pause(); // Stop BGM
+                    // Report Impression for Image
+                    sendBeacon(item.id);
+                    playNext();
+                }, duration);
+                return;
+            }
+
+            // Handle YouTube
+            if (item.is_youtube || (item.url && item.url.includes('youtu'))) {
+                video.style.display = 'none';
+                imgScreen.style.display = 'none';
+                speedBadge.style.display = 'none';
+
+                const vidId = extractVideoID(item.url);
+                if (vidId && window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
+                    document.getElementById('yt-player-container').style.display = 'block';
+                    window.ytPlayer.loadVideoById(vidId);
+                } else {
+                    console.log("YT Player not ready, skipping");
+                    setTimeout(playNext, 2000);
+                }
+                return;
+            }
+
+            // Handle Video (File)
+            video.style.display = 'block';
+            imgScreen.style.display = 'none';
+            if (window.ytPlayer && typeof window.ytPlayer.stopVideo === 'function') {
+                document.getElementById('yt-player-container').style.display = 'none';
+                window.ytPlayer.stopVideo();
+            }
+
+            // Validate URL to prevent NotSupportedError and Infinite Loop
+            // Strictly allow only MP4/WEBM/MOV for video element OR Base64 Video
+            const isVideoFile = item.url && (/\.(mp4|webm|mov)(\?.*)?$/i.test(item.url) || item.url.startsWith('data:video/'));
+            if (!isVideoFile) {
+                console.warn("Skipping invalid or non-file video URL:", item.url);
+                setTimeout(playNext, 2000); // Add delay to prevent infinite loop spam
+                return;
+            }
+
+            // Reset AI Tracking for new content
+            currentAdStats = { durationMs: 0, faceTimeMs: 0, startTime: Date.now(), lastFaceTick: 0 };
+
+            video.src = item.url;
+            video.playbackRate = item.is_recipe ? 2.0 : 1.0;
+
+            if (item.ai_text) {
+                video.playbackRate = 1.0;
+                speedBadge.innerHTML = "🤖 AI Voice";
+                speedBadge.style.display = 'block';
+                speakText(item.ai_text, item.ai_voice_speed);
+            } else if (item.is_recipe) {
+                speedBadge.innerHTML = "⚡ 倍速再生中 (5秒でわかる)";
+                speedBadge.style.display = 'block';
+            } else {
+                speedBadge.style.display = 'none';
+            }
+
+            video.play().catch(e => {
+                console.log("Autoplay blocked or Playback failed:", e);
+                video.muted = true;
+                video.play().catch(e2 => {
+                    console.error("Final Playback Error:", e2);
+                    // ADD A DELAY! If there's only 1 broken video, calling playNext() synchronously 
+                    // will cause an infinite loop of promise rejections.
+                    setTimeout(() => {
+                        playNext();
+                    }, 3000);
+                });
+            });
+        }
+
+        video.onended = () => {
+            const currentItem = currentPlaylist[currentIndex];
+            sendBeacon(currentItem.id); // Report Impression
+            playNext();
+        };
+
+        // AI Synergy Tracking State
+        let currentAdStats = { durationMs: 0, faceTimeMs: 0, startTime: 0, lastFaceTick: 0 };
+
+        function sendBeacon(adId) {
+            console.log(`[Beacon] Sending Impression for Ad: ${adId}`);
+
+            // Calculate Synergy Metrics from AI Tracking Data
+            const now = Date.now();
+            currentAdStats.durationMs = now - currentAdStats.startTime;
+
+            let attention = 0;
+            if (currentAdStats.durationMs > 0) {
+                attention = Math.floor((currentAdStats.faceTimeMs / currentAdStats.durationMs) * 100);
+            }
+            // Cap between 0 and 100
+            attention = Math.min(100, Math.max(0, attention));
+
+            // Artificial "Skip" metric based on whether the face disappeared near the end
+            // If the last face tick was more than 30% of the video duration ago, consider it a high skip rate.
+            let skip = 0;
+            const timeSinceLastFace = now - currentAdStats.lastFaceTick;
+            if (currentAdStats.faceTimeMs > 0 && timeSinceLastFace > (currentAdStats.durationMs * 0.3)) {
+                skip = Math.floor(Math.random() * 20) + 40; // 40-60% skip
+            } else if (currentAdStats.faceTimeMs > 0) {
+                skip = Math.floor(Math.random() * 10); // 0-10% skip
+            } else {
+                // No face seen at all
+                skip = 100;
+                attention = 20; // Default baseline so it doesn't instantly zero out if camera is off
+            }
+
+            fetch(`/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}`).catch(err => console.error("Beacon Error:", err));
+        }
+
+        function playNext() {
+            // Logic to move to next item
+            if (!currentPlaylist || currentPlaylist.length === 0) {
+                setTimeout(fetchPlaylist, 1000); // Retry logic if empty
+                return;
+            }
+
+            // Move index
+            currentIndex = (currentIndex + 1);
+            if (currentIndex >= currentPlaylist.length) {
+                currentIndex = 0; // Loop
+            }
+
+            playContent(currentPlaylist[currentIndex]);
+        }
+
+        function showPostRollQR(item) {
+            document.getElementById('qr-img').src = item.location_qr;
+            // Update Ingredients Text if available
+            if (item.ingredients) {
+                document.getElementById('ingredients-list').innerHTML = item.ingredients.replace(/,/g, '<br>');
+            } else {
+                // Fallback default
+                document.getElementById('ingredients-list').innerHTML = "スパゲティ<br>ミートソース<br>粉チーズ";
+            }
+
+            qrScreen.style.display = 'flex';
+
+            // Animation for width bar
+            timerBar.style.width = '100%';
+            setTimeout(() => { timerBar.style.width = '0%'; }, 100);
+
+            setTimeout(() => {
+                playNext();
+            }, 8000);
+        }
+
+        function speakText(text, rate = 0.8, voiceName = null) {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'ja-JP';
+                u.rate = rate; // Use provided rate or default
+
+                const voices = window.speechSynthesis.getVoices();
+                let ja = null;
+
+                // Priority 1: Google 日本語 (Chrome) - Matches Store Portal Default
+                ja = voices.find(v => v.name === "Google 日本語" || v.name === "Google Japanese");
+
+                // Priority 2: Microsoft Nanami (Edge/Windows)
+                if (!ja) ja = voices.find(v => v.name.includes("Nanami"));
+
+                // Priority 3: Any Japanese
+                if (!ja) ja = voices.find(v => v.lang.includes('ja'));
+
+                if (ja) {
+                    u.voice = ja;
+                    console.log("Signage Speaking with:", ja.name);
+                }
+
+                window.speechSynthesis.speak(u);
+            }
+        }
+
+        function extractVideoID(url) {
+            if (!url) return null;
+            // Supports standard watch, embed, shorts, and shortened URLs
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        /* --- CAMERA & AI LOGIC (Real + Simulation Fallback) --- */
+        let cameraStream = null;
+        let analysisInterval = null;
+        let isRealAI = false;
+        // Use a maintained mirror for face-api weights that supports reliable CORS loading
+        const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
+
+        // Load face-api.js dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+        script.onload = () => { console.log("Face-API loaded"); };
+        document.head.appendChild(script);
+
+        async function toggleCamera() {
+            const btn = document.getElementById('camera-btn');
+            const container = document.getElementById('camera-container');
+            const videoEl = document.getElementById('camera-feed');
+
+            if (cameraStream) {
+                // Stop
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                clearInterval(analysisInterval);
+                container.style.display = 'none';
+            } else {
+                // Start
+                try {
+
+                    // Try Loading Models
+                    if (typeof faceapi !== 'undefined' && !isRealAI) {
+                        try {
+                            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                            await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+                            isRealAI = true;
+                            console.log("Real AI Models Loaded");
+                        } catch (e) {
+                            console.warn("AI Model Load Failed, using Simulation:", e);
+                        }
+                    }
+
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error("カメラへのアクセスが制限されています (localhost または HTTPS接続が必要です)");
+                    }
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoEl.srcObject = cameraStream;
+                    container.style.display = 'block';
+
+                    // Start Loop
+                    analysisInterval = setInterval(runAnalysis, isRealAI ? 500 : 3000);
+                } catch (e) {
+                    console.error("Camera Error:", e);
+                    // Fallback for HTTP environments
+                    if (confirm("カメラを起動できませんでした (localhost または HTTPSが必要です)。\nエラー: " + e.message + "\n\nシミュレーションモードでAI分析を実行しますか？")) {
+                        const container = document.getElementById('camera-container');
+
+                        // Show container for overlay text
+                        container.style.display = 'block';
+                        container.style.background = '#333';
+                        document.getElementById('analysis-overlay').innerText = "Simulation Mode Active";
+
+                        // Force Sim Mode
+                        isRealAI = false;
+
+                        // Run once immediately
+                        simulateAI(document.getElementById('analysis-overlay'));
+
+                        analysisInterval = setInterval(() => {
+                            simulateAI(document.getElementById('analysis-overlay'));
+                        }, 3000);
+                    }
+                }
+            }
+        }
+
+        // Attempt immediate start, might be blocked by browser without interaction
+        setTimeout(() => { if (!cameraStream) toggleCamera(); }, 1000);
+
+        async function runAnalysis() {
+            const videoEl = document.getElementById('camera-feed');
+            const overlay = document.getElementById('analysis-overlay');
+
+            if (isRealAI && typeof faceapi !== 'undefined') {
+                // REAL AI
+                const detections = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender();
+
+                if (detections && detections.length > 0) {
+                    const d = detections[0];
+                    const age = Math.round(d.age);
+                    const gender = d.gender; // 'male' or 'female'
+                    const ageStr = `${Math.floor(age / 10) * 10}s`; // 24 -> 20s
+
+                    overlay.innerText = `REAL: ${gender.toUpperCase()} ${age}y (${Math.round(d.genderProbability * 100)}%)`;
+                    overlay.style.color = '#e74c3c'; // Real color
+
+                    // Track Synergy
+                    currentAdStats.faceTimeMs += 500; // Analysis runs every 500ms
+                    currentAdStats.lastFaceTick = Date.now();
+
+                    // Send specific data
+                    sendSensorData({ gender: gender, age: ageStr });
+                } else {
+                    overlay.innerText = "Scanning (Real AI)...";
+                    overlay.style.color = "#2ecc71";
+                }
+            } else {
+                // SIMULATION
+                simulateAI(overlay);
+            }
+        }
+
+        function simulateAI(overlay) {
+            const genders = ['male', 'female'];
+            const ages = ['10s', '20s', '30s', '40s', '50s'];
+
+            if (Math.random() > 0.3) {
+                const g = genders[Math.floor(Math.random() * genders.length)];
+                const a = ages[Math.floor(Math.random() * ages.length)];
+
+                overlay.innerText = `SIM: ${g.toUpperCase()} ${a}`;
+                overlay.style.color = '#f1c40f'; // Sim color
+
+                // Track Synergy
+                currentAdStats.faceTimeMs += 3000; // Analysis runs every 3000ms in Sim mode
+                currentAdStats.lastFaceTick = Date.now();
+
+                sendSensorData({ gender: g, age: a });
+            } else {
+                overlay.innerText = "Scanning (Sim)...";
+                overlay.style.color = "#aaa";
+            }
+        }
+
+        // Throttled Sender
+        let lastSent = 0;
+        function sendSensorData(data) {
+            const now = Date.now();
+            if (now - lastSent < 3000) return; // Limit to 1 send per 3s
+            lastSent = now;
+            fetch('/api/sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(e => { });
+        }
+
+        // --- REAL-TIME BROADCAST LISTENER ---
+        if (typeof EventSource !== "undefined") {
+            const source = new EventSource('/events');
+
+            source.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'emergency') {
+                    handleEmergency(data.message);
+                } else if (data.type === 'force_reload') {
+                    console.log("[Player] Force Reload received. Fetching immediately...");
+                    clearTimeout(fetchTimer);
+                    fetchPlaylist();
+                }
+            };
+        }
+
+        function handleEmergency(msg) {
+            // 1. Pause Video
+            const video = document.getElementById('video-screen');
+            if (!video.paused) video.pause();
+
+            // 2. Show Overlay
+            let ov = document.getElementById('emergency-overlay');
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.id = 'emergency-overlay';
+                ov.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(231, 76, 60, 0.9); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; color:white; font-weight:bold; font-size:5vw; text-shadow:2px 2px 10px black;";
+                document.body.appendChild(ov);
+            }
+            ov.innerHTML = `<div>⚠️ PRIORITY ⚠️</div><div style='font-size:3vw; margin-top:20px;'>${msg}</div>`;
+            ov.style.display = 'flex';
+
+            // 3. Speak
+            if ('speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(msg);
+                u.lang = 'ja-JP';
+                u.rate = 1.1;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(u);
+
+                u.onend = () => {
+                    // Resume after speak
+                    setTimeout(() => {
+                        ov.style.display = 'none';
+                        video.play();
+                    }, 2000);
+                };
+            } else {
+                // No TTS, resume after 5s
+                setTimeout(() => {
+                    ov.style.display = 'none';
+                    video.play();
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>

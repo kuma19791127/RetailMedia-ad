@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailMedia Business - 店舗のDXを始めよう</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --accent: #f43f5e;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .btn-nav {
+            background: var(--primary);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white !important;
+            font-weight: 600;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            background: radical-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            overflow: hidden;
+        }
+
+        .hero-bg-anim {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: url('download111.png') no-repeat center center;
+            background-size: cover;
+            opacity: 0.2;
+            animation: slowZoom 30s infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes slowZoom {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.2);
+            }
+        }
+
+        .hero-content {
+            z-index: 10;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #60a5fa, #f43f5e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* Cards / Features */
+        .features {
+            padding: 100px 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid var(--glass);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .card p {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        /* Demo Video Area */
+        .video-section {
+            padding: 100px 0;
+            text-align: center;
+            background: #1e293b;
+        }
+
+        .video-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* CTA */
+        .cta-section {
+            padding: 120px 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, var(--dark), #1e1b4b);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            padding: 20px 50px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(244, 63, 94, 0.5);
+        }
+
+        /* API Integration Code Block */
+        .code-block {
+            background: #000;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            text-align: left;
+            margin-top: 20px;
+            color: #a5f3fc;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">Retail<span>Media</span>.biz</div>
+        <div class="nav-links">
+            <a href="#features">機能</a>
+            <a href="advertiser_dashboard.html">分析</a>
+            <a href="#api">API連携</a>
+            <a href="advertiser_dashboard.html" class="btn-nav">ログイン</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-bg-anim"></div>
+        <div class="hero-content">
+            <h1 style="font-size: 3rem; line-height: 1.2;">広告主様の広告を<br>店舗サイネージにYouTubeのように<br>自由に配信サービス(リテアド)。</h1>
+            <p class="subtitle">
+                面倒な契約も、複雑な入稿も不要。<br>
+                1再生1円〜の明瞭会計で、あなたの広告を店舗の「一等地」へ。
+            </p>
+            <a href="#cta" class="btn-primary">今すぐ始める (無料)</a>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="card">
+            <h3>🎥 自由な配信・明瞭会計</h3>
+            <p>管理画面から動画をアップロードするだけ。時間帯（1時間単位で細かく指定可能）、天気、店舗属性に合わせて「今、出したい広告」を即座に配信。不要になった場合はいつでも即座に<strong>配信停止（ワンクリック）</strong>が可能です。料金は完全従量課金制。
+            </p>
+        </div>
+        <div class="card" id="analytics">
+            <h3>📊 高度な分析機能</h3>
+            <p>カメラ付きのサイネージによる属性分析など、リアルタイムにPOSと連携したリッチなデータ提供が可能です。</p>
+        </div>
+        <div class="card">
+            <h3>🛒 POS連携 & CVR可視化</h3>
+            <p>POSシステムと連携し、「広告を見た人がその後何を買ったか」を追跡。インプレッションだけでなく、実際の売上貢献度（ROAS）を可視化します。</p>
+        </div>
+    </section>
+
+    <!-- YouTube Comparison Section -->
+    <section id="comparison" style="padding: 80px 20px; background: #1e1b4b;">
+        <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 30px; color: #f43f5e;">
+                「一般的な小売サイネージ」と「リテアド」の決定的な違い
+            </h2>
+            <p
+                style="font-size: 1.2rem; color: #cbd5e1; line-height: 1.8; margin-bottom: 40px; text-align: left; background: rgba(0,0,0,0.3); padding: 30px; border-radius: 12px; border-left: 5px solid #f43f5e;">
+                <strong>1. 「ただの動画再生機」か、「Webと同じ広告ネットワーク」か</strong><br>
+                従来のサイネージはUSBメモリを挿すか、本部からプレイリストを一斉送信して流し続ける「デジタル看板」に過ぎません。一方リテアドは、Google AdSenseやGoogle Ad
+                Manager(MCM)などの「Webの広告配信システム」と直接・自動で繋がっています。常にその瞬間に最も単価の高い（儲かる）広告枠をAIがオークションで選んで自動再生します。これはサイネージ業界における圧倒的なブレイクスルーです。<br><br>
+
+                <strong>2. 「コンテンツ」と「広告」の分断がない</strong><br>
+                従来のサイネージは商品のCMばかりが延々と流れ、すぐに見飽きられます。リテアドは、クリエイターが作った「面白い動画・役に立つレシピ動画」等（コンテンツ）を流す間に広告を挟み込む設計です。「番組を見るからCMも見る」というYouTubeと同じモデルで、お客さんの滞在の目（視聴率）を圧倒的に惹きつけます。<br><br>
+
+                <strong>3. 圧倒的なスケールメリット</strong><br>
+                1企業だけだと限定的な効果しか発揮できないサイネージパネルを、多くの小売り企業が参加するネットワーク（計30,000パネル規模）にすることで、広告主に圧倒的なスケールメリットを提供します。
+            <div
+                style="font-size: 0.95rem; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 8px; margin-top: 20px; text-align: left;">
+
+                <strong
+                    style="color: #cbd5e1; font-size: 1.1rem; border-bottom: 1px dotted rgba(255,255,255,0.2); padding-bottom: 5px; display: inline-block; margin-bottom: 15px;">
+                    【全国30,000パネルの実現シナリオ】
+                </strong>
+                <ul style="padding-left: 20px; margin-top: 5px; line-height: 1.6; color: #e2e8f0; margin-bottom: 25px;">
+                    <li><strong>ターゲット：</strong> 大手・中堅チェーン中心（1社平均 100店舗）</li>
+                    <li><strong>総店舗数：</strong> 60社 × 100店舗 = <strong>6,000店舗</strong></li>
+                    <li><strong>最大パネル数：</strong> 6,000店舗 × 5台(1店舗) = <strong
+                            style="color:#f43f5e; font-size: 1.1rem;">30,000 パネル</strong></li>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-top:8px;">
+                        ※（参考）第一目標である「8,000パネル」は、このモデルの「初期（約30社×中規模展開）」で十分に達成できる、極めて現実的なマイルストーンです。</p>
+                </ul>
+
+                <h4
+                    style="color: #f43f5e; font-size: 1.2rem; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                    🏪 メディア規模比較（効率化モデル）
+                </h4>
+
+                <div style="overflow-x: auto; margin-bottom: 40px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: center; color: #fff; border: 1px solid #475569;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.1);">
+                                <th style="padding: 15px; border: 1px solid #475569; width: 20%; font-size: 1.1rem;">比較項目</th>
+                                <th style="padding: 15px; border: 1px solid #475569; width: 40%; font-size: 1.1rem;">コンビニ大手（1社）</th>
+                                <th style="padding: 15px; border: 1px solid #475569; width: 40%; font-size: 1.1rem; color: #3b82f6;">リテアド＋α（60社）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">店舗数</td>
+                                <td style="padding: 15px; border: 1px solid #475569;">約16,300店</td>
+                                <td style="padding: 15px; border: 1px solid #475569;">6,000店（約1/3）</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">店当り設置</td>
+                                <td style="padding: 15px; border: 1px solid #475569;">2パネル（小型）</td>
+                                <td style="padding: 15px; border: 1px solid #475569; font-weight: bold;">5パネル（大型）</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">総パネル数</td>
+                                <td style="padding: 15px; border: 1px solid #475569; font-weight: bold;">約32,600</td>
+                                <td style="padding: 15px; border: 1px solid #475569; font-weight: bold; font-size: 1.2rem; color: #3b82f6;">30,000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4
+                    style="color: #f43f5e; font-size: 1.2rem; margin-top: 30px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                    💰 店舗モデル：実証実験（PoC）コスト試算表
+                </h4>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 10px;">※ 1台（パネル）あたり：縦 100cm × 横 100cm （1m × 1m）想定</p>
+                <div style="overflow-x: auto; margin-bottom: 25px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff; border: 1px solid #475569; font-size: 0.95rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.1);">
+                                <th style="padding: 12px; border: 1px solid #475569;">項目</th>
+                                <th style="padding: 12px; border: 1px solid #475569;">単価（1台）</th>
+                                <th style="padding: 12px; border: 1px solid #475569;">300台の総計（60社×5台）</th>
+                                <th style="padding: 12px; border: 1px solid #475569;">備考</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">機材調達費</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">12万 〜 20万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">3,600万 〜 6,000万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-size: 0.85rem; color: #cbd5e1;">透明LEDフィルム + 制御IC + 送信BOX（コントローラー）</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">輸入・国内検品</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">約2.5万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">750万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-size: 0.85rem; color: #cbd5e1;">関税(無税)・国内消費税(10%)、国際送料、動作確認</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">設置施工費</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">約4万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">1,200万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-size: 0.85rem; color: #cbd5e1;">ガラス面清掃、フィルム貼付作業、配線隠蔽処理</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">通信機器（無線Wi-Fi）</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">0.5万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">150万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-size: 0.85rem; color: #cbd5e1;">通信環境構築用（モバイルルーター・SIM初期費用等）</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; background: rgba(0,0,0,0.2);">予備機（約10%）</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">本体価格に準ずる</td>
+                                <td style="padding: 12px; border: 1px solid #475569;">360万 〜 600万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-size: 0.85rem; color: #cbd5e1;">貼付失敗やドット抜け交換用のストック 30台分</td>
+                            </tr>
+                            <tr style="background: rgba(244, 63, 94, 0.1);">
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; color: #f43f5e;">合計（初期投資）</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; color: #f43f5e;">19万 〜 27万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-weight: bold; color: #f43f5e; font-size: 1.1rem;">6,060万 〜 8,700万円</td>
+                                <td style="padding: 12px; border: 1px solid #475569; font-size: 0.85rem; color: #cbd5e1;">1台あたりの導入パッケージ費用（初期）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h5
+                    style="color: #cbd5e1; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px dotted rgba(255,255,255,0.1); padding-bottom: 5px;">
+                    💡 この比較から言える、リテアドの「圧倒的な強みと勝ち筋」
+                </h5>
+
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #fcd34d;">1. 実は「60社」の共同運用で、コンビニに匹敵するメディアが作れる</strong><br>
+                    「コンビニ1万6千店舗に機材を入れる」ハードルに比べ、実は「大手・中堅スーパーを60社（6,000店舗）」集めるだけで全国制覇と同等クラス（3万パネル）の日本最大級メディアが完成してしまいます。売り場面積が広く、1店舗に5台置けるスーパーならではのスケールメリットです。
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #34d399;">2. 顧客の「滞在時間」が根本的に違う（広告価値の圧倒的差）</strong><br>
+                    <ul style="padding-left: 20px; margin-top: 5px; line-height: 1.6;">
+                        <li><span style="color:#a7f3d0;">コンビニ:</span>
+                            顧客の滞在時間は平均「3〜5分」。目的買いが多く、レジ上のサイネージを見る時間はわずか数十秒です。</li>
+                        <li><span style="color:#a7f3d0;">リテアド（スーパー）:</span>
+                            顧客の滞在時間は平均「20〜40分」。「今日の夕飯何にしよう？」と悩みながら売り場（青果・鮮魚・精肉・惣菜）を回遊するため、設置された5つのパネルでじっくり広告やクリエイターの動画を見てもらえる時間があります。<strong
+                                style="color:#fff;">「視聴完了率」と「購買への影響力（CVR）」は当プラットフォームが圧倒的に有利</strong>です。</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <strong style="color: #f472b6;">3. 客単価の大きさがクリエイターと親和性抜群</strong><br>
+                    コンビニでのついで買い（+150円のスイーツ等）に対し、スーパーでは「動画を見て、ビール6缶パックと餃子の材料一式を買う（+1,500円）」といった大きなクロスセルが発生します。ここが、広告主にとって<strong
+                        style="color:#fff;">「コンビニのサイネージより、リテアドに広告費を出したい」</strong>と思わせる最大のキラーポイントです。
+                </div>
+
+                <div
+                    style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); padding: 15px; border-radius: 8px;">
+                    <strong style="color: #f43f5e; font-size: 1.1rem;">🔥 結論</strong><br>
+                    先行するコンビニの3万パネル網に対して、リテアドは「スーパー上位60社の3万パネルのネットワーク」で対抗でき、しかも<strong
+                        style="color:#fff;">「滞在時間の長さ」と「客単価の大きさがクリエイターと」</strong>の相乗効果で、広告リターンの「質」的な部分においてメディア価値を凌駕するポテンシャルを秘めています！
+                </div>
+            </div><br>
+
+            <strong>これを一言でまとめると…</strong><br>
+            従来のサイネージは単なる「映像を流す機械」ですが、リテアドは<strong>「店舗・メーカー・クリエイターの３者全員が自動で儲かるように設計された、AI搭載のリアル広告プラットフォーム」</strong>です。この事業は、単なる看板設置ではなく「売り場のYouTube化」による共同運用によるプラットフォーム戦略です。
+            </p>
+        </div>
+    </section>
+
+    <!-- POS Data Integration Benefits -->
+    <section id="pos-benefits"
+        style="padding: 80px 20px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.05);">
+        <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
+            <h2
+                style="font-size: 2.5rem; margin-bottom: 40px; background: linear-gradient(to right, #34d399, #3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                POSデータ連携による<br>圧倒的な分析力
+            </h2>
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; text-align: left;">
+                <div class="card" style="border: 1px solid #34d399;">
+                    <h3 style="color: #34d399;">📈 POSデータ連動とROAS可視化</h3>
+                    <p>「このCMを流したから、結果的に商品が何個売れたのか」を誰も正確に測れない従来のOOHとは違い、リテアドは「広告の再生データ」と「お店のPOS（レジ）の売上データ」を掛け合わせ、<strong>「このCMを流した時間帯に、実際にその商品が何個売れたか」</strong>という究極の効果（CVR）を完全に可視化します。
+                    </p>
+                </div>
+                <div class="card" style="border: 1px solid #3b82f6;">
+                    <h3 style="color: #3b82f6;">🎯 クロスセル効果を狙う配信</h3>
+                    <p>手法はクロスセルを狙います。惣菜コーナーで「餃子・からあげの動画」と一緒に「ビールのCM」を流し、顧客に「おいしい・飲みたい」と瞬間で理解できる訴求を実施し売上に繋げます。有機・オメガ3脂肪酸など、健康に関心の高い高齢者向けに、特化したプロの配信で情報を届けることも可能です。
+                    </p>
+                </div>
+                <div class="card" style="border: 1px solid #f472b6;">
+                    <h3 style="color: #f472b6;">💸 圧倒的強さの1st Party Data</h3>
+                    <p>Web上のCookieに頼るだけでなく、「実店舗のPOSデータ」という絶対に嘘をつかない確定された購買データを持っていることこそが最大の武器です。A/Bテストにより「広告を出した店舗群の方が、売上が統計的に有意に15%高かった」等のリフト値を証明できます。
+                    </p>
+                </div>
+            </div>
+            <div style="margin-top: 50px;">
+                <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.8;">
+                    リテアドは、単なる「広告配信」ではなく、<br>
+                    <strong>「店舗という現場でのマーケティング実験室」</strong>を提供します。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Strategy Section -->
+    <section id="plans" class="features" style="background:#0f172a;">
+        <h2
+            style="text-align:center; font-size:2.5rem; margin-bottom:50px; width:100%; grid-column: 1 / -1; background: linear-gradient(to right, #60a5fa, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            料金プラン戦略</h2>
+
+        <div class="card">
+            <div class="icon">👁️</div>
+            <h3>エンゲージメント向上 (CPM型)</h3>
+            <p>AIカメラで「見られた数」を正確に計測。1,000回視認あたりの課金で、確実な認知拡大を実現します。</p>
+        </div>
+        <div class="card">
+            <div class="icon">🛒</div>
+            <h3>成果報酬型広告 (CPA/POS連携)</h3>
+            <p>POSデータと連携し、広告視聴後の商品購入や来店といった「成果」が発生した場合のみ課金されます。</p>
+        </div>
+        <div class="card" style="border: 1px solid #f43f5e;">
+            <div class="icon">☔</div>
+            <h3 style="color:#f43f5e;">モーメント配信（状況連動）</h3>
+            <p>「雨が降ったら傘の広告」「気温30度超えでアイスの広告」など、特定の状況に合わせて自動配信します。</p>
+        </div>
+        <div class="card" style="border: 1px solid #3b82f6;">
+            <div class="icon">📈</div>
+            <h3 style="color:#3b82f6;">インプレッション配信</h3>
+            <p>純粋な再生回数ベースでの課金プラン。低コストで大量の露出を確保したい場合に最適です。</p>
+        </div>
+    </section>
+
+    <!-- Privacy Section (New) -->
+    <section id="privacy" style="padding: 80px 20px; background: rgba(15, 23, 42, 0.8); text-align: center;">
+        <div style="max-width: 900px; margin: 0 auto;">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🛡️</div>
+            <h2 style="font-size: 2.5rem; color: #fff; margin-bottom: 20px;">強力な個人情報保護</h2>
+            <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.8; margin-bottom: 40px;">
+                リテアドは「Privacy by Design」に基づき、個人データを保持しない安全な仕組みを構築しています。
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; text-align: left;">
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🚀 エッジAIによる即時破棄</h3>
+                    <p style="color: #94a3b8; line-height: 1.6;">
+                        サイネージ端末（エッジAIチップ）内で、「20代女性」「笑顔」「視線あり」といった属性データ（数値）に即座に変換します。<br>
+                        変換・分析が終わった瞬間（数ミリ秒後）、<strong>元の映像データは即座に破棄（上書き削除）</strong>され、メモリにも残りません。
+                    </p>
+                </div>
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🔒 個人データの完全非保持</h3>
+                    <p style="color: #94a3b8; line-height: 1.6;">
+                        万が一サーバーがハッキングされても、そこに<strong>個人画像データは一切存在しない</strong>ため、漏洩のリスク自体を根本から断ちます。<br>
+                        統計データのみをマーケティングに活用する、安心・安全なプラットフォームです。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="video-section">
+        <h2 style="font-size: 2.5rem; margin-bottom: 40px;">イメージ・デモ</h2>
+        <div class="video-container">
+            <!-- Embedding the demo video created earlier -->
+            <iframe src="demo_movie.html" width="100%" height="650px" frameborder="0"
+                style="background: black;"></iframe>
+        </div>
+    </section>
+
+    <section id="analytics" class="features"
+        style="grid-template-columns: 1fr 1fr; align-items: center; background: rgba(15, 23, 42, 0.5);">
+        <div style="text-align: center;">
+            <img src="Gemini_Generated_Image_p9upqcp9upqcp9up.png" alt="Analytics Dashboard"
+                style="max-width: 100%; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+        </div>
+        <div>
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px;">📊 高度な分析機能</h2>
+            <p style="font-size: 1.2rem; color:#cbd5e1; line-height: 1.6;">
+                カメラ付きのサイネージによる属性分析など<br>
+                リアルタイムにPOSと連携したリッチなデータ提供が可能です。<br>
+            </p>
+        </div>
+    </section>
+
+    <section id="api" class="features" style="grid-template-columns: 1fr 1fr; align-items: center;">
+        <div>
+            <h2 style="font-size: 2.5rem;">🔗 自社システムと連携</h2>
+            <p style="font-size: 1.2rem; color:#94a3b8; margin-bottom: 20px;">
+                開発者向けの強力な API / SDK を提供。<br>
+                在庫連動広告や、AIによる自動生成配信など、御社のマーケティングシステムとシームレスに統合できます。
+            </p>
+            <div class="code-block">
+                // Initialize RetailMedia SDK
+                const rm = new RetailMediaSDK({ apiKey: 'YOUR_KEY' });
+
+                // Push Ad based on Inventory
+                rm.campaign.create({
+                target: 'store_shibuya',
+                trigger: { stockLevel: 'high', weather: 'rainy' },
+                creative: 'ad_umbrella_sale.mp4'
+                });
+            </div>
+        </div>
+        <div style="text-align:center;">
+            <div
+                style="background:linear-gradient(45deg, #2563eb, #f43f5e); width:200px; height:200px; margin:0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 50px rgba(37,99,235,0.5);">
+                <span style="font-size:5rem;">API</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="cta" class="cta-section">
+        <h2 style="font-size: 3rem; margin-bottom: 20px;">さあ、店舗の<br>デジタルトランスフォーメーションを始めましょう</h2>
+        <p style="margin-bottom: 40px; color:#cbd5e1;">初期費用は無料。まずはアカウントを作成して、デモ配信をお試しください。</p>
+        <a href="login_portal.html" class="btn-primary">アカウント登録 (無料)</a>
+    </section>
+
+    <!-- Company Profile Section -->
+    <section id="company"
+        style="padding: 80px 20px; background: var(--dark); border-top: 1px solid rgba(255,255,255,0.05);">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h2 style="font-size: 2rem; margin-bottom: 30px; text-align: center; color: white;">運営会社</h2>
+            <div
+                style="background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 12px; border: 1px solid var(--glass);">
+                <table style="width: 100%; border-collapse: collapse; color: #cbd5e1; font-size: 0.95rem;">
+                    <tbody>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 15px; text-align: left; width: 30%; color: #94a3b8;">会社名</th>
+                            <td style="padding: 15px;">non-logi株式会社</td>
+                        </tr>
+
+
+                        <tr>
+                            <th style="padding: 15px; text-align: left; color: #94a3b8;">事業内容</th>
+                            <td style="padding: 15px;">リテールメディアシステムの開発・運営、広告代理業</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer with Policies -->
+    <footer
+        style="background: #000; padding: 40px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div
+            style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">利用規約</a>
+                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">プライバシーポリシー</a>
+                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">特定商取引法に基づく表記</a>
+                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">お問い合わせ</a>
+            </div>
+            <p style="color: #64748b; font-size: 0.8rem; margin: 0;">&copy; 2026 RetailMedia.biz. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+</body>
+
+</html>
