@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.retail-ad.com/sitemap.xml
