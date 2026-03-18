@@ -10,7 +10,7 @@ async function createDocs() {
     // Slide 1: Title
     let slide1 = pptx.addSlide();
     slide1.background = { color: 'ffffff' };
-    slide1.addText('次世代リテールメディアシステム\n(LiteAd / Connect)', { x: 0.5, y: 1.5, w: 9, h: 2, fontSize: 44, bold: true, color: 'f43f5e', align: 'center' });
+    slide1.addText('次世代リテールメディアシステム\n(retail-ad / Connect)', { x: 0.5, y: 1.5, w: 9, h: 2, fontSize: 44, bold: true, color: 'f43f5e', align: 'center' });
     slide1.addText('次世代ビジネスモデル＆事業計画資料', { x: 0.5, y: 3.5, w: 9, h: 1, fontSize: 24, color: '334155', align: 'center' });
 
     // Slide 2: Problem
@@ -46,12 +46,12 @@ async function createDocs() {
         { text: '   「集客でき、見られる動画」を提供した再生数と成果の対価として報酬分配（月末締め翌月末等自動処理）。\n\n', options: { fontSize: 14, color: '64748b' } },
         { text: ' 🏪 店舗 / 小売企業 (Retailer)\n', options: { fontSize: 16, bold: true } },
         { text: '   広告の放映枠(場所・サイネージ機材)を提供した対価。集客+商品の実売上もUPするWin-Win。\n\n', options: { fontSize: 14, color: '64748b' } },
-        { text: ' ⚙️ プラットフォーマー (LiteAd Owner)\n', options: { fontSize: 16, bold: true } },
+        { text: ' ⚙️ プラットフォーマー (retail-ad Owner)\n', options: { fontSize: 16, bold: true } },
         { text: '   システム利用料、AI分析手数料（DSPマージン含む）としてシステム全体からプラットフォーム利益を獲得。', options: { fontSize: 14, color: '64748b' } }
     ], { x: 0.5, y: 1.5, w: 9, h: 3.5 });
 
-    await pptx.writeFile({ fileName: 'LiteAd_BusinessModel_Presentation.pptx' });
-    console.log('[Success] PowerPoint (LiteAd_BusinessModel_Presentation.pptx) generated!');
+    await pptx.writeFile({ fileName: 'retail-ad_BusinessModel_Presentation.pptx' });
+    console.log('[Success] PowerPoint (retail-ad_BusinessModel_Presentation.pptx) generated!');
 
     // Word Document
     const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
@@ -61,7 +61,7 @@ async function createDocs() {
             properties: {},
             children: [
                 new Paragraph({
-                    text: "次世代リテールメディアシステム (LiteAd / Connect)",
+                    text: "次世代リテールメディアシステム (retail-ad / Connect)",
                     heading: HeadingLevel.TITLE,
                     alignment: docx.AlignmentType.CENTER,
                     spacing: { after: 400 }
@@ -105,8 +105,8 @@ async function createDocs() {
     });
 
     const b64string = await Packer.toBuffer(doc);
-    fs.writeFileSync('LiteAd_BusinessModel_Document.docx', b64string);
-    console.log('[Success] Word Document (LiteAd_BusinessModel_Document.docx) generated!');
+    fs.writeFileSync('retail-ad_BusinessModel_Document.docx', b64string);
+    console.log('[Success] Word Document (retail-ad_BusinessModel_Document.docx) generated!');
 }
 
 createDocs().catch(err => {

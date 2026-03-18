@@ -1,17 +1,17 @@
 /**
- * LiteAd POS Connect SDK (v1.0.0)
+ * retail-ad POS Connect SDK (v1.0.0)
  * リテールメディア「リテアド」成果報酬型連動用SDK
  * 
  * Usage:
- * const liteAd = new LiteAdPOS('API_KEY_XXXX');
+ * const liteAd = new retail-adPOS('API_KEY_XXXX');
  * liteAd.trackSale({ transactionId: 'TX123', amount: 1500, items: ['driscoll_berry'] });
  */
 
-class LiteAdPOS {
+class retail-adPOS {
     constructor(apiKey, endpoint = 'http://localhost:3000') {
         this.apiKey = apiKey;
         this.endpoint = endpoint;
-        console.log(`[LiteAd POS] Initialized with Key: ${apiKey.substring(0, 5)}...`);
+        console.log(`[retail-ad POS] Initialized with Key: ${apiKey.substring(0, 5)}...`);
     }
 
     /**
@@ -20,7 +20,7 @@ class LiteAdPOS {
      */
     async trackSale(data) {
         if (!data.amount) {
-            console.error('[LiteAd POS] Error: "amount" is required.');
+            console.error('[retail-ad POS] Error: "amount" is required.');
             return;
         }
 
@@ -42,15 +42,15 @@ class LiteAdPOS {
 
             const responseParams = await res.json();
             if (res.ok) {
-                console.log(`[LiteAd POS] Tracking Success:`, responseParams);
+                console.log(`[retail-ad POS] Tracking Success:`, responseParams);
                 return responseParams;
             } else {
-                console.error(`[LiteAd POS] Tracking Failed:`, responseParams);
+                console.error(`[retail-ad POS] Tracking Failed:`, responseParams);
                 throw new Error(responseParams.error || 'Unknown Error');
             }
 
         } catch (e) {
-            console.error('[LiteAd POS] Network Error:', e);
+            console.error('[retail-ad POS] Network Error:', e);
             throw e;
         }
     }
@@ -65,7 +65,7 @@ class LiteAdPOS {
             });
             return await res.json();
         } catch (e) {
-            console.error('[LiteAd POS] Inventory Fetch Error:', e);
+            console.error('[retail-ad POS] Inventory Fetch Error:', e);
             return [];
         }
     }
@@ -73,7 +73,7 @@ class LiteAdPOS {
 
 // Browser / Node.js Compatibility
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = LiteAdPOS;
+    module.exports = retail-adPOS;
 } else {
-    window.LiteAdPOS = LiteAdPOS;
+    window.retail-adPOS = retail-adPOS;
 }

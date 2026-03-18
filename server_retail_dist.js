@@ -895,7 +895,7 @@ app.get('/api/track/scan', (req, res) => {
 
     // Redirect to a dummy "Product Page" or search
     // Using a simple success page for now or standard search
-    res.redirect(`https://www.google.com/search?q=LiteAd+Campaign+${variant}`);
+    res.redirect(`https://www.google.com/search?q=retail-ad+Campaign+${variant}`);
 });
 
 // 2. Sale Tracker (Called by POS SDK)
@@ -1008,7 +1008,7 @@ app.post('/api/admin/creators/send-email', (req, res) => {
     console.log(`\n========================================`);
     console.log(`📧 AUTOMATIC EMAIL SENT (Payout)`);
     console.log(`To: ${to}`);
-    console.log(`Subject: 【LiteAd】今月の広告収益振込予定のお知らせ`);
+    console.log(`Subject: 【retail-ad】今月の広告収益振込予定のお知らせ`);
     console.log(`Body: 
     クリエイター様
     
@@ -1308,7 +1308,7 @@ const XLSX = require('xlsx');
 let storeData = {
     "default_store": {
         id: "STORE_001",
-        name: "LiteAd Demo Store",
+        name: "retail-ad Demo Store",
         billing_email: "store@example.com",
         bank_info: {
             bank_name: "",
