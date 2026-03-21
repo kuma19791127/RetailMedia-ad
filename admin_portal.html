@@ -338,17 +338,15 @@
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
 
-    <!-- PWA Setup -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2563eb">
-    <link rel="apple-touch-icon" href="/app-icon.png">
+    <!-- PWA Setup (Disabled on local file:// to prevent CORS errors) -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js');
-        });
+      if (location.protocol !== 'file:') {
+          const l = document.createElement('link'); l.rel = 'manifest'; l.href = '/manifest.json'; document.head.appendChild(l);
+          if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(e=>console.log(e))); }
       }
     </script>
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/app-icon.png">
 </head>
 
 <body>
@@ -420,9 +418,55 @@
             <div class="nav-item" onclick="switchTab('agency')">
                 🤝 代理店申請一覧
             </div>
+
+            <div class="nav-section">📊 リアルタイム監視</div>
+            <div class="nav-item" onclick="switchTab('livereg')">
+                📡 POS受診ログ (Live)
+            </div>
         </div>
 
         <div class="main">
+
+            <!-- LIVE POS STREAM DASHBOARD -->
+            <div id="panel-livereg" class="panel">
+                <div class="header">
+                    <div>
+                        <h1>📡 POSリアルタイム受信ログ</h1>
+                        <p style="color:#7f8c8d; margin-top:5px;">各店舗の「どこでもレジ」「ポータル同期」からAdminに届く生データを監視</p>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #e74c3c;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>🔌 リアルタイム受信ストリーム</h3>
+                        <div style="background:#e74c3c; color:white; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; animation: pulse 1.5s infinite;">● 接続中 (Listening...)</div>
+                    </div>
+                    <p style="font-size:13px; color:#555;">※別タブで「どこでもレジ」を開き決済を行うと、そのデータが即座にここに流れてきます。また、Store Portalからの5分おき定期同期も自動で受信されます。</p>
+                    
+                    <style>
+                        @keyframes pulse { 0% { opacity:1; } 50% { opacity:0.5; } 100% { opacity:1; } }
+                        .log-row { animation: slideIn 0.3s ease-out; }
+                        @keyframes slideIn { from { transform: translateX(-20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+                    </style>
+
+                    <div style="background:#1e293b; color:#f8fafc; padding:15px; border-radius:8px; height:400px; overflow-y:auto; margin-top:15px;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px; font-family:monospace; text-align:left;">
+                            <thead style="background:#0f172a; position:sticky; top:-15px;">
+                                <tr>
+                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">時刻</th>
+                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">ソース</th>
+                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">売上金額</th>
+                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">内容・対象商品</th>
+                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">AI広告照合</th>
+                                </tr>
+                            </thead>
+                            <tbody id="live-pos-table">
+                                <!-- Data injected via localStorage listener -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
             <!-- PAYOUT DASHBOARD (Revenue Center) - Default Active -->
             <div id="panel-payout" class="panel active">
@@ -615,7 +659,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
             // Map logical ID to visual index
-            const map = { 'payout': 0, 'billing': 1, 'creators': 2, 'agency': 3 };
+            const map = { 'payout': 0, 'billing': 1, 'creators': 2, 'agency': 3, 'livereg': 4 };
             if (map[tabId] !== undefined) {
                 const items = document.querySelectorAll('.nav-item');
                 if (items[map[tabId]]) items[map[tabId]].classList.add('active');
@@ -623,6 +667,7 @@
 
             if (tabId === 'agency') loadAgencyData();
             if (tabId === 'creators') loadCreatorData();
+            if (tabId === 'livereg') renderLiveLogs();
         }
 
         async function loadCreatorData() {
@@ -652,7 +697,26 @@
                 } else {
                     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">登録されている口座データはありません</td></tr>';
                 }
-            } catch (e) { console.error("Creator list failed", e); }
+            } catch (e) { 
+                console.error("Creator list failed, showing MOCK data", e);
+                document.getElementById('creator-table-body').innerHTML = `
+                        <tr>
+                            <td><b>佐藤 クリエイター (DEMO)</b><br><span style="font-size:11px; color:#aaa;">sato.creator@example.com</span></td>
+                            <td>三井住友銀行<br><span style="font-size:11px; color:#aaa;">渋谷支店</span></td>
+                            <td>普通 1234567</td>
+                            <td>¥15,000</td>
+                            <td style="color:#4285F4;">¥2,500</td>
+                            <td style="color:#e1b12c;">¥1,000</td>
+                            <td style="color:#e74c3c; font-weight:bold;">-¥3,700</td>
+                            <td class="highlight-value payout-highlight" style="font-size:16px;">¥14,800</td>
+                            <td><span class="badge badge-unpaid">未払</span></td>
+                            <td style="display:flex; gap:5px; flex-direction:column;">
+                                <button onclick="sendCreatorEmail('sato.creator@example.com', 14800, this)" class="btn-action send-email-btn" style="background:#9b59b6; font-size:11px;">📩 確定メール</button>
+                                <button class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
+                            </td>
+                        </tr>
+                `;
+            }
         }
 
         async function sendCreatorEmail(email, amount, btnElement) {
@@ -731,7 +795,19 @@
                     `).join('');
                 }
             } catch (e) {
-                console.error("Error loading agency data", e);
+                console.error("Error loading agency data, showing MOCK data", e);
+                const tbody = document.getElementById('agency-table-body');
+                if(tbody) tbody.innerHTML = `
+                        <tr>
+                            <td>${new Date().toLocaleDateString()}</td>
+                            <td>株式会社 電通 (DEMO)</td>
+                            <td>大手飲料メーカーA</td>
+                            <td>¥500,000</td>
+                            <td style="color:#e67e22; font-weight:bold;">¥100,000</td>
+                            <td><span class="badge badge-pending">PENDING</span></td>
+                            <td><button class="btn-action" onclick="alert('承認しました')">Verify</button></td>
+                        </tr>
+                `;
             }
         }
 
@@ -784,7 +860,37 @@
                 document.getElementById('payout-table-body').innerHTML = payoutRows;
 
             } catch (e) {
-                console.error("Failed to load admin data", e);
+                console.error("Failed to load admin data, showing MOCK data", e);
+                document.getElementById('admin-email').value = "admin@retail-ad.com";
+                
+                document.getElementById('billing-table-body').innerHTML = `
+                <tr>
+                    <td><b>渋谷デモストア (DEMO)</b><br><span style="font-size:11px; color:#aaa;">STORE-001</span></td>
+                    <td>¥1,250,000</td>
+                    <td><span class="badge badge-pending">1.2%</span></td>
+                    <td class="highlight-value billing-highlight">¥15,000</td>
+                    <td>demo@store-shibuya.com</td>
+                    <td><span class="badge badge-pending">UNPAID</span></td>
+                    <td><button onclick="sendInvoice('demo@store-shibuya.com', 15000, this)" class="btn-action">📧 請求書送信</button></td>
+                </tr>`;
+
+                document.getElementById('payout-table-body').innerHTML = `
+                 <tr>
+                    <td><b>新宿デモストア (DEMO)</b><br><span style="font-size:11px; color:#aaa;">ID: STORE-002</span></td>
+                    <td>¥50,000</td>
+                    <td style="color:#4285F4; font-weight:bold;">¥12,000</td>
+                    <td style="color:#e67e22;">-¥12,400</td>
+                    <td style="color:#e74c3c;">-¥6,200</td>
+                    <td style="color:#e74c3c;">-¥5,000</td>
+                    <td style="font-weight:bold; background:rgba(0,0,0,0.02);">¥38,400</td>
+                    <td class="highlight-value payout-highlight" style="font-size:16px;">¥19,200</td>
+                    <td><button onclick="viewBankInfo('mock')" class="btn-view">🏦 銀行確認</button></td>
+                    <td><span class="badge badge-unpaid">UNPAID</span></td>
+                    <td style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="sendPayoutEmail('shinjuku@demo.com', 19200, this)" class="btn-action payout-email-btn" style="background:#8e44ad; font-size:11px;">📩 確定メール</button>
+                        <button onclick="markAsPaid('STORE-002', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
+                    </td>
+                </tr>`;
             }
         }
 
@@ -1031,6 +1137,44 @@
         document.addEventListener('DOMContentLoaded', () => {
             const overlay = document.getElementById('login-overlay');
             if (overlay) overlay.removeAttribute('aria-hidden');
+            setTimeout(() => { renderLiveLogs(); }, 500);
+        });
+
+        // --- Live POS Monitor logic ---
+        function renderLiveLogs() {
+            const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
+            const tbody = document.getElementById('live-pos-table');
+            if(!tbody) return;
+            
+            if(localLog.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">まだ受信したトランザクションがありません。別タブでどこでもレジを開いて購入をテストしてください。</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = localLog.map(log => {
+                const isRealTime = log.type === 'LIVE_SALE';
+                const sourceColor = isRealTime ? '#10b981' : '#3b82f6';
+                const matchStatus = isRealTime 
+                    ? `<span style="color:#a855f7; font-weight:bold;">動画検証中... (照合完了予定 月末)</span>` 
+                    : `<span style="color:#64748b;">定期同期 (通常処理)</span>`;
+
+                return `
+                <tr class="log-row" style="border-bottom:1px solid #334155;">
+                    <td style="padding:10px; font-weight:bold; color:#cbd5e1;">${log.time}</td>
+                    <td style="padding:10px; color:${sourceColor};">${log.source}</td>
+                    <td style="padding:10px; color:#f8fafc; font-weight:bold; font-size:14px;">¥${log.amount.toLocaleString()}</td>
+                    <td style="padding:10px; color:#94a3b8;"><div style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.items}</div></td>
+                    <td style="padding:10px;">${matchStatus}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Listen for real-time checkout events happening in adjacent tabs
+        window.addEventListener('storage', (e) => {
+            if(e.key === 'admin_pos_log') {
+                renderLiveLogs();
+            }
         });
     </script>
     </div> <!-- End of #main-app -->

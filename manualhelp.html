@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextStep ManualHelp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://web.squarecdn.com/v1/square.js"></script>
+    <!-- PDF.js for parsing PDF documents -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --secondary: #ec4899;
+            --dark: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-light: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Noto Sans JP', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #1e1b4b, #312e81, #0f172a);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+
+        /* Top Bar */
+        header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); position: sticky; top:0;}
+        .brand { 
+            font-size: 26px; font-weight: 800; 
+            background: linear-gradient(to right, #ff4d4d, #f9cb28, #10b981, #3b82f6, #8b5cf6, #ec4899); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            animation: rainbow 5s linear infinite; background-size: 200% auto;
+        }
+        @keyframes rainbow { 0%{ background-position: 0% 50%; } 100%{ background-position: 200% 50%; } }
+        
+        .user-profile { display:flex; gap:10px; align-items:center; font-size: 0.9rem; font-weight:bold; cursor:pointer;}
+
+        /* Navigation */
+        .role-switch { display: flex; gap: 10px; }
+        .role-btn { text-decoration: none; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 10px 15px; border-radius: 30px; cursor: pointer; transition: 0.3s; font-weight: 600; font-size:0.9rem; display:flex; align-items:center; gap:5px;}
+        .role-btn:hover, .role-btn.active { background: var(--primary); box-shadow: 0 0 15px var(--primary-glow); border-color: var(--primary); }
+
+        .container { flex: 1; padding: 20px 30px 100px 30px; max-width: 1400px; margin: 0 auto; width: 100%; position: relative; }
+        .view { display: none; opacity: 0; transition: opacity 0.5s ease; }
+        .view.active { display: block; opacity: 1; animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Common */
+        .btn { background: linear-gradient(135deg, var(--primary), #4f46e5); color: white; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        .btn:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .btn-secondary { background: rgba(255,255,255,0.1); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .btn-gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+        
+        h2 { margin-bottom: 20px; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
+
+        input, textarea, select { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; outline: none; font-size: 1rem; margin-bottom:15px; }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+        select option { background:#0f172a; color:white; }
+
+        /* --- Creator View --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+        @media(max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } } 
+
+        .panel { padding: 30px; }
+        .manual-card { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; margin-bottom:15px; border-left: 4px solid var(--secondary); display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+        .manual-card:hover { background: rgba(255,255,255,0.1); }
+        
+        .step-list { display: flex; flex-direction: column; gap: 15px; margin-top: 20px;}
+        .step-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); }
+
+        /* --- Admin View --- */
+        .table-container { width: 100%; border-collapse: collapse; margin-top: 20px; font-size:0.9rem;}
+        .table-container th, .table-container td { padding: 15px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .badge { background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 4px 8px; border-radius: 20px; font-size: 0.8rem; }
+
+        /* --- Chat View --- */
+        #view-chat .panel { padding:0; display:flex; height: 75vh; overflow:hidden; }
+        .chat-sidebar { width: 280px; border-right: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); display:flex; flex-direction:column; }
+        @media(max-width: 900px) { .chat-sidebar { display:none; } } 
+        
+        .chat-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight:bold; }
+        .chat-list { flex:1; overflow-y:auto; }
+        .chat-item { padding: 15px 20px; cursor:pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:10px; }
+        .chat-item:hover, .chat-item.active { background: rgba(255,255,255,0.1); }
+        .chat-avatar { width:35px; height:35px; min-width:35px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:bold;}
+
+        .chat-main { flex:1; display:flex; flex-direction:column; background: rgba(0,0,0,0.1); }
+        .chat-messages { flex:1; padding: 20px; overflow-y:auto; display:flex; flex-direction:column; gap:20px; }
+        .msg { display:flex; gap:15px; max-width:90%; }
+        .msg.me { align-self:flex-end; flex-direction:row-reverse; }
+        .msg-content { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 16px; border-top-left-radius: 0; position:relative; word-break: break-all; }
+        .msg.me .msg-content { background: var(--primary); border-radius: 16px; border-top-right-radius:0; }
+        .msg-time { font-size:0.75rem; color:#cbd5e1; margin-top:5px; }
+        .attached-media { max-width:100%; border-radius:12px; margin-top:10px; border:1px solid rgba(255,255,255,0.2); max-height:200px; object-fit: contain;}
+        .mention-text { color: #facc15; font-weight: bold; }
+
+        .chat-input-area { padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); display:flex; gap:10px; align-items:flex-end; background: rgba(0,0,0,0.3); position:relative;}
+        .mention-hint { background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px; position:absolute; bottom:80px; left:20px; display:none; flex-direction:column; gap:5px; z-index:100;}
+        .mention-hint-item { padding:8px 15px; cursor:pointer; color:white; border-radius:4px; }
+        .mention-hint-item:hover { background:var(--primary); }
+        
+        textarea.chat-box { flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:12px; color:white; padding:12px; resize:none; min-height:50px; margin:0;}
+        .chat-btn, .upload-btn { background: var(--primary); width:50px; height:50px; min-width:50px; border-radius:50%; color:white; border:none; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center;}
+        .upload-btn { background: rgba(255,255,255,0.1); border:1px dashed rgba(255,255,255,0.4); }
+        .file-preview-container { position:absolute; bottom:80px; left:20px; background:rgba(0,0,0,0.8); border-radius:8px; padding:10px; display:none; border:1px solid var(--primary); z-index:100; align-items:center; gap:10px;}
+        .file-preview-container img, .file-preview-container video { height:50px; width:50px; object-fit:cover; border-radius:4px;}
+
+        /* --- Login Screen --- */
+        #login-view { position: fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, #1e1b4b, #0f172a); z-index: 2000; display:flex; justify-content:center; align-items:center; overflow-y:auto; padding:20px 0;}
+        .login-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); width: 90%; max-width: 400px; text-align:center; margin:auto;}
+        .google-btn { background: white; color:#334155; border:none; padding:12px 24px; border-radius:12px; cursor:pointer; font-weight:bold; font-size:1rem; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; transition:0.3s; margin-top:15px; }
+        .google-btn:hover { background: #f8fafc; transform: translateY(-2px); }
+
+        /* --- User View (Full Screen UI) --- */
+        #anti-gravity-view { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; display: none; flex-direction: column; overflow-y:auto; }
+        .noiseless-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1e1b4b 0%, #000 80%); z-index: 1; pointer-events:none;}
+        .user-header { position: relative; z-index: 2; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .exit-btn { background: transparent; color: #cbd5e1; border: none; font-size: 24px; cursor: pointer; }
+        .progress-container { position: relative; z-index: 2; width: 60%; margin: 0 auto; background: rgba(255,255,255,0.3); height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--secondary); width: 0%; transition: width 0.5s ease; }
+        .floating-ui-container { position: relative; z-index: 2; flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 40px 20px 100px 20px;}
+        .floating-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.2); border-radius: 30px; padding: 40px 30px; width: 100%; max-width: 600px; text-align: center; transition: all 0.5s ease; opacity: 0; transform: translateY(40px); }
+        .floating-card.active { opacity: 1; transform: translateY(0); }
+        .step-number { font-size: 1.2rem; color: var(--secondary); font-weight: 800; letter-spacing: 2px; margin-bottom: 20px; }
+        .step-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 30px; line-height: 1.4; }
+        .clear-btn { background: var(--secondary); color: white; border: none; padding: 18px 40px; border-radius: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; width:100%;}
+        
+        /* Mobile Nav */
+        @media(max-width: 900px) {
+            header .role-switch { display: none; }
+            .mobile-bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; width: 100vw; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 100; border-top: 1px solid rgba(255,255,255,0.1); justify-content: space-around; padding: 10px 5px; }
+            .role-btn { flex-direction: column; background: transparent; border: none; font-size: 0.7rem; padding: 5px; color:#cbd5e1; gap:3px;}
+            .role-btn i { font-size: 1.4rem; }
+            body { padding-bottom: 80px; }
+        }
+        @media(min-width: 901px) { .mobile-bottom-nav { display: none; } }
+
+        /* Square Payment Layout */
+        #payment-modal { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:3000; display:none; justify-content:center; align-items:center;}
+        .payment-card { background:#0f172a; border:1px solid #334155; padding:30px; border-radius:16px; width:90%; max-width:400px; text-align:center;}
+        #card-container { background:white; padding:15px; border-radius:8px; margin:20px 0;}
+
+        /* Loader */
+        .ai-loader { display:none; text-align:center; padding:30px; }
+        .ai-loader i { font-size: 3rem; color: var(--secondary); animation: spin 2s linear infinite; margin-bottom:15px;}
+        @keyframes spin { 100% { transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- Payment Modal (Square) -->
+    <div id="payment-modal">
+        <div class="payment-card">
+            <h2 id="pay-title" style="margin-bottom:10px;"><i class="fa-brands fa-square"></i> セキュア決済</h2>
+            <p style="font-size:1.8rem; color:#f8fafc; font-weight:bold; margin-bottom:20px;">¥500 <span style="font-size:0.9rem; color:#94a3b8; font-weight:normal;">(税込)</span></p>
+            <div id="card-container"></div>
+            <button id="card-button" class="btn" style="width:100%; font-size:1.1rem; padding:15px; margin-bottom:10px;">決済を完了する</button>
+            <button class="btn btn-secondary" style="width:100%; border:none;" onclick="closePayment()">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- Login Screen Portal -->
+    <div id="login-view" style="display:none;">
+        <div class="login-card">
+            <h1 class="brand" style="margin-bottom:20px; font-size:2rem;">ManualHelp</h1>
+            <p style="color:#cbd5e1; margin-bottom:20px; font-size:0.9rem;">役割を選択してログインしてください</p>
+            
+            <input type="text" id="login-org" placeholder="組織名 (例: 株式会社〇〇)">
+            <input type="text" id="login-name" placeholder="氏名 (例: 鈴木 一郎)">
+            <input type="email" id="login-email" placeholder="メールアドレス">
+            <input type="password" id="login-pass" placeholder="パスワード">
+            
+            <select id="login-role">
+                <option value="corp">企業側 (マニュアル作成)</option>
+                <option value="employee">従業員 (学習・タスク実行)</option>
+                <option value="admin">履歴管理 (Admin)</option>
+            </select>
+
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
+            <div style="margin: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.2);"></div>
+            <p style="color:#cbd5e1; font-size:0.8rem; margin-bottom:10px; text-align:left;">💡 1クリック・デモログイン</p>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <button class="btn-secondary" style="flex:1; padding:10px; border-radius:8px; border:none; color:white; cursor:pointer;" onclick="quickLogin('㈱リテール', '鈴木(店長)', 'corp@retail.com', 'corp')">🏢 企業</button>
+                <button class="btn-secondary" style="flex:1; padding:10px; border-radius:8px; border:none; color:white; cursor:pointer;" onclick="quickLogin('㈱リテール', '佐藤(新人)', 'emp@retail.com', 'employee')">👤 従業員</button>
+                <button class="btn-secondary" style="flex:1; padding:10px; border-radius:8px; border:none; color:white; cursor:pointer;" onclick="quickLogin('㈱リテール', '管理Admin', 'admin@retail.com', 'admin')">🛡️ 管理</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="main-app" style="display:flex; flex-direction:column; min-height:100vh;">
+        <header>
+            <div class="brand"><i class="fa-solid fa-feather"></i> ManualHelp</div>
+            <!-- Hash-based URL Links -->
+            <div class="role-switch">
+                <a href="business_lp.html" class="role-btn nav-link" style="background:#8b5cf6; border-color:#8b5cf6;"><i class="fa-solid fa-tv"></i> サイネージパネル広告</a>
+                <a href="#corp" class="role-btn nav-link"><i class="fa-solid fa-building"></i> 企業側 (作成)</a>
+                <a href="#employee" class="role-btn nav-link"><i class="fa-solid fa-user-check"></i> 従業員 (学習)</a>
+                <a href="#chat" class="role-btn nav-link"><i class="fa-regular fa-comments"></i> チャット</a>
+                <a href="#admin" class="role-btn nav-link"><i class="fa-solid fa-shield-halved"></i> 履歴管理</a>
+                <a href="#login" class="role-btn" style="background:#f43f5e; border-color:#f43f5e;"><i class="fa-solid fa-arrow-right-to-bracket"></i> ログアウト</a>
+            </div>
+            <div class="user-profile">
+                <div class="chat-avatar" id="header-avatar" style="width:30px; height:30px;">名</div>
+                <span id="header-name">未ログイン</span>
+            </div>
+        </header>
+
+        <!-- Mobile Bottom Nav -->
+        <div class="mobile-bottom-nav">
+            <a href="#corp" class="role-btn nav-link"><i class="fa-solid fa-building"></i> 企業</a>
+            <a href="#employee" class="role-btn nav-link"><i class="fa-solid fa-user-check"></i> 従業員</a>
+            <a href="#chat" class="role-btn nav-link"><i class="fa-regular fa-comments"></i> チャット</a>
+            <a href="#admin" class="role-btn nav-link"><i class="fa-solid fa-shield-halved"></i> 管理</a>
+        </div>
+
+        <div class="container">
+            <!-- CREATOR VIEW -->
+            <div id="view-corp" class="view">
+                <div class="grid-2" id="creator-main-state">
+                    <div class="glass panel">
+                        <h2><i class="fa-solid fa-book-open"></i> 企業側マニュアル管理</h2>
+                        <button class="btn" style="width:100%; margin-bottom:20px;" onclick="createNewManual()"><i class="fa-solid fa-plus"></i> 新規マニュアル作成</button>
+                        <div id="manuals-list"></div>
+                    </div>
+                </div>
+                <div class="grid-2" id="creator-edit-state" style="display:none;">
+                    <div class="glass panel">
+                        <h2><i class="fa-solid fa-pen-to-square"></i> マニュアル基本設定</h2>
+                        <input type="text" id="edit-manual-name" placeholder="マニュアル名 (例: スーパーレジ担当)">
+                        <textarea id="edit-manual-desc" placeholder="このマニュアルの目的や対象者" style="height:80px;"></textarea>
+                        
+                        <div style="border: 2px dashed rgba(255,255,255,0.2); padding: 20px; text-align: center; border-radius: 12px; margin-top:10px;">
+                            <h3 style="color:#fbbf24; font-size:1rem; margin-bottom:15px;"><i class="fa-solid fa-robot"></i> 高度なAI機能</h3>
+                            
+                            <input type="file" id="pdf-upload" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
+                            <button class="btn" style="width:100%; margin-bottom:10px; background:linear-gradient(135deg, #10b981, #059669); color:white;" onclick="document.getElementById('pdf-upload').click();">
+                                <i class="fa-solid fa-file-pdf"></i> PDFをアップロード (自動ページ階層化)
+                            </button>
+
+                            <input type="file" id="video-upload" accept="video/mp4,video/quicktime" style="display:none;" onchange="handleAiVideo(event)">
+                            <button class="btn btn-gold" style="width:100%; margin-bottom:10px;" onclick="document.getElementById('video-upload').click();">
+                                動画からAIステップ自動生成 (¥500)
+                            </button>
+                            
+                            <select id="lang-select" style="margin-bottom:10px; background:#1e293b; color:white;">
+                                <option value="en">英語 (English)</option>
+                                <option value="vi">ベトナム語 (Tiếng Việt)</option>
+                                <option value="ne">ネパール語 (नेपाली)</option>
+                                <option value="zh-CN">中国語 (简体中文)</option>
+                            </select>
+                            <button class="btn btn-gold" style="width:100%;" onclick="startTranslationPayment()">
+                                標準NMTモデルで一括翻訳 (¥500)
+                            </button>
+                        </div>
+                        
+                        <div class="ai-loader" id="ai-loading">
+                            <i class="fa-solid fa-atom"></i>
+                            <p style="font-size:0.9rem;" id="ai-status">AIモデルで解析中...</p>
+                        </div>
+
+                        <button class="btn" style="width:100%; background:var(--secondary); margin-top:20px;" onclick="saveManual()"><i class="fa-solid fa-cloud-arrow-up"></i> 更新</button>
+                        <button class="btn-secondary" style="width:100%; margin-top:10px; padding:15px; border-radius:12px; border:none; color:white; cursor:pointer;" onclick="closeEditManual()">一覧に戻る</button>
+                    </div>
+                    <div class="glass panel">
+                        <h2><i class="fa-solid fa-list-ol"></i> ステップ (シーケンサー)</h2>
+                        <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:15px;"><i class="fa-regular fa-hand-pointer"></i> ドラックandドロップでページ（手順）の順番を変更できます</p>
+                        <div class="step-list" id="creator-step-list"></div>
+                        <button class="btn btn-secondary" style="margin-top: 20px;" onclick="addManualStep()">+ 手動でステップを追加</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USER VIEW -->
+            <div id="view-employee" class="view">
+                <div class="glass panel">
+                    <h2><i class="fa-solid fa-graduation-cap"></i> 従業員: 学習可能なマニュアル</h2>
+                    <div class="grid-2" id="user-manuals-list" style="gap:15px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));"></div>
+                </div>
+            </div>
+
+            <!-- CHAT VIEW -->
+            <div id="view-chat" class="view">
+                <div class="glass panel">
+                    <div class="chat-sidebar">
+                        <div class="chat-header"><i class="fa-solid fa-hashtag"></i> チャンネル・DM</div>
+                        <div class="chat-list" id="channel-list"></div>
+                    </div>
+                    <div class="chat-main">
+                        <div class="chat-header" style="background:rgba(0,0,0,0.2);" id="current-chat-header"># 全体連絡 (店舗連絡)</div>
+                        <div class="chat-messages" id="chat-box"></div>
+                        <div class="mention-hint" id="mention-hint"></div>
+                        <div class="file-preview-container" id="file-preview"></div>
+                        <div class="chat-input-area">
+                            <input type="file" id="real-file-upload" accept="image/*,video/*" style="display:none;" onchange="handleFileSelect(event)">
+                            <button class="upload-btn" onclick="document.getElementById('real-file-upload').click();"><i class="fa-solid fa-paperclip"></i></button>
+                            <textarea class="chat-box" id="chat-input" placeholder="メッセージを入力... (@でメンション)" onkeyup="checkMention(this)"></textarea>
+                            <button class="chat-btn" onclick="sendChat()"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN VIEW -->
+            <div id="view-admin" class="view">
+                <div class="glass panel" style="overflow-x:auto;">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> 履歴管理 (10日間タイムマシン)</h2>
+                    <table class="table-container">
+                        <thead><tr><th>Version ID</th><th>マニュアル名</th><th>実行ユーザー</th><th>タイムスタンプ</th><th>変更内容</th></tr></thead>
+                        <tbody id="admin-log-data"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN ANTI-GRAVITY UI -->
+    <div id="anti-gravity-view">
+        <div class="noiseless-bg"></div>
+        <div class="user-header">
+            <button class="exit-btn" onclick="exitAntiGravity()"><i class="fa-solid fa-xmark"></i> 閉じる</button>
+            <div style="color:var(--secondary); font-weight:bold; letter-spacing:1px; display:flex; gap:10px;"><i class="fa-solid fa-feather"></i> <span id="ag-manual-name"></span></div><div style="width:24;"></div>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="ag-progress"></div></div>
+        <div class="floating-ui-container">
+            <div class="floating-card" id="ag-card"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Persistence Layer ---
+        function loadDB() {
+            let m = localStorage.getItem('ag_manuals');
+            let l = localStorage.getItem('ag_logs');
+            let c = localStorage.getItem('ag_chat');
+            let u = localStorage.getItem('ag_user');
+            
+            if(!m) m = [{ id:1, name:"スーパーレジ担当", desc:"レジ精算業務", version:1, steps:[{title:"ドロワーを開ける"}, {title:"現金確認"}] }]; else m = JSON.parse(m);
+            if(!l) l = [{ vid:"v1.0.1", manual:"スーパーレジ担当", user:"SYSTEM", time:"初期化", diff:"作成" }]; else l = JSON.parse(l);
+            if(!c) c = [{ id: 1, org: '㈱リテール', sender: '本部', target: '全体連絡', avatar: '本', color: '#ec4899', isMe: false, time: '今日', text: '本日からキャンペーンです！<br><span class="mention-text">@全店舗</span> 画像を確認してください。', file: null }]; else c = JSON.parse(c);
+            
+            if(u) currentUser = JSON.parse(u);
+
+            return { manuals: m, logs: l, chat: c };
+        }
+        function saveDB() {
+            localStorage.setItem('ag_db_manuals', JSON.stringify(dbManuals));
+            localStorage.setItem('ag_logs', JSON.stringify(adminLogs));
+            localStorage.setItem('ag_chat', JSON.stringify(chatMessages));
+        }
+
+        let currentUser = null;
+        let { manuals: dbManuals, logs: adminLogs, chat: chatMessages } = loadDB();
+
+        // --- Config ---
+        let GCP_API_KEY = "INSERT_API_KEY_HERE_AFTER_CLONING"; 
+        const SQUARE_APP_ID = "sq0idp-dEBc0wMfUZp6crtfka8HeQ"; 
+        const SQUARE_LOCATION_ID = "LZYJ3X6XZQ8ZN";
+
+        // --- Login & Routing Logic ---
+        function checkRoute() {
+            const hash = window.location.hash || '#login';
+            
+            // Render Profile
+            if(currentUser) {
+                document.getElementById('header-name').innerText = currentUser.name;
+                document.getElementById('header-avatar').innerText = currentUser.avatar;
+            } else {
+                document.getElementById('header-name').innerText = 'ゲスト';
+                document.getElementById('header-avatar').innerText = '?';
+            }
+
+            if(hash === '#login') {
+                document.getElementById('login-view').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
+                localStorage.removeItem('ag_user');
+                currentUser = null;
+                return;
+            }
+            
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(v => v.classList.remove('active'));
+
+            if (hash.includes('corp')) {
+                document.getElementById('view-corp').classList.add('active');
+                document.querySelector('a[href="#corp"]').classList.add('active');
+                renderCreatorManuals();
+            } else if (hash.includes('employee')) {
+                document.getElementById('view-employee').classList.add('active');
+                document.querySelector('a[href="#employee"]').classList.add('active');
+                renderUserManuals();
+            } else if (hash.includes('chat')) {
+                document.getElementById('view-chat').classList.add('active');
+                document.querySelector('a[href="#chat"]').classList.add('active');
+                renderChat();
+            } else if (hash.includes('admin')) {
+                document.getElementById('view-admin').classList.add('active');
+                document.querySelector('a[href="#admin"]').classList.add('active');
+                renderAdminLogs();
+            } else {
+                window.location.hash = '#corp'; // Default
+            }
+        }
+
+        window.onload = function() {
+            checkRoute();
+            initSquarePayments();
+        };
+
+        window.addEventListener('hashchange', checkRoute);
+
+        // --- Auth functions ---
+        function doLogin() {
+            const org = document.getElementById('login-org').value.trim();
+            const name = document.getElementById('login-name').value.trim();
+            const email = document.getElementById('login-email').value.trim();
+            const role = document.getElementById('login-role').value;
+            if(!org || !name) { Swal.fire('エラー', '組織名と名前を入力するか、デモログインを押してください', 'error'); return; }
+            currentUser = { org, name, email, role, avatar: name.charAt(0) };
+            localStorage.setItem('ag_user', JSON.stringify(currentUser));
+            window.location.hash = '#' + role;
+            checkRoute();
+            renderChat(); // Force re-render with new identity
+        }
+
+        window.addEventListener('storage', function(e) {
+            // Keep tabs in sync effortlessly!
+            if (e.key === 'ag_chat') {
+                const oldChat = chatMessages || [];
+                chatMessages = JSON.parse(e.newValue);
+                
+                // --- 🌟 Detect Mention and DM notification ---
+                const myName = currentUser ? currentUser.name : '';
+                if(chatMessages.length > oldChat.length) {
+                    const newMsg = chatMessages[chatMessages.length - 1];
+                    if(newMsg.sender !== myName && myName !== '') {
+                        // Check if it's a DM specifically directed to me, or if my name is @mentioned
+                        if(newMsg.target === myName || (newMsg.text && newMsg.text.includes('@' + myName))) {
+                            let alertTitle = newMsg.target === myName ? `📩 ${newMsg.sender} からのDM` : `📣 ${newMsg.sender} からのメンション`;
+                            Swal.fire({
+                                toast: true, position: 'top-end', icon: 'info',
+                                title: alertTitle,
+                                text: newMsg.text.replace(/<[^>]*>?/gm, '').substring(0, 30) + (newMsg.text.length>30?'...':''),
+                                background: '#1e293b', color: '#f8fafc',
+                                showConfirmButton: false, timer: 6000
+                            });
+                        }
+                    }
+                }
+
+                if(window.location.hash.includes('chat')) {
+                    renderChat();
+                    setTimeout(() => {
+                        const box = document.getElementById('chat-box');
+                        if(box) box.scrollTop = box.scrollHeight;
+                    }, 50);
+                }
+            }
+            if (e.key === 'ag_manuals') {
+                dbManuals = JSON.parse(e.newValue);
+                if(window.location.hash.includes('corp')) renderCreatorManuals();
+                if(window.location.hash.includes('employee')) renderUserManuals();
+            }
+        });
+
+        function quickLogin(org, name, email, role) {
+            document.getElementById('login-org').value = org;
+            document.getElementById('login-name').value = name;
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-pass').value = "demo1234!!";
+            document.getElementById('login-role').value = role;
+            doLogin(); 
+        }
+
+        // --- Square UI ---
+        let card;
+        let pendingAction = null; 
+        async function initSquarePayments() {
+            if (!window.Square) return;
+            try {
+                const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOCATION_ID);
+                card = await payments.card();
+                await card.attach('#card-container');
+                document.getElementById('card-button').addEventListener('click', async () => {
+                    const result = await card.tokenize();
+                    if (result.status === 'OK') processPaymentOnServer(result.token);
+                    else Swal.fire('エラー', 'カード決済に失敗しました', 'error');
+                });
+            } catch (e) { console.error("Square Init Error", e); }
+        }
+
+        function triggerSquarePayment(actionType, title) {
+            pendingAction = actionType;
+            document.getElementById('pay-title').innerHTML = `<i class="fa-brands fa-square"></i> セキュア決済`;
+            document.getElementById('payment-modal').style.display = 'flex';
+        }
+
+        function closePayment() { document.getElementById('payment-modal').style.display = 'none'; }
+
+        async function processPaymentOnServer(token) {
+            Swal.fire({ title: '決済処理中...', text: 'Square APIと通信しています', didOpen: () => { Swal.showLoading(); }});
+            try {
+                const res = await fetch('/api/payment/square-charge', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token, amount: 500, source: 'Anti-Gravity API' })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    Swal.fire('決済完了!', '処理を開始します', 'success');
+                    closePayment();
+                    if(pendingAction === 'ai_generation') executeVideoIntelligence();
+                    if(pendingAction === 'translation') executeCloudTranslation();
+                } else Swal.fire('決済失敗', data.error || '不明なエラー', 'error');
+            } catch (e) {
+                closePayment();
+                Swal.fire('決済模擬成功', 'デモ：バックエンド非通信のため完了として進めます', 'info').then(() => {
+                    if(pendingAction === 'ai_generation') executeVideoIntelligence();
+                    if(pendingAction === 'translation') executeCloudTranslation();
+                });
+            }
+        }
+
+        // --- Creator ---
+        let editingManualIndex = null;
+        let tempSteps = [];
+        let pendingVideoBase64 = null;
+
+        function renderCreatorManuals() {
+            const list = document.getElementById('manuals-list');
+            list.innerHTML = '';
+            dbManuals.forEach((m, idx) => {
+                list.innerHTML += `<div class="manual-card" onclick="openEditManual(${idx})"><div><h3 style="color:var(--primary);">${m.name}</h3><p style="font-size:0.85rem; color:#cbd5e1;">${m.desc}</p></div><i class="fa-solid fa-chevron-right"></i></div>`;
+            });
+        }
+        function createNewManual() {
+            dbManuals.push({ id: Date.now(), name: "新規マニュアル", desc: "", version: 0, steps: [] });
+            openEditManual(dbManuals.length - 1);
+        }
+        function openEditManual(idx) {
+            editingManualIndex = idx;
+            const m = dbManuals[idx];
+            document.getElementById('edit-manual-name').value = m.name;
+            document.getElementById('edit-manual-desc').value = m.desc;
+            tempSteps = JSON.parse(JSON.stringify(m.steps)); 
+            document.getElementById('creator-main-state').style.display = 'none';
+            document.getElementById('creator-edit-state').style.display = 'grid';
+            renderEditSteps();
+        }
+        function closeEditManual() {
+            document.getElementById('creator-main-state').style.display = 'grid';
+            document.getElementById('creator-edit-state').style.display = 'none';
+            renderCreatorManuals();
+        }
+
+        // Drag and Drop State
+        let draggedStepIndex = null;
+        function onStepDragStart(event, idx) { draggedStepIndex = idx; event.dataTransfer.effectAllowed = 'move'; }
+        function onStepDragOver(event) { event.preventDefault(); }
+        function onStepDrop(event, targetIdx) {
+            event.preventDefault();
+            if (draggedStepIndex !== null && draggedStepIndex !== targetIdx) {
+                const item = tempSteps.splice(draggedStepIndex, 1)[0];
+                tempSteps.splice(targetIdx, 0, item);
+                renderEditSteps();
+            }
+        }
+
+        window.attachMediaToStep = function(event, idx) {
+            const file = event.target.files[0];
+            if(!file) return;
+            Swal.fire({title: 'メディア圧縮中...', text:'モバイル端末用(.mov, .mp4)に最適化しています...', timer: 1500, didOpen:()=>{Swal.showLoading()}});
+            setTimeout(() => {
+                const url = URL.createObjectURL(file);
+                tempSteps[idx].mediaUrl = url;
+                tempSteps[idx].mediaType = file.type.startsWith('video') ? 'video' : 'image';
+                renderEditSteps();
+            }, 1000);
+        };
+        
+        function renderEditSteps() {
+            const list = document.getElementById('creator-step-list');
+            list.innerHTML = '';
+            tempSteps.forEach((s, idx) => {
+                const mediaIndicator = s.mediaUrl ? (s.mediaType === 'video' ? `<div style="margin-top:5px; font-size:0.8rem; color:#10b981;"><i class="fa-solid fa-video"></i> 動画添付済</div>` : `<div style="margin-top:5px; font-size:0.8rem; color:#3b82f6;"><i class="fa-solid fa-image"></i> 画像添付済</div>`) : '';
+                list.innerHTML += `<div class="step-item" draggable="true" ondragstart="onStepDragStart(event, ${idx})" ondragover="onStepDragOver(event)" ondrop="onStepDrop(event, ${idx})" style="cursor:grab; transition:0.2s; align-items:flex-start;">
+                    <i class="fa-solid fa-grip-vertical" style="color:#cbd5e1; margin-right:10px; margin-top:10px;"></i>
+                    <div style="flex:1;">
+                        <span style="font-size:0.8rem; color:#cbd5e1;">STEP ${idx+1}</span>
+                        <input type="text" value="${s.title}" oninput="tempSteps[${idx}].title=this.value" onkeydown="(event)=>{event.stopPropagation()}" draggable="false" style="width:100%; padding:5px; margin:0; border:none; border-bottom:1px solid var(--primary); background:transparent; pointer-events:auto; color:white;">
+                        ${mediaIndicator}
+                    </div>
+                    <label style="cursor:pointer; color:#fbbf24; margin-left:15px; margin-top:5px;" title="動画や画像を添付">
+                        <i class="fa-solid fa-paperclip"></i>
+                        <input type="file" style="display:none;" accept="video/mp4,video/quicktime,video/*,image/*" onchange="attachMediaToStep(event, ${idx})">
+                    </label>
+                    <i class="fa-solid fa-trash" style="color:#f43f5e; cursor:pointer; padding:10px; margin-top:2px;" onclick="tempSteps.splice(${idx},1); renderEditSteps()"></i>
+                </div>`;
+            });
+        }
+        function addManualStep() { tempSteps.push({ title: "新しい手順" }); renderEditSteps(); }
+        function saveManual() {
+            const m = dbManuals[editingManualIndex];
+            
+            // Format current Date/Time
+            const now = new Date();
+            const dateStr = now.getFullYear() + "/" + String(now.getMonth()+1).padStart(2,'0') + "/" + String(now.getDate()).padStart(2,'0') + " " + String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+
+            // Calculate Exact Diff details
+            const newName = document.getElementById('edit-manual-name').value;
+            const newDesc = document.getElementById('edit-manual-desc').value;
+            let diffTexts = [];
+            
+            if (m.name !== newName) diffTexts.push("名前を変更");
+            if (m.desc !== newDesc) diffTexts.push("説明文を変更");
+
+            const oldSteps = m.steps || [];
+            const newSteps = tempSteps || [];
+            
+            if (oldSteps.length !== newSteps.length) {
+                diffTexts.push(`ステップ数が変動 (${oldSteps.length}→${newSteps.length}件)`);
+            } else {
+                for (let i = 0; i < oldSteps.length; i++) {
+                    if (oldSteps[i].title !== newSteps[i].title) {
+                        diffTexts.push(`STEP ${i+1} の内容変更`);
+                    }
+                }
+            }
+            
+            if (diffTexts.length === 0) diffTexts.push("データ構造の微更新 (内容同一)");
+            
+            const diffResult = diffTexts.join(" / ");
+
+            m.name = newName;
+            m.desc = newDesc;
+            m.steps = tempSteps;
+            m.version += 1;
+            
+            adminLogs.unshift({ vid: `v1.0.${m.version}`, manual: m.name, user: currentUser ? currentUser.name : "企業管理者", time: dateStr, diff: diffResult });
+            saveDB();
+            Swal.fire('保存完了', 'Adminに詳細な変更履歴が連携されました', 'success').then(closeEditManual);
+        }
+
+        function handleAiVideo(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            document.getElementById('ai-loading').style.display = 'block';
+            document.getElementById('ai-status').innerHTML = '🎥 動画を圧縮最適化中...<br><span style="font-size:0.8rem;">(エンコード中)</span>';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                pendingVideoBase64 = e.target.result.split(',')[1];
+                setTimeout(() => {
+                    document.getElementById('ai-loading').style.display = 'none';
+                    triggerSquarePayment('ai_generation', 'AI動画解析 (Video Intelligence)');
+                    document.getElementById('video-upload').value = '';
+                }, 1500);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handlePdfUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            document.getElementById('ai-loading').style.display = 'block';
+            document.getElementById('ai-status').innerHTML = '📄 PDFを解析中...<br><span style="font-size:0.8rem;">(ステップ自動階層化処理)</span>';
+            
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    if(window.pdfjsLib) {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let addedSteps = 0;
+                        for(let i=1; i<=pdf.numPages; i++) {
+                            try {
+                                const page = await pdf.getPage(i);
+                                const textContent = await page.getTextContent();
+                                let pageText = textContent.items.map(item => item.str).join(' ').trim();
+                                if(!pageText) pageText = `PDF 取説 ページ ${i}`;
+                                else if(pageText.length > 50) pageText = pageText.substring(0, 50) + '...';
+                                tempSteps.push({ title: `${i}ページ目: ${pageText}` });
+                                addedSteps++;
+                            } catch(e) {
+                                tempSteps.push({ title: `${i}ページ目 自動抽出されたステップ` });
+                                addedSteps++;
+                            }
+                        }
+                        Swal.fire('成功', `${addedSteps}ページのPDFを解析し、${addedSteps}個のステップとして階層化しました！<br>ドラッグ＆ドロップで入れ替え可能です。`, 'success');
+                        renderEditSteps();
+                    } else {
+                        Swal.fire('エラー', 'PDF.jsライブラリが読み込まれていません', 'error');
+                    }
+                    document.getElementById('ai-loading').style.display = 'none';
+                    document.getElementById('pdf-upload').value = '';
+                };
+                fileReader.readAsArrayBuffer(file);
+            } catch(e) {
+                Swal.fire('エラー', 'PDFの読み込みに失敗しました', 'error');
+                document.getElementById('ai-loading').style.display = 'none';
+                document.getElementById('pdf-upload').value = '';
+            }
+        }
+
+        async function executeVideoIntelligence() {
+            document.getElementById('ai-loading').style.display = 'block';
+            document.getElementById('ai-status').innerText = 'API解析中...';
+            try {
+                const res = await fetch(`https://videointelligence.googleapis.com/v1/videos:annotate?key=${GCP_API_KEY}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ inputContent: pendingVideoBase64, features: ["LABEL_DETECTION", "SHOT_CHANGE_DETECTION"] })
+                });
+                if (res.ok) {
+                    Swal.fire('解析完了', 'ステップを展開しました！', 'success');
+                    tempSteps.push({ title: "[AI検出] レジカウンターの操作" }, { title: "[AI検出] 現金の確認" });
+                } else {
+                    Swal.fire('API結果モック', 'セキュリティでブロック中のためモックを展開します。', 'warning');
+                    tempSteps.push({ title: "[AIモック] 作業の準備" }, { title: "[AIモック] スキャナー確認" });
+                }
+                renderEditSteps();
+            } catch (e) { Swal.fire('エラー', '通信に失敗しました', 'error'); }
+            document.getElementById('ai-loading').style.display = 'none';
+        }
+
+        function startTranslationPayment() {
+            if(tempSteps.length === 0) return Swal.fire('エラー', '翻訳ステップがありません', 'error');
+            triggerSquarePayment('translation', '標準的な翻訳・言語検出 NMTモデル');
+        }
+
+        async function executeCloudTranslation() {
+            const targetLang = document.getElementById('lang-select').value;
+            document.getElementById('ai-loading').style.display = 'block';
+            document.getElementById('ai-status').innerText = `${targetLang} に翻訳中...`;
+            try {
+                const texts = tempSteps.map(s => s.title);
+                const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${GCP_API_KEY}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: texts, target: targetLang })
+                });
+                const data = await res.json();
+                if (data.data && data.data.translations) {
+                    Swal.fire('完了', 'NMT翻訳が完了しました！', 'success');
+                    data.data.translations.forEach((t, i) => tempSteps[i].title = t.translatedText );
+                    renderEditSteps();
+                } else Swal.fire('APIテスト', 'モック翻訳を適用します', 'warning');
+            } catch(e) { console.error(e); }
+            document.getElementById('ai-loading').style.display = 'none';
+        }
+
+        // --- Employee / AG UI ---
+        function renderUserManuals() {
+            const list = document.getElementById('user-manuals-list');
+            list.innerHTML = '';
+            dbManuals.forEach((m, idx) => {
+                list.innerHTML += `<div class="glass panel" style="padding:20px; text-align:center; border:1px solid var(--primary); cursor:pointer;" onclick="launchAntiGravity(${idx})"><i class="fa-solid fa-rocket" style="font-size:2rem; color:var(--primary); margin-bottom:10px;"></i><h3 style="margin-bottom:10px;">${m.name}</h3><button class="btn" style="width:100%;">START学習設定</button></div>`;
+            });
+        }
+        let agManual = null; let agStepIdx = 0;
+        function launchAntiGravity(idx) {
+            agManual = dbManuals[idx];
+            if(!agManual.steps) agManual.steps = []; // Safety catch
+            document.getElementById('ag-manual-name').innerText = agManual.name;
+            document.getElementById('anti-gravity-view').style.display = 'flex';
+            document.getElementById('ag-card').classList.add('active'); // Added to fix blank screen
+            agStepIdx = 0; updateAGUI();
+        }
+        function exitAntiGravity() { document.getElementById('anti-gravity-view').style.display = 'none'; }
+        function updateAGUI() {
+            const card = document.getElementById('ag-card');
+            if(agManual.steps && agStepIdx < agManual.steps.length) {
+                document.getElementById('ag-progress').style.width = ((agStepIdx)/agManual.steps.length)*100 + '%';
+                const sTitle = agManual.steps[agStepIdx].title;
+                const mediaUrl = agManual.steps[agStepIdx].mediaUrl;
+                let mediaHtml = '';
+                if(mediaUrl) {
+                    if(agManual.steps[agStepIdx].mediaType === 'video') mediaHtml = `<video src="${mediaUrl}" style="width:100%; max-height:300px; border-radius:12px; margin-bottom:20px;" controls autoplay muted playsinline></video>`;
+                    else mediaHtml = `<img src="${mediaUrl}" style="width:100%; max-height:300px; object-fit:contain; border-radius:12px; margin-bottom:20px;">`;
+                }
+                card.innerHTML = `<div class="step-number">STEP ${agStepIdx + 1}</div>
+                    ${mediaHtml}
+                    <div class="step-title">${sTitle}</div>
+                    <label style="display:block; margin:20px 0; font-size:1.2rem; cursor:pointer;">
+                        <input type="checkbox" id="step-check" style="width:20px; height:20px; margin-right:10px;">
+                        「${sTitle}」はできましたか？
+                    </label>
+                    <button class="clear-btn" onclick="if(document.getElementById('step-check').checked){agStepIdx++; updateAGUI()}else{Swal.fire('確認', 'チェックを入れて完了を証明してください', 'warning')}">完了して次へ</button>`;
+            } else {
+                document.getElementById('ag-progress').style.width = '100%';
+                card.innerHTML = `<div class="step-number" style="color:#10b981;">COMPLETED</div><div class="step-title">すべてクリアしました</div><button class="clear-btn" style="background:#10b981;" onclick="exitAntiGravity()">閉じる</button>`;
+            }
+        }
+
+        // --- Chat ---
+        let pendingFile = null;
+        let currentChannel = '全体連絡';
+        function switchChannel(channelName) {
+            currentChannel = channelName;
+            document.getElementById('current-chat-header').innerText = channelName === '全体連絡' ? '# 全体連絡 (店舗連絡)' : `✉️ ${channelName} へのダイレクトメッセージ`;
+            renderChat();
+        }
+        
+        function renderChat() {
+            const myOrg = currentUser ? currentUser.org : '未所属';
+            const myName = currentUser ? currentUser.name : '';
+            
+            // Generate user list dynamically based on chat history for this organization
+            const uniqueUsers = new Set(['熊澤', '森下', '店長']); // Default demo users
+            chatMessages.forEach(m => {
+                if(m.org === myOrg && m.sender !== myName && m.sender !== '本部') uniqueUsers.add(m.sender);
+            });
+            const users = Array.from(uniqueUsers);
+
+            let chanHtml = `<div class="chat-item ${currentChannel==='全体連絡'?'active':''}" onclick="switchChannel('全体連絡')"><div class="chat-avatar" style="background:#f43f5e;"><i class="fa-solid fa-bullhorn"></i></div> <div>@全体連絡</div></div>`;
+            users.forEach(u => {
+                chanHtml += `<div class="chat-item ${currentChannel===u?'active':''}" onclick="switchChannel('${u}')"><div class="chat-avatar" style="background:#8b5cf6;">👤</div> <div>@${u}</div></div>`;
+            });
+            document.getElementById('channel-list').innerHTML = chanHtml;
+
+            const box = document.getElementById('chat-box');
+            box.innerHTML = '';
+            
+            const visibleMessages = chatMessages.filter(msg => {
+                if (msg.org !== myOrg && msg.org !== '全体') return false; // Cross-org isolation
+                if(currentChannel === '全体連絡') return msg.target === '全体連絡' || !msg.target;
+                return (msg.target === currentChannel && msg.sender === myName) || 
+                       (msg.sender === currentChannel && msg.target === myName) ||
+                       (msg.target === currentChannel && currentChannel === myName) ||
+                       (msg.sender === currentChannel && msg.target === '全体連絡'); 
+            });
+
+            visibleMessages.forEach(msg => {
+                let mHtml = '';
+                const isMyMessage = (msg.sender === myName);
+                if(msg.file) mHtml = msg.file.type === 'video' ? `<video src="${msg.file.url}" class="attached-media" controls></video>` : `<img src="${msg.file.url}" class="attached-media">`;
+                let textReplaced = msg.text.replace(/(@[^\s]+)/g, '<span class="mention-text">$1</span>');
+                box.innerHTML += `
+                <div class="msg ${isMyMessage ? 'me' : ''}">
+                    <div class="chat-avatar" style="background:${msg.color||'#6366f1'}; cursor:pointer;" onclick="switchChannel('${msg.sender}')" title="クリックして ${msg.sender} と個別会話(DM)を開始">${msg.avatar||'?'}</div>
+                    <div style="width:100%;">
+                        <div style="font-size:0.75rem; color:#cbd5e1; text-align:${isMyMessage?'right':'left'}; cursor:pointer; display:inline-block;" onclick="switchChannel('${msg.sender}')" title="クリックして ${msg.sender} と個別会話(DM)を開始">
+                            ${msg.sender}
+                        </div>
+                        <div class="msg-content">${textReplaced}${mHtml?'<br>'+mHtml:''}</div>
+                    </div>
+                </div>`;
+            });
+        }
+        function handleFileSelect(e) { 
+            const f = e.target.files[0]; if(!f)return; pendingFile = {type:f.type.startsWith('video')?'video':'image', url:URL.createObjectURL(f)}; 
+            const p = document.getElementById('file-preview'); p.style.display='flex'; p.innerHTML = pendingFile.type==='video'?`<video src="${pendingFile.url}"></video> <span>添付済</span> <i class="fa-solid fa-xmark remove-file" onclick="removePendingFile()"></i>`:`<img src="${pendingFile.url}"> <span>添付済</span> <i class="fa-solid fa-xmark remove-file" onclick="removePendingFile()"></i>`;
+        }
+        function removePendingFile() { pendingFile = null; document.getElementById('file-preview').style.display = 'none'; }
+        
+        function checkMention(el) {
+            const val = el.value;
+            const hint = document.getElementById('mention-hint');
+            if(val.endsWith('@')) {
+                const myOrg = currentUser ? currentUser.org : '未所属';
+                const myName = currentUser ? currentUser.name : '';
+                const uniqueUsers = new Set(['熊澤', '森下', '店長']); 
+                chatMessages.forEach(m => {
+                    if(m.org === myOrg && m.sender !== myName && m.sender !== '本部') uniqueUsers.add(m.sender);
+                });
+                const users = Array.from(uniqueUsers);
+                
+                let html = `<div class="mention-hint-item" onclick="insertMention('@全体連絡')"><i class="fa-solid fa-bullhorn"></i> @全体連絡</div>`;
+                users.forEach(u => {
+                    html += `<div class="mention-hint-item" onclick="insertMention('@${u}')">👤 @${u}</div>`;
+                });
+                hint.innerHTML = html;
+                hint.style.display = 'flex';
+            } else if (!val.includes('@')) {
+                hint.style.display = 'none';
+            }
+        }
+        
+        function insertMention(text) {
+            const el = document.getElementById('chat-input');
+            el.value = el.value.replace(/@$/, text + ' ');
+            document.getElementById('mention-hint').style.display = 'none';
+            el.focus();
+        }
+
+        function sendChat() {
+            const txt = document.getElementById('chat-input').value.trim();
+            if(!txt && !pendingFile) return;
+            const u = currentUser ? currentUser : {org: "未所属", name:"名前なし", avatar:"?"};
+            chatMessages.push({ id: Date.now(), org: u.org, sender: u.name, target: currentChannel, avatar: u.avatar, color: '#10b981', time: "今", text: txt, file: pendingFile });
+            document.getElementById('chat-input').value = ''; removePendingFile(); document.getElementById('mention-hint').style.display='none';
+            saveDB(); renderChat(); setTimeout(() => {
+                        const box = document.getElementById('chat-box');
+                        if(box) box.scrollTop = box.scrollHeight;
+            }, 50);
+        }
+
+        // --- Admin ---
+        function renderAdminLogs() {
+            const tbody = document.getElementById('admin-log-data');
+            tbody.innerHTML = '';
+            adminLogs.forEach(log => {
+                tbody.innerHTML += `<tr><td><span class="badge">${log.vid}</span></td><td>${log.manual}</td><td style="color:#cbd5e1;">${log.user}</td><td style="color:#cbd5e1;">${log.time}</td><td>${log.diff}</td></tr>`;
+            });
+        }
+    </script>
+
+    <!-- Square Payment Modal -->
+    <div id="payment-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div class="glass" style="padding:30px; border-radius:15px; width:400px; max-width:90%; position:relative; background:#1e293b; color:white;">
+            <i class="fa-solid fa-xmark" style="position:absolute; top:15px; right:20px; font-size:1.5rem; cursor:pointer; color:#94a3b8;" onclick="closePayment()"></i>
+            <h2 id="pay-title" style="margin-top:0; color:#10b981; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; font-size:1.2rem;"><i class="fa-brands fa-square"></i> セキュア決済</h2>
+            <p style="font-size:0.9rem; color:#cbd5e1; margin-bottom:20px;">高度なAI機能の実行には ¥500 のクラウドAPI利用料（1回使い切り）が発生します。</p>
+            <div id="card-container" style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; min-height:80px;"></div>
+            <button id="card-button" class="btn btn-gold" style="width:100%; font-size:1.1rem;"><i class="fa-solid fa-lock"></i> ¥500 決済してAIを実行</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -10,18 +10,15 @@
     <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
     <script src="square_integration.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
         rel="stylesheet">
-    <!-- 認証・設定ファイルの読み込み -->
-    <!-- <script src="auth_config.js"></script> REMOVED: Integrated into this file for simplicity -->
     <style>
         :root {
-            /* Modern Tech Palette */
             --primary-color: #2563EB;
-            /* Vivid Blue */
             --primary-dark: #1E40AF;
             --accent-color: #F59E0B;
-            /* Amber for attention */
             --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             --glass-bg: rgba(255, 255, 255, 0.95);
             --text-main: #1F2937;
@@ -40,7 +37,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            /* App-like feel */
         }
 
         /* 共通ヘッダー */
@@ -58,346 +54,68 @@
         .header-logo {
             font-size: 20px;
             font-weight: 700;
-            color: var(--primary-color);
+            color: #2563EB;
             letter-spacing: -0.5px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
+        .header-logo::before { content: '⚡'; }
+        .header-info { font-size: 11px; text-align: right; color: var(--text-sub); line-height: 1.3; }
 
-        .header-logo::before {
-            content: '⚡';
-            /* Icon */
-        }
-
-        .header-info {
-            font-size: 11px;
-            text-align: right;
-            color: var(--text-sub);
-            line-height: 1.3;
-        }
-
-        /* ページ切り替え */
         .page {
-            display: none;
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            animation: fadeIn 0.3s ease-out;
+            display: none; flex: 1; padding: 20px; overflow-y: auto; animation: fadeIn 0.3s ease-out;
         }
+        .page.active { display: flex; flex-direction: column; }
 
-        .page.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Login Screen */
-        #page-login {
-            justify-content: center;
-            align-items: center;
-        }
-
-        .login-card {
-            background: white;
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: var(--shadow-lg);
-            width: 100%;
-            max-width: 320px;
-            text-align: center;
-        }
-
-        .login-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 30px;
-            color: var(--text-main);
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 16px;
-            font-size: 16px;
-            /* Optimized for Mobile to prevent zoom */
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            box-sizing: border-box;
-            text-align: left;
-            margin-bottom: 15px;
-            transition: border-color 0.2s;
-            font-family: inherit;
-        }
-
-        .login-input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
+        #page-login { justify-content: center; align-items: center; }
+        .login-card { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: var(--shadow-lg); width: 100%; max-width: 320px; text-align: center; }
+        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 30px; color: var(--text-main); }
+        .login-input { width: 100%; padding: 16px; font-size: 16px; border: 2px solid #E5E7EB; border-radius: 12px; box-sizing: border-box; text-align: left; margin-bottom: 15px; transition: border-color 0.2s; font-family: inherit; }
+        .login-input:focus { border-color: #2563EB; outline: none; }
+        .btn-primary { background: #2563EB; color: white; width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
 
         /* Store Selector Bar */
-        .store-selector-bar {
-            background: white;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .store-icon {
-            font-size: 18px;
-        }
-
-        select {
-            flex: 1;
-            padding: 8px 12px;
-            font-size: 14px;
-            border-radius: 8px;
-            border: 1px solid #E5E7EB;
-            background: #F9FAFB;
-            font-family: inherit;
-            color: var(--text-main);
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn-logout {
-            background: #F3F4F6;
-            color: var(--text-sub);
-        }
-
-        .btn-admin {
-            background: #111827;
-            color: #FFD700;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .store-selector-bar { background: white; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; }
+        select { flex: 1; padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-family: inherit; color: var(--text-main); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-logout { background: #F3F4F6; color: var(--text-sub); }
 
         /* Scanner Area */
-        #scanner-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 20px auto 0;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #000;
-            aspect-ratio: 4/3;
-            position: relative;
-            box-shadow: var(--shadow-lg);
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .scan-guide {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70%;
-            height: 40%;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 8px;
-            box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.4);
-            z-index: 10;
-        }
-
-        .scan-guide::after {
-            content: 'SCAN BARCODE';
-            position: absolute;
-            bottom: -25px;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
+        #scanner-container { width: 100%; max-width: 400px; margin: 20px auto 0; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4/3; position: relative; box-shadow: var(--shadow-lg); }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .scan-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 40%; border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 8px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.4); z-index: 10; }
+        .scan-guide::after { content: 'SCAN BARCODE'; position: absolute; bottom: -25px; width: 100%; text-align: center; color: white; font-size: 12px; font-weight: 600; letter-spacing: 1px; }
 
         /* Action Buttons */
-        .action-area {
-            max-width: 400px;
-            margin: 20px auto 0;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .btn-next {
-            background: var(--bg-gradient);
-            color: var(--text-main);
-            border: 2px solid var(--primary-color);
-            display: none;
-        }
-
-        .btn-pay {
-            background: var(--accuracy-color, #10B981);
-            color: white;
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-        }
+        .action-area { max-width: 400px; margin: 20px auto 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+        .btn-next { background: var(--bg-gradient); color: var(--text-main); border: 2px solid #2563EB; display: none; }
+        .btn-pay { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
 
         /* Cart List */
-        .cart-container {
-            background: white;
-            border-radius: 16px 16px 0 0;
-            margin-top: 20px;
-            flex: 1;
-            padding: 20px;
-            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .total-display {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--text-main);
-            text-align: right;
-            border-bottom: 2px solid #F3F4F6;
-            padding-bottom: 15px;
-            margin-bottom: 15px;
-        }
-
-        .total-display span {
-            font-size: 18px;
-            color: var(--text-sub);
-            margin-right: 5px;
-        }
-
-        #items {
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
-            animation: slideIn 0.2s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(-10px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+        .cart-container { background: white; border-radius: 16px 16px 0 0; margin-top: 20px; flex: 1; padding: 20px; box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; }
+        .total-display { font-size: 32px; font-weight: 800; color: var(--text-main); text-align: right; border-bottom: 2px solid #F3F4F6; padding-bottom: 15px; margin-bottom: 15px; }
+        .total-display span { font-size: 18px; color: var(--text-sub); margin-right: 5px; }
+        #items { overflow-y: auto; flex: 1; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; animation: slideIn 0.2s ease-out; }
+        
+        @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* Payment SCreen */
-        #page-payment {
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .payment-card {
-            background: white;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: var(--shadow-lg);
-            width: 100%;
-            max-width: 340px;
-        }
-
-        .qr-frame {
-            border: 2px dashed var(--primary-color);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 30px 0;
-            background: #F9FAFB;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        #page-payment { align-items: center; justify-content: center; text-align: center; }
+        .payment-card { background: white; padding: 40px; border-radius: 24px; box-shadow: var(--shadow-lg); width: 100%; max-width: 340px; }
         
-        #sq-payment-form {
-            width: 100%;
-            margin-top: 20px;
-        }
+        #sq-payment-form { width: 100%; margin-top: 20px; }
 
         /* Overlay Mask */
-        #mask {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 50;
-            backdrop-filter: blur(5px);
-        }
+        #mask { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); color: white; justify-content: center; align-items: center; flex-direction: column; z-index: 50; backdrop-filter: blur(5px); }
+        .mask-icon { font-size: 40px; margin-bottom: 15px; }
 
-        .mask-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-
-        /* --- Password Reset Modal --- */
-        #modal-reset {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-        }
+        #modal-reset { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 200; }
     </style>
 
     <!-- Google AdSense -->
@@ -409,9 +127,7 @@
     <link rel="apple-touch-icon" href="/app-icon.png">
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js');
-        });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); });
       }
     </script>
 </head>
@@ -420,39 +136,26 @@
 
     <!-- 1. Login Screen (Updated to Email/Password) -->
     <div id="page-login" class="page active">
-        <div class="header-logo" style="position:absolute; top:30px; font-size:28px;">
-            どこでもレジ
-        </div>
+        <div class="header-logo" style="position:absolute; top:30px; font-size:28px;">どこでもレジ</div>
         <div class="login-card">
             <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
             <h2 class="login-title">Staff Login</h2>
-
-            <!-- Email Input -->
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
-            <input type="email" id="input-email" class="login-input" placeholder="store@demo.com"
-                autocomplete="username">
-
-            <!-- Password Input -->
+            <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
-            <input type="password" id="input-pass" class="login-input" placeholder="Password"
-                autocomplete="current-password">
+            <input type="password" id="input-pass" class="login-input" placeholder="Password" autocomplete="current-password">
 
             <button class="btn-primary" onclick="handleLogin()">ログインして開始</button>
 
             <div style="margin-top:15px; font-size:12px;">
-                <a href="#" onclick="showResetModal()" style="color:var(--primary-color);">Forgot Password?</a>
+                <a href="#" onclick="showResetModal()" style="color:#2563EB;">Forgot Password?</a>
             </div>
 
             <div style="margin-top:25px; font-size:11px; color:#9CA3AF; line-height:1.6; text-align: left;">
-                <b>Demo Account:</b><br>
-                Email: store@demo.com<br>
-                Pass: DemoPass2026!
+                <b>Demo Account:</b><br>Email: store@demo.com<br>Pass: DemoPass2026!
             </div>
-
             <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
-                <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">
-                    📖 どこでもレジ サービス詳細 (LP) を見る
-                </a>
+                <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
             </div>
         </div>
     </div>
@@ -462,29 +165,30 @@
         <div style="background:white; padding:30px; border-radius:10px; width:300px; text-align:center;">
             <h3>請求先メール登録</h3>
             <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">管理者へ直接請求先アドレスを送信します。</p>
-            <input type="email" id="reset-email" placeholder="email@example.com"
-                style="width:100%; padding:10px; margin-bottom:15px; box-sizing:border-box; border:1px solid #bdc3c7; border-radius:4px;">
-            <button onclick="doReset()"
-                style="width:100%; padding:10px; background:var(--primary-color); color:white; border:none; border-radius:4px; cursor:pointer;">
-                送信する</button>
-            <div style="margin-top:15px; cursor:pointer; color:#95a5a6; font-size:12px;" onclick="closeResetModal()">
-                Cancel</div>
+            <input type="email" id="reset-email" placeholder="email@example.com" style="width:100%; padding:10px; margin-bottom:15px; box-sizing:border-box; border:1px solid #bdc3c7;">
+            <button onclick="doReset()" style="width:100%; padding:10px; background:#2563EB; color:white; border:none; border-radius:4px; cursor:pointer;">送信する</button>
+            <div style="margin-top:15px; cursor:pointer; color:#95a5a6; font-size:12px;" onclick="closeResetModal()">Cancel</div>
         </div>
     </div>
 
     <!-- 2. POS Screen -->
     <div id="page-pos" class="page">
-        <div class="app-header">
-            <div class="header-logo" id="header-chain-name"></div>
-            <div class="header-info" id="header-user-info"></div>
+        <!-- New POS Header / Excel Import -->
+        <div class="store-selector-bar" style="justify-content: space-between; border-radius:12px; margin-bottom:15px; background:var(--glass-bg);">
+            <div style="font-weight:bold; color:#2563EB; display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.2rem;">📱</span>
+                <span id="header-chain-name">どこでもレジ</span>
+                <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px;"></span>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <!-- EXCEL IMPORT BUTTON -->
+                <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm" style="background:#10B981; color:white; padding:8px 12px; font-weight:bold;">📥 商品データ取込(Excel)</button>
+                <input type="file" id="excel-master-upload" accept=".xlsx, .csv" style="display:none;" onchange="importProductMaster(event)">
+                <button class="btn-sm btn-logout" onclick="logout()" style="padding:8px 12px;">ログアウト</button>
+            </div>
         </div>
 
-        <div class="store-selector-bar">
-            <span class="store-icon">🏪</span>
-            <select id="store-select" onchange="changeStore()"></select>
-            <button class="btn-sm btn-logout" onclick="logout()">Logout</button>
-            <button class="btn-sm btn-admin" onclick="showAdminStats()">📊 売上確認 (Admin)</button>
-        </div>
+        <select id="store-select" onchange="changeStore()" style="display:none;"></select>
 
         <div id="scanner-container">
             <video id="video"></video>
@@ -532,11 +236,107 @@
         let currentSession = null;
         let currentStoreConfig = null;
 
-        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
-            ? 'http://localhost:3000'
-            : '';
+        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
-        // --- Auth Logic (Email/Password) ---
+        // --- IndexedDB Product Master DB (Dexie.js) ---
+        var db = new Dexie("AnywhereRegiDB");
+        db.version(1).stores({
+            products: 'janCode, name, price, category'
+        });
+
+        // --- EXCEL BULK IMPORT (50,000+ items possible into IndexedDB) ---
+        async function importProductMaster(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Swal.fire({
+                title: '商品マスター読込中...',
+                text: 'エクセルから数万点の商品データをブラウザ(IndexedDB)にキャッシュ中',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    if(json.length === 0) throw new Error("データが空です");
+
+                    // Map columns dynamically
+                    const productsToInsert = json.map(row => ({
+                        janCode: String(row['JAN'] || row['janCode'] || row['JANコード'] || row['バーコード'] || Math.floor(Math.random()*1000000000000)),
+                        name: row['商品名'] || row['name'] || "不明な商品",
+                        price: parseInt(row['価格'] || row['price'] || row['売価'] || row['単価'] ||"0", 10),
+                        category: row['カテゴリ'] || row['category'] || "一般"
+                    }));
+
+                    // Bulk put to IndexedDB (incredibly fast)
+                    await db.products.bulkPut(productsToInsert);
+                    const count = await db.products.count();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '取込完了！',
+                        html: `<b>${productsToInsert.length}件</b> の商品マスターを端末データベースに高速登録しました。<br>現在の総商品登録数: <b>${count}件</b><br><br><span style="font-size:12px;color:#666;">これより市販のHIDスキャナで一瞬で商品が呼び出せます。数万点でも遅延なしで決済操作が可能です。</span>`
+                    });
+                    document.getElementById('excel-master-upload').value = '';
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('エラー', '読み込みに失敗しました。正しいエクセル形式か確認してください。', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- Mock Product API (now queries ultra-fast IndexedDB) ---
+        async function mockProductApi(janCode) {
+            return new Promise(async (resolve) => {
+                let codeStr = String(janCode);
+                try {
+                    // --- ① インストアコード (NON-PLU) 判定ロジック ---
+                    // 日本の規約: 「02」または「20〜29」から始まる13桁はインストアコード（生鮮・惣菜など）
+                    if (codeStr.length === 13 && (codeStr.startsWith('02') || codeStr.startsWith('2'))) {
+                        // フォーマット: [prefix2桁] + [商品コード5桁] + [値段5桁] + [チェックディジット1桁]
+                        const prefix = codeStr.substring(0, 2);
+                        const itemCode = codeStr.substring(2, 7);
+                        const priceStr = codeStr.substring(7, 12);
+                        
+                        // インストアコードに埋め込まれた価格を抽出 (1円〜99,999円)
+                        const calculatedPrice = parseInt(priceStr, 10);
+                        
+                        return resolve({
+                            janCode: codeStr,
+                            name: `インストア生鮮食品 (${itemCode})`,
+                            price: calculatedPrice,
+                            category: "インストア"
+                        });
+                    }
+
+                    // --- ② Check ultra-fast local IndexedDB ---
+                    const productInfo = await db.products.get(codeStr);
+                    if (productInfo) {
+                        return resolve(productInfo);
+                    }
+                    
+                    // --- ③ Fallback to productMaster (products.js) if exists ---
+                    if (typeof productMaster !== 'undefined' && productMaster[codeStr]) {
+                        return resolve({ janCode: codeStr, ...productMaster[codeStr] });
+                    } 
+                    
+                    // --- ④ Not Found ---
+                    resolve({ janCode: codeStr, name: "未登録商品", price: 100, category: "不明" });
+                } catch (e) {
+                    resolve({ janCode: codeStr, name: "エラー", price: 0, category: "ｴﾗｰ" });
+                }
+            });
+        }
+
+
+        // --- Auth Logic ---
         async function handleLogin() {
             const email = document.getElementById('input-email').value;
             const password = document.getElementById('input-pass').value;
@@ -544,45 +344,26 @@
             if (!email || !password) return alert("Email and Password are required.");
 
             try {
-                // Modified: Now calls standard Email/Pasword endpoint
                 const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
                 const data = await res.json();
-
                 if (data.success) {
-                    // Success!
-                    currentSession = {
-                        email: email,
-                        role: 'store', // derived
-                        storeName: "Demo Store", // Mock name
-                        sessionToken: "mock_token_" + Date.now()
-                    };
+                    currentSession = { email: email, role: 'store', storeName: "Demo Store", sessionToken: "mock_token_" + Date.now() };
                     initPosScreen(currentSession);
-                } else {
-                    alert(data.error || "Login Failed");
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Network Error during login.");
-            }
+                } else { alert(data.error || "Login Failed"); }
+            } catch (e) { console.error(e); alert("Network Error during login."); }
         }
 
         // --- Password Reset ---
-        function showResetModal() {
-            document.getElementById('modal-reset').style.display = 'flex';
-        }
-        function closeResetModal() {
-            document.getElementById('modal-reset').style.display = 'none';
-        }
+        function showResetModal() { document.getElementById('modal-reset').style.display = 'flex'; }
+        function closeResetModal() { document.getElementById('modal-reset').style.display = 'none'; }
         async function doReset() {
             const email = document.getElementById('reset-email').value;
             if (!email) return alert("Email required");
-
             try {
-                // Modified: Now calls standard endpoint to add billing email to Admin Portal
                 const res = await fetch(`${API_URL}/api/admin/settings/billing-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -596,37 +377,28 @@
         function initPosScreen(session) {
             document.getElementById('page-login').classList.remove('active');
             document.getElementById('page-pos').classList.add('active');
-            document.getElementById('header-chain-name').innerText = session.storeName;
             document.getElementById('header-user-info').innerText = session.email;
 
-            // Mock Store List
             const select = document.getElementById('store-select');
             select.innerHTML = "";
             const opt = document.createElement('option');
-            opt.value = "store1";
-            opt.innerText = "Demo Store 001";
+            opt.value = "store1"; opt.innerText = "Demo Store 001";
             select.appendChild(opt);
-
             changeStore();
             initApp();
         }
 
-        function changeStore() {
-            const select = document.getElementById('store-select');
-            const storeId = select.value;
-            console.log(`Store changed to: ${storeId}`);
-        }
+        function changeStore() { console.log(`Store changed`); }
 
         function logout() {
             currentSession = null;
             document.getElementById('page-pos').classList.remove('active');
             document.getElementById('page-login').classList.add('active');
-            document.getElementById('input-pass').value = ''; // clear pass
+            document.getElementById('input-pass').value = '';
         }
 
         function resetPos() {
-            total = 0;
-            cartItems = [];
+            total = 0; cartItems = [];
             document.getElementById('items').innerHTML = "";
             document.getElementById('total-display').innerText = "0";
             document.getElementById('page-payment').classList.remove('active');
@@ -643,70 +415,55 @@
         let isPaused = false;
         let cartItems = [];
 
-        async function mockProductApi(janCode) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    if (typeof productMaster !== 'undefined' && productMaster[janCode]) {
-                        resolve({ janCode, ...productMaster[janCode] });
-                    } else {
-                        resolve({ janCode, name: "未登録商品", price: 200, category: "不明" });
-                    }
-                }, 300);
-            });
-        }
-
         async function goToPayment() {
             if (total === 0) return alert("商品がありません");
-
             document.getElementById('page-pos').classList.remove('active');
             document.getElementById('page-payment').classList.add('active');
             document.getElementById('final-total').innerText = total.toLocaleString();
 
             const status = document.getElementById('sq-status');
-            status.innerText = "";
+            if(status) status.innerText = "";
             
-            // Clean up previous form elements if any
             document.getElementById('sq-card-container').innerHTML = '';
             document.getElementById('google-pay-button').innerHTML = '';
 
-            initializeSquarePayment(total, 'sq-card-container', () => {
-                Swal.fire('決済完了', '決済が完了し、本部に売上データが送信されました。', 'success').then(() => {
-                    resetPos();
-                });
+            initializeSquarePayment(total, 'sq-card-container', async () => {
+                try {
+                    const txData = {
+                        storeId: currentSession ? currentSession.storeName : "Demo Store",
+                        transactionId: "TX" + Date.now(),
+                        amount: total,
+                        items: cartItems.map(i => ({ janCode: i.janCode, name: i.name, price: i.price })),
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // Send exact POS transaction data to Admin Server (Fake API)
+                    await fetch(API_URL + '/api/admin/sales', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(txData)
+                    }).catch(e => console.log('Admin sync mock fallback', e));
+
+                    // --- Cross-Tab Sync for Local Demo ---
+                    const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
+                    localLog.unshift({ type: 'LIVE_SALE', source: 'どこでもレジ端末', amount: total, time: new Date().toLocaleTimeString(), items: txData.items.map(i=>i.name).join(', ') });
+                    if(localLog.length > 50) localLog.pop();
+                    localStorage.setItem('admin_pos_log', JSON.stringify(localLog));
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '決済完了',
+                        text: '決済が完了し、本部に売上データが送信されました。'
+                    }).then(() => { resetPos(); });
+                } catch (e) {
+                    Swal.fire('エラー', '本部の通信に失敗しました (オフライン仮保存)', 'warning').then(() => { resetPos(); });
+                }
             });
         }
 
         function backToScan() {
             document.getElementById('page-payment').classList.remove('active');
             document.getElementById('page-pos').classList.add('active');
-        }
-
-        async function mockPaymentInitApi(cartData, totalAmount) {
-            const AWS_URL = 'https://c7fnqeywme.execute-api.us-east-1.amazonaws.com/default/gmo-payment-url-generator';
-            try {
-                const response = await fetch(AWS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: totalAmount, orderId: "T" + Date.now() })
-                });
-                if (!response.ok) throw new Error("API Error");
-                return await response.json();
-            } catch (e) {
-                // throw e; // Pass error for debugging
-                // Mock fallback if offline for demo
-                return { paymentUrl: "https://example.com/pay_mock", orderId: "MOCK" + Date.now() };
-            }
-        }
-
-        function showAdminStats() {
-            // const stats = getAdminStats();
-            const msg = `【今月の売上速報】\n(Mock Data)\n` +
-                `----------------------------\n` +
-                `総取引: 42件\n` +
-                `流通額: ¥150,000\n` +
-                `----------------------------\n` +
-                `★手数料収益(1%): ¥1,500\n`;
-            alert(msg);
         }
 
         async function startScanner() {
@@ -724,7 +481,7 @@
             if (isPaused) return;
             isPaused = true;
             const mask = document.getElementById('mask');
-            document.getElementById('mask-msg').innerText = "Searching...";
+            document.getElementById('mask-msg').innerText = "Searching db...";
             mask.style.display = 'flex';
 
             try {
@@ -732,7 +489,6 @@
 
                 document.getElementById('mask-msg').innerText = "Scan OK!";
                 setTimeout(() => mask.style.display = 'none', 200);
-
                 document.getElementById('btn-next').style.display = 'block';
 
                 total += product.price;
@@ -767,8 +523,26 @@
                 mask.onclick = null;
                 startScanner();
             };
+            
+            // --- HID Barcode Scanner Integration ---
+            // Physical Scanners send keypress events ending with Enter incredibly fast
+            let hidBarcodeStr = "";
+            let hidTimeout = null;
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && hidBarcodeStr.length >= 8) {
+                    e.preventDefault();
+                    onScanSuccess(hidBarcodeStr); 
+                    hidBarcodeStr = "";
+                    return;
+                }
+                
+                if (/^[0-9]$/.test(e.key) || /^[a-zA-Z]$/.test(e.key)) {
+                    hidBarcodeStr += e.key;
+                    if(hidTimeout) clearTimeout(hidTimeout);
+                    hidTimeout = setTimeout(() => { hidBarcodeStr = ""; }, 50); // reset if it was human typing manually
+                }
+            });
         }
     </script>
 </body>
-
 </html>

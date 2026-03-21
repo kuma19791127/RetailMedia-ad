@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO Best Practices -->
+    <title>ManualHelp | 月100万円のマニュアル作成費を完全無料に</title>
+    <meta name="description" content="マニュアル作成に月100万円費用を支払っていませんか？ManualHelpならドラッグ＆ドロップや動画で直感的に作成可能。何人でもいくらでも完全無料でご利用いただけます。">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --secondary: #ec4899;
+            --dark: #0f172a;
+            --text-main: #1e293b;
+            --text-light: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Noto Sans JP', sans-serif; }
+
+        body { background: #ffffff; color: var(--text-main); overflow-x: hidden; line-height: 1.6; }
+
+        /* Hero Section */
+        .hero { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: white; padding: 100px 20px 80px; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(99,102,241,0.15) 0%, transparent 60%); animation: pulse 10s infinite alternate; z-index: 0; }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+        .hero-content { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+        .badge-free { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-weight: 800; padding: 10px 20px; border-radius: 30px; display: inline-block; margin-bottom: 20px; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); }
+        h1 { font-size: 3.5rem; font-weight: 900; margin-bottom: 25px; line-height: 1.2; letter-spacing: -1px; }
+        .hero-subtitle { font-size: 1.2rem; color: #cbd5e1; margin-bottom: 40px; }
+        .cta-btn { background: linear-gradient(135deg, var(--primary), #4f46e5); color: white; display: inline-flex; align-items: center; gap: 10px; padding: 18px 40px; border-radius: 40px; font-size: 1.2rem; font-weight: bold; text-decoration: none; box-shadow: 0 10px 25px var(--primary-glow); transition: 0.3s; }
+        .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px var(--primary-glow); }
+
+        .pricing-banner { background: #f8fafc; padding: 40px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        .pricing-text { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .pricing-note { font-size: 0.9rem; color: #64748b; margin-top: 5px; }
+
+        .section { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+        .section-title { text-align: center; font-size: 2.5rem; font-weight: 800; margin-bottom: 50px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        
+        .feature-card { background: white; border-radius: 20px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; transition: 0.3s; text-align: center; }
+        .feature-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+        .feature-icon { font-size: 3rem; color: var(--secondary); margin-bottom: 20px; }
+        .feature-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 15px; }
+
+        .chat-banner { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; border-radius: 30px; padding: 50px; text-align: center; margin: 60px 0; box-shadow: 0 20px 40px rgba(236,72,153,0.3); }
+
+        .industry-card { border-radius:16px; border:2px solid #e2e8f0; padding:25px; cursor:pointer; background:white; text-decoration:none; color:inherit; display:block; transition:0.3s;}
+        .industry-card:hover { border-color:var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.05); transform:translateY(-5px);}
+        .industry-name { font-size:1.4rem; font-weight:bold; margin-bottom:10px; display:flex; align-items:center; gap:10px;}
+        .industry-desc { font-size:0.95rem; color:#64748b; }
+
+        @media(max-width: 768px) { h1 { font-size: 2.2rem; } .hero { padding: 60px 20px; } }
+    </style>
+</head>
+<body>
+
+    <header style="padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee;">
+        <div style="font-size: 1.5rem; font-weight: 900;"><i class="fa-solid fa-feather" style="color:var(--primary);"></i> ManualHelp</div>
+        <a href="manualhelp.html#login" class="cta-btn" style="padding: 10px 25px; font-size: 1rem;">ログイン / 登録</a>
+    </header>
+
+    <div class="hero">
+        <div class="hero-content">
+            <div class="badge-free">完全無料・無制限</div>
+            <h1>マニュアル作成に月100万円費用を<br>支払っていませんか？</h1>
+            <p class="hero-subtitle">ManualHelpは「何人でも」「いくらでも」無料で使える次世代マニュアル管理プラットフォームです。<br>動画のAI解析、ドラッグ＆ドロップによる直感的な編集で圧倒的なDXを実現します。</p>
+            <a href="manualhelp.html#corp" class="cta-btn">無料でマニュアルを作成する <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="pricing-banner">
+        <div class="pricing-text">基本機能はすべて「無料」です</div>
+        <p class="pricing-note">※Google Cloud APIを利用した【AI動画解析】や【AI一括多言語翻訳】などの特殊機能をご利用の際のみ、1回500円の実費決済となります。</p>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">あらゆる業種の「現場のリアルな課題」を解決</h2>
+        
+        <div class="grid-3">
+            <a href="#retail" class="industry-card">
+                <div class="industry-name">🏪 卸売業・小売業</div>
+                <div class="industry-desc">アルバイトの入れ替わりが激しい小売業。新人教育の時間を「テスト連動型マニュアル」で大幅削減。レジ打ちの手順も動画から全自動抽出！</div>
+            </a>
+            
+            <a href="#manufacturing" class="industry-card">
+                <div class="industry-name">⚙️ 製造業</div>
+                <div class="industry-desc">複雑な機械操作や安全基準の共有。PDFの取り扱い説明書をアップロードするだけで自動階層化し、言語の違う外国人労働者へ一括翻訳して安全を担保。</div>
+            </a>
+            
+            <a href="#transport" class="industry-card">
+                <div class="industry-name">🚚 運輸業・郵便業</div>
+                <div class="industry-desc">配送ルートや車両点検の確認漏れを防止。現場のスマホから確認必須チェックリスト付き（チェックしなければ完了できない）機能で品質維持。</div>
+            </a>
+            
+            <a href="#it" class="industry-card">
+                <div class="industry-name">💻 情報通信業</div>
+                <div class="industry-desc">複雑な社内システムの利用手順を画面録画動画から一瞬で文章化。エンジニアのドキュメント作成の時間をゼロに。</div>
+            </a>
+            
+            <a href="#dining" class="industry-card">
+                <div class="industry-name">🍽️ 飲食サービス業</div>
+                <div class="industry-desc">レシピや仕込みの手順、接客の基本をビジュアル化。動画共有機能により、各店舗間での品質のばらつきや属人化を完全に排除！</div>
+            </a>
+            
+            <a href="#medical" class="industry-card">
+                <div class="industry-name">🏥 医療・介護業</div>
+                <div class="industry-desc">ミスの許されない器具の扱いや介助手順。チャット機能での「申し送り事項」との連動でスムーズな業務引継ぎを実現します。</div>
+            </a>
+
+            <a href="#hospitality" class="industry-card">
+                <div class="industry-name">🏨 宿泊業</div>
+                <div class="industry-desc">清掃マニュアルやフロント対応を可視化。言葉の壁がある外国人スタッフに対しても、26カ国語クラウド翻訳機能で即戦力化。</div>
+            </a>
+
+            <a href="#service" class="industry-card">
+                <div class="industry-name">🤝 サービス業全般</div>
+                <div class="industry-desc">「何を聞かれているか」事前のDM・チャット機能で情報共有。マニュアルとコミュニケーションを連携した新時代の教育システム。</div>
+            </a>
+        </div>
+    </div>
+    
+    <div class="section" style="padding-top:0;">
+        <div class="chat-banner">
+            <h2 style="font-size: 2rem; margin-bottom: 20px;"><i class="fa-regular fa-comments"></i> 現場を繋ぐ「ダイレクトチャット機能」を標準搭載</h2>
+            <p style="font-size: 1.2rem; line-height: 1.8;">
+                マニュアルだけでは解決しない日々のコミュニケーションもManualHelpにお任せ。<br>
+                「@店長」や「@熊澤」などのダイレクトメンションで、担当者とプライベートなやり取りが可能。<br>
+                万が一現場で問題が発生した場合も、画像や動画を添付して即座に全体や担当者へ共有可能です。
+            </p>
+        </div>
+    </div>
+
+    <footer style="background: var(--dark); color: #cbd5e1; text-align: center; padding: 40px 20px;">
+        <p style="font-size: 1.5rem; font-weight: bold; color: white; margin-bottom: 20px;"><i class="fa-solid fa-feather"></i> ManualHelp</p>
+        <p>&copy; 2026 non-logi Inc. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>

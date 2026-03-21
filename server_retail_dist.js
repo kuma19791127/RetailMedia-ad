@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const os = require('os');
-require('dotenv').config();
+try { require('dotenv').config(); } catch (e) { console.log('[System] dotenv module not found, skipping.'); }
 
 const fs = require('fs');
 
@@ -83,6 +83,12 @@ app.get('/creator-portal', (req, res) => res.sendFile(path.join(__dirname, 'crea
 // NEW: Analytics Dashboard Route
 app.get('/advertiser/analytics', (req, res) => res.sendFile(path.join(__dirname, 'advertiser_dashboard.html')));
 app.get('/shift', (req, res) => res.sendFile(path.join(__dirname, 'shift_manager.html')));
+
+// Anti-Gravity Routes (URL Routing separation)
+app.get('/ag-login', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
+app.get('/corp', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
+app.get('/employee', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
 
 // Legacy Routes (Redirect to Portal)
 app.get('/store-owner', (req, res) => res.redirect('/store-portal'));
@@ -188,7 +194,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
             method: 'POST',
             headers: {
                 'Square-Version': '2024-03-20',
-                'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || 'sq0csp-vlNHR3Hhys1nlQm3FPEfpVG70AZJiHbbEOYyINK1MW8'}`,
+                'Authorization': `Bearer EAAAl-EUOJH3OJ55TOYSKXE1PLH2_uqcQwWo18xxf-bvS2CeNVJI0ETQ8nXsKs7z`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
