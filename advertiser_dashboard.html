@@ -261,6 +261,17 @@
             gap: 10px;
             justify-content: flex-end;
         }
+
+        /* Responsive */
+        @media(max-width: 768px) {
+            body { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; padding: 15px; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+            .nav-item { margin-bottom: 5px; font-size: 0.9rem; padding: 10px; }
+            .logo { width: 100%; text-align: center; margin-bottom: 15px; }
+            .main { padding: 15px; overflow-y: visible; }
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .grid { grid-template-columns: 1fr !important; }
+        }
     </style>
 
     <!-- Google AdSense -->
@@ -435,16 +446,18 @@
         <div id="campaigns-section" style="display:none;">
             <div class="header" style="justify-content: space-between; align-items: center; display: flex;">
                 <h1 style="margin:0;">📢 キャンペーン管理</h1>
-                <div style="background:white; padding:10px 20px; border-radius:8px; display:flex; gap:20px; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                    <div>
-                        <span style="font-size:0.8rem; color:#64748b;">アカウント残高 (Budget)</span>
-                        <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">1,000,000</span></div>
+                <div style="background:white; padding:15px; border-radius:8px; display:flex; flex-direction:column; gap:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); width:100%; max-width:350px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:0.8rem; color:#64748b;">残高 (Budget)</span>
+                            <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">1,000,000</span></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:0.8rem; color:#64748b;">消化 (Spend)</span>
+                            <div style="font-size:1.2rem; font-weight:bold; color:#f43f5e;">¥<span id="account-spend-display">0</span></div>
+                        </div>
                     </div>
-                    <div>
-                        <span style="font-size:0.8rem; color:#64748b;">総消化額 (Spend)</span>
-                        <div style="font-size:1.2rem; font-weight:bold; color:#f43f5e;">¥<span id="account-spend-display">0</span></div>
-                    </div>
-                    <button onclick="chargeBudget()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem;">➕ 予算追加 (決済)</button>
+                    <button onclick="chargeBudget()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem; width:100%;">➕ 予算追加 (決済)</button>
                 </div>
             </div>
 
