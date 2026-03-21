@@ -1285,7 +1285,10 @@
                 .then(function (response) {
                     if (response.result) {
                         const button = paymentsClient.createButton({ onClick: onGooglePaymentButtonClicked });
-                        document.getElementById('gpay-container').appendChild(button);
+                        const container = document.getElementById('gpay-container');
+                        if (container) {
+                            container.appendChild(button);
+                        }
                     }
                 })
                 .catch(function (err) { console.error(err); });
@@ -2372,6 +2375,7 @@
                     title: '決済情報の入力',
                     html: `
                         <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px;">
+                            <div id="apple-pay-button"></div>
                             <div id="google-pay-button"></div>
                             <div id="sq-card-container"></div>
                             <button id="sq-creditcard" style="padding:10px; background:#0f172a; color:white; border-radius:5px; border:none; cursor:pointer;">クレジットカードで決済</button>
