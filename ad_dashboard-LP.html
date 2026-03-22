@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>広告主様向け - 次世代 Retail-Ad のご案内</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #ec4899;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --gradient: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: var(--dark);
+            color: white;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.8);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .btn-nav {
+            background: var(--primary);
+            padding: 10px 24px;
+            border-radius: 30px;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: 0.3s;
+        }
+
+        .btn-nav:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 20px 60px;
+            background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.2), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.2), transparent 40%);
+        }
+
+        .tagline {
+            color: #38bdf8;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 30px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: #94a3b8;
+            max-width: 800px;
+            margin: 0 auto 50px;
+        }
+
+        /* Features/Comparisons */
+        .section {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h2.section-title {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 60px;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--gradient);
+            opacity: 0; transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .card .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            font-size: 1.05rem;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .comparison-table th {
+            background: rgba(0,0,0,0.2);
+            font-weight: 800;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            font-size: 1.05rem;
+            color: #f1f5f9;
+        }
+
+        .comparison-table .highlight {
+            background: rgba(79, 70, 229, 0.1);
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        /* Call to Action */
+        .cta-section {
+            text-align: center;
+            padding: 100px 20px;
+            background: var(--gradient);
+            margin-top: 50px;
+        }
+
+        .btn-large {
+            display: inline-block;
+            background: white;
+            color: var(--primary);
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-decoration: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+
+        .btn-large:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .nav-links {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                margin-top: 15px;
+            }
+            .nav-links a { margin-left: 0; }
+            h1 { font-size: 2.8rem; }
+            .comparison-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">retail-ad <span>for Advertisers</span></div>
+        <div class="nav-links">
+            <a href="#problem">Web広告の限界</a>
+            <a href="#solution">リテアドの強み</a>
+            <a href="#comparison">他媒体比較</a>
+            <a href="login_portal.html" class="btn-nav">ダッシュボードへログイン</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <span class="tagline">Cookie依存からの完全脱却</span>
+        <h1>本当に「売れたか」が<br>分かる広告へ。</h1>
+        <p class="subtitle">
+            Web上の「インプレッション推測」に依存する時代は終わりました。<br>
+            実店舗のレジ(POS)と直接連携し、広告を見た直後の<strong>「リアルな購買データ」</strong>を完全にトラッキングする、次世代のリテールメディア・ネットワーク。
+        </p>
+        <div>
+            <a href="login_portal.html" class="btn-large">配信ダッシュボードを開く</a>
+        </div>
+    </header>
+
+    <section id="problem" class="section">
+        <h2 class="section-title">Web広告・従来型サイネージが抱える「限界」</h2>
+        <div class="grid">
+            <div class="card" style="border-left: 4px solid #ef4444;">
+                <div class="icon">🚫</div>
+                <h3 style="color: #ef4444;">Cookie規制によるトラッキング崩壊</h3>
+                <p>YouTubeやSNSなどのWeb広告は、プライバシー保護強化（サードパーティCookie廃止）により、「広告を見た人が本当に商品を買ったか」という正確な計測が不可能になっています。ターゲティング精度も年々低下し、広告費の無駄打ちが増加しています。</p>
+            </div>
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+                <div class="icon">🏪</div>
+                <h3 style="color: #f59e0b;">コンビニサイネージの「押し売り感」</h3>
+                <p>従来のコンビニ向けサイネージは、全員に全く同じ映像を垂れ流すだけでターゲティングができません。「誰が見ているか」「天気はどうか」を無視した画一的な配信は、顧客からノイズとして扱われスルーされてしまいます。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="solution" class="section">
+        <h2 class="section-title">なぜ「retail-ad」が圧倒的に優れているのか</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">🔗</div>
+                <h3>「POS売上データ」との完全連携 (CPA計測)</h3>
+                <p>Cookieに頼る必要はありません。店舗のどこで、何時何分に広告が再生されたかという「配信ログ」と、レジで何時何分に誰が買ったかという「POS決済ログ」をAIが統合。<strong>広告視聴による「リアルな売上貢献度(CPA)」を1円単位で証明</strong>します。</p>
+            </div>
+            <div class="card">
+                <div class="icon">🎯</div>
+                <h3>AIカメラと独自データによる精密ターゲティング</h3>
+                <p>「30代女性がサイネージの前に立った瞬間」「気温が30度を超えた瞬間」だけを狙い撃ちした『モーメント配信』が可能。YouTube顔負けの高度なパーソナライズを、リアルの店舗空間で実現し購買行動をダイレクトに後押しします。</p>
+            </div>
+            <div class="card">
+                <div class="icon">🛒</div>
+                <h3>「視聴」から「購入」までの距離がゼロ</h3>
+                <p>スマホで家で広告を見ても、スーパーに行くまでの間に忘れられてしまいます。「retail-ad」は、顧客の財布が開く「購買の最前線（商品棚・レジ横）」でダイレクトに訴求。認知から購買までのロスを極限までゼロに近づけます。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="comparison" class="section">
+        <h2 class="section-title">広告媒体の比較</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>従来のWeb広告 (YouTube等)</th>
+                    <th>従来の店舗サイネージ (コンビニ等)</th>
+                    <th class="highlight">retail-ad (当システム)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>購買転換の証明</th>
+                    <td>❌ 不可能 (Cookie規制により推測のみ)</td>
+                    <td>❌ 不可能 (再生回数のレポートのみ)</td>
+                    <td class="highlight">✅ 確実 (実店舗POSデータと100%リンク)</td>
+                </tr>
+                <tr>
+                    <th>ターゲティング</th>
+                    <td>✅ 個人属性ベース (精度低下中)</td>
+                    <td>❌ できない (全員に同じ映像)</td>
+                    <td class="highlight">✅ 空間AIベース (年齢/性別/天候による動的変化)</td>
+                </tr>
+                <tr>
+                    <th>購買までの距離</th>
+                    <td>⚠️ 遠い (後日来店する必要あり)</td>
+                    <td>✅ 近い (店内にいる)</td>
+                    <td class="highlight">✅ 最短 (商品棚・決済端末の目の前)</td>
+                </tr>
+                <tr>
+                    <th>個人情報リスク</th>
+                    <td>⚠️ 高い (トラッキング拒否が増加)</td>
+                    <td>✅ ない</td>
+                    <td class="highlight">✅ ない (AIカメラは画像を保存せず属性のみ判定)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="cta-section">
+        <h2 style="font-size: 3rem; margin-bottom: 20px;">確実な費用対効果を、その目で。</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 40px;">
+            広告は「見せる」時代から、「実店舗で売る」時代へ。<br>
+            初期費用ゼロで、今すぐ広告キャンペーンを作成できます。
+        </p>
+        <a href="login_portal.html" class="btn-large">広告主ダッシュボードで配信を開始</a>
+    </section>
+
+    <footer>
+        <p>© 2026 nonlogi .Inc(リテアド) All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>

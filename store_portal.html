@@ -1704,31 +1704,35 @@
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-nav" style="display:flex !important;">
         <div class="nav-btn active" onclick="showPanel('revenue')">
-            <i>📊</i><span>売上管理</span>
+            <i>🏠</i><span>ホーム</span>
         </div>
         <div class="nav-btn" onclick="window.location.href='anywhere_regi.html'">
-            <i>🏪</i><span>どこでもレジ</span>
+            <i>🏪</i><span>レジ</span>
+        </div>
+        <div class="nav-btn" onclick="window.location.href='shift_manager.html'">
+            <i>🗓️</i><span>シフト</span>
         </div>
         <div class="nav-btn" onclick="window.location.href='manualhelp.html'">
             <i>📖</i><span>マニュアル</span>
         </div>
-        <div class="nav-btn" onclick="showPanel('pos')">
-            <i>🔌</i><span>POS連携</span>
-        </div>
-        <div class="nav-btn" onclick="window.location.href='shift_manager.html'">
-            <i>🚪</i><span>シフト管理</span>
+        <div class="nav-btn" onclick="showStoreMenu()">
+            <i>≡</i><span>メニュー</span>
         </div>
     </nav>
     <script>
         function showStoreMenu() {
             Swal.fire({
-                title: '店舗メニュー',
+                title: 'その他メニュー',
                 html: `
-                        < div style = "display:grid; grid-template-columns:1fr; gap:10px;" >
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                        <button onclick="showPanel('pos'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2ecc71;">🔌 POS連携</button>
+                        <button onclick="showPanel('studio'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#f39c12;">✨ AIボイス</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr; gap:10px; border-top:1px solid #eee; padding-top:15px;">
                         <button onclick="alert('Camera Settings (Demo)'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#8e44ad;">📷 AIカメラ設定</button>
                         <button onclick="alert('Inventory Mgmt (Demo)'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
-                        <button onclick="location.href='login_portal.html';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#95a5a6;">🚪 ログアウト</button>
-                    </div >
+                        <button onclick="location.href='index.html';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
+                    </div>
                 `,
                 showConfirmButton: false,
                 showCloseButton: true

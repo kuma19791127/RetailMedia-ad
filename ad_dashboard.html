@@ -133,6 +133,25 @@
             color: var(--text-sub);
         }
 
+        .budget-panel {
+            background: white; padding: 15px 20px; border-radius: 8px; display: flex; gap: 20px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .budget-panel {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: left;
+                gap: 15px;
+            }
+            .budget-panel > div {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .budget-panel div span:first-child {
+                margin-right: 10px;
+            }
+        }
         /* Mobile Bottom Nav */
         .mobile-nav {
             display: none;
@@ -844,6 +863,10 @@
                 style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; display:block; text-decoration:none; color:#bdc3c7;">
                 📊 詳しい分析
             </a>
+            <a href="ad_dashboard-LP.html" target="_blank" class="nav-item"
+                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; display:block; text-decoration:none; color:#bdc3c7;">
+                📖 ビジネスモデル解説 (LP)
+            </a>
             <div class="nav-item" onclick="registerCreditCard()"
                 style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; color:#bdc3c7;">
                 💳 クレジット情報登録
@@ -858,17 +881,7 @@
         <!-- Region Selector Removed as per request (Default National) -->
         <!-- <div class="sidebar-section">...</div> -->
 
-        <!-- Payment Function moved here -->
-        <div class="sidebar-section">
-            <div class="sidebar-label">お支払い設定</div>
-            <div style="font-size:11px; color:#bdc3c7; display:flex; align-items:center; gap:5px; margin-bottom:10px;">
-                <span style="color:#2ecc71;">🔒</span> 広告料金の決済カードを設定
-            </div>
-            <button onclick="registerCreditCard()" style="width:100%; padding:12px; background:#fff; color:#34495e; border:none; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-                💳 Square 決済登録・更新
-            </button>
-        </div>
-
+        <!-- Removed Payment Function block -->
         <div style="flex:1;"></div>
 
         <!-- Removed LP link from sidebar as per request -->
@@ -897,24 +910,19 @@
                         </div>
                     </div>
                     
-                    <div style="background:white; padding:10px 20px; border-radius:8px; display:flex; gap:20px; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="budget-panel">
                         <div>
                             <span style="font-size:0.8rem; color:#64748b;">アカウント残高 (Budget)</span>
-                            <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">1,000,000</span></div>
+                            <div style="font-size:1.2rem; font-weight:bold; color:#2c3e50;">¥<span id="account-budget-display">1,000,000</span></div>
                         </div>
                         <div>
                             <span style="font-size:0.8rem; color:#64748b;">総消化額 (Spend)</span>
                             <div style="font-size:1.2rem; font-weight:bold; color:#e74c3c;">¥<span id="account-spend-display">0</span></div>
                         </div>
-                        <button onclick="registerCreditCard()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem;">➕ 予算追加 (決済)</button>
+                        <button onclick="registerCreditCard()" class="btn-primary" style="padding:12px 15px; font-size:1rem; flex:1;">➕ 予算追加 (決済)</button>
                     </div>
 
-                    <div style="display:flex; align-items:center;">
-                        <a href="/"
-                            style="background:#c0392b; color:white; padding:8px 15px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:14px; display:inline-flex; align-items:center; gap:5px;">
-                            🚪 ログアウト
-                        </a>
-                    </div>
+
                 </div>
 
                 <div class="upload-section" id="campaign-creation-section">
@@ -1600,7 +1608,10 @@
                     showCancelButton: true,
                     confirmButtonText: 'アップロード',
                     preConfirm: () => {
-                        return {
+                        const checkboxes = document.querySelectorAll('.store-checkbox:checked');
+                    const targetStores = Array.from(checkboxes).map(c => c.value);
+
+                    return {
                             bgm: document.getElementById('swal-bgm').value
                         };
                     }
@@ -2000,7 +2011,19 @@
                     </div>`;
             }
 
+
             // Common Targeting Fields (New Request)
+            const storeSearchFields = `
+                <div style="text-align:left; margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
+                    <label style="font-size:12px; font-weight:bold; color:#555;">📍 エリア・パネル指定 (任意)</label>
+                    <div style="display:flex; gap:5px; margin-top:5px; margin-bottom:10px;">
+                        <input id="swal-store-search" class="swal2-input" placeholder="店舗名や地域を入力 (例: 横浜市)" style="margin:0; font-size:14px; flex:1;">
+                        <button type="button" onclick="searchStores()" style="background:#2ecc71; color:white; border:none; padding:0 15px; border-radius:4px; font-weight:bold; cursor:pointer;">検索</button>
+                    </div>
+                    <div id="swal-store-results" style="max-height:100px; overflow-y:auto; font-size:12px; background:#f8f9fa; border:1px solid #eee; border-radius:4px; display:none;"></div>
+                </div>
+            `;
+            
             const targetingFields = `
                 <div style="text-align:left; margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
                     <label style="font-size:12px; font-weight:bold; color:#555;">🎯 ターゲティング設定 (任意)</label>
@@ -2093,6 +2116,7 @@
                     
                     <div style="margin-top:15px;">${extraFields}</div>
                     ${mediaFields}
+                    ${storeSearchFields}
                     ${targetingFields}
 
                     <div style="margin-top:15px; text-align:left; border-top:1px solid #eee; padding-top:10px;">
@@ -2111,7 +2135,30 @@
                 confirmButtonText: '配信登録',
                 confirmButtonColor: '#3498db',
                 didOpen: () => {
-                    const dropzone = document.getElementById('swal-dropzone');
+                    window.searchStores = () => {
+                        const q = document.getElementById('swal-store-search').value;
+                        const resultsDiv = document.getElementById('swal-store-results');
+                        if (!q) return;
+                        resultsDiv.style.display = 'block';
+                        
+                        if (q.includes('横浜')) {
+                            resultsDiv.innerHTML = `
+                                <label style="display:flex; align-items:center; gap:5px; padding:8px; border-bottom:1px solid #ddd; cursor:pointer;">
+                                    <input type="checkbox" class="store-checkbox" value="YOKOHAMA_MAIN" checked> 
+                                    <span>横浜本店サイネージ (ID: YOKO-001) <span style="color:#2ecc71; font-size:10px;">稼働中: 4台</span></span>
+                                </label>
+                                <label style="display:flex; align-items:center; gap:5px; padding:8px; cursor:pointer;">
+                                    <input type="checkbox" class="store-checkbox" value="YOKOHAMA_WEST" checked> 
+                                    <span>横浜西口スーパー (ID: YOKO-002) <span style="color:#2ecc71; font-size:10px;">稼働中: 2台</span></span>
+                                </label>
+                            `;
+                        } else {
+                            resultsDiv.innerHTML = '<div style="padding:10px; color:#999; text-align:center;">該当する店舗が見つかりませんでした</div>';
+                        }
+                    };
+
+                    const dropzone
+ = document.getElementById('swal-dropzone');
                     const fileInput = document.getElementById('swal-file');
                     const filenameDisplay = document.getElementById('swal-filename');
 
@@ -2204,6 +2251,9 @@
                         }
                     }
 
+                    const checkboxes = document.querySelectorAll('.store-checkbox:checked');
+                    const targetStores = Array.from(checkboxes).map(c => c.value);
+
                     return {
                         name: name,
                         budget: budget,
@@ -2217,7 +2267,8 @@
                         format: format,
                         ytUrl: document.getElementById('swal-yt-url').value,
                         fileUrl: fileUrl, // Send Base64
-                        fileName: fileInput.files.length > 0 ? fileInput.files[0].name : null // Send Filename
+                        fileName: fileInput.files.length > 0 ? fileInput.files[0].name : null, // Send Filename
+                        targetStores: targetStores.length > 0 ? targetStores : ['all'] // New attribute
                     }
                 }
             });
@@ -2261,14 +2312,21 @@
 
                     if (res.ok) {
                         let targetInfo = "";
-                        if (formValues.gender !== 'all' || formValues.age !== 'all' || formValues.time !== 'all') {
+                        if (formValues.gender !== 'all' || formValues.age !== 'all' || formValues.time !== 'all' || (formValues.targetStores && formValues.targetStores[0] !== 'all')) {
                             const genderMap = { 'female': '女性', 'male': '男性', 'all': '指定なし' };
                             const ageMap = { '20s': '20代', '30s': '30代', '40s': '40代', 'senior': '50代+', 'all': '指定なし' };
                             const timeMap = { 'morning': '朝', 'lunch': '昼', 'evening': '夕方', 'night': '夜', 'all': '終日' };
+                            
+                            let storesText = "指定なし (全国)";
+                            if (formValues.targetStores && formValues.targetStores[0] !== 'all') {
+                                storesText = formValues.targetStores.join(', ');
+                            }
 
                             targetInfo = `<br><div style="margin-top:10px; padding:10px; background:#f0f8ff; border-radius:4px; text-align:left; font-size:12px;">
                                 <b>🎯 ターゲティング設定:</b><br>
+                                ・店舗/エリア: ${storesText}<br>
                                 ・性別: ${genderMap[formValues.gender] || formValues.gender}<br>
+
                                 ・年代: ${ageMap[formValues.age] || formValues.age}<br>
                                 ・時間: ${timeMap[formValues.time] || formValues.time}
                             </div>`;
@@ -2375,7 +2433,10 @@
                     title: '決済情報の入力',
                     html: `
                         <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px;">
-                            <div id="apple-pay-button"></div>
+                            <button onclick="Swal.clickConfirm()" style="padding:10px; background:black; color:white; border-radius:5px; border:none; cursor:pointer; font-size:16px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px;">
+                                <i style="font-style:normal;"></i> Apple Pay で支払う
+                            </button>
+                            <div id="apple-pay-button" style="display:none;"></div>
                             <div id="google-pay-button"></div>
                             <div id="sq-card-container"></div>
                             <button id="sq-creditcard" style="padding:10px; background:#0f172a; color:white; border-radius:5px; border:none; cursor:pointer;">クレジットカードで決済</button>
@@ -2477,7 +2538,7 @@
     </script>
 
     <nav class="mobile-nav">
-        <div class="nav-btn" onclick="window.open('business_lp.html', '_blank')">
+        <div class="nav-btn" onclick="window.open('ad_dashboard-LP.html', '_blank')">
             <i>📖</i><span>ビジネスモデル解説 (LP)</span>
         </div>
         <div class="nav-btn" onclick="showPanel('api')">

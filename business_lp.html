@@ -64,6 +64,32 @@
             font-weight: 600;
         }
 
+        /* Mobile specific styling */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .logo {
+                margin-bottom: 20px;
+            }
+            .nav-links {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+                width: 100%;
+            }
+            .nav-links a {
+                margin-left: 0;
+                display: block;
+                font-size: 1.1rem;
+            }
+            .hero {
+                padding-top: 180px; /* Adjust spacing for stacked nav */
+            }
+        }
+
         /* Hero Section */
         .hero {
             min-height: 100vh;
