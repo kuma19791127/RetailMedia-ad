@@ -286,6 +286,34 @@
             padding: 60px 20px;
             text-align: center;
         }
+        /* Mobile specific styling */
+        @media (max-width: 768px) {
+            .hero {
+                padding-top: 120px;
+                height: auto;
+                min-height: 100vh;
+                padding-bottom: 50px;
+                align-items: flex-start;
+            }
+            .hero h1 {
+                font-size: 2.1rem;
+                margin-bottom: 20px;
+            }
+            .hero p {
+                font-size: 1rem;
+                margin-bottom: 30px;
+            }
+            nav {
+                padding: 15px 20px;
+            }
+            .logo {
+                font-size: 1.2rem;
+            }
+            .btn-login {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 
     <!-- Google AdSense -->
@@ -308,7 +336,7 @@
 
     <nav>
         <div class="logo">retail-ad Agency</div>
-        <a href="login_portal.html" class="btn-login">パートナーログイン</a>
+        <a href="login_portal.html" class="btn-login" style="text-align: center; line-height: 1.2;">パートナー<br>ログイン</a>
     </nav>
 
     <header class="hero">
