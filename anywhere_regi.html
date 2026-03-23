@@ -151,8 +151,10 @@
                 <a href="#" onclick="showResetModal()" style="color:#2563EB;">Forgot Password?</a>
             </div>
 
-            <div style="margin-top:25px; font-size:11px; color:#9CA3AF; line-height:1.6; text-align: left;">
-                <b>Demo Account:</b><br>Email: store@demo.com<br>Pass: DemoPass2026!
+            <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
+                <b style="color:#1F2937; margin-bottom:5px; display:inline-block;">Demo Account (タップで自動入力＆コピー)</b><br>
+                Email: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; margin-bottom:5px; transition:0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'" onclick="document.getElementById('input-email').value='store@demo.com'; navigator.clipboard.writeText('store@demo.com'); Swal.fire({toast:true, position:'top-end', icon:'success', title:'Emailをコピー＆入力しました', showConfirmButton:false, timer:2000});">store@demo.com</span><br>
+                Pass: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; transition:0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'" onclick="document.getElementById('input-pass').value='DemoPass2026!'; navigator.clipboard.writeText('DemoPass2026!'); Swal.fire({toast:true, position:'top-end', icon:'success', title:'Passwordをコピー＆入力しました', showConfirmButton:false, timer:2000});">DemoPass2026!</span>
             </div>
             <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
                 <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
@@ -180,11 +182,12 @@
                 <span id="header-chain-name">どこでもレジ</span>
                 <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px;"></span>
             </div>
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
                 <!-- EXCEL IMPORT BUTTON -->
-                <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm" style="background:#10B981; color:white; padding:8px 12px; font-weight:bold;">📥 商品データ取込(Excel)</button>
+                <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm" style="background:#10B981; color:white; padding:8px 8px; font-weight:bold;">📥 商品データ取込(Excel)</button>
                 <input type="file" id="excel-master-upload" accept=".xlsx, .csv" style="display:none;" onchange="importProductMaster(event)">
-                <button class="btn-sm btn-logout" onclick="logout()" style="padding:8px 12px;">ログアウト</button>
+                <button onclick="toggleDebugLog()" class="btn-sm" style="background:#f59e0b; color:white; padding:8px 8px; font-weight:bold;">🛠 スキャン履歴</button>
+                <button class="btn-sm btn-logout" onclick="logout()" style="padding:8px 8px;">ログアウト</button>
             </div>
         </div>
 
@@ -231,8 +234,35 @@
         </div>
     </div>
 
+    <!-- Debug Log Panel -->
+    <div id="debug-log-panel" style="display:none; position:fixed; bottom:0; left:0; width:100%; height:35%; background:rgba(0,0,0,0.85); color:#0fa; font-family:monospace; font-size:12px; z-index:9999; padding:15px; overflow-y:auto; box-sizing:border-box; border-top:3px solid #2563EB;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px dashed #0fa; padding-bottom:5px;">
+            <span style="font-weight:bold;">🛠 スキャン履歴 / レジデバッグログ</span>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('debug-log-content').innerHTML=''" style="background:#555; color:white; border:none; padding:4px 8px; border-radius:3px;">Clear</button>
+                <button onclick="toggleDebugLog()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:3px;">閉じる</button>
+            </div>
+        </div>
+        <div id="debug-log-content" style="white-space:pre-wrap;"></div>
+    </div>
+
     <script src="products.js"></script>
     <script>
+        // --- Debug Log System ---
+        function toggleDebugLog() {
+            const p = document.getElementById('debug-log-panel');
+            p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function logDebug(msg) {
+            console.log(msg);
+            const content = document.getElementById('debug-log-content');
+            if(content) {
+                const timeStr = new Date().toLocaleTimeString();
+                content.innerHTML += `<div style="margin-bottom:4px; border-bottom:1px solid rgba(0,255,170,0.2);">[${timeStr}] ${msg}</div>`;
+                content.scrollTop = content.scrollHeight;
+            }
+        }
         // --- Global State ---
         let currentSession = null;
         let currentStoreConfig = null;
@@ -304,10 +334,19 @@
                         // フォーマット: [prefix2桁] + [商品コード5桁] + [値段5桁] + [チェックディジット1桁]
                         const prefix = codeStr.substring(0, 2);
                         const itemCode = codeStr.substring(2, 7);
-                        const priceStr = codeStr.substring(7, 12);
+                        const priceBlock = codeStr.substring(7, 12);
                         
-                        // インストアコードに埋め込まれた価格を抽出 (1円〜99,999円)
-                        const calculatedPrice = parseInt(priceStr, 10);
+                        let calculatedPrice = parseInt(priceBlock, 10);
+                        let checkDigit = codeStr[12];
+                        
+                        // NON-PLU standard: the 5 price digits consist of a 1-digit price-check digit and 4-digit actual price value.
+                        if (calculatedPrice >= 10000 && (prefix === '02' || prefix.startsWith('2'))) {
+                            const actualPriceStr = codeStr.substring(8, 12);
+                            calculatedPrice = parseInt(actualPriceStr, 10);
+                            logDebug(`[Instore parsing] Price block ${priceBlock} treated as ${actualPriceStr}. Tax excluded calculated: ${calculatedPrice}`);
+                        } else {
+                            logDebug(`[Instore parsing] Price block parsed directly as ${calculatedPrice}`);
+                        }
                         
                         return resolve({
                             janCode: codeStr,
@@ -479,6 +518,7 @@
         }
 
         async function onScanSuccess(code) {
+            logDebug(`[SCAN EVENT] Raw Barcode Read: ${code}`);
             if (isPaused) return;
             isPaused = true;
             const mask = document.getElementById('mask');
@@ -487,6 +527,7 @@
 
             try {
                 const product = await mockProductApi(code);
+                logDebug(`[DB MATCH] Success: ${product.name} (¥${product.price})`);
 
                 document.getElementById('mask-msg').innerText = "Scan OK!";
                 setTimeout(() => mask.style.display = 'none', 200);
