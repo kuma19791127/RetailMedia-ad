@@ -192,6 +192,7 @@
             padding: 20px;
             text-align: left;
             border-bottom: 1px solid rgba(255,255,255,0.05);
+            white-space: nowrap;
         }
 
         .comparison-table th {
@@ -245,21 +246,55 @@
             border-top: 1px solid var(--border);
         }
 
+        /* Hide bottom nav on desktop */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             nav {
-                flex-direction: column;
-                padding: 15px;
+                display: none; /* Hide top nav on mobile to use bottom nav */
             }
-            .nav-links {
+            body {
+                padding-bottom: 80px; /* Space for bottom nav */
+            }
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid rgba(255,255,255,0.1);
+                z-index: 2000;
+                justify-content: space-around;
+                padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            }
+            .mobile-bottom-nav a {
+                color: #94a3b8;
+                text-decoration: none;
+                font-size: 0.75rem;
                 display: flex;
                 flex-direction: column;
-                gap: 15px;
-                text-align: center;
-                margin-top: 15px;
+                align-items: center;
+                gap: 4px;
+                font-weight: 600;
             }
-            .nav-links a { margin-left: 0; }
+            .mobile-bottom-nav a i {
+                font-size: 1.2rem;
+                font-style: normal;
+            }
+            .mobile-bottom-nav a.btn-mobile {
+                color: #ec4899;
+            }
             h1 { font-size: 2.8rem; }
             .comparison-table { display: block; overflow-x: auto; }
+            .cta-section h2 {
+                font-size: 2rem !important; /* Adjusted for mobile view */
+                line-height: 1.4;
+            }
         }
     </style>
 </head>
@@ -376,6 +411,14 @@
     <footer>
         <p>© 2026 nonlogi .Inc(リテアド) All Rights Reserved.</p>
     </footer>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-bottom-nav">
+        <a href="#problem"><i>⚠️</i>広告の限界</a>
+        <a href="#solution"><i>✨</i>リテアド強み</a>
+        <a href="#comparison"><i>📊</i>他媒体比較</a>
+        <a href="login_portal.html" class="btn-mobile"><i>🔑</i>ログイン</a>
+    </div>
 
 </body>
 </html>
