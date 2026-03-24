@@ -182,6 +182,13 @@ app.post('/api/creator/upload', (req, res) => {
 app.post('/api/payment/square-charge', async (req, res) => {
     const { token, amount, source } = req.body;
     console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}`);
+    
+    // デモ決済用のトークンが送られてきた場合は、本番のSquareAPIを叩かずに成功扱いにする
+    if (token === 'demo-applepay' || token === 'demo-local-token' || token === 'demo-error-token') {
+        console.log(`[Square API] Demo token detected (${token}). Bypassing actual Square charge.`);
+        return res.json({ success: true, transactionId: `demo_tx_${Date.now()}` });
+    }
+
     console.log(`[Square API] Using Production Key for actual charge.`);
     
     try {
