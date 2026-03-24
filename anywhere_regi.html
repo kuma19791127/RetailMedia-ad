@@ -80,24 +80,24 @@
         .btn-primary:active { transform: scale(0.98); }
 
         /* Store Selector Bar */
-        .store-selector-bar { background: white; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; }
+        .store-selector-bar { background: white; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; flex-shrink: 0; }
         select { flex: 1; padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-family: inherit; color: var(--text-main); }
         .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
         .btn-logout { background: #F3F4F6; color: var(--text-sub); }
 
         /* Scanner Area */
-        #scanner-container { width: 100%; max-width: 400px; margin: 20px auto 0; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4/3; position: relative; box-shadow: var(--shadow-lg); }
+        #scanner-container { width: 100%; max-width: 400px; margin: 20px auto 0; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4/3; position: relative; box-shadow: var(--shadow-lg); flex-shrink: 0; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .scan-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 40%; border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 8px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.4); z-index: 10; }
         .scan-guide::after { content: 'SCAN BARCODE'; position: absolute; bottom: -25px; width: 100%; text-align: center; color: white; font-size: 12px; font-weight: 600; letter-spacing: 1px; }
 
         /* Action Buttons */
-        .action-area { max-width: 400px; margin: 20px auto 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+        .action-area { max-width: 400px; margin: 20px auto 0; width: 100%; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
         .btn-next { background: var(--bg-gradient); color: var(--text-main); border: 2px solid #2563EB; display: none; }
         .btn-pay { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
 
         /* Cart List */
-        .cart-container { background: white; border-radius: 16px 16px 0 0; margin-top: 20px; flex: 1; padding: 20px; box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; }
+        .cart-container { background: white; border-radius: 16px 16px 0 0; margin-top: 20px; flex: 1; min-height: 200px; padding: 20px; box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; flex-shrink: 0; }
         .total-display { font-size: 32px; font-weight: 800; color: var(--text-main); text-align: right; border-bottom: 2px solid #F3F4F6; padding-bottom: 15px; margin-bottom: 15px; }
         .total-display span { font-size: 18px; color: var(--text-sub); margin-right: 5px; }
         #items { overflow-y: auto; flex: 1; }
@@ -394,7 +394,19 @@
                     currentSession = { email: email, role: 'store', storeName: "Demo Store", sessionToken: "mock_token_" + Date.now() };
                     initPosScreen(currentSession);
                 } else { alert(data.error || "Login Failed"); }
-            } catch (e) { console.error(e); alert("Network Error during login."); }
+            } catch (e) { 
+                console.error(e); 
+                // ローカル環境(file://)やサーバー未起動時のデモ用フォールバック
+                if (email === 'store@demo.com' && password === 'DemoPass2026!') {
+                    currentSession = { email: email, role: 'store', storeName: "Demo Store", sessionToken: "mock_token_" + Date.now() };
+                    initPosScreen(currentSession);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({toast:true, position:'top-end', icon:'info', title:'サーバー未起動のため<br>オフライン(デモ)モードで開始します', showConfirmButton:false, timer:3500});
+                    }
+                } else {
+                    alert("通信エラー：サーバーが起動していません。(Network Error)");
+                }
+            }
         }
 
         // --- Password Reset ---
