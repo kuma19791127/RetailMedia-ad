@@ -8,11 +8,13 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Simple pass-through fetch for now, caching can be improved later
+  // キャッシュ・ファースト（なければネットワーク）
   e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request)).catch(() => {
-        // Fallback for offline if fetch fails and not in cache
-        return fetch(e.request);
+    caches.match(e.request).then((response) => {
+      return response || fetch(e.request).catch(() => {
+          // ネットワークも切断されており、キャッシュもない場合
+          console.log("Network and cache both failed for:", e.request.url);
+      });
     })
   );
 });

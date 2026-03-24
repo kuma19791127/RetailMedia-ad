@@ -167,7 +167,14 @@
         <div class="payment-card">
             <h2 id="pay-title" style="margin-bottom:10px;"><i class="fa-brands fa-square"></i> セキュア決済</h2>
             <p style="font-size:1.8rem; color:#f8fafc; font-weight:bold; margin-bottom:20px;">¥500 <span style="font-size:0.9rem; color:#94a3b8; font-weight:normal;">(税込)</span></p>
-            <div id="apple-pay-button" style="margin-bottom:15px; width:100%;"></div>
+            <!-- Apple Pay UI (全ブラウザ/OSで強制表示用) -->
+            <button onclick="processPaymentOnServer('demo-applepay')" style="background:transparent; padding:0; border:none; width:100%; margin-bottom:15px; cursor:pointer; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                <div style="background:#000; color:#fff; border-radius:4px; padding:12px; font-size:16px; font-weight:bold; display:flex; justify-content:center; align-items:center; width:100%;">
+                    <i class="fa-brands fa-apple" style="font-size:1.3rem; margin-right:5px;"></i> Pay
+                </div>
+            </button>
+            <div id="apple-pay-button" style="display:none;"></div>
+            
             <div id="google-pay-button" style="margin-bottom:15px; width:100%;"></div>
             <div id="card-container"></div>
             <button id="card-button" class="btn" style="width:100%; font-size:1.1rem; padding:15px; margin-bottom:10px;">決済を完了する</button>
