@@ -313,6 +313,22 @@
                 padding: 8px 15px;
                 font-size: 0.85rem;
             }
+            h2.section-title {
+                font-size: 1.5rem; /* スマホで見切れないように縮小 */
+                margin-bottom: 40px;
+            }
+            .sp-br { display: block; }
+            .flow-steps {
+                justify-content: flex-start;
+                gap: 5%;
+            }
+            .step {
+                width: 30%;
+                margin-bottom: 20px;
+            }
+        }
+        @media (min-width: 769px) {
+            .sp-br { display: none; }
         }
     </style>
 
@@ -354,7 +370,7 @@
 
     <section style="background: #fff;">
         <div class="container">
-            <h2 class="section-title">広告主（メーカー）導入の4つの理由</h2>
+            <h2 class="section-title">広告主（メーカー）導入の<br class="sp-br">4つの理由</h2>
             <div class="grid">
                 <div class="card">
                     <span class="card-icon">🎯</span>
@@ -382,7 +398,7 @@
 
     <section style="background: #ecf0f1;">
         <div class="container">
-            <h2 class="section-title">広告代理店・パートナー様の収益メリット</h2>
+            <h2 class="section-title">広告代理店・<br class="sp-br">パートナー様の収益メリット</h2>
             <div class="grid">
                 <div class="card" style="border-top-color: var(--highlight);">
                     <span class="card-icon">🔄</span>

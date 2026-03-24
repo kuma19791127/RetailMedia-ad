@@ -698,24 +698,8 @@
                     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">登録されている口座データはありません</td></tr>';
                 }
             } catch (e) { 
-                console.error("Creator list failed, showing MOCK data", e);
-                document.getElementById('creator-table-body').innerHTML = `
-                        <tr>
-                            <td><b>佐藤 クリエイター (DEMO)</b><br><span style="font-size:11px; color:#aaa;">sato.creator@example.com</span></td>
-                            <td>三井住友銀行<br><span style="font-size:11px; color:#aaa;">渋谷支店</span></td>
-                            <td>普通 1234567</td>
-                            <td>¥15,000</td>
-                            <td style="color:#4285F4;">¥2,500</td>
-                            <td style="color:#e1b12c;">¥1,000</td>
-                            <td style="color:#e74c3c; font-weight:bold;">-¥3,700</td>
-                            <td class="highlight-value payout-highlight" style="font-size:16px;">¥14,800</td>
-                            <td><span class="badge badge-unpaid">未払</span></td>
-                            <td style="display:flex; gap:5px; flex-direction:column;">
-                                <button onclick="sendCreatorEmail('sato.creator@example.com', 14800, this)" class="btn-action send-email-btn" style="background:#9b59b6; font-size:11px;">📩 確定メール</button>
-                                <button class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
-                            </td>
-                        </tr>
-                `;
+                console.error("Creator list failed", e);
+                document.getElementById('creator-table-body').innerHTML = '<tr><td colspan="10" style="text-align:center;">データがありません</td></tr>';
             }
         }
 
@@ -795,19 +779,9 @@
                     `).join('');
                 }
             } catch (e) {
-                console.error("Error loading agency data, showing MOCK data", e);
+                console.error("Error loading agency data", e);
                 const tbody = document.getElementById('agency-table-body');
-                if(tbody) tbody.innerHTML = `
-                        <tr>
-                            <td>${new Date().toLocaleDateString()}</td>
-                            <td>株式会社 電通 (DEMO)</td>
-                            <td>大手飲料メーカーA</td>
-                            <td>¥500,000</td>
-                            <td style="color:#e67e22; font-weight:bold;">¥100,000</td>
-                            <td><span class="badge badge-pending">PENDING</span></td>
-                            <td><button class="btn-action" onclick="alert('承認しました')">Verify</button></td>
-                        </tr>
-                `;
+                if(tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">データがありません</td></tr>';
             }
         }
 
@@ -860,37 +834,12 @@
                 document.getElementById('payout-table-body').innerHTML = payoutRows;
 
             } catch (e) {
-                console.error("Failed to load admin data, showing MOCK data", e);
+                console.error("Failed to load admin data", e);
                 document.getElementById('admin-email').value = "admin@retail-ad.com";
                 
-                document.getElementById('billing-table-body').innerHTML = `
-                <tr>
-                    <td><b>渋谷デモストア (DEMO)</b><br><span style="font-size:11px; color:#aaa;">STORE-001</span></td>
-                    <td>¥1,250,000</td>
-                    <td><span class="badge badge-pending">1.2%</span></td>
-                    <td class="highlight-value billing-highlight">¥15,000</td>
-                    <td>demo@store-shibuya.com</td>
-                    <td><span class="badge badge-pending">UNPAID</span></td>
-                    <td><button onclick="sendInvoice('demo@store-shibuya.com', 15000, this)" class="btn-action">📧 請求書送信</button></td>
-                </tr>`;
+                document.getElementById('billing-table-body').innerHTML = '<tr><td colspan="7" style="text-align:center;">データがありません</td></tr>';
 
-                document.getElementById('payout-table-body').innerHTML = `
-                 <tr>
-                    <td><b>新宿デモストア (DEMO)</b><br><span style="font-size:11px; color:#aaa;">ID: STORE-002</span></td>
-                    <td>¥50,000</td>
-                    <td style="color:#4285F4; font-weight:bold;">¥12,000</td>
-                    <td style="color:#e67e22;">-¥12,400</td>
-                    <td style="color:#e74c3c;">-¥6,200</td>
-                    <td style="color:#e74c3c;">-¥5,000</td>
-                    <td style="font-weight:bold; background:rgba(0,0,0,0.02);">¥38,400</td>
-                    <td class="highlight-value payout-highlight" style="font-size:16px;">¥19,200</td>
-                    <td><button onclick="viewBankInfo('mock')" class="btn-view">🏦 銀行確認</button></td>
-                    <td><span class="badge badge-unpaid">UNPAID</span></td>
-                    <td style="display:flex; flex-direction:column; gap:5px;">
-                        <button onclick="sendPayoutEmail('shinjuku@demo.com', 19200, this)" class="btn-action payout-email-btn" style="background:#8e44ad; font-size:11px;">📩 確定メール</button>
-                        <button onclick="markAsPaid('STORE-002', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
-                    </td>
-                </tr>`;
+                document.getElementById('payout-table-body').innerHTML = '<tr><td colspan="11" style="text-align:center;">データがありません</td></tr>';
             }
         }
 

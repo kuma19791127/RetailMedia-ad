@@ -210,33 +210,66 @@
             overflow-x: auto;
         }
 
-        /* Mobile specific styling */
+        /* Mobile specific stylings */
+        .sp-br { display: none; }
+        
         @media (max-width: 768px) {
+            .sp-br { display: block; }
+            h2 { font-size: 1.6rem !important; }
             nav {
-                flex-direction: column;
+                flex-direction: row;
+                justify-content: center;
                 padding: 15px;
             }
             .logo {
-                margin-bottom: 15px;
+                margin-bottom: 0;
             }
             .nav-links {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 15px;
-                text-align: center;
+                position: fixed;
+                bottom: 0;
+                left: 0;
                 width: 100%;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(10px);
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                padding: 12px 0;
+                padding-bottom: env(safe-area-inset-bottom, 15px); /* iPhone safe area */
+                margin: 0;
+                border-top: 1px solid var(--glass);
+                z-index: 9999;
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
             }
             .nav-links a {
-                margin-left: 0;
-                font-size: 1rem;
+                margin: 0;
+                font-size: 0.75rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                color: #cbd5e1;
+                flex: 1;
+                text-decoration: none;
             }
-            /* Adjust hero for the thicker navbar */
+            /* Add pseudo icons for bottom nav */
+            .nav-links a[href="#features"]::before { content: '⚙️'; font-size: 1.2rem; margin-bottom: 4px; }
+            .nav-links a[href*="dashboard"]::before { content: '📊'; font-size: 1.2rem; margin-bottom: 4px; }
+            .nav-links a[href="#api"]::before { content: '🔗'; font-size: 1.2rem; margin-bottom: 4px; }
+            .nav-links a.btn-nav::before { content: '🔑'; font-size: 1.2rem; margin-bottom: 4px; }
+
+            .nav-links a.btn-nav {
+                background: none;
+                color: var(--primary) !important;
+                padding: 0;
+                border-radius: 0;
+                font-weight: bold;
+            }
+            /* Adjust hero for the navbars */
             .hero {
-                padding-top: 150px;
+                padding-top: 100px;
                 height: auto;
                 min-height: 100vh;
-                padding-bottom: 50px;
+                padding-bottom: 100px;
             }
             .hero-content h1 {
                 font-size: 2.2rem !important;
@@ -273,7 +306,7 @@
 <body>
 
     <nav>
-        <div class="logo">Retail<span>Media</span>.biz</div>
+        <div class="logo">retail-ad<span>.com</span></div>
         <div class="nav-links">
             <a href="#features">機能</a>
             <a href="advertiser_dashboard.html">分析</a>
@@ -314,7 +347,7 @@
     <section id="comparison" style="padding: 80px 20px; background: #1e1b4b;">
         <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
             <h2 style="font-size: 2.5rem; margin-bottom: 30px; color: #f43f5e;">
-                「一般的な小売サイネージ」と「リテアド」の決定的な違い
+                「一般的な小売サイネージ」と<br class="sp-br">「リテアド」の決定的な違い
             </h2>
             <p
                 style="font-size: 1.2rem; color: #cbd5e1; line-height: 1.8; margin-bottom: 40px; text-align: left; background: rgba(0,0,0,0.3); padding: 30px; border-radius: 12px; border-left: 5px solid #f43f5e;">
@@ -512,7 +545,7 @@
     <!-- Pricing Strategy Section -->
     <section id="plans" class="features" style="background:#0f172a;">
         <h2
-            style="text-align:center; font-size:2.5rem; margin-bottom:50px; width:100%; grid-column: 1 / -1; background: linear-gradient(to right, #60a5fa, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            style="text-align:center; font-size:2.5rem; margin-bottom:50px; width:100%; grid-column: 1 / -1; background: linear-gradient(to right, #60a5fa, #f43f5e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
             料金プラン戦略</h2>
 
         <div class="card">
@@ -546,9 +579,8 @@
                 リテアドは「Privacy by Design」に基づき、個人データを保持しない安全な仕組みを構築しています。
             </p>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; text-align: left;">
-                <div
-                    style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; text-align: left;">
+                <div style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                     <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🚀 エッジAIによる即時破棄</h3>
                     <p style="color: #94a3b8; line-height: 1.6;">
                         サイネージ端末（エッジAIチップ）内で、「20代女性」「笑顔」「視線あり」といった属性データ（数値）に即座に変換します。<br>
@@ -577,7 +609,7 @@
     </section>
 
     <section id="analytics" class="features"
-        style="grid-template-columns: 1fr 1fr; align-items: center; background: rgba(15, 23, 42, 0.5);">
+        style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: center; background: rgba(15, 23, 42, 0.5);">
         <div style="text-align: center;">
             <img src="Gemini_Generated_Image_p9upqcp9upqcp9up.png" alt="Analytics Dashboard"
                 style="max-width: 100%; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
@@ -591,12 +623,12 @@
         </div>
     </section>
 
-    <section id="api" class="features" style="grid-template-columns: 1fr 1fr; align-items: center;">
+    <section id="api" class="features" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: center;">
         <div>
             <h2 style="font-size: 2.5rem;">🔗 自社システムと連携</h2>
             <p style="font-size: 1.2rem; color:#94a3b8; margin-bottom: 20px;">
                 開発者向けの強力な API / SDK を提供。<br>
-                在庫連動広告や、AIによる自動生成配信など、御社のマーケティングシステムとシームレスに統合できます。
+                在庫連動広告や、AIによる自動生成配信など、<br class="sp-br">御社のマーケティングシステムと<br class="sp-br">シームレスに統合できます。
             </p>
             <div class="code-block">
                 // Initialize RetailMedia SDK
@@ -619,8 +651,8 @@
     </section>
 
     <section id="cta" class="cta-section">
-        <h2 style="font-size: 3rem; margin-bottom: 20px;">さあ、店舗の<br>デジタルトランスフォーメーションを始めましょう</h2>
-        <p style="margin-bottom: 40px; color:#cbd5e1;">初期費用は無料。まずはアカウントを作成して、デモ配信をお試しください。</p>
+        <h2 style="font-size: 2.5rem; margin-bottom: 20px;">さあ、サイネージパネル広告を<br class="sp-br">始めましょう</h2>
+        <p style="margin-bottom: 40px; color:#cbd5e1;">初期費用は無料。まずはアカウントを作成して、<br class="sp-br">配信をお試しください。</p>
         <a href="login_portal.html" class="btn-primary">アカウント登録 (無料)</a>
     </section>
 
@@ -660,7 +692,7 @@
                 <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">特定商取引法に基づく表記</a>
                 <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">お問い合わせ</a>
             </div>
-            <p style="color: #64748b; font-size: 0.8rem; margin: 0;">&copy; 2026 retail-ad Media. All rights reserved.
+            <p style="color: #64748b; font-size: 0.8rem; margin: 0;">&copy; 2026 retail-ad.com. All rights reserved.
             </p>
         </div>
     </footer>
