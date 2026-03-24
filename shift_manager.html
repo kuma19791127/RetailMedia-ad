@@ -695,6 +695,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>シフト管理システム ログイン</h2>
+            <input type="text" id="login-org" placeholder="組織コードを入力 (例: non-logi.inc)" value="non-logi.inc" required>
             <input type="text" id="login-name" placeholder="氏名を入力 (例: Aさん)" required>
             <select id="login-dept">
                 <option value="meat">🥩 畜産</option>
@@ -901,10 +902,14 @@
 
         // --- LOGIN LOGIC ---
         function doLogin() {
+            const orgNode = document.getElementById('login-org');
             const nameNode = document.getElementById('login-name');
             const emailNode = document.getElementById('login-email');
+            
+            if (!orgNode.value) return Swal.fire('エラー', '組織コードを入力してください', 'error');
             if (!nameNode.value) return Swal.fire('エラー', '名前を入力してください', 'error');
 
+            currentUser.org = orgNode.value;
             currentUser.name = nameNode.value;
             currentUser.dept = document.getElementById('login-dept').value;
             currentUser.email = emailNode.value;
@@ -917,10 +922,12 @@
 
             // Save specifically with email context where possible or default
             localStorage.setItem('shift_last_email', currentUser.email);
+            localStorage.setItem(`shift_org_${currentUser.email}`, currentUser.org);
             localStorage.setItem(`shift_name_${currentUser.email}`, currentUser.name);
             localStorage.setItem(`shift_dept_${currentUser.email}`, currentUser.dept);
 
             // Backwards compatibility fallbacks
+            localStorage.setItem('shift_org', currentUser.org);
             localStorage.setItem('shift_name', currentUser.name);
             localStorage.setItem('shift_dept', currentUser.dept);
             localStorage.setItem('shift_email', currentUser.email);
@@ -1711,9 +1718,11 @@
                 document.getElementById('login-email').value = savedEmail;
 
                 // Lookup specifics by email context to prevent user overlap
+                const savedOrg = localStorage.getItem(`shift_org_${savedEmail}`) || localStorage.getItem('shift_org');
                 const savedName = localStorage.getItem(`shift_name_${savedEmail}`) || localStorage.getItem('shift_name');
                 const savedDept = localStorage.getItem(`shift_dept_${savedEmail}`) || localStorage.getItem('shift_dept');
 
+                if (savedOrg) document.getElementById('login-org').value = savedOrg;
                 if (savedName) document.getElementById('login-name').value = savedName;
                 if (savedDept) document.getElementById('login-dept').value = savedDept;
             }
