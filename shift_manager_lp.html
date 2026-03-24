@@ -226,6 +226,8 @@
             border-top: 1px solid #e2e8f0;
         }
 
+        .mobile-br { display: none; }
+
         @media (max-width: 768px) {
             h1 { font-size: 2.3rem; }
             .feature-row { flex-direction: column !important; margin-bottom: 60px; gap: 30px; }
@@ -234,6 +236,8 @@
             nav { padding: 15px; }
             .logo { font-size: 1.2rem; }
             .btn-nav { padding: 10px 20px; font-size: 0.9rem; }
+            .cta-box h2 { font-size: 1.8rem; }
+            .mobile-br { display: block; }
         }
     </style>
 </head>
@@ -311,7 +315,7 @@
     </section>
 
     <div class="cta-box">
-        <h2>さあ、シフト作成の苦痛から解放されましょう</h2>
+        <h2>さあ、シフト作成の<br class="mobile-br">苦痛から解放されましょう</h2>
         <p>初期費用・月額すべて無料！お手元のExcelファイルをご用意の上、ログイン画面へお進みください。</p>
         <a href="shift_manager.html" class="btn-large" style="background: white; color: var(--dark);">完全無料でログイン / アカウント作成</a>
     </div>
