@@ -237,6 +237,26 @@ app.post('/api/payment/square-charge', async (req, res) => {
     }
 });
 
+// --- ANYWHERE REGI POS SYNC API ---
+app.post('/api/admin/sales', (req, res) => {
+    try {
+        const txData = req.body;
+        console.log(`[POS Sync] ✅ Received New Transaction: ${txData.transactionId} (${txData.amount}円)`);
+        console.log(`[POS Sync] 🛒 Items:`, txData.items.map(i => `${i.name} (¥${i.price})`).join(', '));
+        
+        // Broadcast the purchase event so Signage and Ad Engine can see the Uplift
+        broadcastEvent({
+            type: 'pos_purchase_sync',
+            transaction: txData
+        });
+
+        res.json({ success: true, message: "Synced to Admin Server" });
+    } catch (e) {
+        console.error("[POS Sync Error]", e);
+        res.status(500).json({ success: false });
+    }
+});
+
 // --- AUTH (2FA) ---
 const users = {
     // Demo Accounts (Pre-seeded)

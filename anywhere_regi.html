@@ -491,11 +491,17 @@
                     };
 
                     // Send exact POS transaction data to Admin Server (Fake API)
-                    await fetch(API_URL + '/api/admin/sales', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(txData)
-                    }).catch(e => console.log('Admin sync mock fallback', e));
+                    try {
+                        const syncRes = await fetch(API_URL + '/api/admin/sales', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(txData)
+                        });
+                        addDebugLog("✅ [SERVER-SYNC] 決済データ送信成功: " + total + "円");
+                    } catch(e) { 
+                        console.log('Admin sync mock fallback', e); 
+                        addDebugLog("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
+                    }
 
                     // --- Cross-Tab Sync for Local Demo ---
                     const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
