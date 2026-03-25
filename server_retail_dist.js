@@ -192,12 +192,12 @@ app.post('/api/payment/square-charge', async (req, res) => {
     console.log(`[Square API] Using Production Key for actual charge.`);
     
     try {
-        const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)).catch(() => globalThis.fetch(...args));
+        const customFetch = globalThis.fetch || (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
         const crypto = require('crypto');
         
         // Execute Actual Production Charge via Square API
         const idempotencyKey = crypto.randomUUID();
-        const squareRes = await (await fetch() || globalThis.fetch)('https://connect.squareup.com/v2/payments', {
+        const squareRes = await customFetch('https://connect.squareup.com/v2/payments', {
             method: 'POST',
             headers: {
                 'Square-Version': '2024-03-20',
