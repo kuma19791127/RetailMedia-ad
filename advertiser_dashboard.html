@@ -482,31 +482,21 @@
             </div>
 
             <!-- PLAN SELECTION -->
-            <div class="grid" style="grid-template-columns: repeat(5, 1fr); gap:15px; margin-bottom:20px;">
-                <div class="card" onclick="openNewCampaignModal('cpm')"
-                    style="cursor:pointer; border-left:5px solid #2563eb; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="color:#2563eb; margin-bottom:5px; font-size:1rem;">👁️ 認知 (CPM)</h3>
-                    <p style="font-size:0.75rem; color:#64748b; margin:0;">多くの人に認知を広げる標準プラン。</p>
-                </div>
-                <div class="card" onclick="openNewCampaignModal('cpa')"
-                    style="cursor:pointer; border-left:5px solid #16a34a; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="color:#16a34a; margin-bottom:5px; font-size:1rem;">🛒 成果 (CPA)</h3>
-                    <p style="font-size:0.75rem; color:#64748b; margin:0;">POSと連携し売上確定時のみ課金。</p>
-                </div>
-                <div class="card" onclick="openNewCampaignModal('rtb')"
-                    style="cursor:pointer; background:#f8fafc; border:1px solid #e2e8f0; border-left:5px solid #ef4444; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="color:#ef4444; margin-bottom:5px; font-size:1rem;">⚡ DSP入札(RTB)</h3>
-                    <p style="font-size:0.75rem; color:#64748b; margin:0;">リアルタイムオークションで広告枠を落札。</p>
+            <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:20px;">
+                <div class="card" onclick="openNewCampaignModal('impression')"
+                    style="cursor:pointer; border-left:5px solid #9333ea; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                    <h3 style="color:#9333ea; margin-bottom:5px; font-size:1rem;">👁️ インプレッション配信</h3>
+                    <p style="font-size:0.75rem; color:#64748b; margin:0;">不特定多数への認知拡大：1再生 1円〜</p>
                 </div>
                 <div class="card" onclick="openNewCampaignModal('moment')"
                     style="cursor:pointer; border-left:5px solid #f59e0b; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="color:#f59e0b; margin-bottom:5px; font-size:1rem;">☔ モーメント</h3>
-                    <p style="font-size:0.75rem; color:#64748b; margin:0;">特定の環境下（雨・気温）で強制配信。</p>
+                    <h3 style="color:#f59e0b; margin-bottom:5px; font-size:1rem;">☔ モーメント配信</h3>
+                    <p style="font-size:0.75rem; color:#64748b; margin:0;">雨天等の状況連動：1再生 3円〜</p>
                 </div>
-                <div class="card" onclick="openNewCampaignModal('impression')"
-                    style="cursor:pointer; border-left:5px solid #9333ea; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                    <h3 style="color:#9333ea; margin-bottom:5px; font-size:1rem;">📈 枠買切</h3>
-                    <p style="font-size:0.75rem; color:#64748b; margin:0;">目標再生数を確実に達成。</p>
+                <div class="card" onclick="openNewCampaignModal('cpa')"
+                    style="cursor:pointer; border-left:5px solid #16a34a; transition:0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                    <h3 style="color:#16a34a; margin-bottom:5px; font-size:1rem;">🛒 成果報酬・POS連動型</h3>
+                    <p style="font-size:0.75rem; color:#64748b; margin:0;">A/Bテスト・併売分析：1再生 10円〜</p>
                 </div>
             </div>
 
