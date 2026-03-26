@@ -200,7 +200,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
             method: 'POST',
             headers: {
                 'Square-Version': '2024-03-20',
-                'Authorization': `Bearer EAAAl-EUOJH3OJ55TOYSKXE1PLH2_uqcQwWo18xxf-bvS2CeNVJI0ETQ8nXsKs7z`,
+                'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || ''}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
