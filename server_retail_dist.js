@@ -969,9 +969,7 @@ let globalDashboardStats = {
 let globalSensorLogs = [];
 
 // --- AGENCY REFERRAL DATA STORE ---
-let agencyReferrals = [
-    { date: '2026-05-15', agency: 'ag-001@demo.com', advertise: 'client@example.com', price: 30000, status: 'Pending' }
-];
+let agencyReferrals = [];
 
 app.post('/api/admin/agency-submit', express.json(), (req, res) => {
     agencyReferrals.push({

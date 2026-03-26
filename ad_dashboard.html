@@ -933,7 +933,7 @@
                     <div class="budget-panel">
                         <div>
                             <span style="font-size:0.8rem; color:#64748b;">アカウント残高 (Budget)</span>
-                            <div style="font-size:1.2rem; font-weight:bold; color:#2c3e50;">¥<span id="account-budget-display">1,000,000</span></div>
+                            <div style="font-size:1.2rem; font-weight:bold; color:#2c3e50;">¥<span id="account-budget-display">0</span></div>
                         </div>
                         <div>
                             <span style="font-size:0.8rem; color:#64748b;">総消化額 (Spend)</span>
@@ -2463,7 +2463,7 @@
                     showCancelButton: true,
                     didOpen: () => {
                         initializeSquarePayment(amount, 'sq-card-container', () => {
-                            const b = parseInt(localStorage.getItem('accountBudget') || "1000000");
+                            const b = parseInt(localStorage.getItem('accountBudget') || "0");
                             localStorage.setItem('accountBudget', b + parseInt(amount));
                             updateBudgetDisplays();
                             Swal.fire('成功', '決済が完了し、アカウントの予算が追加されました', 'success');
@@ -2483,7 +2483,7 @@
                     const spendEl = document.getElementById('account-spend-display');
                     if(spendEl) spendEl.innerText = totalSpend.toLocaleString();
                 }
-                const b = parseInt(localStorage.getItem('accountBudget') || "1000000");
+                const b = parseInt(localStorage.getItem('accountBudget') || "0");
                 const budgetEl = document.getElementById('account-budget-display');
                 if(budgetEl) budgetEl.innerText = b.toLocaleString();
             } catch(e) { console.error(e) }

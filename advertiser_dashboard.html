@@ -470,7 +470,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <span style="font-size:0.8rem; color:#64748b;">残高 (Budget)</span>
-                            <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">1,000,000</span></div>
+                            <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">0</span></div>
                         </div>
                         <div style="text-align:right;">
                             <span style="font-size:0.8rem; color:#64748b;">消化 (Spend)</span>
@@ -791,7 +791,7 @@
                 const spendEl = document.getElementById('account-spend-display');
                 if(budgetEl && spendEl) {
                     spendEl.innerText = totalSpend.toLocaleString();
-                    const currentBudget = parseInt(localStorage.getItem('accountBudget') || "1000000");
+                    const currentBudget = parseInt(localStorage.getItem('accountBudget') || "0");
                     budgetEl.innerText = currentBudget.toLocaleString();
                 }
 
@@ -901,7 +901,7 @@
                     showCancelButton: true,
                     didOpen: () => {
                         initializeSquarePayment(amount, 'sq-card-container', () => {
-                            const b = parseInt(localStorage.getItem('accountBudget') || "1000000");
+                            const b = parseInt(localStorage.getItem('accountBudget') || "0");
                             localStorage.setItem('accountBudget', b + parseInt(amount));
                             loadCampaigns();
                             Swal.fire('成功', '決済が完了し、アカウントの予算が追加されました', 'success');
