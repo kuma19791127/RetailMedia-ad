@@ -1,13 +1,3 @@
 {
-  "type": "service_account",
-  "project_id": "my-project-89579lifeai",
-  "private_key_id": "de780f052f582462ef65d512b20830e63303c1a8",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh61bsmPkoRl+S\nVl3/YFRguSov0T3YSEOLSo3N1mpbikdOO7XAQVv7BMAAlaPE6idmZ1UlUmhxQpTk\nOiAFU5styXVut/na6rtuX5Z/mZ1TIhKZN/TP06X3+sURHXhHrUc4InstF6YyIm6h\noHe4fRp9/OhohBxa583pO2Ry1ykwA21ltgnbBJxc2UcprK3/H9K4m7jk643827m0\nKBOjsrIwVTjX/N1EUEuQGvnBB+Uxdrj3VMN78IStaeznrR5b3VSOrs8GNDLvg/IU\n9laMBEzmaRJdddp/+rM1j30O/P9r9KwMSFYamSenOemjVQePBuh+3IRhxnTpW7Tp\nvpbPljGvAgMBAAECggEAD7i24IQiDUwdvoCazfjAJnL8R+jsatlXNKGdjfjL3KRE\nzgxDBlFbZfPbVgRpKdI5p7CtMN8JPEiBNViuKHC8WHVajLfqKp0x1JPQ/1Q1/zZc\ndk555N86VNrIoqZFsTHnxjTwFB/p2uH2h5zed/eMw75j1fzLlFqT7mp0VQw6u4fV\nYxyiKWp9vH5ajPyJwj0Q0XH5K4aA2JkKwuamjZEG2IQExD0FAYT3SZ3nThQyKzvJ\nnCJVO6P3D3SrndVGxSLGoQjt7956U4vOxmTmBuL2bom5LnuzH0nAI+7IbLaO4rf1\naOmkECy5XvU/OvUMo5a5kDUUCm615hGEdBtaJrZQ8QKBgQDzYQfCZwSkTkDP6He0\n7LO0U+yG4n3gcL+ytoj4TxbRPWtTjexcBQwasaagIV75bw6scAQfduOeWGnHk8Hk\nZKwVIbu07CCM8JXjF5LChduRIUiF8JnoQHAObLojOfL+N0/pcmXz4gBzUAwkoRfa\n7KKcxh77eFlc633oaxNEUxWT0wKBgQDtooXxMacHRQnoCuJ939ts8xpys6y2USO8\nE4I17Mm79vtDFyVahetrXQWRfq6h6+jEy8ynRuHc+MWYjruOGm5x6u9XukEt6LtC\neGla2y5ijEZ44TC6XChLejJStoXa0H5u8+YSL97bk3eqk+em0SEibk+Ae2cDSpNg\nLkyE7UOtNQKBgQCQ4B2iV3in5f0mxhccGBsRKTQPRxvvUq6KT6ZRSaMngww0fLNK\nQ6bk7QNnJvZGPRnbBAMwR7FPPQoax5YPwu281ovKMxVdUImo2Qt/x/bf+ZQWRxcW\n7eTGcWqMNZ60PXDQYkzWVJ44Blp0I4DzzREvibA/uXBYo8YbaEHb1iluCQKBgA9F\nxr39pvJ8qWpUaMIWRQ/3f9enXI5LILTRvCijE0QVV4i0UB5FRSAdVmJHdgnKE6ey\nQXDuyU1eX7SyV7OGV1rS8pb8zXuZ3Y8kFgFU3OJQiabzMiKIEb7oF5vhRzEM/VM8\nMakxkm0iSSqZXuYFws9nr4xeYfyAKoCf+SMB7LuRAoGAVdXcEjxLgaff7tVnzJE6\nmUoohcHlLRJSFnVeX48Xgwf+iMzWitJgMScR34FdHSQRwU4IvZ6/CW87wZ3mfWKl\n6Fd3vwm7E1yWNLo4Uobl1tgp0rNJ1aViHBRSsjoGU6Tp4Fg2LMAXYMRBt6MwKNeH\nJu8ZBLSnkWDMWIT03JcZqV0=\n-----END PRIVATE KEY-----\n",
-  "client_email": "vertex-express@my-project-89579lifeai.iam.gserviceaccount.com",
-  "client_id": "107124083375038478747",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/vertex-express%40my-project-89579lifeai.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
+  "notice": "SENSITIVE DATA REMOVED. This file previously contained a Google Cloud Service Account Key which was inadvertently leaked to a public GitHub repository. The key has been removed to mitigate security risks. Please generate a new key and manage it securely."
 }
