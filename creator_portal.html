@@ -371,12 +371,12 @@
                 <div class="stat-sub" style="font-size: 0.85rem; text-align: left; margin-top: 5px; line-height: 1.4;">
                     ・メーカー広告: 1再生 約0.5円<br>
                     ・Google AdSense連携: 広告収益の10%<br>
-                    <span style="color:#e1b12c; margin-top:3px; display:inline-block;">+ 今月のCM誘導ボーナス ¥10,000</span>
+                    <span style="color:#e1b12c; margin-top:3px; display:inline-block; display:none;">+ 今月のCM誘導ボーナス ¥10,000</span>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">平均シナジースコア</div>
-                <div class="stat-value" style="color:var(--warning);" id="avg-score">S ランク</div>
+                <div class="stat-value" style="color:var(--warning);" id="avg-score">-- ランク</div>
                 <div class="stat-sub">POS売上貢献度が非常に高いです！</div>
             </div>
         </div>
@@ -476,12 +476,30 @@
             // Count Up and Payment Math (Internal 20% system fee deducted implicitly)
             const manufacturer_ad = fallbackTotalV * 0.5; // Roughly 0.5 yen per view
             const adsense_share = manufacturer_ad * 0.1;
-            const cm_bonus = 10000;
+            const cm_bonus = fallbackTotalR ? fallbackTotalR : 0;
             const subtotal = manufacturer_ad + adsense_share + cm_bonus;
             const final_payout = Math.floor(subtotal * 0.8);
 
             document.getElementById('total-views').innerText = fallbackTotalV.toLocaleString();
             document.getElementById('total-revenue').innerText = '¥' + final_payout.toLocaleString();
+
+            if (mockVideos && mockVideos.length > 0) {
+                let ts = 0;
+                mockVideos.forEach(v => {
+                    if (v.rank === 'S') ts += 4;
+                    else if (v.rank === 'A') ts += 3;
+                    else if (v.rank === 'B') ts += 2;
+                    else ts += 1;
+                });
+                const avgNum = ts / mockVideos.length;
+                let finalRank = 'C';
+                if (avgNum >= 3.5) finalRank = 'S';
+                else if (avgNum >= 2.5) finalRank = 'A';
+                else if (avgNum >= 1.5) finalRank = 'B';
+                document.getElementById('avg-score').innerText = finalRank + ' ランク';
+            } else {
+                document.getElementById('avg-score').innerText = '-- ランク';
+            }
         }
 
         // Helper: Convert File to Base64

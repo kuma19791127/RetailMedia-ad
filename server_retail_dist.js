@@ -98,12 +98,11 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_pol
 
 // --- CREATOR API ---
 app.get('/api/creator/stats', (req, res) => {
-    // Generate some random growth just to show it's live
+    // Views increment slightly if active, but revenue relies on POS data
     CREATOR_STATE.videos.forEach(v => {
         if (v.status === 'active') {
-            const add = Math.floor(Math.random() * 5);
+            const add = Math.floor(Math.random() * 2);
             v.views += add;
-            v.revenue += add * 0.5;
         }
     });
     CREATOR_STATE.total_views = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.views, 0);
@@ -249,6 +248,22 @@ app.post('/api/admin/sales', (req, res) => {
             type: 'pos_purchase_sync',
             transaction: txData
         });
+        
+        // Link POS Sales to Creator Synergy Score & Revenue
+        if (CREATOR_STATE.videos.length > 0) {
+            CREATOR_STATE.videos.forEach(v => {
+                if (v.status === 'active') {
+                    // Actual dynamic reward algorithm: Sales Uplift Bonus
+                    v.revenue += Math.floor(txData.amount * 0.05); // 5% of sales generated during cm
+                    v.uplift += 1;
+                    if (v.uplift > 50) v.rank = 'S';
+                    else if (v.uplift > 30) v.rank = 'A';
+                    else if (v.uplift > 10) v.rank = 'B';
+                }
+            });
+            CREATOR_STATE.total_revenue = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.revenue, 0);
+            console.log(`[Creator] POS Synergy Reward Distributed! New Total: ¥${CREATOR_STATE.total_revenue}`);
+        }
 
         res.json({ success: true, message: "Synced to Admin Server" });
     } catch (e) {
