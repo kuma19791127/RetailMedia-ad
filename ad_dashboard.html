@@ -913,13 +913,13 @@
                 style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; display:block; text-decoration:none; color:#f1c40f; font-weight:bold;">
                 📺 確認用プレーヤー起動
             </a>
-            <div class="nav-item" onclick="registerCreditCard()"
-                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; color:#bdc3c7;">
-                💳 クレジット情報登録
-            </div>
             <div class="nav-item" onclick="handleSupport()"
-                style="padding:10px; cursor:pointer; border-radius:4px; color:#bdc3c7;">
+                style="padding:10px; cursor:pointer; border-radius:4px; margin-bottom:5px; color:#bdc3c7;">
                 📞 お問い合わせ
+            </div>
+            <div class="nav-item" onclick="registerCreditCard()"
+                style="padding:10px; cursor:pointer; border-radius:4px; color:#f1c40f; font-weight:bold; background:rgba(255,193,7,0.1);">
+                💳 お支払い管理 (クレジット)
             </div>
         </div>
 
@@ -2672,6 +2672,45 @@
             });
         }
     </script>
+    <!-- 新しいモバイルナビゲーション -->
+    <style>
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e2e8f0;
+            display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-btn {
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 0.65rem; color: #64748b; cursor: pointer; text-decoration: none;
+        }
+        .nav-btn.active { color: #f43f5e; font-weight: bold; }
+        .nav-btn i { font-size: 1.2rem; font-style: normal; margin-bottom: 2px; }
+        @media (min-width: 769px) { .mobile-nav { display: none !important; } }
+    </style>
+    <div class="mobile-nav">
+        <div class="nav-btn active" onclick="showPanel('dashboard')">
+            <i>📊</i><span>ダッシュボード</span>
+        </div>
+        <a href="ad_dashboard-LP.html" class="nav-btn">
+            <i>📖</i><span>ビジネス</span>
+        </a>
+        <a href="advertiser_dashboard.html" class="nav-btn">
+            <i>📈</i><span>分析</span>
+        </a>
+        <div class="nav-btn" onclick="registerCreditCard()">
+            <i>💳</i><span>お支払い</span>
+        </div>
+        <!-- ≡ その他メニュー（サポート、ログアウトなど） -->
+        <div class="nav-btn" onclick="showOtherMenu()">
+            <i>≡</i><span>その他</span>
+        </div>
+    </div>
 </body>
 
 </html>
