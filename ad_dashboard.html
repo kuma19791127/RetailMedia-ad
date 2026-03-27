@@ -2115,13 +2115,17 @@
             const mediaFields = `
                 <div style="text-align:left; margin-top:15px; border-top:1px dashed #ddd; padding-top:10px;">
                     <label style="font-size:12px; font-weight:bold; color:#555;">📺 フォーマットと長さ (参考価格・1再生1円〜)</label>
-                    <select id="swal-format" class="swal2-select" style="width:100%; font-size:14px; margin-top:5px; padding:8px;">
-                        <option value="standard">📺 標準動画 (最大30秒) - ¥10,000~ / 月</option>
-                        <option value="short">⚡ ショート動画 (最大15秒) - ¥5,000~ / 月</option>
-                        <option value="youtube">▶️ YouTube動画リンク - ¥10,000~ / 月</option>
-                        <option value="shorts">📱 YouTube Shortsリンク - ¥5,000~ / 月</option>
-                        <option value="image">🖼️ 画像スライド (10秒) - ¥3,000~ / 月</option>
-                    </select>
+                    <select id="swal-format" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+
+                                <option value="standard">標準ビデオ (TV型 横16:9)</option>
+                                <option value="short">ショート動画 (スマホ縦 9:16)</option>
+                                <option value="image">画像スライド (静止画)</option>
+                                <optgroup label="透明LEDフィルム専用 (Yake等)">
+                                    <option value="led_fish">鮮魚対面ガラス (1000×300mm / 10:3)</option>
+                                    <option value="led_fridge">冷蔵庫ドア (500×1000mm / 1:2)</option>
+                                    <option value="led_end">エンド上部 (900×200mm / 9:2)</option>
+                                </optgroup>
+                            </select>
 
                     <div style="margin-top:10px;">
                         <label style="font-size:12px; font-weight:bold; color:#555;">🔗 YouTubeリンク (任意)</label>
