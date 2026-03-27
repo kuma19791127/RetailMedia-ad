@@ -601,10 +601,7 @@ app.get('/api/campaigns', (req, res) => {
         list = signageServer.getAllCampaigns();
     }
 
-    // Add some history/mock if list is empty for demo purpose
-    if (list.length === 0) {
-        list.push({ status: 'ended', name: 'Spring Sale 2025', plan: 'cpm', start: '2025-04-01', end: '2025-04-30', budget: 10000, spend: 10000, imp: 10000 });
-    }
+    // Removed fallback demo "Spring Sale" mock campaign. Lists will now return properly empty.
 
     res.json(list);
 });
