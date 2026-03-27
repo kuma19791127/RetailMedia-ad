@@ -1,7 +1,6 @@
 {
   "name": "リテアド",
   "short_name": "リテアド",
-  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
