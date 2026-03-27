@@ -12,6 +12,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         :root {
@@ -82,9 +83,10 @@
         }
         button.btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
 
-        .demo-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
-        .chip { background: white; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
-        .chip:hover { background: #f1f5f9; border-color: var(--primary); }
+        .demo-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
+        .role-chip { background: white; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: var(--gray); cursor: pointer; transition: 0.3s; }
+        .role-chip:hover { background: #f1f5f9; border-color: var(--primary); color: var(--primary); }
+        .role-chip.active-chip { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow); }
 
         .scroll-indicator { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); text-align: center; color: var(--gray); font-size: 0.9rem; font-weight: bold; animation: bounce 2s infinite; cursor: pointer; z-index: 20; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); } 40% { transform: translateY(-10px) translateX(-50%); } 60% { transform: translateY(-5px) translateX(-50%); } }
@@ -190,24 +192,58 @@
             <h1>retail-ad ログイン</h1>
             <p class="subtitle">Retail Media Platform</p>
 
-            <form id="loginForm" onsubmit="handleLogin(event)">
+            <!-- 1. Role Selection Tabs (No email overwrite) -->
+            <div style="margin-bottom:25px;">
+                <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); text-align:center; margin-bottom:10px;">① あなたの「役割」を選択してください</p>
+                <div class="demo-chips">
+                    <div class="role-chip" onclick="selectRole('store', this)">🏪 店舗</div>
+                    <div class="role-chip" onclick="selectRole('advertiser', this)">👔 広告主</div>
+                    <div class="role-chip" onclick="selectRole('agency', this)">🕴️ 代理店</div>
+                    <div class="role-chip" onclick="selectRole('creator', this)">🎨 クリエイター</div>
+                </div>
+            </div>
+
+            <!-- 2. Google Login (High Priority) -->
+            <div style="margin-bottom:25px; padding-bottom:20px; border-bottom:1px dashed #cbd5e1; text-align:center;">
+                <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); margin-bottom:10px;">② Googleアカウントで素早くログイン</p>
+                <div style="display:flex; justify-content:center;">
+                    <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
+                    <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+                </div>
+            </div>
+
+            <!-- 3. Standard Form Login -->
+            <form id="loginForm" method="dialog" onsubmit="handleLogin(event)">
+                <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); text-align:center; margin-bottom:15px;">またはメールアドレスでログイン</p>
+
+                <!-- Hidden select to store the chosen role -->
+                <select id="login-role" name="role" required style="display:none;">
+                    <option value="">-- Role --</option>
+                    <option value="advertiser">広告主</option>
+                    <option value="store">店舗</option>
+                    <option value="agency">代理店</option>
+                    <option value="creator">クリエイター</option>
+                </select>
+
                 <div class="form-group">
                     <label>メールアドレス</label>
-                    <input type="email" id="email" placeholder="user@retail-ad.com" required>
+                    <input type="email" id="email" name="email" placeholder="user@retail-ad.com" autocomplete="username" required>
                 </div>
                 <div class="form-group">
                     <label>パスワード</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
                 </div>
-                <button type="submit" class="btn-primary">ログイン</button>
-            </form>
 
-            <div class="demo-chips">
-                <div class="chip" onclick="fillDemo('store')">🏪 店舗向け</div>
-                <div class="chip" onclick="fillDemo('advertiser')">👔 広告主向け</div>
-                <div class="chip" onclick="fillDemo('agency')">🕴️ 代理店向け</div>
-                <div class="chip" onclick="fillDemo('creator')">🎨 クリエイター</div>
-            </div>
+                <div style="margin-bottom:20px; font-size:0.85rem; display:flex; align-items:center; justify-content:space-between;">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="remember" name="remember" checked> ログインを保持
+                    </label>
+                    <span style="color:var(--primary); cursor:pointer; font-weight:bold;" onclick="autoFillDemo()">※デモ入力</span>
+                </div>
+
+                <button type="submit" class="btn-primary">メールアドレスでログイン</button>
+            </form>
+            
             <p style="text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:20px;">本サービスへのログインにより、プライバシーポリシーに同意したものとみなされます。</p>
         </div>
 
@@ -307,50 +343,90 @@
             ? 'http://localhost:3000'
             : ''; 
 
-        // Demo Fill
-        function fillDemo(role) {
-            let email, pass;
-            if (role === 'store') { email = 'store@demo.com'; pass = 'DemoPass2026!'; }
-            if (role === 'advertiser') { email = 'advertiser@demo.com'; pass = 'DemoPass2026!'; }
-            if (role === 'agency') { email = 'agency@demo.com'; pass = 'DemoPass2026!'; }
-            if (role === 'creator') { email = 'creator@demo.com'; pass = 'DemoPass2026!'; }
+        // Select Role without overwriting user's typed email!
+        function selectRole(role, element) {
+            document.getElementById('login-role').value = role;
+            
+            // Highlight active chip
+            document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active-chip'));
+            if(element) element.classList.add('active-chip');
+        }
 
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = pass;
+        // Demo Autofill (Only triggered intentionally, no longer overwrites unexpectedly)
+        function autoFillDemo() {
+            const role = document.getElementById('login-role').value;
+            if (!role) {
+                Swal.fire('エラー', '先に上部のボタンから役割（ロール）を選択してください', 'warning');
+                return;
+            }
+            document.getElementById('email').value = role + '@demo.com';
+            document.getElementById('password').value = 'DemoPass2026!';
             Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'デモアカウントを入力しました', showConfirmButton: false, timer: 1500 });
+        }
+
+        // Window Load for remembering email
+        window.addEventListener('DOMContentLoaded', () => {
+             const saved = localStorage.getItem('retailMediaSavedEmail');
+             if (saved) document.getElementById('email').value = saved;
+        });
+
+        // Google Authentication Logic Callback
+        function handleGoogleLogin(response) {
+            console.log("Encoded JWT ID token: " + response.credential);
+            
+            const role = document.getElementById('login-role').value;
+            if (!role) {
+                Swal.fire('エラー', 'Googleでログインする前に、ご利用の「役割（ロール）」を必ず選択してください。', 'warning');
+                return;
+            }
+
+            Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'Googleアカウントで認証されました！', showConfirmButton: false, timer: 1500 });
+            
+            // 選択された役割ごとのダッシュボードへ遷移
+            setTimeout(() => {
+                let redirect = 'store_portal.html';
+                if (role === 'advertiser') redirect = 'ad_dashboard.html';
+                if (role === 'agency') redirect = 'agency_portal.html';
+                if (role === 'creator') redirect = 'creator_portal.html';
+                window.location.href = redirect;
+            }, 1500);
         }
 
         // Login Handler
         async function handleLogin(e) {
-            e.preventDefault();
+            // Note: form "method='dialog'" prevents full reload, letting Chrome prompt to save password cleanly!
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const role = document.getElementById('login-role').value;
+
+            if (!role) {
+                Swal.fire('エラー', 'ログインする「役割（ロール）」を選択してください。', 'warning');
+                return;
+            }
+
             const btn = document.querySelector('.btn-primary');
             btn.innerText = 'ログイン中...';
             
             // 【セキュリティ】 ログイン成功の通行証（セッション）を発行
             sessionStorage.setItem('retailMediaAuth', 'true');
             
-            try {
-                const res = await fetch(`${API_URL}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    window.location.href = data.redirect;
-                } else {
-                    throw new Error();
-                }
-            } catch (err) {
-                // Fallback for static demo
-                let redirect = 'store_portal.html';
-                if (email.includes('advertiser')) redirect = 'ad_dashboard.html';
-                if (email.includes('agency')) redirect = 'agency_portal.html';
-                if (email.includes('creator')) redirect = 'creator_portal.html';
-                window.location.href = redirect;
+            // パスワード保持（簡易）
+            if (document.getElementById('remember') && document.getElementById('remember').checked) {
+                localStorage.setItem('retailMediaSavedEmail', email);
             }
+
+            // タイムアウトを使って、ブラウザの「パスワード保存ダイアログ」が一瞬出る隙間を作る
+            setTimeout(() => {
+                let redirect = '';
+                if (role === 'advertiser' || email.includes('advertiser')) redirect = 'ad_dashboard.html';
+                else if (role === 'store' || email.includes('store')) redirect = 'store_portal.html';
+                else if (role === 'agency' || email.includes('agency')) redirect = 'agency_portal.html';
+                else if (role === 'creator' || email.includes('creator')) redirect = 'creator_portal.html';
+                else redirect = 'store_portal.html';
+                
+                window.location.href = redirect;
+            }, 500);
         }
     </script>
 </body>
