@@ -510,18 +510,24 @@
 
             if (mockVideos && mockVideos.length > 0) {
                 let ts = 0;
+                let validCount = 0;
                 mockVideos.forEach(v => {
-                    if (v.rank === 'S') ts += 4;
-                    else if (v.rank === 'A') ts += 3;
-                    else if (v.rank === 'B') ts += 2;
-                    else ts += 1;
+                    if (v.rank === 'S') { ts += 4; validCount++; }
+                    else if (v.rank === 'A') { ts += 3; validCount++; }
+                    else if (v.rank === 'B') { ts += 2; validCount++; }
+                    else if (v.rank === 'C') { ts += 1; validCount++; }
                 });
-                const avgNum = ts / mockVideos.length;
-                let finalRank = 'C';
-                if (avgNum >= 3.5) finalRank = 'S';
-                else if (avgNum >= 2.5) finalRank = 'A';
-                else if (avgNum >= 1.5) finalRank = 'B';
-                document.getElementById('avg-score').innerText = finalRank + ' ランク';
+                
+                if (validCount === 0) {
+                    document.getElementById('avg-score').innerText = '-- ランク';
+                } else {
+                    const avgNum = ts / validCount;
+                    let finalRank = 'C';
+                    if (avgNum >= 3.5) finalRank = 'S';
+                    else if (avgNum >= 2.5) finalRank = 'A';
+                    else if (avgNum >= 1.5) finalRank = 'B';
+                    document.getElementById('avg-score').innerText = finalRank + ' ランク';
+                }
             } else {
                 document.getElementById('avg-score').innerText = '-- ランク';
             }

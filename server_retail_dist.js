@@ -98,13 +98,7 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_pol
 
 // --- CREATOR API ---
 app.get('/api/creator/stats', (req, res) => {
-    // Views increment slightly if active, but revenue relies on POS data
-    CREATOR_STATE.videos.forEach(v => {
-        if (v.status === 'active') {
-            const add = Math.floor(Math.random() * 2);
-            v.views += add;
-        }
-    });
+    // Removed automatic demo increment. Views now stay accurate (0 until real views happen).
     CREATOR_STATE.total_views = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.views, 0);
     CREATOR_STATE.total_revenue = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.revenue, 0);
 
@@ -116,10 +110,10 @@ app.post('/api/creator/upload', (req, res) => {
     const newId = Date.now();
     const newVideo = {
         id: newId,
-        title: title || "究極の卵かけご飯",
+        title: title || "動画タイトル未定",
         format: format || "縦型 (Shorts)",
-        views: 1000, revenue: 500, status: 'active',
-        attention: 92, skip: 2, uplift: 25, rank: 'S', color: '#f1c40f'
+        views: 0, revenue: 0, status: 'active',
+        attention: "--", skip: "--", uplift: "--", rank: '-', color: '#64748b'
     };
     CREATOR_STATE.videos.unshift(newVideo);
 
