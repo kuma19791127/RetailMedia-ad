@@ -72,7 +72,7 @@ function broadcastEvent(data) {
 
 // --- ROUTES ---
 // 1. Unified Login (Entry Point)
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login_portal.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // 2. Dashboards
 app.get('/advertiser', (req, res) => res.sendFile(path.join(__dirname, 'ad_dashboard.html')));
@@ -185,7 +185,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
     console.log(`[Square API] Using Production Key for actual charge.`);
     
     try {
-        const customFetch = globalThis.fetch || (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+        const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
         const crypto = require('crypto');
         
         // Execute Actual Production Charge via Square API
