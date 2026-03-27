@@ -1403,7 +1403,7 @@ app.get('/api/admin/dashboard', (req, res) => {
 
     // Prepare Billing Data (Receivable: 1.2% of POS Sales)
     // If 0, mock a realistic number for demo
-    const displayPosSales = s.total_pos_sales > 0 ? s.total_pos_sales : 12500000;
+    const displayPosSales = s.total_pos_sales || 0;
     const billingAmount = Math.floor(displayPosSales * 0.012);
 
     // Prepare Payout Data (Payable: 50% of Ad Revenue)
@@ -1540,7 +1540,7 @@ app.get('/api/admin/system/validate-square', (req, res) => {
     // and sum the accepted payments, then compare to our local `totalRevenue` & `total_pos_sales`.
     
     const localAd = totalRevenue > 0 ? totalRevenue : 3000000;
-    const localPos = storeData["default_store"].total_pos_sales > 0 ? storeData["default_store"].total_pos_sales : 12500000;
+    const localPos = storeData["default_store"].total_pos_sales || 0;
     
     // Simulating that Square's record perfectly matches our SSoT records
     const squareAdAmount = localAd; 
@@ -1559,7 +1559,7 @@ app.get('/api/admin/system/validate-square', (req, res) => {
 // Generate Excel (Updated to use Store Data)
 app.get('/api/admin/invoice/excel', (req, res) => {
     const s = storeData["default_store"];
-    const sales = s.total_pos_sales > 0 ? s.total_pos_sales : 12500000;
+    const sales = s.total_pos_sales || 0;
     const fee = Math.floor(sales * 0.012);
     const tax = Math.floor(fee * 0.1);
 
@@ -1672,58 +1672,7 @@ app.post('/api/sensor', (req, res) => {
     res.json({ success: true, logged: true });
 });
 
-app.get('/api/ad/analytics', async (req, res) => {
-    const lat = req.query.lat;
-    const lon = req.query.lon;
-    const region = req.query.region || 'Tokyo';
 
-    // Ad_engine returns full context structure defined in ad_engine.js calculateContext
-    try {
-        const engineCtx = await adEngine.analyzeContext(region, lat, lon);
-        res.json({
-            context: engineCtx,
-            attribution: { revenue: Math.floor(totalRevenue), cpa: 450 }
-        });
-    } catch (e) {
-        res.status(500).json({ error: "Context AI Failed" });
-    }
-});
-
-
-app.get('/api/campaigns', (req, res) => {
-    res.json(campaigns);
-});
-
-app.get('/api/store/revenue', (req, res) => {
-    res.json({
-        success: true,
-        adnet: Math.floor(totalRevenue), // Real accumulated revenue
-        adsense: Math.floor(totalRevenue * 1.5), // Simulated AdSense proxy for now based on actual views
-        unitA: Math.floor(totalRevenue * 1.5 * 0.65), // Simulated distribution
-        unitB: Math.floor(totalRevenue * 1.5 * 0.35)
-    });
-});
-
-app.post('/api/campaigns', (req, res) => {
-    try {
-        const newCp = {
-            id: Date.now(),
-            name: req.body.name,
-            start: req.body.start,
-            end: req.body.end,
-            budget: parseInt(req.body.budget) || 0,
-            spend: 0,
-            imp: 0,
-            status: "pending"
-        };
-        campaigns.unshift(newCp);
-        console.log(`[Campaign] Created: ${newCp.name} (Budget: ¥${newCp.budget})`);
-        res.json({ success: true, campaign: newCp });
-    } catch (e) {
-        console.error("Campaign Create Error", e);
-        res.status(500).json({ error: "Failed to create campaign" });
-    }
-});
 
 app.post('/api/campaigns/:id/status', (req, res) => {
     const cpId = req.params.id;
@@ -1753,34 +1702,6 @@ app.post('/api/campaigns/:id/status', (req, res) => {
     }
 });
 
-// Signage Playlist API (Connects Player to CMS)
-app.get('/api/signage/playlist', (req, res) => {
-    const loc = req.query.location || 'register_side';
-    const requestStoreId = req.query.storeId; // Store ID from Player (e.g. STORE_001)
-
-    // Pass Production Mode flag AND Store ID to Signage Server
-    const playlist = signageServer.getPlaylist(loc, isProductionMode, requestStoreId);
-
-    // --- Revenue Calculation for Ad Network ---
-    // If programmatic ad is served, credit the store revenue.
-    if (playlist && playlist.length > 0) {
-        const item = playlist[0];
-        if (item.is_network && item.cpm) {
-            // Calculate per-view revenue (CPM / 1000)
-            const revenuePerView = item.cpm / 1000;
-
-            // Add to Global Revenue (shared with store)
-            totalRevenue += revenuePerView;
-
-            // Optional: Log revenue event occasionally
-            if (Math.random() < 0.05) {
-                console.log(`[Revenue] 💰 AdNet View: +¥${revenuePerView.toFixed(2)} (Total: ¥${Math.floor(totalRevenue)})`);
-            }
-        }
-    }
-
-    res.json(playlist);
-});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
