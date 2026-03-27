@@ -328,6 +328,9 @@
             const btn = document.querySelector('.btn-primary');
             btn.innerText = 'ログイン中...';
             
+            // 【セキュリティ】 ログイン成功の通行証（セッション）を発行
+            sessionStorage.setItem('retailMediaAuth', 'true');
+            
             try {
                 const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',

@@ -863,6 +863,14 @@
             }
         });
     </script>
+
+    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
+    <script>
+        // Check if the user has a valid session token (cleared on restart or cache clear)
+        if (!sessionStorage.getItem('retailMediaAuth')) {
+            window.location.replace('index.html');
+        }
+    </script>
 </head>
 
 <body>
