@@ -76,6 +76,21 @@
             h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
         }
     </style>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
 </head>
 <body>
 
