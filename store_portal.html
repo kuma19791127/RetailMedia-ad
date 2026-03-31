@@ -1194,12 +1194,42 @@
                             <div style="font-size:11px; color:#7f8c8d; line-height:1.4;">
                                 ※音声はテキストスペースなど利用しで聞き取り易く、ボイス速度を調整してください
                             </div>
-                            <div style="text-align:right;">
-                                <button onclick="speakText(document.getElementById('ad-text').value, null, true)"
-                                    style="background:#e67e22; color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; font-size:20px; font-weight:bold; margin-bottom:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-                                    🔊 音声ボイス
-                                </button><br>
-                                <span style="font-size:12px; color:#555;">💾 保存 (原稿 & MP3)</span>
+                            <div style="text-align:right; flex-shrink:0; margin-left: 10px;">
+                                <style>
+                                    @keyframes pulse-orange {
+                                        0% { box-shadow: 0 0 0 0 rgba(238, 82, 83, 0.5); }
+                                        70% { box-shadow: 0 0 0 12px rgba(238, 82, 83, 0); }
+                                        100% { box-shadow: 0 0 0 0 rgba(238, 82, 83, 0); }
+                                    }
+                                    .btn-voice-cool {
+                                        background: linear-gradient(135deg, #ff9f43 0%, #ee5253 100%);
+                                        color: white;
+                                        border: none;
+                                        padding: 14px 24px;
+                                        border-radius: 50px;
+                                        cursor: pointer;
+                                        font-size: 17px;
+                                        font-weight: 900;
+                                        margin-bottom: 8px;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        gap: 8px;
+                                        box-shadow: 0 6px 15px rgba(238, 82, 83, 0.4);
+                                        transition: all 0.3s ease;
+                                        animation: pulse-orange 2s infinite;
+                                        white-space: nowrap;
+                                        letter-spacing: 1px;
+                                    }
+                                    .btn-voice-cool:active {
+                                        transform: scale(0.96);
+                                    }
+                                </style>
+                                <button onclick="speakText(document.getElementById('ad-text').value, null, true)" class="btn-voice-cool">
+                                    <span style="font-size: 22px;">🔊</span>
+                                    <span>音声ボイス</span>
+                                </button>
+                                <div style="font-size:12px; color:#555; text-align:center;">💾 保存(原稿&MP3)</div>
                             </div>
                         </div>
                     </div>
