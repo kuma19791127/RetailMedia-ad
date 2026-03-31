@@ -557,11 +557,12 @@ app.post('/api/campaigns', (req, res) => {
 
         const rawUrl = url || file_url || youtube_url || "";
 
-        if (rawUrl.startsWith('data:video/quicktime;base64,')) {
-            console.log("[AdUpload] Detected .mov file, transcoding to .mp4...");
+        if (rawUrl.startsWith('data:video/quicktime;base64,') || rawUrl.startsWith('data:video/mp4;base64,')) {
+            console.log("[AdUpload] Detected raw video file, transcoding and compressing heavily...");
             const base64Data = rawUrl.split(';base64,').pop();
+            const ext = rawUrl.startsWith('data:video/quicktime') ? 'mov' : 'mp4';
             const tempId = Date.now();
-            const inputPath = path.join(__dirname, 'uploads', `ad_temp_${tempId}.mov`);
+            const inputPath = path.join(__dirname, 'uploads', `ad_temp_${tempId}.${ext}`);
             const outputPath = path.join(__dirname, 'uploads', `ad_video_${tempId}.mp4`);
             fs.writeFileSync(inputPath, base64Data, { encoding: 'base64' });
 
@@ -569,9 +570,10 @@ app.post('/api/campaigns', (req, res) => {
                 .output(outputPath)
                 .videoCodec('libx264')
                 .addOption('-preset', 'fast')
+                .addOption('-crf', '28') // Heavy compression for Retail Signage
                 .on('end', () => {
-                    console.log("[AdUpload] Transcoding finished.");
-                    fs.unlinkSync(inputPath); // Clean up temp mov file
+                    console.log("[AdUpload] Transcoding & Compression finished.");
+                    fs.unlinkSync(inputPath); // Clean up temp file
                     processAndInject(`/uploads/ad_video_${tempId}.mp4`);
                     // We must wait to broadcast or return. Because Express prefers sync response,
                     // we returned "Campaign Created" below before finish, but that's fine.
