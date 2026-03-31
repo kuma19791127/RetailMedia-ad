@@ -2576,23 +2576,7 @@
         }
     </script>
 
-    <nav class="mobile-nav">
-        <div class="nav-btn" onclick="window.open('ad_dashboard-LP.html', '_blank')">
-            <i>📖</i><span>ビジネスモデル解説 (LP)</span>
-        </div>
-        <div class="nav-btn" onclick="showPanel('api')">
-            <i>⚙️</i><span>設定</span>
-        </div>
-        <div class="nav-btn" onclick="window.open('advertiser_dashboard.html', '_blank')">
-            <i>📈</i><span>分析</span>
-        </div>
-        <div class="nav-btn" onclick="handlePayment()">
-            <i>💳</i><span>支払い設定</span>
-        </div>
-        <div class="nav-btn" onclick="showFullMenu()">
-            <i>≡</i><span>メニュー</span>
-        </div>
-    </nav>
+    <!-- Old nav removed -->
     <script>
         // Feature Parity: Sidebar features in one menu
         function showFullMenu() {
@@ -2694,22 +2678,18 @@
         @media (min-width: 769px) { .mobile-nav { display: none !important; } }
     </style>
     <div class="mobile-nav">
-        <div class="nav-btn active" onclick="showPanel('dashboard')">
-            <i>📊</i><span>ダッシュボード</span>
-        </div>
-        <a href="ad_dashboard-LP.html" class="nav-btn">
+        <a href="ad_dashboard-LP.html" class="nav-btn" style="text-decoration:none;">
             <i>📖</i><span>ビジネス</span>
         </a>
-        <a href="advertiser_dashboard.html" class="nav-btn">
+        <a href="advertiser_dashboard.html" class="nav-btn" style="text-decoration:none;">
             <i>📈</i><span>分析</span>
         </a>
         <div class="nav-btn" onclick="registerCreditCard()">
             <i>💳</i><span>お支払い</span>
         </div>
-        <!-- ≡ その他メニュー（サポート、ログアウトなど） -->
-        <div class="nav-btn" onclick="showOtherMenu()">
-            <i>≡</i><span>その他</span>
-        </div>
+        <a href="login_portal.html" class="nav-btn" style="text-decoration:none;">
+            <i style="color:#f43f5e; font-style:normal;">🚪</i><span style="color:#f43f5e; font-weight:bold;">ログアウト</span>
+        </a>
     </div>
 </body>
 
