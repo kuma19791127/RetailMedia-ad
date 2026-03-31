@@ -227,8 +227,9 @@
             </div>
             <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
                 <!-- EXCEL IMPORT BUTTON -->
-                <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm" style="background:#10B981; color:white; padding:8px 8px; font-weight:bold;">📥 商品データ取込(Excel)</button>
-                <input type="file" id="excel-master-upload" accept=".xlsx, .csv" style="display:none;" onchange="importProductMaster(event)">
+                <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm" style="background:#10B981; color:white; padding:8px 8px; font-weight:bold;">📥 商品データ取込</button>
+                <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="importProductMaster(event)">
+                <button onclick="showIntegrationSettings()" class="btn-sm" style="background:#8e44ad; color:white; padding:8px 8px; font-weight:bold;">⚙️ 連携設定</button>
                 <button onclick="toggleDebugLog()" class="btn-sm" style="background:#f59e0b; color:white; padding:8px 8px; font-weight:bold;">🛠 スキャン履歴</button>
                 <button class="btn-sm btn-logout" onclick="logout()" style="padding:8px 8px;">ログアウト</button>
             </div>
@@ -318,53 +319,166 @@
             products: 'janCode, name, price, category'
         });
 
-        // --- EXCEL BULK IMPORT (50,000+ items possible into IndexedDB) ---
+        // --- EXCEL/JS BULK IMPORT (50,000+ items inside IndexedDB) & Drag And Drop ---
         async function importProductMaster(event) {
-            const file = event.target.files[0];
+            handleProductFile(event.target.files[0]);
+            event.target.value = '';
+        }
+
+        async function handleProductFile(file) {
             if (!file) return;
 
             Swal.fire({
                 title: '商品マスター読込中...',
-                text: 'エクセルから数万点の商品データをブラウザ(IndexedDB)にキャッシュ中',
+                text: file.name + ' を解析しデータベースに同期しています',
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
 
+            const isJS = file.name.endsWith('.js') || file.name.endsWith('.json');
             const reader = new FileReader();
-            reader.onload = async function (e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet);
-                    
-                    if(json.length === 0) throw new Error("データが空です");
 
-                    // Map columns dynamically
-                    const productsToInsert = json.map(row => ({
-                        janCode: String(row['JAN'] || row['janCode'] || row['JANコード'] || row['バーコード'] || Math.floor(Math.random()*1000000000000)),
-                        name: row['商品名'] || row['name'] || "不明な商品",
-                        price: parseInt(row['価格'] || row['price'] || row['売価'] || row['単価'] ||"0", 10),
-                        category: row['カテゴリ'] || row['category'] || "一般"
-                    }));
+            if (isJS) {
+                reader.onload = async function (e) {
+                    try {
+                        let text = e.target.result;
+                        let jsonStr = text;
+                        if(file.name.endsWith('.js')) {
+                            jsonStr = text.replace(/.*productMaster\s*=\s*/, '').replace(/;*$/, '');
+                            if(!jsonStr.trim().startsWith('{') && !jsonStr.trim().startsWith('[')) {
+                                throw new Error("Invalid JS format");
+                            }
+                        }
+                        
+                        let parsedObj;
+                        try { parsedObj = JSON.parse(jsonStr); } 
+                        catch(err) { parsedObj = new Function("return " + jsonStr)(); }
 
-                    // Bulk put to IndexedDB (incredibly fast)
-                    await db.products.bulkPut(productsToInsert);
-                    const count = await db.products.count();
+                        let productsToInsert = [];
+                        if (Array.isArray(parsedObj)) {
+                            productsToInsert = parsedObj.map(row => ({
+                                janCode: String(row.janCode || row.JAN || Math.floor(Math.random()*1000000000000)),
+                                name: row.name || row['商品名'] || "不明",
+                                price: parseInt(row.price || row['価格'] || "0", 10),
+                                category: row.category || row['カテゴリ'] || "一般"
+                            }));
+                        } else {
+                            for (const [code, info] of Object.entries(parsedObj)) {
+                                productsToInsert.push({
+                                    janCode: code,
+                                    name: info.name || "不明",
+                                    price: parseInt(info.price || 0, 10),
+                                    category: info.category || "一般"
+                                });
+                            }
+                        }
 
-                    Swal.fire({
-                        icon: 'success',
-                        title: '取込完了！',
-                        html: `<b>${productsToInsert.length}件</b> の商品マスターを端末データベースに高速登録しました。<br>現在の総商品登録数: <b>${count}件</b><br><br><span style="font-size:12px;color:#666;">これより市販のHIDスキャナで一瞬で商品が呼び出せます。数万点でも遅延なしで決済操作が可能です。</span>`
-                    });
-                    document.getElementById('excel-master-upload').value = '';
-                } catch (error) {
-                    console.error(error);
-                    Swal.fire('エラー', '読み込みに失敗しました。正しいエクセル形式か確認してください。', 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
+                        await db.products.bulkPut(productsToInsert);
+                        const count = await db.products.count();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '同期完了',
+                            html: `<b>${productsToInsert.length}件</b> のJavaScriptデータを端末DBに登録しました。<br>現在の総商品登録数: <b>${count}件</b>`
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        Swal.fire('エラー', 'JS/JSONの解析に失敗しました。', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                reader.onload = async function (e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(sheet);
+                        
+                        if(json.length === 0) throw new Error("データが空です");
+
+                        const productsToInsert = json.map(row => ({
+                            janCode: String(row['JAN'] || row['janCode'] || row['JANコード'] || row['バーコード'] || Math.floor(Math.random()*1000000000000)),
+                            name: row['商品名'] || row['name'] || "不明な商品",
+                            price: parseInt(row['価格'] || row['price'] || row['売価'] || row['単価'] ||"0", 10),
+                            category: row['カテゴリ'] || row['category'] || "一般"
+                        }));
+
+                        await db.products.bulkPut(productsToInsert);
+                        const count = await db.products.count();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '取込完了！',
+                            html: `<b>${productsToInsert.length}件</b> の商品マスターを端末データベースに高速登録しました。<br>現在の総商品登録数: <b>${count}件</b><br><br><span style="font-size:12px;color:#666;">これより市販のHIDスキャナで一瞬で商品が呼び出せます。数万点でも遅延なしで決済操作が可能です。</span>`
+                        });
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('エラー', '読み込みに失敗しました。正しいエクセル形式か確認してください。', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
         }
+
+        // Global Drag and Drop feature for anywhere_regi
+        window.addEventListener('dragover', e => { e.preventDefault(); document.body.style.opacity = '0.8'; });
+        window.addEventListener('dragleave', e => { e.preventDefault(); document.body.style.opacity = '1'; });
+        window.addEventListener('drop', e => {
+            e.preventDefault();
+            document.body.style.opacity = '1';
+            if(e.dataTransfer.files.length > 0) handleProductFile(e.dataTransfer.files[0]);
+        });
+
+        // Webhooks integration modal
+        function showIntegrationSettings() {
+            Swal.fire({
+                title: '📡 外部連携・Webhooks設定',
+                html: `
+                    <div style="text-align:left; font-size:13px; margin-bottom:15px; color:#555;">
+                        売上や在庫変動発生時に外部サーバー（本部DBや独自POS等）へ即時通知します。
+                    </div>
+                    <label style="display:block; text-align:left; font-size:12px; font-weight:bold; margin-bottom:5px;">Webhook 宛先 URL</label>
+                    <input id="swal-wh-url" class="swal2-input" placeholder="https://your-server.com/api/webhooks" style="width:80%; font-size:14px; margin-top:0;">
+                    <label style="display:block; text-align:left; font-size:12px; font-weight:bold; margin-top:15px; margin-bottom:5px;">Webhook Secret</label>
+                    <input id="swal-wh-sec" type="password" class="swal2-input" placeholder="Secure token" style="width:80%; font-size:14px; margin-top:0;">
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '保存する',
+                preConfirm: () => {
+                    const url = document.getElementById('swal-wh-url').value;
+                    localStorage.setItem('pos_webhook_url', url);
+                    return url;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('保存しました', 'POS売上/在庫のWebhook連携が有効になりました。', 'success');
+                }
+            });
+        }
+
+        // Cross-tab Synchronization from store_portal
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sync_inventory_time' && e.newValue) {
+                Swal.fire({
+                    title: 'ストアからのデータ同期要求',
+                    text: 'システム (store_portal) で新しい在庫・商品マスターがアップロードされました。このPOS端末(どこでもレジ)にも同期・引き渡しますか？',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '許可して同期',
+                    cancelButtonText: '拒否',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if(result.isConfirmed) {
+                        Swal.fire('同期完了', '端末データベースに最新の商品データを安全に反映しました。(デモ)', 'success');
+                        logDebug("🔔 [CrossTab Sync] ユーザーが store_portal からの在庫データ引き渡しを許可し、同期完了しました。");
+                    } else {
+                        logDebug("🔔 [CrossTab Sync] ユーザーが store_portal からの同期を拒否しました。");
+                    }
+                });
+            }
+        });
 
         // --- Mock Product API (now queries ultra-fast IndexedDB) ---
         async function mockProductApi(janCode) {

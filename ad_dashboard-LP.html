@@ -111,15 +111,29 @@
         .subtitle {
             font-size: 1.4rem;
             color: #94a3b8;
-            max-width: 800px;
+            max-width: 100%;
             margin: 0 auto 50px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        @media (max-width: 768px) {
+            .subtitle {
+                font-size: 1.2rem;
+                max-width: 100%;
+                padding: 0 10px;
+            }
         }
 
         /* Features/Comparisons */
         .section {
-            padding: 100px 20px;
-            max-width: 1200px;
+            padding: 80px 15px;
+            max-width: 100%;
             margin: 0 auto;
+        }
+        @media (max-width: 768px) {
+            .section {
+                padding: 60px 10px;
+            }
         }
 
         h2.section-title {
@@ -131,8 +145,14 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
         }
 
         .card {
@@ -184,8 +204,15 @@
             margin-top: 40px;
             background: #1e293b;
             border-radius: 16px;
-            overflow: hidden;
+            overflow-x: auto;
+            display: block;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        @media (max-width: 768px) {
+            .comparison-table th, .comparison-table td {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
         }
 
         .comparison-table th, .comparison-table td {

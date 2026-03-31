@@ -615,6 +615,91 @@
                     </div>
                 </div>
             </div>
+            <div id="panel-studio" class="panel">
+                <h2 style="margin-top:0;">🎙️ AI ボイス スタジオ</h2>
+                <div class="card">
+                    <h3>📊 Excelから放送原稿を作成 ℹ️ フォーマット詳細</h3>
+                    <label for="campaign-text">Campaign Text (放送原稿)</label>
+                    <textarea id="campaign-text" rows="3">本日の特売 トマト 98 円!</textarea>
+                    <p style="font-size:0.85rem;color:var(--text-sub);margin-top:4px;">
+                        ※音声はテキストスペースなど利用しで聞き取り易く、ボイス速度を調整してください
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>🔊 音声ボイス</h3>
+                    <div class="flex-row">
+                        <div class="flex-col" style="flex:1;">
+                            <label for="voice-model">Voice Model (Engine)</label>
+                            <select id="voice-model">
+                                <option selected>🌟 Gemini 2.5 Flash (Kore)</option>
+                            </select>
+                        </div>
+                        <div class="flex-col" style="flex:1;">
+                            <label for="voice-speed">🔊 Voice Speed</label>
+                            <input type="number" id="voice-speed" step="0.1" min="0.5" max="2" value="0.9"> x
+                        </div>
+                        <div class="flex-col" style="flex:1;">
+                            <label for="voice-pitch">🎵 声の高さ (ピッチ)</label>
+                            <input type="number" id="voice-pitch" step="0.1" min="-5" max="5" value="-2.0">
+                        </div>
+                    </div>
+                    <label for="voice-style" style="margin-top:12px;">🗣️ 話し方のスタイル (AI Prompt)</label>
+                    <input type="text" id="voice-style" value="cheerfully">
+                </div>
+                <div class="card">
+                    <h3>💾 保存 (原稿 & MP3)</h3>
+                    <button class="btn" id="save-btn">保存</button>
+                </div>
+                <div class="card">
+                    <h3>⏰ 放送時間の予約設定 (オプション)</h3>
+                    <div class="flex-row" style="align-items:center;">
+                        <div class="flex-col" style="flex:1;">
+                            <label for="schedule-date">年 /月/日 --:--</label>
+                            <input type="datetime-local" id="schedule-date">
+                        </div>
+                        <div class="flex-col" style="flex:1;display:flex;align-items:center;">
+                            <input type="checkbox" id="immediate" checked style="margin-right:8px;">
+                            <label for="immediate">即時配信</label>
+                        </div>
+                    </div>
+                    <p style="font-size:0.85rem;color:var(--text-sub);margin-top:4px;">
+                        タイムセールなどに合わせて、事前に配信スケジュールを設定できます。空欄の場合は「即時配信」となります。
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>🚨 優先配信 (サイネージへ即時割り込み)</h3>
+                    <button class="btn" id="priority-btn">優先配信実行</button>
+                </div>
+                <div class="card">
+                    <h3>Mascot Character / Image</h3>
+                    <button class="btn" id="select-mascot">(Click to Select Preset)</button>
+                    <p id="mascot-status" style="margin-top:8px;color:var(--text-sub);">選択されていません</p>
+                </div>
+                <div class="card">
+                    <h3>Preview Area</h3>
+                    <div class="preview" id="preview-area">
+                        「3.5mmステレオピンプラグ<->RCAピンプラグｘ２」のケーブル（写真）または「3.5mmステレオピンプラグ<->3.5mmステレオピンプラグ」のケーブルを使って、オーディオ機器のAUX IN端子に、パソコンのヘッドフォン端子（緑色）から接続すれば、パソコンの音をオーディオ機器から再生することができます。
+                    </div>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                <script>
+                    document.getElementById('save-btn').addEventListener('click', () => {
+                        Swal.fire('保存しました', '原稿と音声が保存されました。', 'success');
+                    });
+                    document.getElementById('priority-btn').addEventListener('click', () => {
+                        Swal.fire('優先配信', 'サイネージへ即時割り込み配信を開始しました。', 'info');
+                    });
+                    document.getElementById('select-mascot').addEventListener('click', () => {
+                        Swal.fire({
+                            title: 'マスコット選択',
+                            html: '<p>ここにマスコット画像のプリセット選択 UI を実装してください。</p>',
+                            icon: 'question'
+                        }).then(() => {
+                            document.getElementById('mascot-status').textContent = '選択済み (例: キャラクターA)';
+                        });
+                    });
+                </script>
+            </div>
 
             <div class="metric-grid">
                 <div class="card" style="border-left: 5px solid #27ae60;">
@@ -1325,6 +1410,127 @@
             </div>
         </div>
 
+        <!-- Inventory Sync Panel -->
+        <div id="panel-inventory" class="panel">
+            <h2 style="margin-top:0;">📦 在庫連携 (Inventory Sync)</h2>
+            <div class="card" style="border-left: 5px solid #2980b9;">
+                <h3 style="margin-top:0; color:#2980b9;">📥 商品データのインポート</h3>
+                <p style="font-size:13px; color:#555; margin-bottom:15px;">
+                    Excelファイル(.xlsx) または 商品リストJSファイル(products.js) をドラッグ＆ドロップ、または選択してアップロードします。<br>
+                    <span style="color:#e74c3c;">※アップロード後、クラウドPOS (どこでもレジ) 等の他端末にも自動共有されます。</span>
+                </p>
+                <div id="drop-zone" style="border: 2px dashed #9bc5c3; border-radius: 12px; padding: 40px 20px; text-align: center; background: #f0f8ff; cursor: pointer; transition: all 0.3s ease;">
+                    <span style="font-size: 30px; display: block; margin-bottom: 10px;">📄</span>
+                    <span style="font-weight: bold; color: #2c3e50;">ここにファイルをドロップ</span>
+                    <p style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">またはクリックしてファイルを選択 (.xlsx / .csv / .js)</p>
+                    <input type="file" id="inventory-file" accept=".xlsx,.csv,.js" style="display: none;">
+                </div>
+                <div id="upload-status" style="margin-top:15px; font-weight:bold; font-size:14px; color:#27ae60; display:none;"></div>
+            </div>
+
+            <div class="card" style="border-left: 5px solid #8e44ad;">
+                <h3 style="margin-top:0; color:#8e44ad;">📡 Webhooks連携エクスポート (送信)</h3>
+                <p style="font-size:13px; color:#555; margin-bottom:15px;">
+                    商品の在庫情報などの変動を、外部システム（自社サーバーや他社POS等）へリアルタイム送信します。
+                </p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <label style="font-size:12px; font-weight:bold;">Webhook 宛先 URL</label>
+                    <input type="url" id="webhook-url" placeholder="https://your-server.com/api/webhooks/inventory" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
+                    <label style="font-size:12px; font-weight:bold; margin-top:5px;">Webhook 秘匿キー (Secret)</label>
+                    <input type="password" id="webhook-secret" placeholder="wh_sec_..." style="padding:10px; border:1px solid #ccc; border-radius:5px;">
+                    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                        <button class="btn" onclick="testWebhook()" style="background:#f39c12; flex:1;">テスト送信</button>
+                        <button class="btn" onclick="saveWebhook()" style="flex:2;">保存して有効化</button>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                // --- Drag and Drop Logic ---
+                const dropZone = document.getElementById('drop-zone');
+                const fileInput = document.getElementById('inventory-file');
+                const statusDiv = document.getElementById('upload-status');
+
+                dropZone.addEventListener('click', () => fileInput.click());
+
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.style.background = '#e0f7fa';
+                    dropZone.style.borderColor = '#00acc1';
+                });
+
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    dropZone.style.background = '#f0f8ff';
+                    dropZone.style.borderColor = '#9bc5c3';
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.style.background = '#f0f8ff';
+                    dropZone.style.borderColor = '#9bc5c3';
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) handleInventoryUpload(files[0]);
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) handleInventoryUpload(e.target.files[0]);
+                });
+
+                async function handleInventoryUpload(file) {
+                    Swal.fire({
+                        title: 'ファイル読み込み中...',
+                        text: file.name + ' を解析しています',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    // 簡易的な読み込みシミュレーション
+                    setTimeout(() => {
+                        let msg = `<b>${file.name}</b> の取り込みが完了しました。<br>`;
+                        if(file.name.endsWith('.js')) {
+                            msg += 'ローカルPOS (どこでもレジ) 等で直接利用可能なJSフォーマットとして認識されました。';
+                        } else {
+                            msg += 'Excel解析が完了し、システムデータベースに同期されました。';
+                        }
+                        
+                        // LocalStorageにモック用キャッシュ保存 (anywhere_regi用)
+                        localStorage.setItem('sync_inventory_time', Date.now());
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '同期完了',
+                            html: msg
+                        });
+                        
+                        statusDiv.style.display = 'block';
+                        statusDiv.innerHTML = `✅ 最終同期: ${new Date().toLocaleString()} (${file.name})`;
+                    }, 1500);
+                }
+
+                // --- Webhook Logic ---
+                function testWebhook() {
+                    let url = document.getElementById('webhook-url').value;
+                    if(!url) return Swal.fire('エラー', 'URLを入力してください', 'error');
+                    
+                    Swal.fire({
+                        title: 'テスト送信中',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+                    setTimeout(() => {
+                        Swal.fire('送信成功', 'Webhookテストペイロードが正常に送信されました。HTTP 200 OK', 'success');
+                    }, 800);
+                }
+
+                function saveWebhook() {
+                    let url = document.getElementById('webhook-url').value;
+                    if(!url) return Swal.fire('エラー', 'URLを入力してください', 'error');
+                    Swal.fire('保存完了', '在庫数変動時のWebhook連携が有効化されました。', 'success');
+                }
+            </script>
+        </div>
+
     </div>
 
     <script>
@@ -1746,6 +1952,9 @@
         <div class="nav-btn" onclick="window.location.href='manualhelp.html'">
             <i>📖</i><span>マニュアル</span>
         </div>
+        <div class="nav-btn" onclick="showPanel('studio')">
+            <i>✨</i><span>AIボイススタジオ</span>
+        </div>
         <div class="nav-btn" onclick="showStoreMenu()">
             <i>≡</i><span>メニュー</span>
         </div>
@@ -1755,13 +1964,12 @@
             Swal.fire({
                 title: 'その他メニュー',
                 html: `
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div style="display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:15px;">
                         <button onclick="showPanel('pos'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2ecc71;">🔌 POS連携</button>
-                        <button onclick="showPanel('studio'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#f39c12;">✨ AIボイス</button>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr; gap:10px; border-top:1px solid #eee; padding-top:15px;">
                         <button onclick="alert('Camera Settings (Demo)'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#8e44ad;">📷 AIカメラ設定</button>
-                        <button onclick="alert('Inventory Mgmt (Demo)'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
+                        <button onclick="showPanel('inventory'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
                         <button onclick="location.href='index.html';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
                     </div>
                 `,

@@ -30,10 +30,13 @@ self.addEventListener('fetch', (e) => {
     fetch(e.request).then((response) => {
       // ネットワーク通信成功時はキャッシュを更新（HTMLなどを常に新しく保つ）
       if (response && response.status === 200 && response.type === 'basic') {
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(e.request, responseClone);
-        });
+        const url = e.request.url;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, responseClone);
+          });
+        }
       }
       return response;
     }).catch(() => {
