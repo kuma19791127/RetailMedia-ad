@@ -229,20 +229,35 @@
     <!-- Global Mobile Typography Fix -->
     <style>
         body, h1, h2, h3, h4, h5, p, span, div {
-            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
-            word-break: keep-all; /* Fallback */
-            overflow-wrap: break-word;
+            word-break: normal;
+            line-break: strict;
+            overflow-wrap: anywhere;
         }
+
+        /* Phrase wrapping helper */
+        .phrase {
+            display: inline-block;
+            vertical-align: top;
+        }
+
         .mobile-br { display: none; }
-        .desktop-br { display: block; }
+        .desktop-br { display: inline; }
+
         @media (max-width: 768px) {
             .mobile-br { display: block; }
             .desktop-br { display: none; }
             
-            /* Auto-reduce huge headings on mobile globally to prevent overflow */
-            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
-            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
-            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+            h1 { font-size: clamp(1.6rem, 7vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h2 { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; line-height: 1.5 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.5rem) !important; line-height: 1.4 !important; }
+
+            .header {
+                padding: 60px 15px !important;
+            }
+
+            .phrase {
+                display: inline-block;
+            }
         }
     </style>
 
@@ -265,15 +280,15 @@
 <body>
 
     <div class="header">
-        <h1>あなたの動画が、街の体験を変える。<br>リアルで届ける新しい動画ステージ</h1>
-        <p>「あなたのクリエイティビティ」×「最新AI」が生み出す、<br>YouTubeの枠を超えた全く新しいファン獲得＆収益モデル。</p>
+        <h1><span class="phrase">あなたの動画が、</span><span class="phrase">街の体験を変える。</span><br class="desktop-br"><span class="phrase">リアルで届ける</span><span class="phrase">新しい動画ステージ</span></h1>
+        <p><span class="phrase">「あなたのクリエイティビティ」×</span><span class="phrase">「最新AI」が生み出す、</span><br class="desktop-br"><span class="phrase">YouTubeの枠を超えた</span><span class="phrase">全く新しいファン獲得＆収益モデル。</span></p>
     </div>
 
     <div class="container">
         <!-- Section 1 -->
         <div class="card">
-            <h2>街の巨大スクリーンで、新しいファンに出会おう！</h2>
-            <p>スマホの中だけじゃない！あなたの魅力あふれるショート動画が、実際にお店で買い物をしている人々の足を止め、日常にワクワクを届けます。リアルな視聴体験から、全く新しいファンを獲得するチャンスです。</p>
+            <h2><span class="phrase">街の巨大スクリーンで、</span><span class="phrase">新しいファンに</span><span class="phrase">出会おう！</span></h2>
+            <p><span class="phrase">スマホの中だけじゃない！</span><span class="phrase">あなたの魅力あふれるショート動画が、</span><span class="phrase">実際にお店で</span><span class="phrase">買い物をしている人々の足を止め、</span><span class="phrase">日常にワクワクを届けます。</span><span class="phrase">リアルな視聴体験から、</span><span class="phrase">全く新しいファンを獲得するチャンスです。</span></p>
 
             <div class="grid">
                 <div class="box">
