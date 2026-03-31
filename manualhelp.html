@@ -41,7 +41,7 @@
         .brand { 
             font-size: 26px; font-weight: 800; 
             background: linear-gradient(to right, #ff4d4d, #f9cb28, #10b981, #3b82f6, #8b5cf6, #ec4899); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; 
             animation: rainbow 5s linear infinite; background-size: 200% auto;
         }
         @keyframes rainbow { 0%{ background-position: 0% 50%; } 100%{ background-position: 200% 50%; } }
@@ -139,13 +139,22 @@
         .step-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 30px; line-height: 1.4; }
         .clear-btn { background: var(--secondary); color: white; border: none; padding: 18px 40px; border-radius: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; width:100%;}
         
-        /* Mobile Nav */
         @media(max-width: 900px) {
             header .role-switch { display: none; }
             .mobile-bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; width: 100vw; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 100; border-top: 1px solid rgba(255,255,255,0.1); justify-content: space-around; padding: 10px 5px; }
             .role-btn { flex-direction: column; background: transparent; border: none; font-size: 0.7rem; padding: 5px; color:#cbd5e1; gap:3px;}
             .role-btn i { font-size: 1.4rem; }
             body { padding-bottom: 80px; }
+            
+            /* Layout & Padding fixes for mobile */
+            .container { padding: 15px 10px 100px 10px !important; }
+            .panel { padding: 15px !important; word-break: break-word; overflow-wrap: break-word; }
+            .step-item { padding: 10px !important; gap: 5px; align-items: flex-start !important;}
+            .grid-2 { gap: 15px !important; }
+            
+            /* Buttons */
+            .btn { padding: 12px 15px; font-size: 0.9rem; white-space: normal; height: auto; text-align: center; }
+            .btn i { margin-right: 3px; }
         }
         @media(min-width: 901px) { .mobile-bottom-nav { display: none; } }
 
