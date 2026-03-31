@@ -248,7 +248,7 @@
             .desktop-br { display: none; }
             
             h1 { font-size: clamp(1.6rem, 7vw, 2.2rem) !important; line-height: 1.4 !important; }
-            h2 { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; line-height: 1.5 !important; }
+            h2 { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; line-height: 1.5 !important; display: block !important; }
             h3 { font-size: clamp(1.2rem, 5vw, 1.5rem) !important; line-height: 1.4 !important; }
 
             .header {
@@ -257,6 +257,18 @@
 
             .phrase {
                 display: inline-block;
+            }
+
+            /* Scroll bar hint for tables */
+            .scroll-x {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-left: -20px;
+                margin-right: -20px;
+                padding-left: 20px;
+                padding-right: 20px;
+                width: calc(100% + 40px);
+                box-sizing: border-box;
             }
         }
     </style>
@@ -314,11 +326,12 @@
 
         <!-- Section 2 -->
         <div class="card">
-            <h2>💰 あなたのクリエイティビティに、大きなリターンを</h2>
+            <h2>💰 <span class="phrase">あなたの</span><span class="phrase">クリエイティビティに、</span><span class="phrase">大きなリターンを</span></h2>
             <p>「YouTubeに公開する前のお宝動画」や「お気に入りのショート動画」をシステムにアップロードするだけ！いつもの活動を邪魔せず、通常のプラットフォームを大きく上回る新たなハイブリッド収益源を生み出します！
             </p>
 
-            <table class="vs-table">
+            <div class="scroll-x">
+                <table class="vs-table">
                 <tr>
                     <th>比較項目</th>
                     <th>📱 通常のSNS (YouTube Shorts等)</th>
@@ -340,6 +353,7 @@
                     <td>広告主が支払う<b>「店舗での実売上貢献（CPA）予算」</b>からの直接分配</td>
                 </tr>
             </table>
+            </div>
         </div>
 
         <!-- Section 3 -->
