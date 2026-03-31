@@ -184,7 +184,6 @@ app.post('/api/payment/square-charge', async (req, res) => {
 
     console.log(`[Square API] Using Production Key for actual charge.`);
     
-    /*
     try {
         const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
         const crypto = require('crypto');
@@ -211,8 +210,6 @@ app.post('/api/payment/square-charge', async (req, res) => {
             console.error(`[Square API Error]`, squareData.errors);
             return res.status(400).json({ success: false, error: '決済に失敗しました' });
         }
-    */
-    try {
 
         // Store separate totals (SSoT Sync)
         if (source.includes('anywhere-regi') || source.includes('anywhere_regi')) {
@@ -226,7 +223,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
         }
         
         // Return successful charge with actual transaction ID
-        res.json({ success: true, transactionId: `tx_live_${Date.now()}` });
+        res.json({ success: true, transactionId: squareData.payment.id });
     } catch (e) {
         console.error("Square charge failed:", e);
         res.status(500).json({ success: false, error: 'サーバー連携エラー' });
