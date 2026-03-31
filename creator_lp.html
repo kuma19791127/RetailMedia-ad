@@ -176,6 +176,39 @@
             background: #732d91;
             transform: translateY(-2px);
         }
+        @media (max-width: 768px) {
+            .vs-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            .vs-table th, .vs-table td {
+                min-width: 140px;
+                white-space: normal;
+                word-break: break-word;
+                overflow-wrap: break-word;
+            }
+            .diagram-flow {
+                flex-direction: column;
+            }
+            .flow-step {
+                width: 100% !important;
+                box-sizing: border-box;
+            }
+            .arrow {
+                transform: rotate(90deg);
+                margin: 5px 0 !important;
+            }
+            .box, .card {
+                padding: 20px !important;
+                word-break: break-word;
+                overflow-wrap: break-word;
+            }
+            ul, li {
+                word-break: break-word;
+                overflow-wrap: break-word;
+            }
+        }
     </style>
 
     <!-- Google AdSense -->
