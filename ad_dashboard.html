@@ -1031,13 +1031,16 @@
                 <div class="card" style="margin-top:20px;">
                     <h3>7日間の天気予報 <span style="font-size:14px; font-weight:normal; color:#7f8c8d;">(広告配信プランの参考に)</span>
                     </h3>
-                    <div class="grid-forecast" id="forecast-container">
+                    <div style="overflow-x: auto; padding-bottom: 5px;">
+                        <div class="grid-forecast" id="forecast-container" style="min-width: 500px;">
                         <div class="forecast-day">Loading...</div>
+                        </div>
                     </div>
                 </div>
 
                 <h3 style="margin-top:20px;">リアルタイム環境モニター <span class="live-badge">LIVE API</span></h3>
-                <div class="grid-3">
+                <div style="overflow-x: auto; padding-bottom: 5px;">
+                    <div class="grid-3" style="min-width: 700px;">
                     <div class="card">
                         <h3>時間帯効果 (現在)</h3>
                         <div id="time-visualizer" class="visualizer-container"></div>
@@ -1050,6 +1053,7 @@
                         <h3>気温の影響 (現在)</h3>
                         <div id="temp-visualizer" class="visualizer-container"></div>
                     </div>
+                </div>
                 </div>
             </div> <!-- End Panel Dashboard -->
 
