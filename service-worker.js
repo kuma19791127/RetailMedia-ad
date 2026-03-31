@@ -1,4 +1,4 @@
-const CACHE_NAME = 'retail-ad-store-v3';
+const CACHE_NAME = 'retail-ad-store-v4';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -42,8 +42,11 @@ self.addEventListener('fetch', (e) => {
       }
       return response;
     }).catch(() => {
-      // オフライン・通信エラー時はキャッシュから返す
-      return caches.match(e.request);
+      // オフライン・通信エラー時はキャッシュから返す（無い場合は適切なエラー応答を返す）
+      return caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return new Response('Network error & no cache found.', { status: 503, statusText: 'Service Unavailable' });
+      });
     })
   );
 });
