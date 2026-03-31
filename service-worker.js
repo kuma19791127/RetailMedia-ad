@@ -32,10 +32,12 @@ self.addEventListener('fetch', (e) => {
       if (response && response.status === 200 && response.type === 'basic') {
         const url = e.request.url;
         if (url.startsWith('http://') || url.startsWith('https://')) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, responseClone);
-          });
+          if (e.request.method === 'GET') {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, responseClone).catch(err => console.error(err));
+            });
+          }
         }
       }
       return response;
