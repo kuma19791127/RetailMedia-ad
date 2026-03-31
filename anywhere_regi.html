@@ -226,6 +226,7 @@
                 <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px;"></span>
             </div>
             <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
+                <button onclick="window.open('anywhere_lp.html', '_blank')" class="btn-sm" style="background:#3b82f6; color:white; padding:8px 8px; font-weight:bold;">📖 LPを見る</button>
                 <!-- EXCEL IMPORT BUTTON -->
                 <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm" style="background:#10B981; color:white; padding:8px 8px; font-weight:bold;">📥 商品データ取込</button>
                 <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="importProductMaster(event)">

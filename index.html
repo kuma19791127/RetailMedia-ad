@@ -12,7 +12,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
 
     <style>
         :root {
@@ -203,14 +203,7 @@
                 </div>
             </div>
 
-            <!-- 2. Google Login (High Priority) -->
-            <div style="margin-bottom:25px; padding-bottom:20px; border-bottom:1px dashed #cbd5e1; text-align:center;">
-                <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); margin-bottom:10px;">② Googleアカウントで素早くログイン</p>
-                <div style="display:flex; justify-content:center;">
-                    <div id="g_id_onload" data-client_id="515438983551-p2c4ouhkm1vo11dul1ppv0sb4sjtgner.apps.googleusercontent.com" data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
-                    <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
-                </div>
-            </div>
+
 
             <!-- 3. Standard Form Login -->
             <form id="loginForm" method="dialog" onsubmit="handleLogin(event)">
@@ -276,7 +269,7 @@
             <div class="card-seo" style="border-top: 4px solid var(--secondary);">
                 <h4>✅ リテールメディアのメリット</h4>
                 <p class="text-body" style="font-size:0.95rem;">
-                    <strong>・確実な効果測定:</strong> 広告を見た人が「実際に店舗でどれだけ買ったか」という究極のコンバージョン（購買）をトラッキングできます。<br>
+                    <strong>・確実な効果測定:</strong> 「このCMを流した時間帯に、実際にその商品が何個売れたか」という究極の効果（CVR）を完全に可視化します。<br>
                     <strong>・新たな収益源:</strong> 小売業にとって、商品を売るという本業とは別の「広告収益」という新しい柱が生まれます。<br>
                     <strong>・購買直前の強力なアプローチ:</strong> レジや棚前で広告を打つため、決定率が最も高い状態でのPRが可能です。
                 </p>
@@ -370,27 +363,7 @@
              if (saved) document.getElementById('email').value = saved;
         });
 
-        // Google Authentication Logic Callback
-        function handleGoogleLogin(response) {
-            console.log("Encoded JWT ID token: " + response.credential);
-            
-            const role = document.getElementById('login-role').value;
-            if (!role) {
-                Swal.fire('エラー', 'Googleでログインする前に、ご利用の「役割（ロール）」を必ず選択してください。', 'warning');
-                return;
-            }
 
-            Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'Googleアカウントで認証されました！', showConfirmButton: false, timer: 1500 });
-            
-            // 選択された役割ごとのダッシュボードへ遷移
-            setTimeout(() => {
-                let redirect = 'store_portal.html';
-                if (role === 'advertiser') redirect = 'ad_dashboard.html';
-                if (role === 'agency') redirect = 'agency_portal.html';
-                if (role === 'creator') redirect = 'creator_portal.html';
-                window.location.href = redirect;
-            }, 1500);
-        }
 
         // Login Handler
         async function handleLogin(e) {

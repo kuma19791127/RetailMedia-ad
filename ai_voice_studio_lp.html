@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ボイススタジオ 使い方ガイド | リテアド</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--light);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero {
+            padding: 140px 20px 80px;
+            background: linear-gradient(135deg, #1e293b, var(--dark));
+            color: white;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .section {
+            padding: 80px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            color: var(--dark);
+        }
+
+        .step-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .step-content p {
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        @media(max-width: 768px) {
+            header { flex-direction: column; padding: 10px 20px; }
+            .hero { padding: 120px 20px 60px; }
+            .hero h1 { font-size: 2rem; }
+            .step-card { flex-direction: column; align-items: center; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="store_portal.html" class="logo">
+            <i class="fa-solid fa-microphone-lines"></i> AI ボイススタジオ
+        </a>
+        <a href="store_portal.html#studio" class="btn" style="padding: 10px 20px; font-size: 14px;">スタジオを開く</a>
+    </header>
+
+    <section class="hero">
+        <h1>店内放送を、もっと自由に。もっと簡単に。</h1>
+        <p>AIボイススタジオは、テキストを入力するだけで自然で魅力的な店内アナウンス音声を自動生成できる次世代のツールです。特売情報やタイムセールを、ボタン一つで店内のデジタルサイネージへ一斉配信できます。</p>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">ご利用の3ステップ</h2>
+
+        <div class="step-card">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <h3>原稿の準備（テキスト入力・Excel機能）</h3>
+                <p>放送したい内容を「Campaign Text」に入力します。<br>商品名や価格など、特売のエクセルデータを取り込んで自動で原稿（スクリプト）フォーマットに変換することも可能です。言い間違いを防ぐため、適度にスペースや句読点を入れるのがコツです。</p>
+            </div>
+        </div>
+
+        <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <h3>AIモデルと音声の調整</h3>
+                <p>最新の「Gemini 2.5 Flash」等のAIモデルを選択し、お店の雰囲気に合わせて以下のパラメータを調整します。</p>
+                <ul style="margin-left: 20px; color: var(--gray); line-height: 1.8;">
+                    <li><strong>ボイススピード：</strong> 早口（タイムセール向け）や、ゆっくり（シニア向け）などを設定。</li>
+                    <li><strong>ピッチ（声の高さ）：</strong> 明るい高い声や、落ち着いた低い声を調整可能。</li>
+                    <li><strong>話し方のスタイル（Prompt）：</strong> 「Cheerfully（元気よく）」など、AIに演技指導ができます。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step-card">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <h3>プレビュー確認と配信・予約</h3>
+                <p>プレビューエリアでマスコットキャラクターの動きと音声をテスト確認します。<br>完璧なアナウンスが完成したら、時計マークの「スケジュール」で指定時間に配信を予約するか、「🚨 優先配信」ボタンで今すぐ店内の全サイネージに割り込み放送を開始します！</p>
+                <div style="margin-top:20px;">
+                    <a href="store_portal.html#studio" class="btn" style="background:#ec4899;">今すぐ使ってみる</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background: var(--dark); color: white; padding: 40px 20px; text-align: center;">
+        <p>© 2026 non-logi株式会社. retail-ad Platform - AI Voice Studio.</p>
+    </footer>
+
+</body>
+</html>

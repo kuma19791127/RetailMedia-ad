@@ -26,7 +26,7 @@
         /* Navigation */
         nav {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             padding: 20px 40px;
             backdrop-filter: blur(10px);
@@ -41,6 +41,8 @@
             font-weight: 800;
             font-size: 1.5rem;
             letter-spacing: -1px;
+            position: absolute;
+            left: 40px;
         }
 
         .logo span {
@@ -50,7 +52,7 @@
         .nav-links a {
             color: #cbd5e1;
             text-decoration: none;
-            margin-left: 30px;
+            margin: 0 20px;
             font-size: 0.9rem;
             transition: 0.3s;
         }
@@ -411,8 +413,11 @@
                 flex-direction: row;
                 justify-content: center;
                 padding: 15px;
+                backdrop-filter: none;
+                background: rgba(15, 23, 42, 0.95);
             }
             .logo {
+                position: static;
                 margin-bottom: 0;
             }
             .nav-links {
@@ -536,9 +541,9 @@
         <div class="logo">retail-ad<span>.com</span></div>
         <div class="nav-links">
             <a href="#features">機能</a>
-            <a href="advertiser_dashboard.html">分析</a>
+            <a href="ad_dashboard.html">分析</a>
             <a href="#api">API連携</a>
-            <a href="advertiser_dashboard.html" class="btn-nav">ログイン</a>
+            <a href="ad_dashboard.html" class="btn-nav">ログイン</a>
         </div>
     </nav>
 

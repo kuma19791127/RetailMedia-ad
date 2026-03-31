@@ -197,6 +197,11 @@
             .hero { padding: 180px 20px 60px; }
             .hero h1 { font-size: 2rem; }
         }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
     </style>
 
     <!-- Google AdSense -->
@@ -267,7 +272,7 @@
 
     <section class="hero">
         <h1>レジ待ちゼロ、場所を選ばない新しいお買い物</h1>
-        <p>初期導入費用0円。お客様ご自身のスマートフォンや店員のモバイル端末で、いつでもどこでもバーコードスキャンと決済（GMOペイメント連動）が完了。<br>POSデータと連携し、すぐに利用開始できます。</p>
+        <p>初期導入費用0円。お客様ご自身のスマートフォンや店員のモバイル端末で、いつでもどこでもバーコードスキャンと決済（Square決済）が完了。<br>POSデータと連携し、すぐに利用開始できます。</p>
 
         <div
             style="margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; text-align: left; max-width: 900px; margin-inline: auto;">
@@ -305,6 +310,9 @@
             <p style="margin-top: 15px; font-weight: bold;">
                 しかし、私たちはこの「コスト」を根本から覆し、店舗の圧倒的な「資産」へと転換するソリューションを提案します。
             </p>
+            <div style="text-align: center; margin-top: 25px; font-size: 3rem; color: var(--primary); animation: bounce 2s infinite; font-weight: bold;">
+                ↓
+            </div>
         </div>
     </section>
 
