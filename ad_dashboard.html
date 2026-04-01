@@ -965,7 +965,12 @@
                 </div>
 
                 <div class="upload-section" id="campaign-creation-section">
-                    <div class="upload-title" id="upload-title">📢 新規配信作成 (キャンペーン登録)</div>
+                    <div class="header" style="justify-content: space-between; align-items: center; display: flex;">
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <h1 style="margin:0;">📢 キャンペーン管理</h1>
+                            <button onclick="window.location.href='/api/reports/csv'" style="background:#8b5cf6; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;" title="詳細レポート出力機能">📊 レポート出力(CSV)</button>
+                        </div>
+                    </div>
                     <p style="color:#7f8c8d; font-size:14px; margin-bottom:20px;">
                         目的に合わせたプランを選択してください。詳細設定画面が開きます。
                     </p>
@@ -2679,7 +2684,7 @@
         }
         .nav-btn.active { color: #f43f5e; font-weight: bold; }
         .nav-btn i { font-size: 1.2rem; font-style: normal; margin-bottom: 2px; }
-        @media (min-width: 769px) { .mobile-nav { display: none !important; } }
+        /* Removed min-width hide to show bottom nav on PC as well */
     </style>
     <div class="mobile-nav">
         <a href="ad_dashboard-LP.html" class="nav-btn" style="text-decoration:none;">

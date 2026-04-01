@@ -531,6 +531,9 @@
         <div class="nav-item" onclick="showPanel('studio')">
             <span class="nav-icon">✨</span> AIボイス スタジオ
         </div>
+        <div class="nav-item" onclick="showPanel('approval'); loadPendingCampaigns();">
+            <span class="nav-icon">👀</span> 広告審査 <span id="pending-badge" style="background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:bold; display:none;">0</span>
+        </div>
         <a href="anywhere_regi.html" style="text-decoration:none; color:inherit;">
             <div class="nav-item">
                 <span class="nav-icon">📱</span> どこでもレジ (Local)
@@ -1474,8 +1477,117 @@
                     Swal.fire('保存完了', '在庫数変動時のWebhook連携が有効化されました。', 'success');
                 }
             </script>
-        </div>
+        </div> <!-- end panel-inventory -->
 
+        <!-- Approval Panel -->
+        <div id="panel-approval" class="panel">
+            <h2 style="margin-top:0;">👀 広告審査 (Ad Approval)</h2>
+            <div class="card" style="border-left: 5px solid #e74c3c;">
+                <h3 style="margin-top:0; color:#c0392b;">審査待ちのキャンペーン</h3>
+                <p style="font-size:13px; color:#555; margin-bottom:15px;">
+                    広告主から入稿された新しい広告です。内容を確認し、問題がなければ「承認」してください。<br>
+                    ※ブランドセーフティを守るため、不適切な広告は拒否することができます。
+                </p>
+                <div id="approval-list" style="display:flex; flex-direction:column; gap:15px;">
+                    <div style="color:#7f8c8d; text-align:center; padding:20px;">現在、審査待ちの広告はありません。</div>
+                </div>
+            </div>
+            
+            <script>
+                async function loadPendingCampaigns() {
+                    try {
+                        const res = await fetch(`${API_URL}/api/campaigns`);
+                        const campaigns = await res.json();
+                        const pending = campaigns.filter(c => c.status === 'pending');
+                        
+                        const badge = document.getElementById('pending-badge');
+                        if (badge) {
+                            if (pending.length > 0) {
+                                badge.style.display = 'inline-block';
+                                badge.innerText = pending.length;
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                        
+                        const listDiv = document.getElementById('approval-list');
+                        if (pending.length === 0) {
+                            listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px;">現在、審査待ちの広告はありません。</div>';
+                            return;
+                        }
+                        
+                        listDiv.innerHTML = pending.map(c => `
+                            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:15px; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <h4 style="margin:0 0 5px 0; color:#1e293b;">${c.name || c.title || '無題'}</h4>
+                                    <div style="font-size:12px; color:#64748b; margin-bottom:10px;">
+                                        プラン: <b>${c.plan || 'Custom'}</b> | 予算: <b>¥${c.budget || 0}</b> | 期間: ${c.start || '未定'} 〜 ${c.end || '未定'}
+                                    </div>
+                                    ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:12px; color:#3b82f6; text-decoration:none; background:#eff6ff; padding:4px 8px; border-radius:4px;">🔗 動画/画像をプレビュー</a>` : ''}
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <button onclick="approveCampaign('${c.id}')" style="background:#10b981; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">✅ 承認</button>
+                                    <button onclick="rejectCampaign('${c.id}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">❌ 拒否</button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } catch (e) {
+                        console.error('Failed to load pending campaigns', e);
+                    }
+                }
+                
+                async function approveCampaign(id) {
+                    Swal.fire({
+                        title: '承認しますか？',
+                        text: '承認後、すぐに店舗サイネージへの配信が開始されます。',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: '承認する'
+                    }).then(async (result) => {
+                        if(result.isConfirmed) {
+                            try {
+                                const res = await fetch(`${API_URL}/api/campaigns/${id}/status`, {
+                                    method: 'POST',
+                                    headers: {'Content-Type':'application/json'},
+                                    body: JSON.stringify({status: 'active'})
+                                });
+                                if(res.ok) {
+                                    Swal.fire('承認完了', '広告の配信が開始されました。', 'success');
+                                    loadPendingCampaigns();
+                                }
+                            } catch(e) {}
+                        }
+                    });
+                }
+                
+                async function rejectCampaign(id) {
+                    Swal.fire({
+                        title: '本当に拒否しますか？',
+                        text: 'この広告は削除され、配信されません。',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: '拒否する',
+                        confirmButtonColor: '#d33'
+                    }).then(async (result) => {
+                        if(result.isConfirmed) {
+                             try {
+                                const res = await fetch(`${API_URL}/api/campaigns/${id}/status`, {
+                                    method: 'POST',
+                                    headers: {'Content-Type':'application/json'},
+                                    body: JSON.stringify({status: 'rejected'})
+                                });
+                                if(res.ok) {
+                                    Swal.fire('拒否完了', '広告を却下しました。', 'info');
+                                    loadPendingCampaigns();
+                                }
+                            } catch(e) {}
+                        }
+                    });
+                }
+                
+                window.addEventListener('load', () => setTimeout(loadPendingCampaigns, 2000));
+            </script>
+        </div>
     </div>
 
     <script>

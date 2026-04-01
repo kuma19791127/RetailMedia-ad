@@ -605,10 +605,41 @@ app.get('/api/campaigns', (req, res) => {
     if (signageServer && signageServer.getAllCampaigns) {
         list = signageServer.getAllCampaigns();
     }
-
-    // Removed fallback demo "Spring Sale" mock campaign. Lists will now return properly empty.
-
     res.json(list);
+});
+
+// Update Campaign Status Endpoint (for Approval)
+app.post('/api/campaigns/:id/status', (req, res) => {
+    const id = req.params.id;
+    const { status } = req.body;
+    if (signageServer && signageServer.updateCampaignStatus) {
+        const success = signageServer.updateCampaignStatus(id, status);
+        if (success) {
+            res.json({ success: true, message: 'Status updated' });
+        } else {
+            res.status(404).json({ error: 'Campaign not found' });
+        }
+    } else {
+        res.status(500).json({ error: 'Signage server disconnected' });
+    }
+});
+
+// CSV Export Endpoint
+app.get('/api/reports/csv', (req, res) => {
+    let list = [];
+    if (signageServer && signageServer.getAllCampaigns) {
+        list = signageServer.getAllCampaigns();
+    }
+    
+    const headers = "ID,キャンペーン名,プラン,ステータス,予算(円),消化(円),インプレッション,開始日,終了日\n";
+    const rows = list.map(c => 
+        `"${c.id}","${c.name || ''}","${c.plan}","${c.status}","${c.budget}","${c.spend || 0}","${c.imp}","${c.start || ''}","${c.end || ''}"`
+    ).join('\n');
+    
+    const bom = '\uFEFF';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="retail_media_report.csv"');
+    res.send(bom + headers + rows);
 });
 
 // Real Upload Endpoint (Production Mode)

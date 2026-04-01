@@ -545,7 +545,10 @@
         <!-- CAMPAIGNS SECTION -->
         <div id="campaigns-section" style="display:none;">
             <div class="header" style="justify-content: space-between; align-items: center; display: flex;">
-                <h1 style="margin:0;">📢 キャンペーン管理</h1>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h1 style="margin:0;">📢 キャンペーン管理</h1>
+                    <button onclick="window.location.href='/api/reports/csv'" style="background:#8b5cf6; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;" title="詳細レポート出力機能">📊 レポート出力(CSV)</button>
+                </div>
                 <div style="background:white; padding:15px; border-radius:8px; display:flex; flex-direction:column; gap:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); width:100%; max-width:350px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>

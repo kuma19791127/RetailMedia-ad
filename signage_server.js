@@ -44,12 +44,12 @@ module.exports = {
         }
 
         // --- Priority 2: Paid Ads (Retail Media - Direct Sold) ---
-        if (state.paid && state.paid.status !== 'paused') return [state.paid];
+        if (state.paid && state.paid.status === 'active') return [state.paid];
 
         // --- Priority 3: Moment & Impression (Smart Delivery) ---
 
         // 3a. Moment Delivery (Contextual)
-        if (state.moment && state.moment.status !== 'paused') {
+        if (state.moment && state.moment.status === 'active') {
             // Demo Logic: If trigger matches context
             // Default trigger is weather='rain' for demo
             const trigger = state.moment.trigger || { weather: 'rain' };
@@ -60,7 +60,7 @@ module.exports = {
         }
 
         // 3b. Impression Delivery (Guaranteed)
-        if (state.impression && state.impression.status !== 'paused') {
+        if (state.impression && state.impression.status === 'active') {
             const current = state.impression.current_imp || 0;
             const target = state.impression.target_imp || 1000;
 
@@ -179,22 +179,21 @@ module.exports = {
         const newAd = {
             id: `ad_${Date.now()}`,
             title: metadata.title || metadata.name || "New Campaign",
-            // Prioritize YouTube URL or File URL from dashboard
-            // Prioritize YouTube URL or File URL from dashboard
-            url: metadata.youtube_url || metadata.url || "", // No fallback animation
-            duration: metadata.duration || 45, // Use provided duration
+            url: metadata.youtube_url || metadata.url || "",
+            duration: metadata.duration || 45,
             aspect_ratio: aspectRatio,
             location_qr: metadata.location_qr || ("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(metadata.brand)),
             is_youtube: !!(metadata.youtube_url || (metadata.url && (metadata.url.includes('youtube') || metadata.url.includes('youtu.be')))),
             is_image: (metadata.format === 'image') || (metadata.url && (/\.(jpg|jpeg|png|gif|webp)$/i.test(metadata.url) || metadata.url.startsWith('data:image/'))),
             is_recipe: !!metadata.ai_text,
-            status: 'active',
+            status: metadata.status || 'pending', // Default to pending for approval
             ...metadata
         };
 
         // Update appropriate slot based on TYPE
         if (type === 'INTERRUPT') {
             newAd.is_interrupt = true;
+            newAd.status = 'active'; // Interruptions bypass approval
             STATE["register_side"].interrupt = newAd;
             console.log(`[CMS] ⚡⚡ INTERRUPT Injected: ${newAd.title}`);
         } else if (type === 'MOMENT') {
@@ -202,7 +201,7 @@ module.exports = {
             STATE["register_side"].moment = newAd;
             console.log(`[CMS] ☔ MOMENT Ad Injected: ${newAd.title}`);
         } else if (type === 'IMPRESSION') {
-            newAd.target_imp = 10000;
+            newAd.target_imp = metadata.target_imp || 10000;
             newAd.current_imp = 0;
             STATE["register_side"].impression = newAd;
             console.log(`[CMS] 📈 IMPRESSION Ad Injected: ${newAd.title}`);
