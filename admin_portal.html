@@ -466,6 +466,11 @@
             <div class="nav-item" onclick="switchTab('livereg')">
                 📡 POS受診ログ (Live)
             </div>
+
+            <div class="nav-section">広告主管理 (Advertisers)</div>
+            <div class="nav-item" id="nav-advertisers" onclick="switchTab('advertisers')">
+                💰 入金・アカウント発行
+            </div>
         </div>
 
         <div class="main">
@@ -689,6 +694,116 @@
             </div>
         </div>
 
+        <!-- ADVERTISER MANAGEMENT DASHBOARD -->
+        <div id="panel-advertisers" class="panel">
+            <div class="header">
+                <div>
+                    <h1>💰 入金・アカウント発行 (Advertiser Management)</h1>
+                    <p style="color:#7f8c8d; margin-top:5px;">銀行振込等で確認できた入金を元に、企業アカウントの作成と予算付与をワンクリックで実行</p>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #f39c12; max-width:800px;">
+                <h3 style="margin-top:0;">⚡ 新規広告主アカウント発行・残高チャージ</h3>
+                <p style="font-size:13px; color:#555; margin-bottom:20px;">
+                    銀行口座等での入金（銀行振込）を確認後、以下のフォームに入力して「発行」ボタンを押してください。<br>
+                    <strong>システムが全自動で「アカウント生成・初期パスワード作成・予算チャージ・ご案内メールの送信」を行います。</strong>
+                </p>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">企業名 (Brand Name)</label>
+                        <input type="text" id="adv-name" placeholder="例: トヨタ自動車" class="login-input" style="margin-top:5px; margin-bottom:0;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">担当者メールアドレス</label>
+                        <input type="email" id="adv-email" placeholder="toyota@example.com" class="login-input" style="margin-top:5px; margin-bottom:0;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">入金確認額（付与予算・円）</label>
+                    <input type="number" id="adv-budget" placeholder="100000" class="login-input" style="margin-top:5px; margin-bottom:0; font-size:18px; font-weight:bold; max-width:200px;">
+                </div>
+
+                <div style="display:flex; justify-content:flex-end;">
+                <button onclick="createAdvertiserAccount()" class="btn-action" style="background:#f39c12; font-size:16px; padding:12px 30px; border-radius:30px; box-shadow:0 4px 15px rgba(243,156,18,0.3); font-weight:bold;">
+                    ✨ アカウント発行 ＆ 予算付与メール送信
+                </button>
+                </div>
+            </div>
+            
+            <div class="card" style="max-width:800px;">
+                 <h3>最近の処理履歴</h3>
+                 <p style="font-size:13px; color:#7f8c8d;">※ここで発行したアカウント情報は、システム経由で広告主側ダッシュボードにログイン可能になり、入金額が反映されています。</p>
+                 <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                     <thead>
+                         <tr>
+                             <th style="padding:10px; border-bottom:2px solid #ecf0f1;">処理日時</th>
+                             <th style="padding:10px; border-bottom:2px solid #ecf0f1;">企業名</th>
+                             <th style="padding:10px; border-bottom:2px solid #ecf0f1;">メールアドレス</th>
+                             <th style="padding:10px; border-bottom:2px solid #ecf0f1;">付与予算額</th>
+                             <th style="padding:10px; border-bottom:2px solid #ecf0f1;">ステータス</th>
+                         </tr>
+                     </thead>
+                     <tbody id="adv-history-body">
+                         <!-- Dynamically populated -->
+                     </tbody>
+                 </table>
+            </div>
+
+            <script>
+                function createAdvertiserAccount() {
+                    const name = document.getElementById('adv-name').value;
+                    const email = document.getElementById('adv-email').value;
+                    const budget = document.getElementById('adv-budget').value;
+                    
+                    if (!name || !email || !budget) {
+                        return Swal.fire('エラー', 'すべての項目を入力してください', 'error');
+                    }
+
+                    Swal.fire({
+                        title: 'アカウント発行確認',
+                        html: `<div style="text-align:left; font-size:14px; background:#f8fafc; padding:15px; border-radius:8px;">
+                            対象企業: <b>${name}</b> 様<br>
+                            アドレス: <b>${email}</b><br>
+                            チャージ: <b style="color:#e74c3c; font-size:18px;">¥${Number(budget).toLocaleString()}</b>
+                            </div><br>上記の内容でアカウントを作成し、システム利用開始の案内メールを自動送信します。<br>よろしいですか？`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#f39c12',
+                        confirmButtonText: '発行してメール送信',
+                        cancelButtonText: 'キャンセル'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Dummy processing delay to simulate backend account creation & email
+                            Swal.fire({ title: '処理中...', html: 'API連携中...<br>・新規ID/PASS生成中<br>・予算データの登録中<br>・ご案内メール送信中', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                            
+                            setTimeout(() => {
+                                // Add to demo history table
+                                const tbody = document.getElementById('adv-history-body');
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td style="padding:10px;">${new Date().toLocaleString('ja-JP')}</td>
+                                    <td style="padding:10px;">${name}</td>
+                                    <td style="padding:10px;">${email}</td>
+                                    <td style="padding:10px; color:#27ae60; font-weight:bold;">¥${Number(budget).toLocaleString()}</td>
+                                    <td style="padding:10px;"><span class="badge badge-sent">発行済・送信済</span></td>
+                                `;
+                                tbody.prepend(tr);
+                                
+                                // Reset form
+                                document.getElementById('adv-name').value = '';
+                                document.getElementById('adv-email').value = '';
+                                document.getElementById('adv-budget').value = '';
+
+                                Swal.fire('成功', 'アカウントの発行と予算チャージが完了し、企業様へのご案内メールが送信されました！', 'success');
+                            }, 2000);
+                        }
+                    });
+                }
+            </script>
+        </div>
     </div>
 
     <script>
