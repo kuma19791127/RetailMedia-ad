@@ -1,14 +1,15 @@
 const fs = require('fs');
-const typoBlock = \
+
+const typoBlock = `
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
-    <script src=\"https://unpkg.com/budoux/bundle/budoux-ja.min.js\"></script>
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
     <style>
         h1, h2, h3, h4, h5 {
             text-wrap: balance !important;
             word-break: keep-all !important;
             overflow-wrap: break-word !important;
         }
-        p, .subtitle, li, .card p {
+        p, .subtitle, li, .card p, .card h3 {
             word-break: keep-all !important;
             overflow-wrap: break-word !important;
         }
@@ -29,7 +30,7 @@ const typoBlock = \
         });
     </script>
     <!-- END TYPOGRAPHY FIX -->
-\;
+`;
 
 let files = fs.readdirSync('.');
 files.forEach(f => {
