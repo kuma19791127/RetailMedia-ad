@@ -455,7 +455,7 @@
         let { manuals: dbManuals, logs: adminLogs, chat: chatMessages } = loadDB();
 
         // --- Config ---
-        let GCP_API_KEY = "INSERT_API_KEY_HERE_AFTER_CLONING"; 
+        // GCP_API_KEY removed for security. Translation requests are now securely proxied via backend.
         const SQUARE_APP_ID = "sq0idp-dEBc0wMfUZp6crtfka8HeQ"; 
         const SQUARE_LOCATION_ID = "LZYJ3X6XZQ8ZN";
 
@@ -870,17 +870,17 @@
             document.getElementById('ai-status').innerText = `${targetLang} に翻訳中...`;
             try {
                 const texts = tempSteps.map(s => s.title);
-                const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${GCP_API_KEY}`, {
+                const res = await fetch('/api/manualhelp/translate-steps', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ q: texts, target: targetLang })
+                    body: JSON.stringify({ texts: texts, target: targetLang })
                 });
                 const data = await res.json();
                 if (data.data && data.data.translations) {
                     Swal.fire('完了', 'NMT翻訳が完了しました！', 'success');
                     data.data.translations.forEach((t, i) => tempSteps[i].title = t.translatedText );
                     renderEditSteps();
-                } else Swal.fire('APIテスト', 'モック翻訳を適用します', 'warning');
-            } catch(e) { console.error(e); }
+                } else Swal.fire('エラー', 'バックエンドでの翻訳処理に失敗しました。', 'error');
+            } catch(e) { console.error(e); Swal.fire('エラー', '通信エラー', 'error'); }
             document.getElementById('ai-loading').style.display = 'none';
         }
 

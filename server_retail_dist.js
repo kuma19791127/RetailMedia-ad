@@ -1809,6 +1809,32 @@ app.post('/api/manualhelp/video-to-steps', async (req, res) => {
     }
 });
 
+// --- GCP Cloud Translation API (Secure Proxy) ---
+app.post('/api/manualhelp/translate-steps', async (req, res) => {
+    try {
+        const { texts, target } = req.body;
+        const apiKey = process.env.GCP_API_KEY || "INSERT_API_KEY_HERE_AFTER_CLONING";
+        
+        console.log(`[ManualHelp AI] Translating ${texts.length} steps to ${target} via Google Cloud Translation API`);
+        
+        const fetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: f}) => f(...args)));
+        const gcpRes = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ q: texts, target })
+        });
+        
+        const data = await gcpRes.json();
+        if(data.error) {
+            console.error("[ManualHelp Translation Error]", data.error);
+            return res.status(500).json({ error: data.error.message });
+        }
+        res.json(data);
+    } catch (e) {
+        console.error("[ManualHelp Translation Error]", e);
+        res.status(500).json({ error: "Translation proxy error" });
+    }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
