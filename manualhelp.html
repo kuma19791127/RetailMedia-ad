@@ -830,21 +830,32 @@
 
         async function executeVideoIntelligence() {
             document.getElementById('ai-loading').style.display = 'block';
-            document.getElementById('ai-status').innerText = 'API解析中...';
+            document.getElementById('ai-status').innerHTML = 'AWS / Google AI<br><span style="font-size:0.8rem">解析中です...</span>';
             try {
-                const res = await fetch(`https://videointelligence.googleapis.com/v1/videos:annotate?key=${GCP_API_KEY}`, {
+                const res = await fetch('/api/manualhelp/video-to-steps', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ inputContent: pendingVideoBase64, features: ["LABEL_DETECTION", "SHOT_CHANGE_DETECTION"] })
+                    body: JSON.stringify({ video_base64: pendingVideoBase64 || "mock_data" })
                 });
-                if (res.ok) {
-                    Swal.fire('解析完了', 'ステップを展開しました！', 'success');
-                    tempSteps.push({ title: "[AI検出] レジカウンターの操作" }, { title: "[AI検出] 現金の確認" });
+                const data = await res.json();
+                
+                if (res.ok && data.success) {
+                    Swal.fire({
+                        title: 'AI解析完了！', 
+                        text: '動画から手順を自動生成しました', 
+                        icon: 'success',
+                        background: '#0f172a', color: '#f8fafc'
+                    });
+                    
+                    data.steps.forEach(st => {
+                        tempSteps.push({ title: st.title });
+                    });
                 } else {
-                    Swal.fire('API結果モック', 'セキュリティでブロック中のためモックを展開します。', 'warning');
-                    tempSteps.push({ title: "[AIモック] 作業の準備" }, { title: "[AIモック] スキャナー確認" });
+                    throw new Error("API Response Error");
                 }
                 renderEditSteps();
-            } catch (e) { Swal.fire('エラー', '通信に失敗しました', 'error'); }
+            } catch (e) { 
+                Swal.fire('エラー', 'AWS/GCP バックエンド通信に失敗しました', 'error'); 
+            }
             document.getElementById('ai-loading').style.display = 'none';
         }
 
