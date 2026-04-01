@@ -21,7 +21,7 @@ app.use(cors());
 app.use(express.json({ limit: '500mb' })); // Allow large file uploads (Base64)
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 express.static.mime.define({ 'video/quicktime': ['mov'] });
-app.use(express.static(__dirname)); // Serve root files
+app.use(express.static(__dirname, { dotfiles: 'allow' })); // Serve root files
 app.use('/assets', express.static(path.join(__dirname, 'assets'))); // Serve assets explicitly
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve transcoded video files
 
