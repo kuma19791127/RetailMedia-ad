@@ -26,31 +26,43 @@ async function initializeSquarePayment(amount, containerId, onSuccess) {
         try {
             const applePay = await payments.applePay(paymentRequest);
             await applePay.attach('#apple-pay-button');
-            applePay.addEventListener('ontokenize', async (event) => {
+            document.getElementById('apple-pay-button').addEventListener('click', async () => {
                 const statusContainer = document.getElementById('sq-status');
                 statusContainer.innerText = "Apple Pay 処理中...";
                 try {
-                    const result = await event.detail.tokenResult;
-                    if (result.status === 'OK') await processSquarePayment(result.token, amount, onSuccess);
-                    else statusContainer.innerText = "Apple Pay エラー";
+                    const result = await applePay.tokenize();
+                    if (result.status === 'OK') {
+                        await processSquarePayment(result.token, amount, onSuccess);
+                    } else {
+                        statusContainer.innerText = "Apple Pay エラー: " + (result.errors?.[0]?.message || "キャンセルされました");
+                    }
                 } catch(e) { statusContainer.innerText = "エラーが発生しました"; }
             });
-        } catch (e) { console.warn("Apple Pay not available", e); }
+        } catch (e) {
+            console.warn("Apple Pay not available", e);
+            if (document.getElementById('apple-pay-button')) document.getElementById('apple-pay-button').style.display = 'none';
+        }
 
         // Setup Google Pay
         try {
             const googlePay = await payments.googlePay(paymentRequest);
             await googlePay.attach('#google-pay-button');
-            googlePay.addEventListener('ontokenize', async (event) => {
+            document.getElementById('google-pay-button').addEventListener('click', async () => {
                 const statusContainer = document.getElementById('sq-status');
                 statusContainer.innerText = "Google Pay 処理中...";
                 try {
-                    const result = await event.detail.tokenResult;
-                    if (result.status === 'OK') await processSquarePayment(result.token, amount, onSuccess);
-                    else statusContainer.innerText = "Google Pay エラー";
+                    const result = await googlePay.tokenize();
+                    if (result.status === 'OK') {
+                        await processSquarePayment(result.token, amount, onSuccess);
+                    } else {
+                        statusContainer.innerText = "Google Pay エラー: " + (result.errors?.[0]?.message || "キャンセルされました");
+                    }
                 } catch(e) { statusContainer.innerText = "エラーが発生しました"; }
             });
-        } catch (e) { console.warn("Google Pay not available", e); }
+        } catch (e) {
+            console.warn("Google Pay not available", e);
+            if (document.getElementById('google-pay-button')) document.getElementById('google-pay-button').style.display = 'none';
+        }
 
         document.getElementById('sq-creditcard').addEventListener('click', async () => {
             const statusContainer = document.getElementById('sq-status');
