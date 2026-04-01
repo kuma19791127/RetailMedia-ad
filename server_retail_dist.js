@@ -8,7 +8,7 @@ const fs = require('fs');
 
 const adEngine = require('./ad_engine');
 const signageServer = require('./signage_server');
-const gmoPayment = require('./gmo_payment');
+// GMO dependency removed in favor of Square + Google Cloud flow
 
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
@@ -1443,9 +1443,9 @@ app.get('/api/admin/dashboard', (req, res) => {
     const billingAmount = Math.floor(displayPosSales * 0.012);
 
     // Prepare Payout Data (Payable: 50% of Ad Revenue)
-    const retailAdRevenue = totalRevenue > 0 ? totalRevenue : 3000000;
+    const retailAdRevenue = totalRevenue || 0;
     const creatorReward = Math.floor(retailAdRevenue * 0.1); // 10% to creators
-    const adsenseRevenue = 850000; // Mock Google AdSense Revenue
+    const adsenseRevenue = 0; // Cleared Mock Google AdSense Revenue
     const pureTotalRevenue = (retailAdRevenue - creatorReward) + adsenseRevenue;
     const shareAmount = Math.floor(pureTotalRevenue * 0.5);
 
@@ -1474,84 +1474,65 @@ app.get('/api/admin/dashboard', (req, res) => {
     });
 });
 
-// Mock Send Email (Simulating PDF & Japanese Content)
-app.post('/api/admin/billing/send-email', (req, res) => {
+// --- AWS SES Email Integration ---
+const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
+const sesClient = new SESClient({ 
+    region: "ap-northeast-1", 
+    credentials: { 
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "SKIP", 
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "SKIP" 
+    } 
+});
+
+async function sendSESEmail(toAddress, subject, bodyText) {
+    if(process.env.AWS_ACCESS_KEY_ID === "SKIP" || !process.env.AWS_ACCESS_KEY_ID) {
+        console.warn("[SES] AWS Credentials missing. Skipping real email send to " + toAddress);
+        return true;
+    }
+    const params = {
+        Destination: { ToAddresses: [toAddress] },
+        Message: {
+            Body: { Text: { Data: bodyText } },
+            Subject: { Data: subject }
+        },
+        Source: process.env.SES_SENDER_EMAIL || "admin-accounting@anywhere-regi.com" 
+    };
+    try {
+        await sesClient.send(new SendEmailCommand(params));
+        console.log(`[SES] Real Email sent to ${toAddress}`);
+        return true;
+    } catch (err) {
+        console.error("[SES] Error sending email: ", err);
+        return false;
+    }
+}
+
+// AWS SES Send Email (Invoice / Admin)
+app.post('/api/admin/billing/send-email', async (req, res) => {
     const { to, amount } = req.body;
-    const sender = "admin-accounting@anywhere-regi.retail-ad.com";
     const dateStr = new Date().toISOString().split('T')[0];
     
-    // Simulate Calculation Logic (1.2% fee)
+    // Calculate values cleanly
     const systemFee = Number(amount);
     const posSales = Math.round(systemFee / 0.012);
 
-    console.log(`\n=== 📧 AUTOMATIC INVOICE EMAIL ===`);
-    console.log(`From:    ${sender}`);
-    console.log(`To:      ${to}`);
-    console.log(`Subject: どこでもレジシステム利用料 請求書 (${dateStr})`);
-    console.log(`Body:`);
-    console.log(`   ${to} 様`);
-    console.log(`   今月のどこでもレジご利用明細をお送りします。`);
-    console.log(`   --------------------------------`);
-    console.log(`   [計算ロジック]`);
-    console.log(`   当月POS決済総額: ¥${posSales.toLocaleString()}`);
-    console.log(`   システム利用料率: 1.2%`);
-    console.log(`   --------------------------------`);
-    console.log(`   ご請求金額: ¥${systemFee.toLocaleString()}`);
-    console.log(`   --------------------------------`);
-    console.log(`[System] 📎 Generated PDF Attachment: Invoice_${dateStr}.pdf ... [OK]`);
-    console.log(`==================================\n`);
+    const subject = `[どこでもレジシステム] システム利用料金 請求書 (${dateStr})`;
+    const body = `${to} 様\n\n今月のシステム利用明細をお送りします。\n--------------------------------\n[計算ロジック]\n当月POS決済総額: ￥${posSales.toLocaleString()}\nシステム利用料率: 1.2%\n--------------------------------\nご請求金額: ￥${systemFee.toLocaleString()}\n\nよろしくお願いいたします。`;
 
-    res.json({ success: true });
+    await sendSESEmail(to, subject, body);
+    res.json({ success: true, message: "Email triggered successfully" });
 });
 
-// Mock Send Email for Creators and Stores (Payouts)
-app.post('/api/admin/creators/send-email', (req, res) => {
+// AWS SES Payout Emails for Creators and Stores
+app.post('/api/admin/creators/send-email', async (req, res) => {
     const { to, amount, type } = req.body;
     const dateStr = new Date().toISOString().split('T')[0];
     const payoutAmount = Number(amount);
     
-    let sender = "admin-accounting@creator.retail-ad.com";
-    let subject = `リテアド・クリエイター報酬支払通知書 (${dateStr})`;
-    
-    // Simulate Creator Calculation (2 yen per view)
-    const playCount = Math.round(payoutAmount / 2);
+    let subject = "";
+    let body = "";
 
     if (type === 'store_payout') {
-        sender = "admin-accounting@ad.retail-ad.com";
-        subject = `広告収益・AdSense収益 実質支払通知書 (${dateStr})`;
-        
-        // Simulate Store Payout Calculation
-        const totalNet = payoutAmount * 2; // 50% share
-        const estimatedAdSense = Math.round(totalNet * 0.2);
-        const estimatedAdRev = Math.round(totalNet * 1.2);
-        const agencyFee = Math.round(estimatedAdRev * 0.2);
-        const creatorReward = Math.round(estimatedAdRev * 0.1);
-        
-        console.log(`\n=== 📧 AUTOMATIC PAYOUT EMAIL (STORE) ===`);
-        console.log(`From:    ${sender}`);
-        console.log(`To:      ${to}`);
-        console.log(`Subject: ${subject}`);
-        console.log(`Body:`);
-        console.log(`   ${to} 様`);
-        console.log(`   今月の店舗サイネージにおける広告収益・AdSense収益の分配明細をお送りします。`);
-        console.log(`   --------------------------------`);
-        console.log(`   [計算ロジック]`);
-        console.log(`   リテアド収益: ¥${estimatedAdRev.toLocaleString()}`);
-        console.log(`   AdSense収益: ¥${estimatedAdSense.toLocaleString()}`);
-        console.log(`   代理店コミッション(20%段抜): -¥${agencyFee.toLocaleString()}`);
-        console.log(`   クリエイター報酬他(10%段抜): -¥${creatorReward.toLocaleString()}`);
-        console.log(`   --------------------------------`);
-        console.log(`   差引純売上: ¥${totalNet.toLocaleString()}`);
-        console.log(`   店舗分配率: 50%`);
-        console.log(`   --------------------------------`);
-        console.log(`   お支払予定金額: ¥${payoutAmount.toLocaleString()}`);
-        console.log(`   --------------------------------`);
-        console.log(`[System] 📎 Generated PDF Attachment: Store_Payout_${dateStr}.pdf ... [OK]`);
-        console.log(`==================================\n`);
-    } else {
-        console.log(`\n=== 📧 AUTOMATIC PAYOUT EMAIL (CREATOR) ===`);
-        console.log(`From:    ${sender}`);
-        console.log(`To:      ${to}`);
         console.log(`Subject: ${subject}`);
         console.log(`Body:`);
         console.log(`   ${to} 様`);
@@ -1575,7 +1556,7 @@ app.get('/api/admin/system/validate-square', (req, res) => {
     // In a real scenario, this would call Square's ListTransactions/ListPayments API
     // and sum the accepted payments, then compare to our local `totalRevenue` & `total_pos_sales`.
     
-    const localAd = totalRevenue > 0 ? totalRevenue : 3000000;
+    const localAd = totalRevenue || 0;
     const localPos = storeData["default_store"].total_pos_sales || 0;
     
     // Simulating that Square's record perfectly matches our SSoT records

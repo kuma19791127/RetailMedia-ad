@@ -637,13 +637,13 @@
                     closePayment();
                     if(pendingAction === 'ai_generation') executeVideoIntelligence();
                     if(pendingAction === 'translation') executeCloudTranslation();
-                } else Swal.fire('決済失敗', data.error || '不明なエラー', 'error');
+                } else {
+                    Swal.fire('決済失敗', data.error || '不明なエラー', 'error');
+                    closePayment();
+                }
             } catch (e) {
                 closePayment();
-                Swal.fire('決済模擬成功', 'デモ：バックエンド非通信のため完了として進めます', 'info').then(() => {
-                    if(pendingAction === 'ai_generation') executeVideoIntelligence();
-                    if(pendingAction === 'translation') executeCloudTranslation();
-                });
+                Swal.fire('エラー', '通信エラーまたはサーバー未設定です。バックエンドでSquare・Google連携を確認してください。', 'error');
             }
         }
 

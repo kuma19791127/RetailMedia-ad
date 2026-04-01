@@ -1831,19 +1831,6 @@
                     }
 
                     setTimeout(() => {
-                        const mockNames = ['中村', '小林', '加藤', '伊藤', '渡辺', '山本'];
-                        mockNames.forEach((n, i) => {
-                            if(!STAFF.find(s => s.name === n+'(Ex)')) {
-                                STAFF.push({ 
-                                    name: n+'(Ex)', 
-                                    dept: DEPARTMENTS[i % DEPARTMENTS.length].id, 
-                                    email: `ex${i}@demo.com`,
-                                    reqOff: [],
-                                    reqOffDates: [],
-                                    customTimes: {}
-                                });
-                            }
-                        });
                         saveStaffDB();
                         if (typeof generateShift === 'function') generateShift(false);
                         renderBoard();
