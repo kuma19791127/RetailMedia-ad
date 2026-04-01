@@ -23,7 +23,10 @@ app.use(express.urlencoded({ limit: '500mb', extended: true }));
 express.static.mime.define({ 'video/quicktime': ['mov'] });
 app.use(express.static(__dirname, { dotfiles: 'allow' })); // Serve root files
 app.use('/assets', express.static(path.join(__dirname, 'assets'))); // Serve assets explicitly
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve transcoded video files
+
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir)); // Serve transcoded video files
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
