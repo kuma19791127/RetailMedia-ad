@@ -327,28 +327,32 @@
                         <input type="text" id="edit-manual-name" placeholder="マニュアル名 (例: スーパーレジ担当)">
                         <textarea id="edit-manual-desc" placeholder="このマニュアルの目的や対象者" style="height:80px;"></textarea>
                         
-                        <div style="border: 2px dashed rgba(255,255,255,0.2); padding: 20px; text-align: center; border-radius: 12px; margin-top:10px;">
-                            <h3 style="color:#fbbf24; font-size:1rem; margin-bottom:15px;"><i class="fa-solid fa-robot"></i> 高度なAI機能</h3>
-                            
+                        <div style="border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); padding: 20px; text-align: center; border-radius: 12px; margin-top:10px;">
+                            <h3 style="color:#38bdf8; font-size:1rem; margin-bottom:15px;"><i class="fa-solid fa-file-import"></i> ドキュメント取り込み <span style="font-size:0.8rem; background:#38bdf8; color:#0f172a; padding:2px 6px; border-radius:4px; margin-left:5px;">無料</span></h3>
                             <input type="file" id="pdf-upload" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
-                            <button class="btn" style="width:100%; margin-bottom:10px; background:linear-gradient(135deg, #10b981, #059669); color:white;" onclick="document.getElementById('pdf-upload').click();">
+                            <button class="btn" style="width:100%; background:linear-gradient(135deg, #10b981, #059669); color:white; box-shadow:0 4px 10px rgba(16,185,129,0.3);" onclick="document.getElementById('pdf-upload').click();">
                                 <i class="fa-solid fa-file-pdf"></i> PDFをアップロード (自動ページ階層化)
                             </button>
-
+                            <p style="font-size:0.8rem; color:#94a3b8; margin-top:10px; line-height:1.4;">※既に作成済みのPDFマニュアルをインポートし、ステップ式・スマホ向けに自動変換します。</p>
+                        </div>
+                        
+                        <div style="border: 2px dashed rgba(255,255,255,0.2); background: rgba(0,0,0,0.1); padding: 20px; text-align: center; border-radius: 12px; margin-top:15px;">
+                            <h3 style="color:#fbbf24; font-size:1rem; margin-bottom:15px;"><i class="fa-solid fa-robot"></i> 高度なAI処理 <span style="font-size:0.8rem; background:#fbbf24; color:#0f172a; padding:2px 6px; border-radius:4px; margin-left:5px;">有料</span></h3>
+                            
                             <input type="file" id="video-upload" accept="video/mp4,video/quicktime" style="display:none;" onchange="handleAiVideo(event)">
-                            <button class="btn btn-gold" style="width:100%; margin-bottom:10px;" onclick="document.getElementById('video-upload').click();">
-                                動画からAIステップ自動生成 (¥500)
+                            <button class="btn btn-gold" style="width:100%; margin-bottom:10px; font-weight:bold; box-shadow:0 4px 10px rgba(251,191,36,0.2);" onclick="document.getElementById('video-upload').click();">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 動画からAIステップ自動生成 (¥500)
                             </button>
                             
-                            <select id="lang-select" style="margin-bottom:10px; background:#1e293b; color:white;">
+                            <select id="lang-select" style="margin-bottom:10px; background:#1e293b; color:white; border:1px solid #334155; padding:12px; border-radius:8px;">
                                 <option value="en">英語 (English)</option>
                                 <option value="ja">日本語 (Japanese)</option>
                                 <option value="vi">ベトナム語 (Tiếng Việt)</option>
                                 <option value="ne">ネパール語 (नेपाली)</option>
                                 <option value="zh-CN">中国語 (简体中文)</option>
                             </select>
-                            <button class="btn btn-gold" style="width:100%;" onclick="startTranslationPayment()">
-                                標準NMTモデルで一括翻訳 (¥500)
+                            <button class="btn btn-gold" style="width:100%; font-weight:bold; box-shadow:0 4px 10px rgba(251,191,36,0.2);" onclick="startTranslationPayment()">
+                                <i class="fa-solid fa-language"></i> 標準NMTモデルで一括翻訳 (¥500)
                             </button>
                         </div>
                         
