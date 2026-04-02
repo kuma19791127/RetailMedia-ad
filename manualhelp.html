@@ -13,6 +13,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
+        html, body { overflow-x: hidden !important; max-width: 100vw !important; width: 100vw; }
+        * { max-width: 100vw; box-sizing: border-box !important; }
+
         :root {
             --primary: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.4);
@@ -67,7 +70,7 @@
         
         h2 { margin-bottom: 20px; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
 
-        input, textarea, select { width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; outline: none; font-size: 1rem; margin-bottom:15px; }
+        input, textarea, select { max-width: 100%; width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; outline: none; font-size: 1rem; margin-bottom:15px; }
         input:focus, textarea:focus, select:focus { border-color: var(--primary); }
         select option { background:#0f172a; color:white; }
 
