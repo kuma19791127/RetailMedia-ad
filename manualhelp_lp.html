@@ -57,59 +57,24 @@
         @media(max-width: 768px) { h1 { font-size: 2.2rem; } .hero { padding: 60px 20px; } }
     </style>
 
-    <!-- Global Mobile Typography Fix -->
+    <!-- Unified Typography Fix -->
     <style>
-        body, h1, h2, h3, h4, h5, p, span, div {
-            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
-            word-break: keep-all; /* Fallback */
-            overflow-wrap: break-word;
-        }
+        /* Force break blocks */
+        .nw { display: inline-block; }
         .mobile-br { display: none; }
         .desktop-br { display: block; }
+        
         @media (max-width: 768px) {
             .mobile-br { display: block; }
             .desktop-br { display: none; }
             
-            /* Auto-reduce huge headings on mobile globally to prevent overflow */
-            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
-            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
-            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+            h1 { font-size: clamp(1.6rem, 7vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h2 { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; line-height: 1.5 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.5rem) !important; line-height: 1.4 !important; }
         }
     </style>
-
-    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <!-- BudouX for Japanese Typography -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                // Apply to standard text elements avoiding breaking components
-                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
-                elements.forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
-
-    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
-    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <style>
-        h1, h2, h3, h4, h5 {
-            text-wrap: balance !important;
-            word-break: keep-all !important;
-            overflow-wrap: break-word !important;
-        }
-        p, .subtitle, li, .card p, .card h3 {
-            word-break: keep-all !important;
-            overflow-wrap: break-word !important;
-        }
-        @media (max-width: 768px) {
-            .desktop-br { display: none !important; }
-            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
-            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
-        }
-    </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof budoux !== 'undefined') {
@@ -133,19 +98,19 @@
     <div class="hero">
         <div class="hero-content">
             <div class="badge-free">完全無料・無制限</div>
-            <h1>マニュアル作成に月100万円費用を<br>支払っていませんか？</h1>
-            <p class="hero-subtitle">ManualHelpは「何人でも」「いくらでも」無料で使える次世代マニュアル管理プラットフォームです。<br>動画のAI解析、ドラッグ＆ドロップによる直感的な編集で圧倒的なDXを実現します。</p>
+            <h1><span class="nw">マニュアル作成に</span><br class="mobile-br"><span class="nw">月100万円費用を</span><br><span class="nw">支払っていませんか？</span></h1>
+            <p class="hero-subtitle"><span class="nw">ManualHelpは「何人でも」</span><br class="mobile-br"><span class="nw">「いくらでも」</span><span class="nw">無料で使える</span><br class="mobile-br"><span class="nw">次世代マニュアル管理プラットフォームです。</span><br><span class="nw">動画のAI解析、</span><br class="mobile-br"><span class="nw">ドラッグ＆ドロップによる直感的な編集で</span><br class="mobile-br"><span class="nw">圧倒的なDXを実現します。</span></p>
             <a href="manualhelp.html#corp" class="cta-btn">無料でマニュアルを作成する <i class="fa-solid fa-arrow-right"></i></a>
         </div>
     </div>
 
     <div class="pricing-banner">
-        <div class="pricing-text">基本機能はすべて「無料」です</div>
-        <p class="pricing-note">※Google Cloud APIを利用した【AI動画解析】や【AI一括多言語翻訳】などの特殊機能をご利用の際のみ、1回500円の実費決済となります。</p>
+        <div class="pricing-text"><span class="nw">基本機能はすべて</span><br class="mobile-br"><span class="nw">「無料」です</span></div>
+        <p class="pricing-note"><span class="nw">※Google Cloud APIを利用した</span><span class="nw">【AI動画解析】や</span><br class="mobile-br"><span class="nw">【AI一括多言語翻訳】などの特殊機能をご利用の際のみ、</span><br class="mobile-br"><span class="nw">1回500円の実費決済となります。</span></p>
     </div>
 
     <div class="section">
-        <h2 class="section-title">あらゆる業種の「現場のリアルな課題」を解決</h2>
+        <h2 class="section-title"><span class="nw">あらゆる業種の</span><br class="mobile-br"><span class="nw">「現場のリアルな課題」を解決</span></h2>
         
         <div class="grid-3">
             <a href="#retail" class="industry-card">
@@ -155,7 +120,7 @@
             
             <a href="#manufacturing" class="industry-card">
                 <div class="industry-name">⚙️ 製造業</div>
-                <div class="industry-desc">複雑な機械操作や安全基準の共有。PDFの取り扱い説明書をアップロードするだけで自動階層化し、言語の違う外国人労働者へ一括翻訳して安全を担保。</div>
+                <div class="industry-desc"><span class="nw">複雑な機械操作や安全基準の共有。</span><br class="mobile-br"><span class="nw">PDFの取り扱い説明書をアップロードするだけで自動階層化し、</span><br class="mobile-br"><span class="nw">言語の違う外国人労働者へ一括翻訳して安全を担保。</span></div>
             </a>
             
             <a href="#transport" class="industry-card">
@@ -165,17 +130,17 @@
             
             <a href="#it" class="industry-card">
                 <div class="industry-name">💻 情報通信業</div>
-                <div class="industry-desc">複雑な社内システムの利用手順を画面録画動画から一瞬で文章化。エンジニアのドキュメント作成の時間をゼロに。</div>
+                <div class="industry-desc"><span class="nw">複雑な社内システムの利用手順を画面録画動画から一瞬で文章化。</span><br class="mobile-br"><span class="nw">エンジニアのドキュメント作成の時間をゼロに。</span></div>
             </a>
             
             <a href="#dining" class="industry-card">
                 <div class="industry-name">🍽️ 飲食サービス業</div>
-                <div class="industry-desc">レシピや仕込みの手順、接客の基本をビジュアル化。動画共有機能により、各店舗間での品質のばらつきや属人化を完全に排除！</div>
+                <div class="industry-desc"><span class="nw">レシピや仕込みの手順、接客の基本を</span><br class="mobile-br"><span class="nw">ビジュアル化。</span><span class="nw">動画共有機能により、</span><br class="mobile-br"><span class="nw">各店舗間での品質のばらつきや</span><br class="mobile-br"><span class="nw">属人化を完全に排除！</span></div>
             </a>
             
             <a href="#medical" class="industry-card">
                 <div class="industry-name">🏥 医療・介護業</div>
-                <div class="industry-desc">ミスの許されない器具の扱いや介助手順。チャット機能での「申し送り事項」との連動でスムーズな業務引継ぎを実現します。</div>
+                <div class="industry-desc"><span class="nw">ミスの許されない器具の扱いや介助手順。</span><br class="mobile-br"><span class="nw">チャット機能での「申し送り事項」との</span><br class="mobile-br"><span class="nw">連動でスムーズな業務引継ぎを実現します。</span></div>
             </a>
 
             <a href="#hospitality" class="industry-card">
@@ -185,7 +150,7 @@
 
             <a href="#service" class="industry-card">
                 <div class="industry-name">🤝 サービス業全般</div>
-                <div class="industry-desc">「何を聞かれているか」事前のDM・チャット機能で情報共有。マニュアルとコミュニケーションを連携した新時代の教育システム。</div>
+                <div class="industry-desc"><span class="nw">「何を聞かれているか」</span><br class="mobile-br"><span class="nw">事前のDM・チャット機能で情報共有。</span><br class="mobile-br"><span class="nw">マニュアルとコミュニケーションを連携した新時代の教育システム。</span></div>
             </a>
         </div>
     </div>
