@@ -400,7 +400,7 @@
         <a href="creator_lp.html" class="nav-item" target="_blank">📖 ビジネスモデル解説<br>(LP)を見る</a>
         <a href="signage_player.html" class="nav-item" target="_blank" style="color:var(--primary); font-weight:bold;">📺 配信確認テスト<br>(プレーヤー起動)</a>
         <div style="flex:1;"></div>
-        <a href="login_portal.html" class="nav-item">🚪 ログアウト</a>
+        <a href="#" onclick="logout(); return false;" class="nav-item">🚪 ログアウト</a>
     </div>
 
     <!-- Mobile Navigation -->
@@ -409,7 +409,7 @@
         <a href="#" class="nav-item" onclick="showBankSettings()">💳<br>収益設定</a>
         <a href="creator_lp.html" class="nav-item" target="_blank">📖<br>ビジネスモデル</a>
         <a href="signage_player.html" class="nav-item" target="_blank" style="color:var(--primary);">📺<br>プレーヤー</a>
-        <a href="login_portal.html" class="nav-item">🚪<br>ログアウト</a>
+        <a href="#" onclick="logout(); return false;" class="nav-item">🚪<br>ログアウト</a>
     </div>
 
     <div class="main-content">
@@ -766,6 +766,11 @@
         // Live Sync with Backend
         setInterval(fetchStats, 3000);
         fetchStats();
+
+        function logout() {
+            sessionStorage.removeItem('retailMediaAuth');
+            window.location.replace('login_portal.html');
+        }
     </script>
 </body>
 
