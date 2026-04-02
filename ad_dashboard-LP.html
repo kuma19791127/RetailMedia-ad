@@ -322,6 +322,15 @@
                 font-size: 2rem !important; /* Adjusted for mobile view */
                 line-height: 1.4;
             }
+            .btn-large {
+                padding: 16px 20px !important;
+                font-size: 1.1rem !important;
+                width: 90%;
+                max-width: 340px;
+                box-sizing: border-box;
+                display: block;
+                margin: 0 auto;
+            }
         }
     </style>
 
@@ -470,7 +479,7 @@
                 <strong>広告で直接「問題解決」を行うことで、圧倒的な視聴意欲と購買意欲を高めます。</strong>
             </p>
             
-            <h4 style="color: white; font-size: 1.2rem; margin-bottom: 15px;">▼ 提案に使える「解決型フック」の構成案（例：食品・調理器具など）</h4>
+            <h4 style="color: white; font-size: 1.2rem; margin-bottom: 15px;">▼ 提案に使える<br class="mobile-br"><span class="nw">「解決型フック」の構成案</span><br class="mobile-br"><span class="nw">（例：食品・調理器具など）</span></h4>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(0, 0, 0, 0.2); border-radius: 8px; overflow: hidden;">
                     <thead>
@@ -504,18 +513,22 @@
 
     
     <section class="section" style="background: rgba(79, 70, 229, 0.05); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-        <h2 class="section-title" style="font-size: 2.2rem; color: #38bdf8;">圧倒的な「POS連動・分析レポート」</h2>
+        <h2 class="section-title" style="font-size: 2.2rem; color: #38bdf8;">圧倒的な<br class="mobile-br"><span class="nw">「POS連動・分析レポート」</span></h2>
         <p style="text-align:center; color:#cbd5e1; margin-bottom: 40px; font-size: 1.1rem;">リテアドであれば、広告主に対して以下のような強力なレポートを提示できます。</p>
         
         <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
             <div class="card" style="border-left: 4px solid #f43f5e;">
-                <h3 style="color: #f43f5e; font-size:1.3rem;">📊 A/Bテストによる純粋な効果測定</h3>
-                <p>「A店舗群（広告を配信した店舗）」と「B店舗群（配信しなかった似た条件の店舗）」のPOSデータを比較し、広告を出した店舗の方が、対象商品の売上が統計的に有意に15%高かった」と証明できます。</p>
+                <h3 style="color: #f43f5e; font-size:1.3rem;">📊 A/Bテストによる<br class="mobile-br"><span class="nw">純粋な効果測定</span></h3>
+                <p>
+                    <span class="nw">「A店舗群（広告を配信した店舗）」と</span><span class="nw">「B店舗群（配信しなかった似た条件の店舗）」の</span><br class="mobile-br"><span class="nw">POSデータを比較し、</span><span class="nw">広告を出した店舗の方が、</span><br class="mobile-br"><span class="nw">対象商品の売上が</span><span class="nw">統計的に有意に15%高かった」と</span><span class="nw">証明できます。</span>
+                </p>
             </div>
             
             <div class="card" style="border-left: 4px solid #34d399;">
                 <h3 style="color: #34d399; font-size:1.3rem;">🛒 併売分析のリフトアップ効果</h3>
-                <p>「カレールーの広告を流した結果、カレールーだけでなく、玉ねぎや牛肉の購入率（バスケット内の併売率）が普段より何%アップしたか」のPOSデータで統計分析(クロスセル・バスケット分析)。</p>
+                <p>
+                    <span class="nw">「カレールーの広告を</span><span class="nw">流した結果、</span><span class="nw">カレールーだけでなく、</span><br class="mobile-br"><span class="nw">玉ねぎや牛肉の購入率</span><br class="mobile-br"><span class="nw">（バスケット内の併売率）が</span><span class="nw">普段より何%アップしたか」の</span><br class="mobile-br"><span class="nw">POSデータで統計分析</span><span class="nw">(クロスセル・バスケット分析)。</span>
+                </p>
             </div>
             
             <div class="card" style="border-left: 4px solid #60a5fa;">
@@ -567,12 +580,12 @@
 
     <!-- Enterprise Premium Plan -->
     <section id="premium-plan" style="background: linear-gradient(135deg, #0f172a, #312e81); padding: 80px 20px; text-align: center; border-radius: 20px; max-width: 1000px; margin: 80px auto 40px; border: 1px solid #8b5cf6; box-shadow: 0 10px 40px rgba(139, 92, 246, 0.2);">
-        <h2 style="font-size: 2.5rem; color: #f472b6; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <span style="font-size: 3rem;">👑</span> 全店ジャック・エンタープライズ
+        <h2 style="font-size: clamp(1.5rem, 5vw, 2.5rem); color: #f472b6; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <span style="font-size: clamp(2rem, 6vw, 3rem);">👑</span> 全店ジャック・エンタープライズ
         </h2>
         <p style="font-size: 1.2rem; color: #e2e8f0; line-height: 1.8; margin-bottom: 40px; max-width: 800px; margin-left: auto; margin-right: auto;">
-            全国の全サイネージパネルをフル活用してブランドを独占的に訴求する大型キャンペーン。<br class="desktop-br">
-            ご予算 <strong style="color: #e879f9; font-size: 1.5rem;">1,000万円〜</strong> のイベントキャンペーンは、<br class="desktop-br">リテアド専属チームが企画・枠確保から配信・詳細分析まで全工程をワンストップで請け負います。
+            <span class="nw">全国の全サイネージパネルを</span><br class="mobile-br"><span class="nw">フル活用して</span><br class="mobile-br"><span class="nw">ブランドを</span><span class="nw">独占的に訴求する</span><span class="nw">大型キャンペーン。</span><br class="desktop-br">
+            <span class="nw">ご予算 <strong style="color: #e879f9; font-size: 1.5rem;">1,000万円〜</strong> の</span><span class="nw">イベントキャンペーンは、</span><br class="desktop-br"><br class="mobile-br"><span class="nw">リテアド専属チームが</span><span class="nw">企画・枠確保から配信・詳細分析まで</span><br class="mobile-br"><span class="nw">全工程を</span><span class="nw">ワンストップで請け負います。</span>
         </p>
         <a href="mailto:info@retail-ad.awsapps.com?subject=大型キャンペーン(全店ジャックプラン)のご相談" class="btn-large" style="background: linear-gradient(45deg, #c084fc, #f472b6); color: white; border:none;">
             専属チームにご相談（窓口）
@@ -583,8 +596,9 @@
     <section class="cta-section">
         <h2 style="font-size: 3rem; margin-bottom: 20px;">確実な費用対効果を、その目で。</h2>
         <p style="font-size: 1.2rem; margin-bottom: 40px;">
-            広告は「見せる」時代から、「実店舗で売る」時代へ。<br>
-            初期費用ゼロで、今すぐ広告キャンペーンを作成できます。
+        <p style="font-size: 1.2rem; margin-bottom: 40px;">
+            <span class="nw">広告は「見せる」時代から、</span><br class="mobile-br"><span class="nw">「実店舗で売る」時代へ。</span><br>
+            <span class="nw">初期費用ゼロで、</span><br class="mobile-br"><span class="nw">今すぐ広告キャンペーンを作成できます。</span>
         </p>
         <a href="login_portal.html" class="btn-large">広告主ダッシュボードで配信を開始</a>
     </section>
