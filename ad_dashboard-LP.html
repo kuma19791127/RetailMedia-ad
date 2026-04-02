@@ -334,6 +334,8 @@
         }
         .mobile-br { display: none; }
         .desktop-br { display: block; }
+        /* 💡スマホ強制改行防止クラス（この span で囲んだ文字は絶対に途中で改行されません） */
+        .nw { display: inline-block; }
         @media (max-width: 768px) {
             .mobile-br { display: block; }
             .desktop-br { display: none; }
@@ -407,8 +409,8 @@
         <span class="tagline">Cookie依存からの完全脱却</span>
         <h1>本当に「売れたか」が<br>分かる広告へ。</h1>
         <p class="subtitle">
-            Web上の「インプレッション推測」に依存する時代は終わりました。<br>
-            実店舗のレジ(POS)と直接連携し、広告を見た直後の<strong>「リアルな購買データ」</strong>を広告主と動画配信者で作る、次世代のリテールメディア・ネットワーク。
+            <span class="nw">Web上の「インプレッション推測」に</span><span class="nw">依存する時代は終わりました。</span><br>
+            <span class="nw">実店舗のレジ(POS)と直接連携し、</span><wbr><span class="nw">広告を見た直後の</span><strong class="nw">「リアルな購買データ」を</strong><wbr><span class="nw">広告主と動画配信者で作る、</span><wbr><span class="nw">次世代の</span><span class="nw">リテールメディア・ネットワーク。</span>
         </p>
         <div>
             <a href="login_portal.html" class="btn-large">配信ダッシュボードを開く</a>
