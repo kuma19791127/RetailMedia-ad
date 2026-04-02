@@ -294,6 +294,13 @@
                 min-height: 100vh;
                 padding-bottom: 50px;
                 align-items: flex-start;
+                justify-content: flex-start;
+                flex-direction: column;
+                box-sizing: border-box;
+            }
+            .hero > div {
+                width: 100%;
+                box-sizing: border-box;
             }
             .hero h1 {
                 font-size: 2.1rem;
@@ -359,6 +366,7 @@
         }
         .mobile-br { display: none; }
         .desktop-br { display: block; }
+        .nw { display: inline-block; }
         @media (max-width: 768px) {
             .mobile-br { display: block; }
             .desktop-br { display: none; }
@@ -428,10 +436,10 @@
         <div>
             <h1>購買決定の<br>『その瞬間』を捉える。</h1>
             <p>
-                スーパー店頭サイネージで、確実な棚落ちを防ぎ、売上を最大化。<br>
-                共同運営の店舗ネットワークを活用した「スーパーのYouTube化」の配信。<br>
-                広告主（メーカー）への提案から配信管理、<br>レポートまで一気通貫でサポート。<br>
-                <strong>代理店様には、新たなリテールメディアへの出稿において、広告業界水準の代理店マージンのお支払いや、代理店様専用の明瞭な支払い額の提示、POSデータと連携した確実な実績データ・各種分析機能の提供など、圧倒的なメリットをもたらします。</strong>
+                <span class="nw">スーパー店頭サイネージで、</span><span class="nw">確実な棚落ちを防ぎ、</span><span class="nw">売上を最大化。</span><br class="desktop-br">
+                <span class="nw">共同運営の店舗ネットワークを活用した</span><br class="mobile-br"><span class="nw">「スーパーのYouTube化」の配信。</span><br class="desktop-br">
+                <br class="mobile-br"><span class="nw">広告主（メーカー）への提案から</span><span class="nw">配信管理、</span><br class="desktop-br"><span class="nw">レポートまで一気通貫でサポート。</span><br class="desktop-br">
+                <strong><span class="nw">代理店様には、</span><span class="nw">新たなリテールメディアへの出稿において、</span><span class="nw">広告業界水準の代理店マージンのお支払いや、</span><br class="mobile-br"><span class="nw">代理店様専用の明瞭な支払い額の提示、</span><span class="nw">POSデータと連携した</span><span class="nw">確実な実績データ・各種分析機能の提供など、</span><span class="nw">圧倒的なメリットをもたらします。</span></strong>
             </p>
             <a href="login_portal.html" class="btn-cta">パートナーになる (無料登録)</a>
         </div>
