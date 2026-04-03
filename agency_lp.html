@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -288,6 +288,8 @@
         }
         /* Mobile specific styling */
         @media (max-width: 768px) {
+            .hero-subtitle, .hero p { text-align: center !important; }
+            .hero-content { display: flex; flex-direction: column; align-items: center; }
             .hero {
                 padding-top: 120px;
                 height: auto;
@@ -342,9 +344,6 @@
         }
     </style>
 
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
-
     <!-- PWA Setup -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2563eb">
@@ -368,6 +367,8 @@
         .desktop-br { display: block; }
         .nw { display: inline-block; }
         @media (max-width: 768px) {
+            .hero-subtitle, .hero p { text-align: center !important; }
+            .hero-content { display: flex; flex-direction: column; align-items: center; }
             .mobile-br { display: block; }
             .desktop-br { display: none; }
             
@@ -406,6 +407,8 @@
             overflow-wrap: break-word !important;
         }
         @media (max-width: 768px) {
+            .hero-subtitle, .hero p { text-align: center !important; }
+            .hero-content { display: flex; flex-direction: column; align-items: center; }
             .desktop-br { display: none !important; }
             h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
             h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
@@ -436,10 +439,10 @@
         <div>
             <h1>購買決定の<br>『その瞬間』を捉える。</h1>
             <p>
-                <span class="nw">スーパー店頭サイネージで、</span><span class="nw">確実な棚落ちを防ぎ、</span><span class="nw">売上を最大化。</span><br class="desktop-br">
+                <span class="nw"><div style="text-align:center;">スーパー店頭サイネージで、</span><span class="nw">確実な棚落ちを防ぎ、</span><span class="nw">売上を最大化。</span><br class="desktop-br">
                 <span class="nw">共同運営の店舗ネットワークを活用した</span><br class="mobile-br"><span class="nw">「スーパーのYouTube化」の配信。</span><br class="desktop-br">
                 <br class="mobile-br"><span class="nw">広告主（メーカー）への提案から</span><span class="nw">配信管理、</span><br class="desktop-br"><span class="nw">レポートまで一気通貫でサポート。</span><br class="desktop-br">
-                <strong><span class="nw">代理店様には、</span><span class="nw">新たなリテールメディアへの出稿において、</span><span class="nw">広告業界水準の代理店マージンのお支払いや、</span><br class="mobile-br"><span class="nw">代理店様専用の明瞭な支払い額の提示、</span><span class="nw">POSデータと連携した</span><span class="nw">確実な実績データ・各種分析機能の提供など、</span><span class="nw">圧倒的なメリットをもたらします。</span></strong>
+                <strong><span class="nw">代理店様には、</span><span class="nw">新たなリテールメディアへの出稿において、</span><span class="nw">広告業界水準の代理店マージンのお支払いや、</span><br class="mobile-br"><span class="nw">代理店様専用の明瞭な支払い額の提示、</span><span class="nw">POSデータと連携した</span><span class="nw">確実な実績データ・各種分析機能の提供など、</span><span class="nw">圧倒的なメリットをもたらします。</div></span></strong>
             </p>
             <a href="login_portal.html" class="btn-cta">パートナーになる (無料登録)</a>
         </div>
@@ -485,12 +488,12 @@
                 <div class="card" style="border-top-color: var(--highlight);">
                     <span class="card-icon">💡</span>
                     <h3>新たな提案フック</h3>
-                    <p><span class="nw">既存のWeb広告やチラシに加え、</span><br class="mobile-br"><span class="nw">「スーパー・リアル店舗同士の共同運用」という</span><br class="mobile-br"><span class="nw">独自の武器で</span><span class="nw">差別化。</span></p>
+                    <p><span class="nw">既存のWeb広告やチラシに加え、</span><br class="mobile-br"><span class="nw">「スーパー・リアル店舗同士の共同運用」<br class="mobile-br"><span class="nw">という</span></span><br class="mobile-br"><span class="nw">独自の武器で</span><span class="nw">差別化。</span></p>
                 </div>
                 <div class="card" style="border-top-color: var(--highlight);">
                     <span class="card-icon">🎥</span>
                     <h3>制作費のアップセル</h3>
-                    <p><span class="nw">サイネージ専用の</span><span class="nw">「シズル感」溢れる動画制作を請け負うことで、</span><br class="mobile-br"><span class="nw">配信費以外の</span><br class="mobile-br"><span class="nw">利益を確保。</span></p>
+                    <p><span class="nw">サイネージ専用の</span><span class="nw">「シズル感」溢れる動画制作を<br class="mobile-br"><span class="nw">請け負うことで</span></span><br class="mobile-br"><span class="nw">配信費以外の</span><br class="mobile-br"><span class="nw">利益を確保。</span></p>
                 </div>
             </div>
         </div>

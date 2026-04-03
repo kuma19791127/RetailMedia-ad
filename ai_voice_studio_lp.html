@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -146,7 +146,8 @@
             .hero h1 { font-size: 2rem; }
             .step-card { flex-direction: column; align-items: center; text-align: center; }
         }
-    </style>
+        @media (max-width: 768px) { .step-card, .step-card * { overflow-wrap: anywhere !important; word-wrap: break-word !important; white-space: normal !important; } }
+</style>
 
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
@@ -165,7 +166,8 @@
             h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
             h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
         }
-    </style>
+        @media (max-width: 768px) { .step-card, .step-card * { overflow-wrap: anywhere !important; word-wrap: break-word !important; white-space: normal !important; } }
+</style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof budoux !== 'undefined') {
@@ -190,7 +192,7 @@
 
     <section class="hero">
         <h1>店内放送を、もっと自由に。もっと簡単に。</h1>
-        <p>AIボイススタジオは、テキストを入力するだけで自然で魅力的な店内アナウンス音声を自動生成できる次世代のツールです。特売情報やタイムセールを、ボタン一つで店内のデジタルサイネージへ一斉配信できます。</p>
+        <p>AIボイススタジオは、テキストを入力するだけで<br class="mobile-br"><span class="nw">自然で魅力的</span>な店内アナウンス音声を自動生成できる次世代のツールです。<br class="mobile-br"><span class="nw">特売情報</span>やタイムセールを、ボタン一つで店内のデジタルサイネージへ<br class="mobile-br"><span class="nw">一斉配信</span>できます。</p>
     </section>
 
     <section class="section">
