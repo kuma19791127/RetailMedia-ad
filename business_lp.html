@@ -157,7 +157,9 @@
             line-height: 1.6;
         }
 
-        .cta-group {
+        #play-demo { display: none !important; }
+            .grid-2col { grid-template-columns: 1fr !important; }
+            .cta-group {
             display: flex;
             gap: 20px;
             justify-content: center;
@@ -293,6 +295,8 @@
                 padding: 0 10px !important;
             }
 
+            #play-demo { display: none !important; }
+            .grid-2col { grid-template-columns: 1fr !important; }
             .cta-group {
                 flex-direction: column;
                 gap: 10px;
@@ -303,13 +307,9 @@
             }
 
             /* Fix table overflow on mobile */
-            table {
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                white-space: normal !important;
-                word-break: break-all;
-            }
+            table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap !important; width: 100%; }
+            td, th { white-space: normal !important; min-width: 150px; }
+            table { min-width: 600px !important; }
         }
     </style>
     <!-- BudouX for Japanese Typography -->
@@ -424,7 +424,7 @@
                 </p>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 50px;">
+            <div class="grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 50px;">
                 <div
                     style="background: rgba(46, 204, 113, 0.1); padding: 30px; border-radius: 12px; border: 1px solid var(--primary);">
                     <h3 style="color: var(--primary); margin-top: 0;">✓ スペースの解放と高収益化</h3>
