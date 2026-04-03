@@ -294,6 +294,7 @@
             </div>
             <div class="header-buttons" style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
                 <button onclick="window.open('anywhere_lp.html', '_blank')" class="btn-sm" style="background:#3b82f6; color:white; padding:8px 8px; font-weight:bold;">📖 LPを見る</button>
+                <button onclick="showSalesByCompany()" class="btn-sm" style="background:#0ea5e9; color:white; padding:8px 8px; font-weight:bold;">📊 会社別売上</button>
                 <!-- EXCEL IMPORT BUTTON -->
                 <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm nav-btn-mobile" style="background:#10B981; color:white; padding:8px 8px; font-weight:bold;">📥 商品データ取込</button>
                 <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="importProductMaster(event)">
@@ -698,6 +699,46 @@
             document.getElementById('page-pos').classList.add('active');
         }
 
+        function getCompanyByProduct(product) {
+            if (product.company) return product.company;
+            if (product.category === "インストア") return "自社（スーパー本体）";
+            if (product.name.includes("水") || product.name.includes("茶") || product.category === "飲料") return "飲料メーカーA社";
+            if (product.name.includes("チョコ") || product.name.includes("スナック") || product.category === "菓子") return "お菓子カンパニー株式会社";
+            
+            const hash = String(product.janCode || "0").charCodeAt(0) % 3;
+            if (hash === 0) return "C食品株式会社";
+            if (hash === 1) return "D日用品メーカー";
+            return "E商事";
+        }
+
+        function showSalesByCompany() {
+            const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
+            let html = '<div style="text-align: left; margin-top: 10px;">';
+            let grandTotal = 0;
+            const keys = Object.keys(companySales);
+            if (keys.length === 0) {
+                html += '<p style="text-align:center; color:#666;">まだ売上データがありません。</p>';
+            } else {
+                html += '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
+                html += '<tr style="background: #f1f5f9;"><th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">メーカー・出品会社</th><th style="padding: 8px; border-bottom: 2px solid #cbd5e1; text-align: right;">売上金額</th></tr>';
+                keys.sort((a,b) => companySales[b] - companySales[a]).forEach(comp => {
+                    html += `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color:#333; word-break:break-all;">${comp}</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color:#1e293b;">¥${companySales[comp].toLocaleString()}</td></tr>`;
+                    grandTotal += companySales[comp];
+                });
+                html += `<tr><td style="padding: 12px 8px; font-weight: bold; color:#1e293b;">総合計</td><td style="padding: 12px 8px; text-align: right; font-weight: 800; color: #2563EB; font-size: 18px;">¥${grandTotal.toLocaleString()}</td></tr>`;
+                html += '</table>';
+                html += `<div style="margin-top:20px; text-align:center;"><button onclick="if(confirm('売上データをリセットしますか？')) { localStorage.removeItem('pos_company_sales'); Swal.close(); }" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; text-decoration:underline;">売上データをリセット</button></div>`;
+            }
+            html += '</div>';
+
+            Swal.fire({
+                title: '📊 会社別 売上確認',
+                html: html,
+                confirmButtonText: '閉じる',
+                confirmButtonColor: '#2563EB'
+            });
+        }
+
         // --- POS & Scanner Logic ---
         const hints = new Map();
         const formats = [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8];
@@ -743,6 +784,14 @@
                         console.log('Admin sync mock fallback', e); 
                         addDebugLog("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
                     }
+
+                    // --- Company Breakdown ---
+                    const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
+                    cartItems.forEach(item => {
+                        const comp = getCompanyByProduct(item);
+                        companySales[comp] = (companySales[comp] || 0) + item.price;
+                    });
+                    localStorage.setItem('pos_company_sales', JSON.stringify(companySales));
 
                     // --- Cross-Tab Sync for Local Demo ---
                     const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
