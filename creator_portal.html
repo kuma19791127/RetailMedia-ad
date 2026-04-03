@@ -12,26 +12,27 @@
 :root {
     --primary: #2563eb;
     --accent: #f43f5e;
-    --dark: #1e293b; /* Slightly whiter/lighter background */
-    --light: #f8fafc;
-    --glass: rgba(255, 255, 255, 0.1);
-    --panel-bg: rgba(255, 255, 255, 0.05); /* Lighter panel */
-    --panel-bg-hover: rgba(255, 255, 255, 0.1);
-    --text-gradient: linear-gradient(to right, #8b5cf6, #ec4899); /* Purple to Pink matching image */
+    --bg-base: #f8fafc; /* White/Light background */
+    --panel-bg: #ffffff;
+    --panel-border: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-gradient: linear-gradient(to right, #8b5cf6, #ec4899);
 }
 
 body {
     margin: 0;
     font-family: 'Inter', 'Noto Sans JP', sans-serif;
-    background: var(--dark);
-    color: white;
+    background: var(--bg-base);
+    color: var(--text-main);
     overflow-x: hidden;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--dark); }
-::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Bottom Navigation */
 header {
@@ -39,7 +40,7 @@ header {
     justify-content: space-around;
     align-items: center;
     padding: 15px 10px;
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(15px);
     position: fixed;
     bottom: 0;
@@ -47,14 +48,12 @@ header {
     width: 100%;
     z-index: 1000;
     box-sizing: border-box;
-    border-top: 1px solid var(--glass);
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    border-top: 1px solid var(--panel-border);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
     padding-bottom: env(safe-area-inset-bottom, 15px);
 }
 
-.logo {
-    display: none; /* Hide text logo on bottom bar to save space, but let's just hide it entirely */
-}
+.logo { display: none; }
 
 .nav-links {
     display: flex;
@@ -64,7 +63,7 @@ header {
 }
 
 .nav-links a {
-    color: #cbd5e1;
+    color: var(--text-muted);
     text-decoration: none;
     font-size: 0.8rem;
     font-weight: 600;
@@ -78,30 +77,27 @@ header {
 }
 
 .nav-links a:hover, .nav-links a.active {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+    background: #eff6ff;
 }
 
 .nav-links a.btn-nav {
     background: none;
-    color: #cbd5e1 !important;
-    border-radius: 8px;
-    padding: 10px;
+    color: var(--text-muted) !important;
 }
 
 .nav-links a.btn-nav:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: #f1f5f9;
 }
 
 /* Main Content */
 .main-content {
-    /* Top padding reduced, bottom padding increased for bottom nav */
     padding: 50px 20px 120px 20px;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Logo at Top of Page instead of Nav */
+/* Logo at Top */
 .page-logo {
     font-weight: 800;
     font-size: 2.5rem;
@@ -119,7 +115,7 @@ h2 {
     margin-top: 0;
     margin-bottom: 30px;
     padding-bottom: 15px;
-    border-bottom: 1px solid var(--glass);
+    border-bottom: 2px solid #e2e8f0;
     background: var(--text-gradient);
     -webkit-background-clip: text;
     background-clip: text;
@@ -139,19 +135,19 @@ h2 {
     background: var(--panel-bg);
     padding: 30px;
     border-radius: 20px;
-    border: 1px solid var(--glass);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     transition: 0.3s;
 }
 
 .stat-card:hover {
     transform: translateY(-8px);
-    background: var(--panel-bg-hover);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .stat-title {
     font-size: 1.1rem;
-    color: #cbd5e1;
+    color: var(--text-muted);
     margin-bottom: 10px;
     font-weight: 600;
 }
@@ -159,19 +155,19 @@ h2 {
 .stat-value {
     font-size: 3rem;
     font-weight: 800;
-    color: #fff;
+    color: #0f172a;
 }
 
 .stat-sub {
     font-size: 0.95rem;
-    color: #10b981;
+    color: #059669;
     margin-top: 10px;
 }
 
 /* Upload Area */
 .upload-area {
-    background: var(--panel-bg);
-    border: 2px dashed #475569;
+    background: #ffffff;
+    border: 2px dashed #94a3b8;
     border-radius: 20px;
     padding: 50px 20px;
     text-align: center;
@@ -182,7 +178,7 @@ h2 {
 
 .upload-area:hover {
     border-color: var(--primary);
-    background: rgba(37, 99, 235, 0.1);
+    background: #eff6ff;
 }
 
 /* Videos List */
@@ -196,49 +192,50 @@ h2 {
     background: var(--panel-bg);
     border-radius: 20px;
     padding: 25px;
-    border: 1px solid var(--glass);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     position: relative;
     transition: 0.3s;
 }
 
 .video-card:hover {
     transform: translateY(-5px);
-    background: var(--panel-bg-hover);
     border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .video-thumb {
     width: 100%;
     height: 180px;
-    background: #0f172a;
+    background: #f1f5f9;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 4rem;
     margin-bottom: 20px;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
 }
 
-.video-title { font-weight: 800; font-size: 1.25rem; margin-bottom: 10px; color: #fff; }
+.video-title { font-weight: 800; font-size: 1.25rem; margin-bottom: 10px; color: #1e293b; }
 
 .status-badge {
     position: absolute; top: 35px; right: 35px; padding: 5px 12px;
     border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
 }
 
-.status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-.status-ban { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.status-active { background: #d1fae5; color: #059669; border: 1px solid #10b981; }
+.status-ban { background: #fee2e2; color: #dc2626; border: 1px solid #ef4444; }
 
-/* Buttons & SweetAlert Overrides */
+/* Buttons & SweetAlert */
 .btn {
     background: var(--text-gradient);
     color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s;
 }
-.btn:hover { transform: scale(1.05); }
+.btn:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4); }
 
-.swal2-popup { background: rgba(30, 41, 59, 0.95) !important; color: #fff !important; border-radius: 20px !important; border: 1px solid var(--glass); backdrop-filter: blur(10px); }
-.swal2-title, .swal2-html-container { color: #fff !important; }
+.swal2-popup { background: #ffffff !important; color: #1e293b !important; border-radius: 20px !important; border: 1px solid var(--panel-border); }
+.swal2-title, .swal2-html-container { color: #1e293b !important; }
 
 @media (max-width: 768px) {
     .page-logo { font-size: 2rem; }
@@ -372,9 +369,9 @@ h2 {
         </div>
 
         <div class="stat-card"
-            style="margin-bottom: 30px; background: rgba(142, 68, 173, 0.05); border-left: 5px solid var(--primary); text-align: left;">
+            style="margin-bottom: 30px; background: #f8fafc; border-left: 5px solid var(--primary); text-align: left;">
             <h3 style="margin-top: 0; color: var(--primary);">✨ サイネージ配信で広がる新しい可能性</h3>
-            <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text);">
+            <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
                 全国の小売り店舗で<br class="mobile-br"><span class="nw">自身のコンテンツ</span>が配信され、<br class="mobile-br"><span class="nw">メーカー広告</span>との親和性によって<br class="mobile-br"><span class="nw">コンテンツの新</span>しい可能性が開けます！<br>
                 <a href="creator_lp.html" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:underline; display:inline-block; margin-top:5px;">👉 おすすめのコンテンツ例や詳細解説はこちら</a>
             </p>
