@@ -250,6 +250,8 @@
         <div class="login-card">
             <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
             <h2 class="login-title">Staff Login</h2>
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">組織名・店舗名 (オプション)</div>
+            <input type="text" id="input-org" class="login-input" placeholder="例: 東京ドーム物販 1号店">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
             <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
@@ -620,6 +622,8 @@
 
         // --- Auth Logic ---
         async function handleLogin() {
+            const orgNameInput = document.getElementById('input-org');
+            const orgName = (orgNameInput && orgNameInput.value.trim() !== '') ? orgNameInput.value.trim() : "Demo Store";
             const email = document.getElementById('input-email').value;
             const password = document.getElementById('input-pass').value;
 
@@ -633,14 +637,14 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    currentSession = { email: email, role: 'store', storeName: "Demo Store", sessionToken: "mock_token_" + Date.now() };
+                    currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
                     initPosScreen(currentSession);
                 } else { alert(data.error || "Login Failed"); }
             } catch (e) { 
                 console.error(e); 
                 // ローカル環境(file://)やサーバー未起動時のデモ用フォールバック
                 if (email === 'store@demo.com' && password === 'DemoPass2026!') {
-                    currentSession = { email: email, role: 'store', storeName: "Demo Store", sessionToken: "mock_token_" + Date.now() };
+                    currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
                     initPosScreen(currentSession);
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({toast:true, position:'top-end', icon:'info', title:'サーバー未起動のため<br>オフライン(デモ)モードで開始します', showConfirmButton:false, timer:3500});
@@ -720,7 +724,7 @@
                 html += '<p style="text-align:center; color:#666;">まだ売上データがありません。</p>';
             } else {
                 html += '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
-                html += '<tr style="background: #f1f5f9;"><th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">メーカー・出品会社</th><th style="padding: 8px; border-bottom: 2px solid #cbd5e1; text-align: right;">売上金額</th></tr>';
+                html += '<tr style="background: #f1f5f9;"><th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">組織・利用店舗</th><th style="padding: 8px; border-bottom: 2px solid #cbd5e1; text-align: right;">売上金額</th></tr>';
                 keys.sort((a,b) => companySales[b] - companySales[a]).forEach(comp => {
                     html += `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color:#333; word-break:break-all;">${comp}</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color:#1e293b;">¥${companySales[comp].toLocaleString()}</td></tr>`;
                     grandTotal += companySales[comp];
@@ -785,12 +789,10 @@
                         addDebugLog("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
                     }
 
-                    // --- Company Breakdown ---
+                    // --- Organization Breakdown ---
                     const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
-                    cartItems.forEach(item => {
-                        const comp = getCompanyByProduct(item);
-                        companySales[comp] = (companySales[comp] || 0) + item.price;
-                    });
+                    const orgName = (currentSession && currentSession.storeName) ? currentSession.storeName : "未設定の組織";
+                    companySales[orgName] = (companySales[orgName] || 0) + total;
                     localStorage.setItem('pos_company_sales', JSON.stringify(companySales));
 
                     // --- Cross-Tab Sync for Local Demo ---
