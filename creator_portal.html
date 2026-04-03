@@ -12,11 +12,12 @@
 :root {
     --primary: #2563eb;
     --accent: #f43f5e;
-    --dark: #0f172a;
+    --dark: #1e293b; /* Slightly whiter/lighter background */
     --light: #f8fafc;
     --glass: rgba(255, 255, 255, 0.1);
-    --panel-bg: rgba(30, 41, 59, 0.5);
-    --panel-bg-hover: rgba(30, 41, 59, 0.8);
+    --panel-bg: rgba(255, 255, 255, 0.05); /* Lighter panel */
+    --panel-bg-hover: rgba(255, 255, 255, 0.1);
+    --text-gradient: linear-gradient(to right, #8b5cf6, #ec4899); /* Purple to Pink matching image */
 }
 
 body {
@@ -32,82 +33,98 @@ body {
 ::-webkit-scrollbar-track { background: var(--dark); }
 ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
 
-/* Top Navigation (replaces sidebar) */
+/* Bottom Navigation */
 header {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    padding: 15px 40px;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(10px);
+    padding: 15px 10px;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(15px);
     position: fixed;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100%;
     z-index: 1000;
     box-sizing: border-box;
-    border-bottom: 1px solid var(--glass);
+    border-top: 1px solid var(--glass);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    padding-bottom: env(safe-area-inset-bottom, 15px);
 }
 
 .logo {
-    font-weight: 800;
-    font-size: 1.5rem;
-    letter-spacing: -1px;
-}
-
-.logo span {
-    color: var(--primary);
+    display: none; /* Hide text logo on bottom bar to save space, but let's just hide it entirely */
 }
 
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 15px;
+    width: 100%;
+    justify-content: space-around;
 }
 
 .nav-links a {
     color: #cbd5e1;
     text-decoration: none;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: 600;
     transition: 0.3s;
-    padding: 8px 15px;
-    border-radius: 4px;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
 }
 
 .nav-links a:hover, .nav-links a.active {
-    color: white;
+    color: #fff;
     background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-links a.btn-nav {
-    background: var(--primary);
-    color: white !important;
-    border-radius: 30px;
-    padding: 10px 20px;
+    background: none;
+    color: #cbd5e1 !important;
+    border-radius: 8px;
+    padding: 10px;
 }
 
 .nav-links a.btn-nav:hover {
-    background: #1d4ed8;
+    background: rgba(255, 255, 255, 0.1);
 }
-
-/* Mobile Nav */
-.mobile-nav { display: none; }
 
 /* Main Content */
 .main-content {
-    padding: 120px 40px 80px 40px;
+    /* Top padding reduced, bottom padding increased for bottom nav */
+    padding: 50px 20px 120px 20px;
     max-width: 1200px;
     margin: 0 auto;
 }
 
+/* Logo at Top of Page instead of Nav */
+.page-logo {
+    font-weight: 800;
+    font-size: 2.5rem;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+    text-align: center;
+    background: var(--text-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 h2 {
     font-size: 2.2rem;
-    color: #fff;
     margin-top: 0;
     margin-bottom: 30px;
     padding-bottom: 15px;
     border-bottom: 1px solid var(--glass);
+    background: var(--text-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
 }
 
 /* Stats Grid */
@@ -129,12 +146,12 @@ h2 {
 .stat-card:hover {
     transform: translateY(-8px);
     background: var(--panel-bg-hover);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .stat-title {
     font-size: 1.1rem;
-    color: #94a3b8;
+    color: #cbd5e1;
     margin-bottom: 10px;
     font-weight: 600;
 }
@@ -193,13 +210,14 @@ h2 {
 .video-thumb {
     width: 100%;
     height: 180px;
-    background: #1e293b;
+    background: #0f172a;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 4rem;
     margin-bottom: 20px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
 }
 
 .video-title { font-weight: 800; font-size: 1.25rem; margin-bottom: 10px; color: #fff; }
@@ -214,7 +232,7 @@ h2 {
 
 /* Buttons & SweetAlert Overrides */
 .btn {
-    background: linear-gradient(45deg, var(--primary), var(--accent));
+    background: var(--text-gradient);
     color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s;
 }
 .btn:hover { transform: scale(1.05); }
@@ -222,46 +240,9 @@ h2 {
 .swal2-popup { background: rgba(30, 41, 59, 0.95) !important; color: #fff !important; border-radius: 20px !important; border: 1px solid var(--glass); backdrop-filter: blur(10px); }
 .swal2-title, .swal2-html-container { color: #fff !important; }
 
-/* Responsive / Mobile */
 @media (max-width: 768px) {
-    header {
-        justify-content: center;
-        padding: 15px;
-    }
-    .logo { margin: 0; }
-    .nav-links { display: none; }
-    
-    .mobile-nav {
-        display: flex;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(10px);
-        border-top: 1px solid var(--glass);
-        z-index: 1000;
-        justify-content: space-around;
-        padding: 12px 0;
-        padding-bottom: env(safe-area-inset-bottom, 15px);
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-    }
-    .mobile-nav a {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        color: #cbd5e1;
-        text-decoration: none;
-        font-size: 0.75rem;
-        flex: 1;
-        gap: 6px;
-    }
-    .mobile-nav a.active { color: var(--primary); font-weight: bold; }
-
-    .main-content {
-        padding: 100px 20px 100px 20px;
-    }
-    h2 { font-size: 1.6rem; }
+    .page-logo { font-size: 2rem; }
+    h2 { font-size: 1.8rem; }
 }
 </style>
 
@@ -355,25 +336,17 @@ h2 {
 <body>
 
     <header>
-        <div class="logo">retail-ad <span>Creator</span></div>
         <div class="nav-links">
-            <a href="#" class="active">📊 ダッシュボード</a>
-            <a href="#" onclick="showBankSettings()">💳 収益設定</a>
-            <a href="creator_lp.html" target="_blank">📖 ビジネスモデル解説</a>
-            <a href="signage_player.html" target="_blank" style="color:var(--primary); font-weight:bold;">📺 配信テスト</a>
-            <a href="#" onclick="logout(); return false;" class="btn-nav">ログアウト</a>
+            <a href="#" class="active"><span style="font-size:1.5rem;">📊</span>ダッシュボード</a>
+            <a href="#" onclick="showBankSettings()"><span style="font-size:1.5rem;">💳</span>収益設定</a>
+            <a href="creator_lp.html" target="_blank"><span style="font-size:1.5rem;">📖</span>LP解説</a>
+            <a href="signage_player.html" target="_blank"><span style="font-size:1.5rem;">📺</span>テスト</a>
+            <a href="#" onclick="logout(); return false;" class="btn-nav"><span style="font-size:1.5rem;">🚪</span>ログアウト</a>
         </div>
     </header>
 
-    <!-- Mobile Navigation -->
-    <div class="mobile-nav">
-        <a href="#" class="active"><span style="font-size:1.2rem;">📊</span>Dashboard</a>
-        <a href="#" onclick="showBankSettings()"><span style="font-size:1.2rem;">💳</span>Settings</a>
-        <a href="signage_player.html" target="_blank" style="color:var(--primary);"><span style="font-size:1.2rem;">📺</span>Player</a>
-        <a href="#" onclick="logout(); return false;"><span style="font-size:1.2rem;">🚪</span>Logout</a>
-    </div>
-
     <div class="main-content">
+        <div class="page-logo">retail-ad Creator</div>
         <h2>クリエイター実績 (全国スーパーサイネージ)</h2>
 
         <div class="grid-top">
