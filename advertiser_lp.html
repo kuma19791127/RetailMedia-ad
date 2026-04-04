@@ -28,11 +28,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px 40px;
+            padding: 15px;
             backdrop-filter: blur(10px);
             position: fixed;
+            bottom: 0;
+            top: auto;
             width: 100%;
-            z-index: 1000;
+            z-index: 10000;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
             box-sizing: border-box;
             border-bottom: 1px solid var(--glass);
         }
@@ -49,8 +53,19 @@
             color: var(--primary);
         }
 
+        .nav-links {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .logo { display: none; } /* Hide logo to save space on bottom nav */
+
+
         .nav-links a {
-            color: #475569;
+            color: #000 !important;
             text-decoration: none;
             margin: 0 20px;
             font-size: 0.9rem;
@@ -58,7 +73,7 @@
         }
 
         .nav-links a:hover {
-            color: white;
+            color: #000 !important;
         }
 
         .btn-nav {
@@ -121,7 +136,7 @@
 
         p.subtitle {
             font-size: 1.5rem;
-            color: #94a3b8;
+            color: #000 !important;
             margin-bottom: 40px;
             line-height: 1.6;
         }
@@ -157,7 +172,7 @@
         }
 
         .card p {
-            color: #cbd5e1;
+            color: #000 !important;
             line-height: 1.6;
         }
 
@@ -185,7 +200,7 @@
 
         .btn-primary {
             background: linear-gradient(45deg, var(--primary), var(--accent));
-            color: white;
+            color: #000 !important;
             padding: 20px 50px;
             border-radius: 50px;
             text-decoration: none;
@@ -250,7 +265,7 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                color: #cbd5e1;
+                color: #000 !important;
                 flex: 1;
                 text-decoration: none;
             }
@@ -406,12 +421,12 @@
         <div class="card">
             <div class="icon">🛒</div>
             <h3>成果報酬型広告 (CPA/POS連携)</h3>
-            <p>POSデータと連携し、広告視聴後の商品購入や来店といった「成果」が発生した場合のみ課金されます。</p>
+            <p>POSデータと連携し、広告視聴後の商品購入や来店といった「成果」が発生した場合のみ<br>課金されます。</p>
         </div>
         <div class="card" style="border: 1px solid #f43f5e;">
             <div class="icon">☔</div>
             <h3 style="color:#f43f5e;">モーメント配信（状況連動）</h3>
-            <p>「雨が降ったら傘の広告」「気温30度超えでアイスの広告」など、特定の状況に合わせて自動配信します。</p>
+            <p>「雨が降ったら傘の広告」<br>「気温30度超えでアイスの広告」など、<br>特定の状況に合わせて<br>自動配信します。</p>
         </div>
         <div class="card" style="border: 1px solid #3b82f6;">
             <div class="icon">📈</div>
@@ -435,23 +450,23 @@
         <div style="max-width: 900px; margin: 0 auto;">
             <div style="font-size: 4rem; margin-bottom: 20px;">🛡️</div>
             <h2 style="font-size: 2.5rem; color: #0f172a; margin-bottom: 20px;">強力な個人情報保護</h2>
-            <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.8; margin-bottom: 40px;">
+            <p style="font-size: 1.1rem; color: #000 !important; line-height: 1.8; margin-bottom: 40px;">
                 リテアドは「Privacy by Design」に基づき、個人データを保持しない安全な仕組みを構築しています。
             </p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; text-align: left;">
                 <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
                     <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🚀 エッジAIによる即時破棄</h3>
-                    <p style="color: #94a3b8; line-height: 1.6;">
-                        サイネージ端末（エッジAIチップ）内で、「20代女性」「笑顔」「視線あり」といった属性データ（数値）に即座に変換します。<br>
+                    <p style="color: #000 !important; line-height: 1.6;">
+                        サイネージ端末（エッジAIチップ）内で、「20代女性」「笑顔」「視線あり」といった属性データ（数値）に<br>即座に変換します。<br>
                         変換・分析が終わった瞬間（数ミリ秒後）、<strong>元の映像データは即座に破棄（上書き削除）</strong>され、メモリにも残りません。
                     </p>
                 </div>
                 <div
                     style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                     <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🔒 個人データの完全非保持</h3>
-                    <p style="color: #94a3b8; line-height: 1.6;">
-                        万が一サーバーがハッキングされても、そこに<strong>個人画像データは一切存在しない</strong>ため、漏洩のリスク自体を根本から断ちます。<br>
+                    <p style="color: #000 !important; line-height: 1.6;">
+                        万が一サーバーがハッキングされても、そこに<strong>個人画像データは一切存在しない</strong>ため、漏洩のリスク自体を<br>根本から断ちます。<br>
                         統計データのみをマーケティングに活用する、安心・安全なプラットフォームです。
                     </p>
                 </div>
@@ -472,7 +487,7 @@
         style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: center; background: rgba(15, 23, 42, 0.5);">
         <div style="text-align: center;">
             <h2 style="font-size: 2.5rem;">🔗 自社システムと連携</h2>
-            <p style="font-size: 1.2rem; color:#94a3b8; margin-bottom: 20px;">
+            <p style="font-size: 1.2rem; color: #000 !important; margin-bottom: 20px;">
                 開発者向けの強力な API / SDK を提供。<br>
                 在庫連動広告や、AIによる自動生成配信など、<br class="sp-br">御社のマーケティングシステムと<br class="sp-br">シームレスに統合できます。
             </p>
@@ -501,18 +516,18 @@
         <h2 style="font-size: 2.5rem; color: #f472b6; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <span style="font-size: 3rem;">👑</span> 全店ジャック・エンタープライズ
         </h2>
-        <p style="font-size: 1.2rem; color: #e2e8f0; line-height: 1.8; margin-bottom: 30px; padding: 0 20px;">
+        <p style="font-size: 1.2rem; color: #000 !important; line-height: 1.8; margin-bottom: 30px; padding: 0 20px;">
             TikTok等のトップティア広告と同様の、全国の全サイネージパネルを<br class="desktop-br">フル活用してブランドを独占的に訴求する大型キャンペーン。<br>
             ご予算 <strong style="color:#e879f9; font-size:1.5rem;">1,000万円〜</strong> のイベントキャンペーンは、<br class="desktop-br">リテアド専属チームが企画・枠の確保から配信・詳細分析まで全工程をワンストップで請け負います。
         </p>
-        <a href="mailto:info@retail-ad.awsapps.com?subject=大型キャンペーン(全店ジャックプラン)のご相談" style="background: linear-gradient(45deg, #c084fc, #f472b6); color: #fff; padding: 18px 45px; border-radius: 50px; font-size: 1.3rem; text-decoration: none; font-weight: bold; display: inline-block; box-shadow: 0 5px 20px rgba(232, 121, 249, 0.4); transition: transform 0.3s;">
+        <a href="mailto:info@retail-ad.awsapps.com?subject=大型キャンペーン(全店ジャックプラン)のご相談" style="background: linear-gradient(45deg, #c084fc, #f472b6); color: #000 !important; padding: 18px 45px; border-radius: 50px; font-size: 1.3rem; text-decoration: none; font-weight: bold; display: inline-block; box-shadow: 0 5px 20px rgba(232, 121, 249, 0.4); transition: transform 0.3s;">
             専属チームにご相談（窓口）
         </a>
     </section>
 
     <section id="cta" class="cta-section">
         <h2 style="font-size: 2.5rem; margin-bottom: 20px;">さあ、サイネージパネル広告を<br class="sp-br">始めましょう</h2>
-        <p style="margin-bottom: 40px; color:#cbd5e1;">初期費用は無料。まずはアカウントを作成して、<br class="sp-br">配信をお試しください。</p>
+        <p style="margin-bottom: 40px; color: #000 !important;">初期費用は無料。まずはアカウントを作成して、<br class="sp-br">配信をお試しください。</p>
         <a href="login_portal.html" class="btn-primary">アカウント登録 (無料)</a>
     </section>
 
@@ -520,19 +535,19 @@
     <section id="company"
         style="padding: 80px 20px; background: var(--dark); border-top: 1px solid rgba(255,255,255,0.05);">
         <div style="max-width: 800px; margin: 0 auto;">
-            <h2 style="font-size: 2rem; margin-bottom: 30px; text-align: center; color: white;">運営会社</h2>
+            <h2 style="font-size: 2rem; margin-bottom: 30px; text-align: center; color: #000 !important;">運営会社</h2>
             <div
                 style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid var(--glass);">
-                <table class="company-table" style="width: 100%; border-collapse: collapse; color: #cbd5e1; font-size: 0.95rem; word-break: break-word; overflow-wrap: break-word;">
+                <table class="company-table" style="width: 100%; border-collapse: collapse; color: #000 !important; font-size: 0.95rem; word-break: break-word; overflow-wrap: break-word;">
                     <tbody>
                         <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <th style="padding: 15px; text-align: left; width: 30%; color: #94a3b8;">会社名</th>
+                            <th style="padding: 15px; text-align: left; width: 30%; color: #000 !important;">会社名</th>
                             <td style="padding: 15px;">non-logi株式会社</td>
                         </tr>
 
 
                         <tr>
-                            <th style="padding: 15px; text-align: left; color: #94a3b8;">事業内容</th>
+                            <th style="padding: 15px; text-align: left; color: #000 !important;">事業内容</th>
                             <td style="padding: 15px;">リテールメディアシステムの開発・運営、広告代理業</td>
                         </tr>
                     </tbody>
@@ -547,10 +562,10 @@
         <div
             style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 20px;">
             <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
-                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">利用規約</a>
-                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">プライバシーポリシー</a>
-                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">特定商取引法に基づく表記</a>
-                <a href="#" style="color: #94a3b8; text-decoration: none; font-size: 0.9rem;">お問い合わせ</a>
+                <a href="#" style="color: #000 !important; text-decoration: none; font-size: 0.9rem;">利用規約</a>
+                <a href="#" style="color: #000 !important; text-decoration: none; font-size: 0.9rem;">プライバシーポリシー</a>
+                <a href="#" style="color: #000 !important; text-decoration: none; font-size: 0.9rem;">特定商取引法に基づく表記</a>
+                <a href="#" style="color: #000 !important; text-decoration: none; font-size: 0.9rem;">お問い合わせ</a>
             </div>
             <p style="color: #64748b; font-size: 0.8rem; margin: 0;">&copy; 2026 retail-ad.com. All rights reserved.
             </p>
@@ -560,3 +575,8 @@
 </body>
 
 </html>
+<style>
+  body, h1, h2, h3, h4, h5, p, span, a, td, th { color: #000 !important; -webkit-text-fill-color: #000 !important; background-clip: initial !important; }
+  .btn-primary { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+  .nav-links a { color: #000 !important; -webkit-text-fill-color: #000 !important; }
+</style>
