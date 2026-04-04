@@ -18,8 +18,8 @@
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
-            background: var(--dark);
-            color: white;
+            background: #ffffff;
+            color: #0f172a;
             overflow-x: hidden;
         }
 
@@ -50,7 +50,7 @@
         }
 
         .nav-links a {
-            color: #cbd5e1;
+            color: #475569;
             text-decoration: none;
             margin: 0 20px;
             font-size: 0.9rem;
@@ -77,7 +77,7 @@
             justify-content: center;
             text-align: center;
             position: relative;
-            background: radical-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
             overflow: hidden;
         }
 
@@ -137,16 +137,17 @@
         }
 
         .card {
-            background: rgba(30, 41, 59, 0.5);
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             padding: 40px;
             border-radius: 20px;
-            border: 1px solid var(--glass);
+            border: 1px solid #e2e8f0;
             transition: 0.3s;
         }
 
         .card:hover {
             transform: translateY(-10px);
-            background: rgba(30, 41, 59, 0.8);
+            background: #f8fafc;
         }
 
         .card h3 {
@@ -164,7 +165,7 @@
         .video-section {
             padding: 100px 0;
             text-align: center;
-            background: #1e293b;
+            background: #f1f5f9;
         }
 
         .video-container {
@@ -179,7 +180,7 @@
         .cta-section {
             padding: 120px 20px;
             text-align: center;
-            background: linear-gradient(to bottom, var(--dark), #1e1b4b);
+            background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
         }
 
         .btn-primary {
@@ -202,7 +203,7 @@
 
         /* API Integration Code Block */
         .code-block {
-            background: #000;
+            background: #f1f5f9;
             padding: 20px;
             border-radius: 10px;
             font-family: monospace;
@@ -231,7 +232,7 @@
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                background: rgba(15, 23, 42, 0.95);
+                background: rgba(255, 255, 255, 0.95);
                 backdrop-filter: blur(10px);
                 display: flex;
                 justify-content: space-around;
@@ -288,13 +289,7 @@
             }
         }
     
-    @media (max-width: 768px) {
-        header { position: fixed !important; top: auto !important; bottom: 0 !important; width: 100% !important; box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important; padding: 10px 5px !important; background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(10px); z-index: 9999 !important; flex-direction: column !important; align-items: center !important; }
-        .nav-links { display: flex !important; flex-direction: row !important; justify-content: space-around !important; width: 100% !important; margin: 0 !important; padding: 0 !important; gap: 5px !important; overflow-x: auto; }
-        .nav-links a { font-size: 0.75rem !important; padding: 5px !important; white-space: nowrap !important; }
-        .logo { display: none !important; }
-        body { padding-bottom: 70px !important; }
-    }
+    
 </style>
 
 
@@ -345,13 +340,7 @@
             h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
         }
     
-    @media (max-width: 768px) {
-        header { position: fixed !important; top: auto !important; bottom: 0 !important; width: 100% !important; box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important; padding: 10px 5px !important; background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(10px); z-index: 9999 !important; flex-direction: column !important; align-items: center !important; }
-        .nav-links { display: flex !important; flex-direction: row !important; justify-content: space-around !important; width: 100% !important; margin: 0 !important; padding: 0 !important; gap: 5px !important; overflow-x: auto; }
-        .nav-links a { font-size: 0.75rem !important; padding: 5px !important; white-space: nowrap !important; }
-        .logo { display: none !important; }
-        body { padding-bottom: 70px !important; }
-    }
+    
 </style>
 
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
@@ -372,13 +361,7 @@
             h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
         }
     
-    @media (max-width: 768px) {
-        header { position: fixed !important; top: auto !important; bottom: 0 !important; width: 100% !important; box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important; padding: 10px 5px !important; background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(10px); z-index: 9999 !important; flex-direction: column !important; align-items: center !important; }
-        .nav-links { display: flex !important; flex-direction: row !important; justify-content: space-around !important; width: 100% !important; margin: 0 !important; padding: 0 !important; gap: 5px !important; overflow-x: auto; }
-        .nav-links a { font-size: 0.75rem !important; padding: 5px !important; white-space: nowrap !important; }
-        .logo { display: none !important; }
-        body { padding-bottom: 70px !important; }
-    }
+    
 </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -406,7 +389,7 @@
         </div>
     </nav>
 
-    <header class="hero">
+    <div class="hero">
         <div class="hero-bg-anim"></div>
         <div class="hero-content">
             <h1 style="font-size: 3rem; line-height: 1.2;">広告主様の<br class="sp-br">広告を<br>店舗サイネージに<br class="sp-br">YouTubeのように<br>自由に<br class="sp-br">配信サービス<br class="mobile-br"><span class="nw">(リテアド)。</span></h1>
@@ -416,7 +399,7 @@
             </p>
             <a href="#cta" class="btn-primary">今すぐ始める (無料)</a>
         </div>
-    </header>
+    </div>
 
     <section id="features" class="features">
         
@@ -448,16 +431,16 @@
     </section>
 
     <!-- Privacy Section (New) -->
-    <section id="privacy" style="padding: 80px 20px; background: rgba(15, 23, 42, 0.8); text-align: center;">
+    <section id="privacy" style="padding: 80px 20px; background: #ffffff; text-align: center;">
         <div style="max-width: 900px; margin: 0 auto;">
             <div style="font-size: 4rem; margin-bottom: 20px;">🛡️</div>
-            <h2 style="font-size: 2.5rem; color: #fff; margin-bottom: 20px;">強力な個人情報保護</h2>
+            <h2 style="font-size: 2.5rem; color: #0f172a; margin-bottom: 20px;">強力な個人情報保護</h2>
             <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.8; margin-bottom: 40px;">
                 リテアドは「Privacy by Design」に基づき、個人データを保持しない安全な仕組みを構築しています。
             </p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; text-align: left;">
-                <div style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
                     <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🚀 エッジAIによる即時破棄</h3>
                     <p style="color: #94a3b8; line-height: 1.6;">
                         サイネージ端末（エッジAIチップ）内で、「20代女性」「笑顔」「視線あり」といった属性データ（数値）に即座に変換します。<br>
@@ -539,10 +522,10 @@
         <div style="max-width: 800px; margin: 0 auto;">
             <h2 style="font-size: 2rem; margin-bottom: 30px; text-align: center; color: white;">運営会社</h2>
             <div
-                style="background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 12px; border: 1px solid var(--glass);">
+                style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid var(--glass);">
                 <table class="company-table" style="width: 100%; border-collapse: collapse; color: #cbd5e1; font-size: 0.95rem; word-break: break-word; overflow-wrap: break-word;">
                     <tbody>
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
                             <th style="padding: 15px; text-align: left; width: 30%; color: #94a3b8;">会社名</th>
                             <td style="padding: 15px;">non-logi株式会社</td>
                         </tr>
@@ -560,7 +543,7 @@
 
     <!-- Footer with Policies -->
     <footer
-        style="background: #000; padding: 40px 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+        style="background: #000; padding: 40px 20px; text-align: center; border-top: 1px solid #e2e8f0;">
         <div
             style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 20px;">
             <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
