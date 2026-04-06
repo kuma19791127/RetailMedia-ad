@@ -326,6 +326,37 @@
     </script>
     <!-- END TYPOGRAPHY FIX -->
 
+
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
 </head>
 
 <body>
@@ -378,12 +409,12 @@
         <div class="card">
             <div class="icon">💰</div>
             <h3>コストZEROで導入</h3>
-            <p>高性能なフレキシブルOLEDサイネージを初期費用0円でご<br class="mobile-br"><span class="nw">提供</span>。設置スペース（入口、商品棚、レジ横など）を<br class="mobile-br"><span class="nw">ご用意</span>いただくだけで、<br class="mobile-br"><span class="nw">すぐに開始</span>できます。</p>
+            <p>初期費用0円でフレキシブルOLEDサイネージをご提供。設置スペース（入口、商品棚、レジ横など）をご用意いただくだけですぐに開始できます。</p>
         </div>
         <div class="card">
             <div class="icon">📈</div>
             <h3>Win-Winの収益分配</h3>
-            <p>このサイネージパネルから発生した広告収益の50%を店舗様に還元。電気代などのランニングコストを補って余りある、確実な収益源となります。</p>
+            <p>広告収益の50%を店舗様に還元。電気代などのランニングコストを補って余りあります。確実な収益源となります。</p>
         </div>
         <div class="card">
             <div class="icon">🗣️</div>
@@ -393,22 +424,22 @@
         <div class="card">
             <div class="icon">🛒</div>
             <h3>どこでもレジ (アイドルタイム＆混雑の解消)</h3>
-            <p>1. 混雑時には店員がモバイルを持ってその場で決済。2. 顧客自身にアプリを<br class="mobile-br"><span class="nw">提供</span>して決済。これによりレジの回転率を圧倒的に向上させ、<br class="mobile-br"><span class="nw">顧客の</span>「待ち時間（アイドルタイム）」をなくします。</p>
+            <p>1. 混雑時には店員がモバイルを持ってその場で決済。2. 顧客自身にアプリを提供して決済。レジの削減で顧客の「待ち時間」をなくします。</p>
         </div>
         <div class="card">
             <div class="icon">🗓️</div>
             <h3>スマートシフト表管理</h3>
-            <p>手書きやエクセルでの複雑なシフト管理から脱却。<br class="mobile-br"><span class="nw">スタッフ</span>の希望休や店舗の繁忙期（モーメント）予測と連動し、直感的な操作で最適な人員配置をパズル感覚で構築できる専用ツールを標準搭載。</p>
+            <p>手書きやエクセルでの複雑なシフト管理から脱却。直感的な操作で最適な人員配置をパズル感覚で構築できる専用ツールを標準搭載。</p>
         </div>
         <div class="card">
             <div class="icon">📖</div>
             <h3>次世代マニュアル (ManualHelp)</h3>
-            <p>1人あたり月額ウン万円のマニュアル作成費用に支払っていませんか？ ドラッグ＆ドロップや動画撮影でどなたでも簡単にマニュアルを作成可能。AIによるステップ自動生成や多言語翻訳（NMTモデル）に加え、社内チャット機能で「本日の業務」を瞬時に共有。人数無制限で完全無料にてご利用いただけます。</p>
+            <p>1人あたり月額ウン万円のマニュアル作成費用に支払っていませんか？ドラッグ＆ドロップや動画撮影でだれでも簡単にマニュアルを作成可能。AIステップ自動生成や多言語翻訳（NMTモデル）に加え、社内チャット機能で「本日の業務」を瞬時に共有。人数無制限で完全無料にてご利用いただけます。</p>
         </div>
         <div class="card" style="border: 2px solid #f1c40f; background: rgba(241, 196, 15, 0.1);">
             <div class="icon">🌍</div>
             <h3 style="color: #f1c40f;">グローバル広告ネットワーク</h3>
-            <p>Google/Nike等のネットワーク広告が自動配信され、店舗独自の広告やAI放送がない間も、空き枠を無駄なく収益化。店舗の確実な収益源となります。</p>
+            <p>Google/Nike等のweb広告が自動配信されます。店舗独自の広告や放送がない間も、空き枠を無駄なく収益化。店舗の確実な収益源となります。</p>
         </div>
     </section>
 
