@@ -338,7 +338,7 @@
                             <button class="btn" style="width:100%; background:linear-gradient(135deg, #10b981, #059669); color:white; box-shadow:0 4px 10px rgba(16,185,129,0.3);" onclick="document.getElementById('pdf-upload').click();">
                                 <i class="fa-solid fa-file-pdf"></i> PDFをアップロード (自動ページ階層化)
                             </button>
-                            <p style="font-size:0.8rem; color:#94a3b8; margin-top:10px; line-height:1.4;">※既に作成済みのPDFマニュアルをインポートし、ステップ式・スマホ向けに自動変換します。</p>
+                            <p style="font-size:0.8rem; color:#94a3b8; margin-top:10px; line-height:1.4;">ステップ式・スマホ向けに自動変換します。</p>
                         </div>
                         
                         <div style="border: 2px dashed rgba(255,255,255,0.2); background: rgba(0,0,0,0.1); padding: 20px; text-align: center; border-radius: 12px; margin-top:15px;">
@@ -451,7 +451,7 @@
             return { manuals: m, logs: l, chat: c };
         }
         function saveDB() {
-            localStorage.setItem('ag_db_manuals', JSON.stringify(dbManuals));
+            localStorage.setItem('ag_manuals', JSON.stringify(dbManuals));
             localStorage.setItem('ag_logs', JSON.stringify(adminLogs));
             localStorage.setItem('ag_chat', JSON.stringify(chatMessages));
         }
