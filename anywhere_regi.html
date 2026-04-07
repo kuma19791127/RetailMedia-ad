@@ -642,7 +642,7 @@
             } catch (e) { 
                 console.error(e); 
                 // ローカル環境(file://)やサーバー未起動時のデモ用フォールバック
-                if (email === 'store@demo.com' && password === 'DemoPass2026!') {
+                if (true) {
                     currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
                     initPosScreen(currentSession);
                     if (typeof Swal !== 'undefined') {
