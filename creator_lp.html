@@ -89,15 +89,15 @@
         }
 
         .box {
-            background: #f8f9fa;
-            border: 1px solid #e2e8f0;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 25px;
             border-radius: 8px;
         }
 
         .box h3 {
             margin-top: 0;
-            color: var(--primary);
+            color: var(--accent);
         }
 
         .vs-table-container { width: 100%; overflow-x: auto; }
@@ -183,7 +183,7 @@
             transform: translateY(-2px);
         }
         @media (max-width: 768px) {
-            .vs-table { display: table; min-width: 600px; }
+            .vs-table { display: table; width: 100%; }
             .vs-table th, .vs-table td { min-width: unset; white-space: normal; word-break: keep-all; overflow-wrap: break-word; }
             .diagram-flow {
                 flex-direction: column;
@@ -248,16 +248,7 @@
             }
 
             /* Scroll bar hint for tables */
-            .scroll-x {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin-left: -20px;
-                margin-right: -20px;
-                padding-left: 20px;
-                padding-right: 20px;
-                width: calc(100% + 40px);
-                box-sizing: border-box;
-            }
+            
         }
     </style>
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
@@ -315,7 +306,7 @@
         <div class="content">
             <div class="grid">
                 <div class="box">
-                    <h3 style="color:var(--primary);">クリエイターにとって</h3>
+                    <h3 style="color:var(--accent);">クリエイターにとって</h3>
                     <ul style="padding-left:20px;">
                         <li><b>圧倒的な高単価:</b> <span class="highlight">1再生あたり約0.5円</span>というSNSの数十倍の高単価。さらに、Google AdSense枠で動画が流れた場合は<span class="highlight" style="color:var(--primary);">広告収益の10%</span>が還元されるハイブリッド収益モデルです。</li>
                         <li><b>新しい視聴者層:</b> スマホを見ていない「実際の買い物客」という<br class="mobile-br">全く新しい層にリーチ可能。</li>
@@ -337,8 +328,8 @@
             <div style="text-align: center;"><h2>💰 <span class="nw">あなたの</span><br class="mobile-br"><span class="nw">クリエイティビティに</span><br class="mobile-br"><span class="nw">大きなリターンを</span></h2></div>
             <p style="text-align: center; line-height: 1.8;">「YouTubeに公開する前のお宝動画」や<br class="mobile-br">「お気に入りのショート動画」を<br class="mobile-br">システムにアップロードするだけ！<br>いつもの活動を邪魔せず、<br class="mobile-br">通常のプラットフォームを大きく上回る<br class="mobile-br">新たな収益源を生み出します！</p>
 
-            <div class="scroll-x">
-                <div class="vs-table-container"><table class="vs-table">
+            <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+                <table class="vs-table" style="min-width: 600px;">
                 <tr>
                     <th>比較項目</th>
                     <th>📱 通常のSNS (YouTube Shorts等)</th>
@@ -359,7 +350,7 @@
                     <td>プラットフォームの広告費分配</td>
                     <td>広告主が支払う<b>「店舗での実売上貢献（CPA）予算」</b>からの直接分配</td>
                 </tr>
-            </table></div>
+            </table>
             </div>
         </div>
 
