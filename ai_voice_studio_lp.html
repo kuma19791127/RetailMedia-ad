@@ -147,6 +147,14 @@
             .step-card { flex-direction: column; align-items: center; text-align: center; }
         }
         @media (max-width: 768px) { .step-card, .step-card * { overflow-wrap: anywhere !important; word-wrap: break-word !important; white-space: normal !important; } }
+
+        .param-list {
+            margin-left: 20px; 
+            color: var(--gray); 
+            line-height: 1.8; 
+            text-align: left;
+        }
+
 </style>
 
     
@@ -205,7 +213,8 @@
                 <h3 style="word-break: normal; overflow-wrap: break-word;">原稿の準備<br class="mobile-br">（テキスト入力・Excel機能）</h3>
                 <p style="word-break: normal; overflow-wrap: break-word;">
                     放送したい内容を<br class="mobile-br">「Campaign Text」に入力します。<br>
-                    商品名や価格など、<br class="mobile-br">特売のエクセルデータを取り込んで<br class="mobile-br">自動で原稿（スクリプト）フォーマットに<br class="mobile-br">変換することも可能です。<br>
+                    商品名や価格など、<br class="mobile-br">特売のエクセルデータを取り込んで<br class="mobile-br">自動で原稿（スクリプト）に<br class="mobile-br">
+                    変換することも可能です。<br>
                     言い間違いを防ぐため、<br class="mobile-br">適度にスペースや句読点を入れるのが<br class="mobile-br">コツです。
                 </p>
             </div>
@@ -218,10 +227,13 @@
                 <p style="word-break: normal; overflow-wrap: break-word;">
                     最新の「Gemini 2.5 Flash」等の<br class="mobile-br">AIモデルを選択し、<br class="mobile-br">お店の雰囲気に合わせて<br class="mobile-br">以下のパラメータを調整します。
                 </p>
-                <ul style="margin-left: 20px; color: var(--gray); line-height: 1.8; word-break: normal; overflow-wrap: break-word; text-align: left;">
-                    <li style="margin-bottom: 5px;"><strong>ボイススピード：</strong><br class="mobile-br">早口（タイムセール向け）や、<br class="mobile-br">ゆっくり（シニア向け）などを設定。</li>
-                    <li style="margin-bottom: 5px;"><strong>ピッチ（声の高さ）：</strong><br class="mobile-br">明るい高い声や、<br class="mobile-br">落ち着いた低い声を調整可能。</li>
-                    <li style="margin-bottom: 5px;"><strong>話し方のスタイル（Prompt）：</strong><br class="mobile-br">「Cheerfully（元気よく）」など、<br class="mobile-br">AIに演技指導ができます。</li>
+                <ul class="param-list">
+                    <li style="margin-bottom: 5px;"><strong>ボイススピード：</strong><br class="mobile-br">早口（タイムセール向け）や、<br class="mobile-br">
+                    ゆっくりなどを設定。</li>
+                    <li style="margin-bottom: 5px;"><strong>ピッチ（声の高さ）：</strong><br class="mobile-br">明るい高い声や<br class="mobile-br">
+                    落ち着いた低い声を調整可能。</li>
+                    <li style="margin-bottom: 5px;"><strong>話し方のスタイル（Prompt）：</strong><br class="mobile-br">「Cheerfully（元気よく）」など<br class="mobile-br">
+                    AIに演技指導ができます。</li>
                 </ul>
             </div>
         </div>
