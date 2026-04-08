@@ -183,17 +183,8 @@
             transform: translateY(-2px);
         }
         @media (max-width: 768px) {
-            .vs-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-            .vs-table th, .vs-table td {
-                min-width: 140px;
-                white-space: normal;
-                word-break: break-word;
-                overflow-wrap: break-word;
-            }
+            .vs-table { display: table; min-width: 600px; }
+            .vs-table th, .vs-table td { min-width: unset; white-space: normal; word-break: keep-all; overflow-wrap: break-word; }
             .diagram-flow {
                 flex-direction: column;
             }
@@ -334,9 +325,8 @@
                 <div class="box">
                     <h3>👔 広告主・店舗にとって</h3>
                     <ul style="padding-left:20px;">
-                        <li><b>注視率の劇的向上:</b> 単なるCMではなく、面白い動画を見るために足を止めるため、<span
-                                class="success-text">CMへのバトンパス（注視力維持）</span>が圧倒的。</li>
-                        <li><b>リスク排除:</b> 「どのインフルエンサーを使えば売れるか」を悩む必要ゼロ。AIが自動でテストし、最も相性の良い動画だけをだけが残る</li>
+                        <li><b>注視率の劇的向上:</b> 単なるCMではなく、面白い動画を<br class="mobile-br">見るために足を止めるため、<br class="mobile-br"><span class="success-text">CMへのバトンパス（注視力維持）</span><br class="mobile-br">が圧倒的。</li>
+                        <li><b>リスク排除:</b> 「どのインフルエンサーを使えば売れるか」を悩む必要ゼロ。AIが自動でテストし<br class="mobile-br">最も相性の良い動画だけが残る。</li>
                     </ul>
                 </div>
             </div>
@@ -376,7 +366,7 @@
         <!-- Section 3 -->
         <div class="card">
             <h2>📈 <span class="nw">AIがあなたの動画の</span><br class="mobile-br"><span class="nw">「リアルな熱量」を分析！</span></h2>
-            <p>再生回数だけじゃない！AIカメラが「どれだけ人が足を止めて見入ったか」というリアルな熱量をスコア化します。<br>街の人を惹きつける素晴らしい動画ほど、全国のお店へ自動でどんどん広がっていくシステムです。</p>
+            <p>再生回数だけじゃない！<br class="mobile-br">AIカメラが「どれだけ人が足を止めて見入ったか」<br class="mobile-br">というリアルな熱量をスコア化します。<br>街の人を惹きつける素晴らしい動画ほど、<br class="mobile-br">全国のお店へ自動で<br class="mobile-br">どんどん広がっていくシステムです。</p>
 
             <div class="diagram">
                 <h3 style="color:var(--accent); margin-top:0;">🔄 Synergy AI 最適化ループ</h3>
