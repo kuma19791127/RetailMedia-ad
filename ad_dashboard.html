@@ -2198,7 +2198,7 @@
                     <input id="swal-name" class="swal2-input" placeholder="例: Summer Sale 2026" style="margin-top:0;">
                     
                     <div style="text-align:left; font-size:12px; color:#666; margin-top:10px; margin-bottom:5px;">予算 (円)</div>
-                    <input id="swal-budget" type="number" class="swal2-input" placeholder="例: 100000" style="margin-top:0;">
+                    <input id="swal-budget" type="number" class="swal2-input" placeholder="例: 1000" min="1000" style="margin-top:0;">
                     
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
                         <div>
@@ -2299,8 +2299,8 @@
                     const fileInput = document.getElementById('swal-file');
                     const format = document.getElementById('swal-format').value;
 
-                    if (!name || !budget) {
-                        Swal.showValidationMessage('名前と予算は必須です');
+                    if (!name || !budget || parseInt(budget) < 1000) {
+                        Swal.showValidationMessage('名前と予算(最低1,000円)は必須です');
                         return false;
                     }
 
@@ -2517,6 +2517,7 @@
         async function registerCreditCard() {
             const { value: amount } = await Swal.fire({
                 title: '予算チャージ (Square決済)',
+                preConfirm: (value) => { const v = parseInt(value); if(!v || v < 1000) { Swal.showValidationMessage('最低課金金額は1,000円です'); return false; } return v; },
                 html: 'チャージする金額（円）を入力してください。<br><span style="font-size: 13px; color: #dc2626; display: block; margin-top: 10px;">デモアカウントでもチャージ出来るので、クレジット決済する場合は、本番環境で課金をしてください。</span>',
                 input: 'number',
                 inputAttributes: { min: 1000, step: 1000 },

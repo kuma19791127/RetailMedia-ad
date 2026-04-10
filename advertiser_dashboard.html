@@ -708,7 +708,7 @@
                     </select>
 
                     <label>予算 (円)</label>
-                    <input type="number" id="cp-budget" placeholder="100000" required>
+                    <input type="number" id="cp-budget" placeholder="1000" min="1000" required>
 
                     <label>クリエイティブ (動画/画像)</label>
                     <input type="file" id="cp-file" required>
@@ -990,6 +990,7 @@
         async function chargeBudget() {
             const { value: amount } = await Swal.fire({
                 title: '予算チャージ (Square決済)',
+                preConfirm: (value) => { const v = parseInt(value); if(!v || v < 1000) { Swal.showValidationMessage('最低課金金額は1,000円です'); return false; } return v; },
                 html: 'チャージする金額（円）を入力してください。<br><span style="font-size: 13px; color: #dc2626; display: block; margin-top: 10px;">デモアカウントでもチャージ出来るので、クレジット決済する場合は、本番環境で課金をしてください。</span>',
                 input: 'number',
                 inputAttributes: { min: 1000, step: 1000 },
