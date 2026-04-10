@@ -212,22 +212,43 @@
     </script>
     <!-- END TYPOGRAPHY FIX -->
 
+
+    <style>
+        @media (max-width: 768px) {
+            .mobile-nav {
+                flex-direction: column !important;
+                padding: 15px !important;
+            }
+            .mobile-nav .logo {
+                margin-bottom: 20px !important;
+            }
+            .mobile-nav .nav-links {
+                flex-direction: column !important;
+                width: 100% !important;
+                text-align: center !important;
+                gap: 15px !important;
+            }
+            .mobile-nav .nav-links a {
+                display: block !important;
+                font-size: 1.1rem !important;
+            }
+            .hero {
+                padding-top: 240px !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-    <header>
-        <a href="main_lp.html" class="logo">
-            <span style="font-size:28px;">📱</span> どこでもレジ
-        </a>
-        <nav class="nav-links">
-            <a href="#problem">店舗の課題</a>
-            <a href="#solution">どこでもレジの解決策</a>
-            <a href="#simulation">収益化シミュレーション</a>
-            <a href="anywhere_regi.html"
-                style="color:var(--primary); background:#eff6ff; padding:8px 15px; border-radius:20px;">アプリを起動</a>
-        </nav>
-    </header>
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; backdrop-filter: blur(10px); position: fixed; width: 100%; top: 0; z-index: 1000; box-sizing: border-box; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(0, 0, 0, 0.1);" class="mobile-nav">
+        <a href="business_lp.html" class="logo" style="text-decoration: none; color: #0f172a; font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; display: flex; align-items: center;">retail-ad<span style="color: #2ecc71;">Store</span></a>
+        <div class="nav-links" style="display: flex; gap: 25px; align-items: center;">
+            <a href="business_lp.html#benefits" style="text-decoration: none; color: #64748b; font-weight: 700; font-size: 14px;">導入メリット</a>
+            <a href="business_lp.html#revenue" style="text-decoration: none; color: #64748b; font-weight: 700; font-size: 14px;">収益モデル</a>
+            <a href="store_portal.html" style="background: #2ecc71; padding: 10px 20px; border-radius: 30px; color: white !important; font-weight: 600; text-decoration: none; font-size: 14px;">売上センターへログイン</a>
+        </div>
+    </nav>
 
     <section class="hero">
         <h1>レジ待ちゼロ、<br class="mobile-br">場所を選ばない<br class="mobile-br">新しいお買い物</h1>
