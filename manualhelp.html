@@ -195,6 +195,10 @@
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
     <script>
+    function updateProfileDisplay() { 
+        const name = localStorage.getItem('demo_name') || currentSession.name;
+        document.querySelector('.user-details h4').innerText = name;
+    }
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
@@ -261,17 +265,17 @@
             <h1 class="brand" style="margin-bottom:20px; font-size:2rem;">ManualHelp</h1>
             <p style="color:#cbd5e1; margin-bottom:20px; font-size:0.9rem;">役割を選択してログインしてください</p>
             
-            <input type="text" id="login-name" placeholder="氏名 (例: 鈴木 一郎)">
-            <input type="email" id="login-email" placeholder="メールアドレス">
-            <input type="password" id="login-pass" placeholder="パスワード">
-            
+            <form id="login-form" onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:0; padding:0;">
+            <input type="text" id="login-name" placeholder="氏名 (例: 鈴木 一郎)" autocomplete="name">
+            <input type="email" id="login-email" placeholder="メールアドレス" autocomplete="username">
+            <input type="password" id="login-pass" placeholder="パスワード" autocomplete="current-password">
             <select id="login-role">
                 <option value="corp">企業側 (マニュアル作成)</option>
                 <option value="employee">従業員 (学習・タスク実行)</option>
                 <option value="admin">履歴管理 (Admin)</option>
             </select>
-
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
+            <button type="submit" class="btn" style="width:100%; margin-top:10px;"><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
+        </form><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
             <div style="margin: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.2);"></div>
             <p style="color:#cbd5e1; font-size:0.8rem; margin-bottom:10px; text-align:left;">💡 1クリック・デモログイン</p>
             <div style="display:flex; gap:10px; margin-bottom:20px;">
@@ -1054,5 +1058,56 @@
             <button id="card-button" class="btn btn-gold" style="width:100%; font-size:1.1rem;"><i class="fa-solid fa-lock"></i> ¥500 決済してAIを実行</button>
         </div>
     </div>
+
+<!-- Context-Agnostic Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+        <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇">
+        
+        <div id="prof-name-container" style="display:none;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+            <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎">
+        </div>
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+        <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+        <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード">
+        
+        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+        <button onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+    </div>
+</div>
+<script>
+    function openProfileModal(showName = false) {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            if(showName) {
+                document.getElementById('prof-name-container').style.display = 'block';
+                document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
+            } else {
+                document.getElementById('prof-name-container').style.display = 'none';
+            }
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
+        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+        if(document.getElementById('prof-name-container').style.display !== 'none') {
+            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+        }
+        document.getElementById('modal-profile').style.display = 'none';
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+        // Try triggering local update if exists
+        try{ updateProfileDisplay(); }catch(e){}
+    }
+</script>
+
 </body>
 </html>

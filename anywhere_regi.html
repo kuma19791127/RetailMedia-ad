@@ -123,6 +123,13 @@
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="/app-icon.png">
     <script>
+    function updateProfileDisplay() { 
+        if(document.getElementById('header-user-info')) {
+            const org = localStorage.getItem('demo_org') || "Demo Store";
+            const email = localStorage.getItem('demo_email') || (currentSession ? currentSession.email : "store@demo.com");
+            document.getElementById('header-user-info').innerHTML = org + ' <br class="mobile-br">[' + email + '] <i class="fa-solid fa-pen" style="font-size:10px;"></i>';
+        }
+    }
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); });
       }
@@ -248,14 +255,15 @@
         <div class="header-logo" style="margin-bottom: 30px; font-size:28px; justify-content: center; width: 100%;">どこでもレジ</div>
         <div class="login-card">
             <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
-            <h2 class="login-title">Staff Login</h2>
+            <h2 class="login-title">anywhere Login</h2>
             
+            <form onsubmit="event.preventDefault(); handleLogin();" style="width:100%; margin:0; padding:0;">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
             <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
             <input type="password" id="input-pass" class="login-input" placeholder="Password" autocomplete="current-password">
-
-            <button class="btn-primary" onclick="handleLogin()">ログインして開始</button>
+            <button type="submit" class="btn-primary">ログインして開始</button>
+        </form>
 
             <div style="margin-top:15px; font-size:12px;">
                 <a href="#" onclick="showResetModal()" style="color:#2563EB;">Forgot Password?</a>
@@ -290,7 +298,7 @@
             <div style="font-weight:bold; color:#2563EB; display:flex; align-items:center; gap:8px;">
                 <span style="font-size:1.2rem;">📱</span>
                 <span id="header-chain-name">どこでもレジ</span>
-                <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px;"></span>
+                <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px; cursor:pointer;" onclick="openProfileModal(false)" title="プロフィール編集"></span>
             </div>
             <div class="header-buttons" style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
                 <button onclick="window.open('anywhere_lp.html', '_blank')" class="btn-sm" style="background:#3b82f6; color:white; padding:8px 8px; font-weight:bold;">📖 LPを見る</button>
@@ -892,5 +900,56 @@
             });
         }
     </script>
+
+<!-- Context-Agnostic Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+        <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇">
+        
+        <div id="prof-name-container" style="display:none;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+            <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎">
+        </div>
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+        <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+        <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード">
+        
+        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+        <button onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+    </div>
+</div>
+<script>
+    function openProfileModal(showName = false) {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            if(showName) {
+                document.getElementById('prof-name-container').style.display = 'block';
+                document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
+            } else {
+                document.getElementById('prof-name-container').style.display = 'none';
+            }
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
+        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+        if(document.getElementById('prof-name-container').style.display !== 'none') {
+            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+        }
+        document.getElementById('modal-profile').style.display = 'none';
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+        // Try triggering local update if exists
+        try{ updateProfileDisplay(); }catch(e){}
+    }
+</script>
+
 </body>
 </html>

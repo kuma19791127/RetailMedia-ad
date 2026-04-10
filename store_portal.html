@@ -601,7 +601,7 @@
 
         <!-- Revenue Panel -->
         <div id="panel-revenue" class="panel active">
-            <h2 style="margin-top:0;">📊 売上センター (Revenue Center)</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">📊 売上センター (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 組織/メール設定</button></div>
 
             <!-- Detailed Revenue Model (Intro) -->
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #2ecc71;">
@@ -2111,6 +2111,57 @@
              setInterval(fetchStoreRevenue, 5000);
         });
     </script>
+
+<!-- Context-Agnostic Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+        <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇">
+        
+        <div id="prof-name-container" style="display:none;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+            <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎">
+        </div>
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+        <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+        
+        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+        <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード">
+        
+        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+        <button onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+    </div>
+</div>
+<script>
+    function openProfileModal(showName = false) {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            if(showName) {
+                document.getElementById('prof-name-container').style.display = 'block';
+                document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
+            } else {
+                document.getElementById('prof-name-container').style.display = 'none';
+            }
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
+        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+        if(document.getElementById('prof-name-container').style.display !== 'none') {
+            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+        }
+        document.getElementById('modal-profile').style.display = 'none';
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+        // Try triggering local update if exists
+        try{ updateProfileDisplay(); }catch(e){}
+    }
+</script>
+
 </body>
 
 </html>
