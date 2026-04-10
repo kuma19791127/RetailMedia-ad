@@ -1064,22 +1064,24 @@
     <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
         
-        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
-        <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇">
-        
-        <div id="prof-name-container" style="display:none;">
-            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
-            <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎">
-        </div>
-        
-        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
-        <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
-        
-        <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
-        <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード">
-        
-        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
-        <button onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+        <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇" autocomplete="organization">
+            
+            <div id="prof-name-container" style="display:none;">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+                <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎" autocomplete="name">
+            </div>
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+            <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" autocomplete="username">
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード" autocomplete="new-password">
+            
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+        </form>
     </div>
 </div>
 <script>
