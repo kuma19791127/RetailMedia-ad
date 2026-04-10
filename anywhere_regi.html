@@ -249,8 +249,7 @@
         <div class="login-card">
             <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
             <h2 class="login-title">Staff Login</h2>
-            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">組織名・店舗名 (オプション)</div>
-            <input type="text" id="input-org" class="login-input" placeholder="例: 東京ドーム物販 1号店">
+            
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
             <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
@@ -621,8 +620,7 @@
 
         // --- Auth Logic ---
         async function handleLogin() {
-            const orgNameInput = document.getElementById('input-org');
-            const orgName = (orgNameInput && orgNameInput.value.trim() !== '') ? orgNameInput.value.trim() : "Demo Store";
+            const orgName = "Demo Store";
             const email = document.getElementById('input-email').value;
             const password = document.getElementById('input-pass').value;
 
@@ -645,9 +643,7 @@
                 if (true) {
                     currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
                     initPosScreen(currentSession);
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({toast:true, position:'top-end', icon:'info', title:'サーバー未起動のため<br>オフライン(デモ)モードで開始します', showConfirmButton:false, timer:3500});
-                    }
+                    
                 } else {
                     alert("通信エラー：サーバーが起動していません。(Network Error)");
                 }

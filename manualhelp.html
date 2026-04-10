@@ -261,7 +261,6 @@
             <h1 class="brand" style="margin-bottom:20px; font-size:2rem;">ManualHelp</h1>
             <p style="color:#cbd5e1; margin-bottom:20px; font-size:0.9rem;">役割を選択してログインしてください</p>
             
-            <input type="text" id="login-org" placeholder="組織名 (例: 株式会社〇〇)">
             <input type="text" id="login-name" placeholder="氏名 (例: 鈴木 一郎)">
             <input type="email" id="login-email" placeholder="メールアドレス">
             <input type="password" id="login-pass" placeholder="パスワード">
@@ -521,7 +520,7 @@
 
         // --- Auth functions ---
         function doLogin() {
-            const org = document.getElementById('login-org').value.trim();
+            const org = "Demo Corp";
             const name = document.getElementById('login-name').value.trim();
             const email = document.getElementById('login-email').value.trim();
             const role = document.getElementById('login-role').value;
@@ -574,7 +573,7 @@
         });
 
         function quickLogin(org, name, email, role) {
-            document.getElementById('login-org').value = org;
+            
             document.getElementById('login-name').value = name;
             document.getElementById('login-email').value = email;
             document.getElementById('login-pass').value = "demo1234!!";
