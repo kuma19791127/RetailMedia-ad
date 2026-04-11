@@ -596,7 +596,7 @@
                             <div style="font-size:1.2rem; font-weight:bold; color:#f43f5e;">¥<span id="account-spend-display">0</span></div>
                         </div>
                     </div>
-                    <button onclick="chargeBudget()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem; width:100%;">➕ 予算追加 (決済)</button>
+                    <button onclick="chargeBudget()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem; width:100%;">➕ 予算追加 (最低1,000円〜)</button>
                 </div>
             </div>
 
@@ -997,7 +997,7 @@
             const { value: amount } = await Swal.fire({
                 title: '予算チャージ (Square決済)',
                 preConfirm: (value) => { const v = parseInt(value); if(!v || v < 1000) { Swal.showValidationMessage('最低課金金額は1,000円です'); return false; } return v; },
-                html: 'チャージする金額（円）を入力してください。<br><span style="font-size: 13px; color: #dc2626; display: block; margin-top: 10px;">デモアカウントでもチャージ出来るので、クレジット決済する場合は、本番環境で課金をしてください。</span>',
+                html: 'チャージする金額（最低1,000円〜）を入力してください。<br><span style="font-size: 13px; color: #dc2626; display: block; margin-top: 10px;">デモアカウントでもチャージ出来るので、クレジット決済する場合は、本番環境で課金をしてください。</span>',
                 input: 'number',
                 inputAttributes: { min: 1000, step: 1000 },
                 inputValue: 100000,
@@ -1296,6 +1296,7 @@
             try {
                 Swal.fire({
                     title: 'お支払い情報の登録',
+                    text: '※広告配信・予算追加は最低1,000円からの少額課金仕様となります。',
                     html: `
                         <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px; width: 300px; margin: 0 auto;">
                             <div id="apple-pay-button" style="margin-bottom:10px;"></div>
@@ -1311,7 +1312,7 @@
                     didOpen: () => {
                         // We use a small charge (100 JPY) for card auth simulation, or handle zero-auth natively in Square in a real app
                         initializeSquarePayment(100, 'sq-card-container', () => {
-                            Swal.fire('成功', 'クレジット情報が安全にSquareへ登録されました。', 'success');
+                            Swal.fire('成功', 'クレジット情報が安全にSquareへ登録されました。<br>最低1,000円から予算を追加できます。', 'success');
                         });
                     }
                 });
