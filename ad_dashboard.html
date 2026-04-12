@@ -907,7 +907,7 @@
     <!-- 1. Left Sidebar -->
     <nav class="sidebar">
         <div class="logo">
-            <span style="font-size:20px;">📡 リテアド</span>
+            <span style="font-size:20px; display:flex; flex-direction:column;"><span>📡 リテアド</span><span class="display-org-name" style="font-size:12px; color:#94a3b8; margin-top:5px;">Demo Advertiser Inc.</span></span>
         </div>
         <div style="font-size:12px; color:#bdc3c7; margin-bottom:20px;">
             広告主ダッシュボード
@@ -971,6 +971,31 @@
                 <div class="content-header" style="justify-content:space-between; flex-wrap:wrap; gap:15px;">
                     <div>
                         <h2 style="margin:0; color:#2c3e50;">ダッシュボード概要</h2>
+                    <div class="card" style="margin-top: 15px; margin-bottom: 30px; background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <h3 style="margin-top:0; border-bottom:1px solid #cbd5e1; padding-bottom:10px; color:#334155;">👤 プロフィール設定 (組織・アカウント)</h3>
+                        <form onsubmit="event.preventDefault(); saveAdvertiserProfile();" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                            <div>
+                                <label style="font-size:12px; font-weight:bold; color:#64748b;">組織名 (企業名)</label>
+                                <input type="text" id="prof-org" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" autocomplete="organization">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:bold; color:#64748b;">担当者名</label>
+                                <input type="text" id="prof-name" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" autocomplete="name">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:bold; color:#64748b;">メールアドレス</label>
+                                <input type="email" id="prof-email" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" autocomplete="username">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:bold; color:#64748b;">新しいパスワード (変更する場合)</label>
+                                <input type="password" id="prof-pass" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" autocomplete="new-password">
+                            </div>
+                            <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end; margin-top:5px;">
+                                <button type="submit" class="btn-primary" style="padding:10px 20px;">設定を保存・同期する</button>
+                            </div>
+                        </form>
+                    </div>
+
                         <div style="margin-top:5px; display:flex; gap:10px; align-items:center;">
                             <span id="current-date-text"
                                 style="font-size:15px; font-weight:bold; color:#34495e; background:#e0e7ff; padding:4px 10px; border-radius:6px; border:1px solid #c7d2fe;">📅
