@@ -996,6 +996,45 @@
                         </form>
                     </div>
 
+                    <div class="card" style="margin-bottom: 30px; background: #fff5f5; border: 1px solid #fecaca; box-shadow:0 4px 6px rgba(239,68,68,0.1);">
+                        <h3 style="margin-top:0; border-bottom:1px solid #fecaca; padding-bottom:10px; color:#b91c1c;">
+                            🛡️ 広告主アカウント審査（本人・法人確認）
+                        </h3>
+                        <p style="font-size:13px; color:#991b1b; margin-bottom:15px; line-height:1.5;">
+                            ブランドセーフティと優良な広告空間を維持するため、ご利用いただく法人様の実在確認が必須となっております。<br>
+                            ※ 個人事業主の場合は確定申告書の控え等をご提出ください。<br>
+                            <a href="https://www.houjin-bangou.nta.go.jp/" target="_blank" style="color:#dc2626; font-weight:bold; display:inline-block; margin-top:5px; text-decoration:underline;">🔗 国税庁 法人番号公表サイトでの検索はこちら</a>
+                        </p>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                            <div>
+                                <label style="font-size:12px; font-weight:bold; color:#991b1b;">法人番号 (13桁)</label>
+                                <input type="text" id="kyc-corp-id" placeholder="例: 1234567890123" style="width:100%; padding:10px; border:1px solid #fca5a5; border-radius:4px; box-sizing:border-box; margin-top:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:bold; color:#991b1b;">DUNSナンバー (任意)</label>
+                                <input type="text" id="kyc-duns" placeholder="例: 123456789" style="width:100%; padding:10px; border:1px solid #fca5a5; border-radius:4px; box-sizing:border-box; margin-top:4px;">
+                            </div>
+                            <div style="grid-column: 1 / -1;">
+                                <label style="font-size:12px; font-weight:bold; color:#991b1b;">登記簿謄本（履歴事項全部証明書）の画像アップロード</label>
+                                <div id="kyc-upload-zone" style="margin-top:8px; border:2px dashed #fca5a5; background:#fff; padding:30px; text-align:center; border-radius:8px; cursor:pointer; transition:0.3s;" onclick="document.getElementById('kyc-file').click();" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#fff'">
+                                    <div style="font-size:30px; margin-bottom:10px;">📄</div>
+                                    <span id="kyc-upload-text" style="color:#b91c1c; font-weight:bold;">ここをクリックして画像をアップロード</span>
+                                </div>
+                                <input type="file" id="kyc-file" style="display:none;" accept="image/*" onchange="handleKycUpload(event)">
+                                
+                                <!-- AI Check Result -->
+                                <div id="ai-kyc-check" style="display:none; margin-top:10px; padding:15px; border-radius:6px; font-size:13px; font-weight:bold; line-height:1.5;">
+                                </div>
+                            </div>
+                            
+                            <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end; margin-top:10px;">
+                                <button onclick="submitKyc()" class="btn-primary" style="background:#ef4444; border:none; padding:12px 25px; box-shadow:0 4px 10px rgba(239,68,68,0.4);">審査書類を提出する</button>
+                            </div>
+                        </div>
+                    </div>
+
+
                         <div style="margin-top:5px; display:flex; gap:10px; align-items:center;">
                             <span id="current-date-text"
                                 style="font-size:15px; font-weight:bold; color:#34495e; background:#e0e7ff; padding:4px 10px; border-radius:6px; border:1px solid #c7d2fe;">📅
