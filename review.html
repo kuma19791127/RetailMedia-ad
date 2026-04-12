@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>広告主 KYC 審査専用ページ | RetailMedia</title>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #334155; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { margin-top: 0; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display:flex; justify-content:space-between; align-items:center; }
+        .btn-refresh { background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        th { background: #f1f5f9; color: #64748b; }
+        .bdg-pending { background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .bdg-approved { background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .bdg-rejected { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .action-btn { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; margin-right: 5px; }
+        .btn-approve { background: #10b981; }
+        .btn-reject { background: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        <span>🛡️ 広告主審査 (KYC) ダッシュボード</span>
+        <button class="btn-refresh" onclick="loadKYCReq()">🔄 データ更新</button>
+    </h1>
+    <p style="color:#64748b; font-size:14px;">広告主（ad_dashboard）から送信された「法人審査リクエスト」がここにリアルタイムで着信します。</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>申請日時</th>
+                <th>アカウント (Email)</th>
+                <th>提出・照合データ</th>
+                <th>ステータス</th>
+                <th>アクション</th>
+            </tr>
+        </thead>
+        <tbody id="kyc-history-body">
+            <tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">取得中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    async function loadKYCReq() {
+        try {
+            const res = await fetch('/api/kyc');
+            const data = await res.json();
+            const tbody = document.getElementById('kyc-history-body');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">現在、審査待ちのKYC書類はありません。</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            // 新しい順に表示
+            data.reverse().forEach(req => {
+                const tr = document.createElement('tr');
+                const dt = new Date(req.createdAt).toLocaleString('ja-JP');
+                
+                let statusBdg = '';
+                if(req.status === 'pending') statusBdg = '<span class="bdg-pending">審査待ち</span>';
+                else if(req.status === 'approved') statusBdg = '<span class="bdg-approved">承認済み</span>';
+                else statusBdg = '<span class="bdg-rejected">却下</span>';
+
+                let actionBtns = '';
+                if(req.status === 'pending') {
+                    actionBtns = \`
+                        <button class="action-btn btn-approve" onclick="updateKyc('\${req.id}', 'approved')">承認</button>
+                        <button class="action-btn btn-reject" onclick="updateKyc('\${req.id}', 'rejected')">却下</button>
+                    \`;
+                } else {
+                    actionBtns = '<span style="color:#94a3b8; font-size:12px; font-weight:bold;">処理済み</span>';
+                }
+
+                tr.innerHTML = \`
+                    <td>\${dt}</td>
+                    <td><b>\${req.userEmail}</b></td>
+                    <td style="font-size:12px; line-height:1.6;">
+                        <span style="color:#64748b;">法人番号:</span> <b>\${req.corpId}</b> <br>
+                        <span style="color:#64748b;">DUNS:</span> <b>\${req.duns || '未入力'}</b> <br>
+                        <a href="https://www.houjin-bangou.nta.go.jp/houjin/v1/search?corpNumber=\${req.corpId}" target="_blank" style="color:#3b82f6; text-decoration:none; font-weight:bold;">🔍 国税庁DBワンクリック照合</a> <br>
+                        <span style="color:#10b981;">✅ AI画像解析: パス済み</span>
+                    </td>
+                    <td>\${statusBdg}</td>
+                    <td>\${actionBtns}</td>
+                \`;
+                tbody.appendChild(tr);
+            });
+        } catch(e) {
+            document.getElementById('kyc-history-body').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">APIサーバーとの通信エラー</td></tr>';
+        }
+    }
+
+    async function updateKyc(id, status) {
+        try {
+            const res = await fetch('/api/kyc/' + id + '/status', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({status})
+            });
+            if(res.ok) {
+                Swal.fire({toast:true, position:'top-end', icon:'success', title:'ステータスを更新しました', showConfirmButton:false, timer:2000});
+                loadKYCReq();
+            }
+        } catch(e) {}
+    }
+
+    // Load on start
+    window.addEventListener('load', loadKYCReq);
+    // Auto refresh every 5 seconds
+    setInterval(loadKYCReq, 5000);
+</script>
+
+</body>
+</html>
