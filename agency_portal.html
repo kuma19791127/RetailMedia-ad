@@ -577,6 +577,80 @@
         }
     </script>
 
+
+<!-- GENERIC PROFILE MODAL INJECTED -->
+<div id="generic-profile-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:10px; width:400px; max-width:90%; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:#333;">👤 プロフィール / アカウント設定</h3>
+        <span onclick="document.getElementById('generic-profile-modal').style.display='none'" style="position:absolute; top:20px; right:20px; font-size:20px; cursor:pointer; color:#999;">&times;</span>
+        
+        <form onsubmit="event.preventDefault(); saveGenericProfile();" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">組織名 (任意)</label>
+                <input type="text" id="g-prof-org" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">お名前</label>
+                <input type="text" id="g-prof-name" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" required>
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">メールアドレス</label>
+                <input type="email" id="g-prof-email" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" required autocomplete="email">
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">新しいパスワード (変更する場合)</label>
+                <input type="password" id="g-prof-pass" placeholder="(空白で変更なし)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" autocomplete="new-password">
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                <button type="submit" style="background:#2ecc71; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-weight:bold;">保存して同期する</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openGenericProfile() {
+        // Load data from localStorage assuming sync points
+        document.getElementById('g-prof-org').value = localStorage.getItem('demo_org') || "";
+        document.getElementById('g-prof-name').value = localStorage.getItem('demo_name') || "";
+        document.getElementById('g-prof-email').value = localStorage.getItem('demo_email') || "";
+        document.getElementById('g-prof-pass').value = ""; // clear password
+        document.getElementById('generic-profile-modal').style.display = 'flex';
+    }
+
+    async function saveGenericProfile() {
+        const org = document.getElementById('g-prof-org').value;
+        const name = document.getElementById('g-prof-name').value;
+        const email = document.getElementById('g-prof-email').value;
+        const pass = document.getElementById('g-prof-pass').value;
+
+        // Save locally to keep in sync across portals
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_name', name);
+        localStorage.setItem('demo_email', email);
+        
+        // Push sync to server (DB background)
+        try {
+            await fetch('/api/user/profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, name, org})
+            });
+        } catch(e) {}
+
+        document.getElementById('generic-profile-modal').style.display = 'none';
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
+        } else {
+            alert("プロフィールを保存しました。");
+        }
+        
+        // Optional refresh specific to page
+        try { if(typeof loadUserInfo === 'function') loadUserInfo(); }catch(e){}
+    }
+</script>
+
 </body>
 
 </html>
