@@ -56,6 +56,33 @@ let campaignsDB = [
     }
 ];
 
+
+// --- KYC (Account Review) Memory DB ---
+let kycDB = [];
+
+app.post('/api/kyc', (req, res) => {
+    const kyc = {
+        id: "kyc_" + Date.now(),
+        corpId: req.body.corpId,
+        duns: req.body.duns,
+        status: "pending",
+        userEmail: req.body.email || "demo@advertiser.com",
+        createdAt: new Date().toISOString()
+    };
+    kycDB.push(kyc);
+    res.json({ success: true, kyc });
+});
+
+app.get('/api/kyc', (req, res) => {
+    res.json(kycDB);
+});
+
+app.post('/api/kyc/:id/status', (req, res) => {
+    const kyc = kycDB.find(k => k.id === req.params.id);
+    if(kyc) kyc.status = req.body.status;
+    res.json({ success: true });
+});
+
 // API: Get Campaigns
 app.get('/api/campaigns', (req, res) => {
     res.json(campaignsDB);
@@ -68,7 +95,7 @@ app.post('/api/campaigns', (req, res) => {
         name: req.body.name || "名称未設定",
         budget: parseInt(req.body.budget) || 1000,
         spent: 0,
-        status: "pending", // Wait for store approval
+        status: "active", // Freely posted like YouTube
         plan: req.body.plan || "impression",
         trigger: req.body.trigger,
         target_imp: req.body.target_imp,
@@ -236,3 +263,5 @@ app.listen(PORT, () => {
     console.log(`- Creator Dashboard:    http://localhost:${PORT}/creator`);
     console.log(`- Advertiser Dashboard: http://localhost:${PORT}/advertiser`);
 });
+
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin_portal.html')));
