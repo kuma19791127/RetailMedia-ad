@@ -62,9 +62,13 @@ let campaignsDB = [
 // --- AI Vision Image Scanning (Google Cloud Vision) ---
 const vision = require('@google-cloud/vision');
 // Will rely on google credentials in .env or the JSON file
-const visionClient = new vision.ImageAnnotatorClient({
-    keyFilename: './my-project-89579lifeai-98e749e02c3e.json'
-});
+let visionClientOptions = {};
+// ローカル環境用（ファイルが存在する場合）
+if (fs.existsSync('./my-project-89579lifeai-98e749e02c3e.json')) {
+    visionClientOptions.keyFilename = './my-project-89579lifeai-98e749e02c3e.json';
+} 
+// 本番(AWS)等でファイルが存在しない場合は、環境変数 GOOGLE_APPLICATION_CREDENTIALS を利用する等の標準のフォールバックになります。
+const visionClient = new vision.ImageAnnotatorClient(visionClientOptions);
 
 app.post('/api/kyc/scan', async (req, res) => {
     try {
