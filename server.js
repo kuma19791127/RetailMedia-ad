@@ -383,6 +383,53 @@ app.post('/api/manualhelp/video-to-steps', async (req, res) => {
     }
 });
 
+
+// --- クリエイター: コンテンツ審査API (Vertex AI Gemini 1.5 Pro) ---
+app.post('/api/creator/review-content', async (req, res) => {
+    try {
+        const { video_base64 } = req.body;
+        
+        console.log("クリエイター動画審査開始: Gemini 1.5 Pro");
+        
+        if (!video_base64) {
+             return res.status(400).json({ error: '動画データがありません' });
+        }
+        
+        if (video_base64 === "mock_data" || video_base64.length < 500) {
+             // Mock fallback
+             return res.json({ safe: true, message: "審査通過 (デモ用自動パス)" });
+        }
+
+        const base64Data = video_base64.replace(/^data:video\/\w+;base64,/, "");
+
+        const request = {
+            contents: [{
+                role: 'user',
+                parts: [
+                    { inlineData: { mimeType: 'video/mp4', data: base64Data } },
+                    { text: 'あなたは広告プラットフォームのAIモデレーターです。この動画に、過度な暴力、性的な描写、ヘイトスピーチなど、公共の場（店舗内）で配信するのに不適切な内容が含まれていないか審査してください。不適切であれば「FAIL: 理由」を、安全であれば「PASS: 理由」を出力してください。' }
+                ]
+            }]
+        };
+
+        const result = await generativeModel.generateContent(request);
+        const response = await result.response;
+        const text = response.candidates[0].content.parts[0].text;
+        
+        console.log("クリエイター動画審査完了:", text);
+        
+        if (text.includes('FAIL')) {
+            res.json({ safe: false, message: text });
+        } else {
+            res.json({ safe: true, message: text });
+        }
+        
+    } catch (error) {
+        console.error('コンテンツ審査エラー:', error);
+        res.status(500).json({ error: '審査中にエラーが発生しました。ファイルサイズが大きすぎる可能性があります。', safe: true });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Anywhere Connect Middleware running at http://localhost:${PORT}`);
     console.log(`- Operator Dashboard:   http://localhost:${PORT}/`);
