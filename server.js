@@ -21,6 +21,87 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
+
+// API: Authentication Login
+app.post('/api/auth/login', (req, res) => {
+    const { email, password, role } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'メールアドレスとパスワードを入力してください。' });
+    }
+    // For demo purposes, we accept any credentials
+    console.log('[Auth] Login successful for:', email);
+    res.json({ success: true, token: 'demo_token_' + Date.now(), role: role || 'store' });
+});
+
+
+// --- Global Memory DB for Demos ---
+let campaignsDB = [
+    {
+        id: "cmp_demo_001",
+        name: "サザンウォーター (新商品枠)",
+        budget: 50000,
+        spent: 1250,
+        status: "active",
+        plan: "impression",
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "cmp_demo_002",
+        name: "アサヒ生ビール 黒生 (雨の日特価)",
+        budget: 35000,
+        spent: 0,
+        status: "pending",
+        plan: "moment",
+        createdAt: new Date().toISOString()
+    }
+];
+
+// API: Get Campaigns
+app.get('/api/campaigns', (req, res) => {
+    res.json(campaignsDB);
+});
+
+// API: Create Campaign
+app.post('/api/campaigns', (req, res) => {
+    const newCamp = {
+        id: "cmp_" + Date.now(),
+        name: req.body.name || "名称未設定",
+        budget: parseInt(req.body.budget) || 1000,
+        spent: 0,
+        status: "pending", // Wait for store approval
+        plan: req.body.plan || "impression",
+        trigger: req.body.trigger,
+        target_imp: req.body.target_imp,
+        bid_max: req.body.bid_max,
+        url: req.body.url,
+        createdAt: new Date().toISOString()
+    };
+    campaignsDB.push(newCamp);
+    // Return the new camp and success
+    res.json({ success: true, campaign: newCamp });
+});
+
+// API: Update Campaign Status
+app.post('/api/campaigns/:id/status', (req, res) => {
+    const camp = campaignsDB.find(c => c.id === req.params.id);
+    if (!camp) return res.status(404).json({ error: "Campaign not found" });
+    
+    // allow paused, active, rejected, pending
+    if(req.body.status) {
+        camp.status = req.body.status;
+    }
+    res.json({ success: true, campaign: camp });
+});
+
+// API: Get Store Profile/Revenue config
+app.get('/api/store/revenue', (req, res) => {
+    res.json({
+        totalRevenue: 24500,
+        pendingApproval: campaignsDB.filter(c => c.status === "pending").length,
+        activeCampaigns: campaignsDB.filter(c => c.status === "active").length
+    });
+});
+
 // API: Get Inventory Status (for Dashboard)
 app.get('/api/inventory', (req, res) => {
     res.json(inventoryDB.getAll());
