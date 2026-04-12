@@ -1068,7 +1068,7 @@
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
             <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇" autocomplete="organization">
             
-            <div id="prof-name-container" style="display:none;">
+            <div id="prof-name-container" style="display:block;">
                 <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
                 <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎" autocomplete="name">
             </div>
@@ -1089,12 +1089,10 @@
         if(typeof Swal !== 'undefined') {
             document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
             document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
-            if(showName) {
-                document.getElementById('prof-name-container').style.display = 'block';
-                document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
-            } else {
-                document.getElementById('prof-name-container').style.display = 'none';
-            }
+            // Name is always shown now
+            document.getElementById('prof-name-container').style.display = 'block';
+            document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
+        
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
