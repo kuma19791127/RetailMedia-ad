@@ -63,11 +63,18 @@ let campaignsDB = [
 const vision = require('@google-cloud/vision');
 // Will rely on google credentials in .env or the JSON file
 let visionClientOptions = {};
+// AWS等のクラウド環境用（環境変数にJSONの中身が直接文字列で設定されている場合）
+if (process.env.GCP_CREDENTIALS) {
+    try {
+        visionClientOptions.credentials = JSON.parse(process.env.GCP_CREDENTIALS);
+    } catch(err) {
+        console.error("GCP_CREDENTIALS parse error:", err);
+    }
+}
 // ローカル環境用（ファイルが存在する場合）
-if (fs.existsSync('./my-project-89579lifeai-98e749e02c3e.json')) {
+else if (fs.existsSync('./my-project-89579lifeai-98e749e02c3e.json')) {
     visionClientOptions.keyFilename = './my-project-89579lifeai-98e749e02c3e.json';
 } 
-// 本番(AWS)等でファイルが存在しない場合は、環境変数 GOOGLE_APPLICATION_CREDENTIALS を利用する等の標準のフォールバックになります。
 const visionClient = new vision.ImageAnnotatorClient(visionClientOptions);
 
 app.post('/api/kyc/scan', async (req, res) => {
