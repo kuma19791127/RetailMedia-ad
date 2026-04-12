@@ -61,6 +61,7 @@ let campaignsDB = [
 
 // --- AI Vision Image Scanning (Google Cloud Vision) ---
 const vision = require('@google-cloud/vision');
+const { VertexAI } = require('@google-cloud/vertexai');
 // Will rely on google credentials in .env or the JSON file
 let visionClientOptions = {};
 // AWS環境用（それぞれの変数が個別に設定されている場合）
@@ -82,6 +83,17 @@ else if (fs.existsSync('./my-project-89579lifeai-98e749e02c3e.json')) {
     visionClientOptions.keyFilename = './my-project-89579lifeai-98e749e02c3e.json';
 } 
 const visionClient = new vision.ImageAnnotatorClient(visionClientOptions);
+
+// Vertex AI (Gemini 1.5) の初期化
+const vertexai = new VertexAI({
+    project: 'my-project-89579lifeai',
+    location: 'us-central1',
+    googleAuthOptions: visionClientOptions.keyFilename ? { keyFilename: visionClientOptions.keyFilename } : { credentials: visionClientOptions.credentials }
+});
+const generativeModel = vertexai.preview.getGenerativeModel({
+    model: 'gemini-1.5-pro-preview-0409',
+    generationConfig: { maxOutputTokens: 2048, temperature: 0.4 }
+});
 
 app.post('/api/kyc/scan', async (req, res) => {
     try {
@@ -309,6 +321,66 @@ app.get('/api/ad/analytics', (req, res) => {
 app.get('/api/signage/playlist', (req, res) => {
     const location = req.query.location || 'register_side';
     res.json(signageServer.getPlaylist(location));
+});
+
+
+// --- マニュアル生成: 動画解析API (Vertex AI Gemini 1.5 Pro) ---
+app.post('/api/manualhelp/video-to-steps', async (req, res) => {
+    try {
+        const { video_base64 } = req.body;
+        if (!video_base64 || video_base64 === "mock_data") {
+            // モックモード（フロントエンドのテスト用）
+            return res.json({
+                success: true,
+                steps: [
+                    { time: '0:01', desc: '[AI自動生成] ※これはデモデータです。実際の動画をアップロードしてください。' },
+                    { time: '0:05', desc: '商品パッケージのバーコードを真上に向けます。' },
+                    { time: '0:10', desc: 'ハンディスキャナーを商品の10cm上にかざし、ボタンを押します。' }
+                ]
+            });
+        }
+        
+        // Base64からヘッダー(data:video/mp4;base64,)を除去
+        const base64Data = video_base64.replace(/^data:video\/\w+;base64,/, "");
+        
+        console.log("動画解析開始: Gemini 1.5 Pro");
+        
+        const request = {
+            contents: [{
+                role: 'user',
+                parts: [
+                    {
+                        inlineData: {
+                            mimeType: 'video/mp4',
+                            data: base64Data
+                        }
+                    },
+                    { text: 'この動画は倉庫や店舗での業務手順を撮影したものです。作業の流れを順番に、わかりやすい日本語のマニュアルとしてステップ・バイ・ステップで書き出してください。出力形式は「1. 〇〇を行います。\n2. 〇〇に注意します。」のようにシンプルにお願いします。' }
+                ]
+            }]
+        };
+
+        const result = await generativeModel.generateContent(request);
+        const response = await result.response;
+        const text = response.candidates[0].content.parts[0].text;
+        
+        console.log("解析完了");
+        
+        // テキストを行ごとに分解してステップ化
+        const lines = text.split('\n').filter(l => l.trim().length > 0);
+        const generatedSteps = lines.map((l, index) => {
+            return {
+                time: `0:0${index + 1}`, // 仮のタイムスタンプ
+                desc: l.replace(/^\d+[.\s]*/, '') // 先頭の数字等を除去
+            }
+        });
+        
+        res.json({ success: true, steps: generatedSteps });
+        
+    } catch (error) {
+        console.error('動画解析エラー:', error);
+        res.status(500).json({ error: '動画の解析に失敗しました。ファイルが大きすぎるか、APIが未設定です。' });
+    }
 });
 
 app.listen(PORT, () => {
