@@ -63,7 +63,7 @@ let campaignsDB = [
 const vision = require('@google-cloud/vision');
 // Will rely on google credentials in .env or the JSON file
 const visionClient = new vision.ImageAnnotatorClient({
-    keyFilename: './my-project-89579lifeai-de780f052f58.json'
+    keyFilename: './my-project-89579lifeai-98e749e02c3e.json'
 });
 
 app.post('/api/kyc/scan', async (req, res) => {
