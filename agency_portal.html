@@ -558,7 +558,7 @@
                 const response = await fetch(`${API_BASE}/api/admin/agency-submit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agency: agencyEmail, advertise: advertiseEmail, price: parseInt(price), date: date })
+                    body: JSON.stringify({ agency: agencyEmail, advertise: advertiseEmail, advContact: advContact, advPhone: advPhone, price: parseInt(price), date: date })
                 });
 
                 if (response.ok) {

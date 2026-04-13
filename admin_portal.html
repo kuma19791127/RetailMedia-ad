@@ -382,10 +382,7 @@
 
     <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
     <script>
-        // Check if the user has a valid session token (cleared on restart or cache clear)
-        if (!sessionStorage.getItem('retailMediaAuth')) {
-            window.location.replace('index.html');
-        }
+        // Admin login is independent; Removed redirect restriction.
     </script>
 
     
@@ -710,7 +707,7 @@
                         <tr>
                             <th>申請日</th>
                             <th>代理店 (Agency)</th>
-                            <th>広告主 (Advertiser)</th>
+                            <th>広告主 (Advertiser)<br><span style="font-size:10px;">担当者 / 電話番号</span></th>
                             <th>契約金額</th>
                             <th>コミッション (20%)</th>
                             <th>ステータス</th>
@@ -958,7 +955,7 @@
                         <tr>
                             <td>${r.date}</td>
                             <td>${r.agency}</td>
-                            <td>${r.advertise}</td>
+                            <td>${r.advertise}<br><span style="font-size:11px;color:#7f8c8d;">${r.advContact || '未登録'} / ${r.advPhone || '未登録'}</span></td>
                             <td>¥${r.price.toLocaleString()}</td>
                             <td style="color:#e67e22; font-weight:bold;">¥${Math.floor(r.price * 0.2).toLocaleString()}</td>
                             <td><span class="badge badge-pending">${r.status}</span></td>

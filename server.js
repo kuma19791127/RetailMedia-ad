@@ -430,6 +430,24 @@ app.post('/api/creator/review-content', async (req, res) => {
     }
 });
 
+
+// ==== Agency Portal Endpoints ====
+let agencyReferrals = [];
+
+app.get('/api/admin/agency', (req, res) => {
+    res.json(agencyReferrals);
+});
+
+app.post('/api/admin/agency-submit', (req, res) => {
+    const data = req.body;
+    data.id = 'ag_' + Date.now();
+    data.status = 'Pending';
+    agencyReferrals.push(data);
+    res.json({ success: true, item: data });
+});
+// =================================
+
+
 app.listen(PORT, () => {
     console.log(`Anywhere Connect Middleware running at http://localhost:${PORT}`);
     console.log(`- Operator Dashboard:   http://localhost:${PORT}/`);
