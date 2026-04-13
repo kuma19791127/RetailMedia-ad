@@ -448,6 +448,31 @@ app.post('/api/admin/agency-submit', (req, res) => {
 // =================================
 
 
+
+// ==== Admin Authentication ====
+let adminAccounts = [{ email: 'admin@demo.com', password: 'DemoPass2026!' }];
+
+app.post('/api/admin/login', (req, res) => {
+    const { email, password } = req.body;
+    const account = adminAccounts.find(a => (a.email === email || a.email === 'admin') && a.password === password);
+    if (account) {
+        res.json({ success: true, token: 'admin_token_' + Date.now() });
+    } else {
+        res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+});
+
+app.post('/api/admin/register', (req, res) => {
+    const { email, password } = req.body;
+    if (adminAccounts.find(a => a.email === email)) {
+        return res.status(400).json({ success: false, message: 'Account already exists' });
+    }
+    adminAccounts.push({ email, password });
+    res.json({ success: true });
+});
+// =================================
+
+
 app.listen(PORT, () => {
     console.log(`Anywhere Connect Middleware running at http://localhost:${PORT}`);
     console.log(`- Operator Dashboard:   http://localhost:${PORT}/`);
