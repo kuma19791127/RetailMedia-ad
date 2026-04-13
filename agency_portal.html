@@ -547,10 +547,13 @@
         async function submitAgencyRequest() {
             const agencyEmail = document.getElementById('agency-email').value;
             const advertiseEmail = document.getElementById('client-email').value;
+            const advContact = document.getElementById('adv-contact') ? document.getElementById('adv-contact').value : '';
+            const advPhone = document.getElementById('adv-phone') ? document.getElementById('adv-phone').value : '';
             const price = document.getElementById('price').value;
             const date = document.getElementById('delivery-date').value;
+            const depositDate = document.getElementById('deposit-date') ? document.getElementById('deposit-date').value : '';
 
-            if (!agencyEmail || !advertiseEmail || !price || !date) {
+            if (!agencyEmail || !advertiseEmail || !advContact || !advPhone || !price || !date || !depositDate) {
                 return alert('すべての必要な項目を入力してください。');
             }
 
@@ -558,15 +561,17 @@
                 const response = await fetch(`${API_BASE}/api/admin/agency-submit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agency: agencyEmail, advertise: advertiseEmail, advContact: advContact, advPhone: advPhone, price: parseInt(price), date: date })
+                    body: JSON.stringify({ agency: agencyEmail, advertise: advertiseEmail, advContact: advContact, advPhone: advPhone, depositDate: depositDate, price: parseInt(price), date: date })
                 });
 
                 if (response.ok) {
                     alert('申請を登録しました。\n管理者の承認をお待ちください。');
-                    // Reset form
                     document.getElementById('client-email').value = "";
+                    document.getElementById('adv-contact').value = "";
+                    document.getElementById('adv-phone').value = "";
                     document.getElementById('price').value = "";
                     document.getElementById('delivery-date').value = "";
+                    document.getElementById('deposit-date').value = "";
                 } else {
                     alert('エラーが発生しました。もう一度お試しください。');
                 }
