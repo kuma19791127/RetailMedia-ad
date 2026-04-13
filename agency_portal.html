@@ -411,8 +411,21 @@
                     <input type="email" id="client-email" class="form-input" placeholder="client@example.com">
                 </div>
                 <div class="form-group">
+                    <label class="form-label">広告主担当者名 (Contact Name)</label>
+                    <input type="text" id="adv-contact" class="form-input" placeholder="例: 山田 太郎">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">広告主電話番号 (Phone)</label>
+                    <input type="tel" id="adv-phone" class="form-input" placeholder="例: 03-1234-5678">
+                </div>
+                <div class="form-group">
                     <label class="form-label">代理店メールアドレス (Agency Email)</label>
                     <input type="email" id="agency-email" class="form-input" placeholder="ag-001@demo.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">入金日 (Deposit Date)</label>
+                    <input type="date" id="deposit-date" class="form-input">
+                    <p style="font-size:12px; color:#ef4444; margin-top:5px; font-weight:bold;">※指定した入金日に入金が確認できなかった場合は、本案件は自動的にキャンセル扱いとなります。</p>
                 </div>
                 <div class="form-group">
                     <label class="form-label">配信開始日 (Delivery Date)</label>
@@ -549,11 +562,11 @@
             const advertiseEmail = document.getElementById('client-email').value;
             const advContact = document.getElementById('adv-contact') ? document.getElementById('adv-contact').value : '';
             const advPhone = document.getElementById('adv-phone') ? document.getElementById('adv-phone').value : '';
+            const depositDate = document.getElementById('deposit-date') ? document.getElementById('deposit-date').value : '';
             const price = document.getElementById('price').value;
             const date = document.getElementById('delivery-date').value;
-            const depositDate = document.getElementById('deposit-date') ? document.getElementById('deposit-date').value : '';
 
-            if (!agencyEmail || !advertiseEmail || !advContact || !advPhone || !price || !date || !depositDate) {
+            if (!agencyEmail || !advertiseEmail || !price || !date || !depositDate) {
                 return alert('すべての必要な項目を入力してください。');
             }
 
@@ -566,12 +579,13 @@
 
                 if (response.ok) {
                     alert('申請を登録しました。\n管理者の承認をお待ちください。');
+                    // Reset form
                     document.getElementById('client-email').value = "";
-                    document.getElementById('adv-contact').value = "";
-                    document.getElementById('adv-phone').value = "";
+                    if(document.getElementById('adv-contact')) document.getElementById('adv-contact').value = "";
+                    if(document.getElementById('adv-phone')) document.getElementById('adv-phone').value = "";
+                    if(document.getElementById('deposit-date')) document.getElementById('deposit-date').value = "";
                     document.getElementById('price').value = "";
                     document.getElementById('delivery-date').value = "";
-                    document.getElementById('deposit-date').value = "";
                 } else {
                     alert('エラーが発生しました。もう一度お試しください。');
                 }
