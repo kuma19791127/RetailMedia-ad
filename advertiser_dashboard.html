@@ -293,7 +293,7 @@
             .nav-item[style*="margin-top:auto"] { margin-top: 0 !important; }
             .nav-icon { font-size: 1.3rem; }
             .nav-text { font-size: 0.55rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-            .logo { display: none; }
+            .logo { display: none !important; }
             
             .mobile-header {
                 display: flex !important;
@@ -416,7 +416,7 @@
 <body>
 
     <div class="sidebar">
-        <div class="logo" style="display:flex; flex-direction:column; gap:2px;"><span>Advertiser<span style="color:var(--primary)">.Hub</span></span><span class="display-org-name" style="font-size:12px; color:#94a3b8; font-weight:normal;">Demo Advertiser Inc.</span></div>
+        <div class="logo"><span>Advertiser<span style="color:var(--primary)">.Hub</span></span><div class="display-org-name" style="font-size:12px; color:#94a3b8; font-weight:normal; line-height:1.2; margin-top:5px;">Demo Advertiser Inc.</div></div>
         <div class="nav-item active" onclick="showSection('analytics')">
             <span class="nav-icon">📊</span><span class="nav-text" style="line-height:1.2;">ｱﾅﾘﾃｨｸｽ</span>
         </div>
@@ -546,7 +546,7 @@
                     クリエイターの動画直後にCMを流した際の、<br class="mobile-br">AI視認維持率（Attention）と広告離脱率（Skip）に<br class="mobile-br">基づく最適化状況です。<br>
                     スコアが低いものは自動システムにより<br class="mobile-br"><span class="nw">段階的にBAN（配信停止）されます。</span>
                 </p>
-                <table class="spec-table">
+                <div class="table-responsive" style="overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%;"><table class="spec-table">
                     <thead>
                         <tr>
                             <th style="width:10%">ステータス</th>
@@ -563,7 +563,7 @@
                             <td colspan="6" style="text-align:center; color:#888;">AIスコア集計中...</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
             <!-- POS Sales Uplift Section -->
@@ -620,7 +620,7 @@
             </div>
 
             <div class="card">
-                <table class="spec-table">
+                <div class="table-responsive" style="overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%;"><table class="spec-table">
                     <thead>
                         <tr>
                             <th>ステータス</th>
@@ -634,7 +634,7 @@
                     <tbody id="campaign-list">
                         <!-- JS Injected -->
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -740,7 +740,7 @@
                         <p style="text-align:center; font-size:0.8rem; color:#999;">Reference: Floor Standing Signage Display</p>
                     </div>
                     <div style="flex:2;">
-                        <table class="spec-table">
+                        <div class="table-responsive" style="overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%;"><table class="spec-table">
                             <tr><th>解像度</th><td>62500</td></tr>
                             <tr><th>ディスプレイの比率</th><td>その他</td></tr>
                             <tr><th>適用</th><td>屋内, アウトドア</td></tr>
@@ -776,7 +776,7 @@
                             <tr><th>寿命</th><td>100000 Hs</td></tr>
                             <tr><th>解像度</th><td>512x1536</td></tr>
                             <tr><th>使用方法</th><td>屋内HD</td></tr>
-                        </table>
+                        </table></div>
                     </div>
                 </div>
             </div>
