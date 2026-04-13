@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -472,6 +473,57 @@ app.post('/api/admin/register', (req, res) => {
 });
 // =================================
 
+
+
+// ==== AI Voice Studio Endpoint (Server-side Proxy) ====
+app.post('/api/voice/synthesize', async (req, res) => {
+    try {
+        const { text, voiceName, stylePrompt } = req.body;
+        
+        // Read key from .env or environment variable
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        if (!GEMINI_API_KEY) {
+            return res.status(500).json({ success: false, message: "Server configuration missing: GEMINI_API_KEY is not set in .env" });
+        }
+
+        const API_MODEL = "gemini-2.5-flash-preview-tts";
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+        const response = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: `${stylePrompt}: ${text}` }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } }
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            console.error("Gemini TTS Error:", err);
+            return res.status(response.status).json({ success: false, message: err });
+        }
+
+        const data = await response.json();
+        let audioPart = null;
+        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+            audioPart = data.candidates[0].content.parts.find(p => p.inlineData);
+        }
+
+        if (audioPart && audioPart.inlineData) {
+            res.json({ success: true, audioBase64: audioPart.inlineData.data });
+        } else {
+            res.status(500).json({ success: false, message: "No audio data returned from Gemini" });
+        }
+    } catch (error) {
+        console.error("Gemini Proxy Exception:", error);
+        res.status(500).json({ success: false, message: error.toString() });
+    }
+});
+// ==================================================
 
 app.listen(PORT, () => {
     console.log(`Anywhere Connect Middleware running at http://localhost:${PORT}`);

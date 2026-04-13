@@ -851,7 +851,7 @@
                             if (audioPart && audioPart.inlineData) {
                                 window.lastApiAudio = audioPart.inlineData.data;
 
-                                const binaryString = window.atob(audioPart.inlineData.data);
+                                const binaryString = window.atob(data.audioBase64);
                                 const bytes = new Uint8Array(binaryString.length);
                                 for (let i = 0; i < binaryString.length; i++) {
                                     bytes[i] = binaryString.charCodeAt(i);
