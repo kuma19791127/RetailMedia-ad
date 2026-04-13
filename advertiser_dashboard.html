@@ -931,6 +931,24 @@
         }
 
         async function createCampaign() {
+
+            // === KYC Authorization Gate ===
+            const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+            const isRealUser2 = checkUser && checkUser.email && checkUser.email !== 'guest@example.com' && checkUser.email !== 'Guest';
+            if (isRealUser2) {
+                const kycStatus = localStorage.getItem('retail_kyc_approved');
+                if (kycStatus !== 'true') {
+                    Swal.fire({
+                        title: '⚠️ 審査が未完了です',
+                        html: '<span style="font-size:0.95rem;">広告を配信・アップロードするには、<b>プロフィール設定（本人・法人確認）</b>を完了する必要があります。<br><br><span style="color:#ef4444;">※現在、運営(Review)で許可されていないため配信できません。</span></span>',
+                        icon: 'warning',
+                        confirmButtonText: '閉じる'
+                    });
+                    return;
+                }
+            }
+            // ==============================
+
             const name = document.getElementById('cp-name').value;
             const start = document.getElementById('cp-start').value || '2026/05/01';
             const end = document.getElementById('cp-end').value || '2026/05/31';

@@ -2075,6 +2075,29 @@
 
     <script>
         async function initiateCampaign(plan) {
+
+            // === KYC Authorization Gate ===
+            const isRealUser = window.currentUser && window.currentUser.email && window.currentUser.email !== 'Guest' && window.currentUser.email !== 'Unknown';
+            if (isRealUser) {
+                const kycStatus = localStorage.getItem('retail_kyc_approved');
+                if (kycStatus !== 'true') {
+                    Swal.fire({
+                        title: '⚠️ 審査が未完了です',
+                        html: '<span style="font-size:0.95rem;">広告を配信・アップロードするには、<b>プロフィール設定（本人・法人確認）</b>を完了する必要があります。<br><br><span style="color:#ef4444;">※現在、運営(Review)で許可されていないため配信できません。</span></span>',
+                        icon: 'warning',
+                        confirmButtonText: 'プロフィール設定を開く',
+                        showCancelButton: true,
+                        cancelButtonText: '閉じる'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            if(typeof openAdvertiserProfileModal === 'function') openAdvertiserProfileModal();
+                        }
+                    });
+                    return;
+                }
+            }
+            // ==============================
+
             let title = 'キャンペーン設定';
             let extraFields = '';
 
