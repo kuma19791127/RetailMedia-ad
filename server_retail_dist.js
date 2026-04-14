@@ -126,625 +126,44 @@ app.get('/ai-studio', (req, res) => res.redirect('/store-portal'));
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_policy.html')));
 
 // --- CREATOR API ---
-app.get('/api/creator/stats', (req, res) => {
-    // Removed automatic demo increment. Views now stay accurate (0 until real views happen).
-    CREATOR_STATE.total_views = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.views, 0);
-    CREATOR_STATE.total_revenue = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.revenue, 0);
 
-    res.json(CREATOR_STATE);
+app.get('/api/review/unlock', (req, res) => {
+    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
+    res.json(CREATOR_STATE.unlockRequests);
 });
 
-app.post('/api/creator/upload', (req, res) => {
-    const { title, src, format } = req.body;
-    const newId = Date.now();
-    const newVideo = {
-        id: newId,
-        title: title || "動画タイトル未定",
-        format: format || "縦型 (Shorts)",
-        views: 0, revenue: 0, status: 'active',
-        attention: "--", skip: "--", uplift: "--", rank: '-', color: '#64748b'
-    };
-    CREATOR_STATE.videos.unshift(newVideo);
-
-    const finishUpload = (finalUrl) => {
-        // Auto-inject into signage player (as PAID or IMPRESSION so it shows up)
-        const adData = {
-            id: `creator_${newId}`,
-            title: `Creator: ${newVideo.title}`,
-            url: finalUrl,
-            duration: 45,
-            brand: "Creator",
-            youtube_url: finalUrl.includes('youtu') ? finalUrl : null
-        };
-        signageServer.injectCampaign('9:16', adData, 'INTERRUPT'); // Inject as INTERRUPT for immediate demo playback
-        console.log(`[Creator] Video Uploaded & Linked to Signage: ${adData.title}`);
-
-        // Broadcast reload event to all signage players
-        broadcastEvent({ type: 'force_reload' });
-        res.json({ success: true, video: newVideo, finalUrl: finalUrl });
-    };
-
-    if (src && src.startsWith('data:video/quicktime;base64,')) {
-        console.log("[Creator] Detected .mov file, transcoding to .mp4...");
-        const base64Data = src.split(';base64,').pop();
-        const inputPath = path.join(__dirname, 'uploads', `temp_${newId}.mov`);
-
-
-        const outputPath = path.join(__dirname, 'uploads', `video_${newId}.mp4`);
-        fs.writeFileSync(inputPath, base64Data, { encoding: 'base64' });
-
-        ffmpeg(inputPath)
-            .output(outputPath)
-            .videoCodec('libx264')
-            .addOption('-preset', 'fast')
-            .on('end', () => {
-                console.log("[Creator] Transcoding finished.");
-                fs.unlinkSync(inputPath); // Clean up temp mov file
-                finishUpload(`/uploads/video_${newId}.mp4`);
-            })
-            .on('error', (err) => {
-                console.error("[Creator] Transcoding error:", err);
-                finishUpload(src); // Fallback to original just in case
-            })
-            .run();
-    } else if (src && src.startsWith('data:')) {
-        // Save MP4 or Image to disk to prevent massive base64 broadcast
-        console.log("[Creator] Saving media file to disk...");
-        const ext = src.split(';')[0].split('/')[1] === 'mp4' ? 'mp4' : 'media';
-        const base64Data = src.split(';base64,').pop();
-        const outputPath = path.join(__dirname, 'uploads', `video_${newId}.${ext}`);
-        fs.writeFileSync(outputPath, base64Data, { encoding: 'base64' });
-        finishUpload(`/uploads/video_${newId}.${ext}`);
-    } else {
-        finishUpload(src || "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyprises.mp4");
-    }
-});
-
-// --- SQUARE PAYMENT API (Sync to Admin Portal) ---
-app.post('/api/payment/square-charge', async (req, res) => {
-    const { token, amount, source } = req.body;
-    console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}`);
-    
-    // デモ決済用のトークンが送られてきた場合は、本番のSquareAPIを叩かずに成功扱いにする
-    if (token === 'demo-applepay' || token === 'demo-local-token' || token === 'demo-error-token') {
-        console.log(`[Square API] Demo token detected (${token}). Bypassing actual Square charge.`);
-        return res.json({ success: true, transactionId: `demo_tx_${Date.now()}` });
-    }
-
-    console.log(`[Square API] Using Production Key for actual charge.`);
-    
-    try {
-        const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
-        const crypto = require('crypto');
-        
-        // Execute Actual Production Charge via Square API
-        const idempotencyKey = crypto.randomUUID();
-        const squareRes = await customFetch('https://connect.squareup.com/v2/payments', {
-            method: 'POST',
-            headers: {
-                'Square-Version': '2024-03-20',
-                'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || ''}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                source_id: token,
-                idempotency_key: idempotencyKey,
-                amount_money: { amount: Number(amount), currency: 'JPY' }
-            })
-        });
-
-        const squareData = await squareRes.json();
-        
-        if (!squareRes.ok || squareData.errors) {
-            console.error(`[Square API Error]`, squareData.errors);
-            return res.status(400).json({ success: false, error: '決済に失敗しました' });
-        }
-
-        // Store separate totals (SSoT Sync)
-        if (source.includes('anywhere-regi') || source.includes('anywhere_regi')) {
-            if(typeof storeData !== 'undefined' && storeData["default_store"]) {
-                storeData["default_store"].total_pos_sales += Number(amount);
-                console.log(`[Admin] POS Sales updated. Current pos total: ¥${storeData["default_store"].total_pos_sales}`);
-            }
-        } else {
-            totalRevenue += Number(amount);
-            console.log(`[Admin] Retail Ad Revenue updated. Current ad total: ¥${totalRevenue}`);
-        }
-        
-        // Return successful charge with actual transaction ID
-        res.json({ success: true, transactionId: squareData.payment.id });
-    } catch (e) {
-        console.error("Square charge failed:", e);
-        res.status(500).json({ success: false, error: 'サーバー連携エラー' });
-    }
-});
-
-// --- ANYWHERE REGI POS SYNC API ---
-app.post('/api/admin/sales', (req, res) => {
-    try {
-        const txData = req.body;
-        console.log(`[POS Sync] ✅ Received New Transaction: ${txData.transactionId} (${txData.amount}円)`);
-        console.log(`[POS Sync] 🛒 Items:`, txData.items.map(i => `${i.name} (¥${i.price})`).join(', '));
-        
-        // Broadcast the purchase event so Signage and Ad Engine can see the Uplift
-        broadcastEvent({
-            type: 'pos_purchase_sync',
-            transaction: txData
-        });
-        
-        // Link POS Sales to Creator Synergy Score & Revenue
-        if (CREATOR_STATE.videos.length > 0) {
-            CREATOR_STATE.videos.forEach(v => {
-                if (v.status === 'active') {
-                    // Actual dynamic reward algorithm: Sales Uplift Bonus
-                    v.revenue += Math.floor(txData.amount * 0.05); // 5% of sales generated during cm
-                    v.uplift += 1;
-                    if (v.uplift > 50) v.rank = 'S';
-                    else if (v.uplift > 30) v.rank = 'A';
-                    else if (v.uplift > 10) v.rank = 'B';
-                }
-            });
-            CREATOR_STATE.total_revenue = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.revenue, 0);
-            console.log(`[Creator] POS Synergy Reward Distributed! New Total: ¥${CREATOR_STATE.total_revenue}`);
-        }
-
-        res.json({ success: true, message: "Synced to Admin Server" });
-    } catch (e) {
-        console.error("[POS Sync Error]", e);
-        res.status(500).json({ success: false });
-    }
-});
-
-// --- AUTH (2FA) ---
-const users = {
-    // Demo Accounts (Pre-seeded)
-    "advertiser@demo.com": { password: "DemoPass2026!", role: "advertiser" },
-    "store@demo.com": { password: "DemoPass2026!", role: "store" },
-    "agency@demo.com": { password: "DemoPass2026!", role: "agency" },
-    "creator@demo.com": { password: "DemoPass2026!", role: "creator" }
-};
-
-app.post('/api/auth/register', (req, res) => {
-    const { email, password, role } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and Password required" });
-
-    if (users[email]) return res.status(400).json({ error: "User already exists" });
-
-    // Register User
-    users[email] = { password, role: role || "store" }; // Default to Store if not specified
-    console.log(`[Auth] 🆕 New User Registered: ${email} (${users[email].role})`);
-
-    currentUser = { email, role: users[email].role }; // Auto Login
-    res.json({ success: true, redirect: getRedirectUrl(users[email].role) });
-});
-
-// Simple Session State for Demo
-let currentUser = null;
-
-app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Missing fields" });
-
-    const user = users[email];
-    if (user && user.password === password) {
-        console.log(`[Auth] ✅ Login Success: ${email}`);
-        currentUser = { email, role: user.role }; // Set Session
-        res.json({ success: true, redirect: getRedirectUrl(user.role) });
-    } else {
-        console.log(`[Auth] ❌ Login Failed: ${email}`);
-        res.json({ success: false, error: "Invalid Email or Password" });
-    }
-});
-
-app.post('/api/auth/reset-password', (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Missing fields" });
-
-    if (users[email]) {
-        users[email].password = password;
-        console.log(`[Auth] 🔑 Password Reset: ${email}`);
-        res.json({ success: true });
-    } else {
-        res.json({ success: false, error: "User not found" });
-    }
-});
-
-app.get('/api/user/me', (req, res) => {
-    if (currentUser) {
-        res.json({ success: true, user: currentUser });
-    } else {
-        // Default fall-back for demo consistency if server restarted
-        res.json({ success: true, user: { email: "store@demo.com", role: "store" } });
-    }
-});
-
-app.post('/api/auth/reset-password', (req, res) => {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
-
-    console.log(`[Auth] 📧 Password Reset Link Sent to: ${email}`);
+app.post('/api/review/unlock', (req, res) => {
+    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
+    CREATOR_STATE.unlockRequests.push({
+        id: Date.now(),
+        date: new Date().toISOString(),
+        creatorId: req.body.creatorId || 'Creator_Main',
+        status: 'pending'
+    });
     res.json({ success: true });
 });
 
-function getRedirectUrl(role) {
-    if (role === 'advertiser') return '/ad_dashboard.html';
-    if (role === 'agency') return '/agency_portal.html';
-    if (role === 'creator') return '/creator_portal.html';
-    return '/store_portal.html'; // Default
-}
-
-/*
-
-    if (pendingAuth[phone] === code) {
-        console.log(`[Auth] ✅ Verification Success for ${phone}`);
-        delete pendingAuth[phone]; // Clear code after use
-
-        // Determine role redirect
-        let redirectUrl = '/store-portal';
-        if (phone.startsWith('090')) redirectUrl = '/advertiser';
-        if (phone.startsWith('070')) redirectUrl = '/agency-portal'; // Agency Prefix
-
-        res.json({ success: true, redirect: redirectUrl });
-    } else {
-        console.log(`[Auth] ❌ Verification Failed for ${phone} (Input: ${code}, Expected: ${pendingAuth[phone]})`);
-*/
-
-
-// --- API ---
-
-// --- ADMIN API ---
-
-
-app.get('/api/admin/dashboard', (req, res) => {
-    // Return mock billing and payout data for the admin portal
-    const retailAdRevenue = CREATOR_STATE.total_revenue * 1.5;
-    const adsenseRevenue = 45000;
-    const agencyCommission = Math.floor(retailAdRevenue * 0.2); // 20%
-    const creatorReward = Math.floor(CREATOR_STATE.total_revenue + (adsenseRevenue * 0.1) + 10000); // 10% + cm bonus
-    const operatingCost = 30000;
-    const totalNetRevenue = retailAdRevenue + adsenseRevenue - agencyCommission - creatorReward - operatingCost;
-    const adRevenueShare = Math.floor(totalNetRevenue * 0.5);
-
-    res.json({
-        success: true,
-        accounting_email: "admin-accounting@anywhere-regi.com",
-        billing: [
-            { id: "STORE_001", name: "本店スーパー", sales: 15400000, fee_1_2_percent: 184800, email: "store@demo.com", status: "未請求" }
-        ],
-        payouts: [
-            {
-                id: "STORE_001", name: "本店スーパー",
-                retail_ad_revenue: retailAdRevenue,
-                adsense_revenue: adsenseRevenue,
-                agency_commission: agencyCommission,
-                creator_reward: creatorReward,
-                operating_cost: operatingCost,
-                total_net_revenue: totalNetRevenue,
-                ad_revenue_share: adRevenueShare,
-                email: "store@demo.com",
-                status: "未払",
-                bank_info: { bank: "みずほ銀行", account: "普通 1234567" }
-            }
-        ]
-    });
-});
-
-app.get('/api/ad/mode', (req, res) => {
-    isProductionMode = (req.query.prod === 'true');
-    console.log(`[System] Switched to ${isProductionMode ? 'PRODUCTION' : 'DEMO'} mode.`);
-    if (!isProductionMode) demoBoostMultiplier = 1.0;
-    res.json({ success: true, mode: isProductionMode ? 'production' : 'demo' });
-});
-
-app.get('/api/ad/demo/boost', (req, res) => {
-    // if (isProductionMode) return res.status(400).json({ error: "Cannot use demo boost in Production mode." });
-
-    try {
-        // Log Debug
-        console.log(`[Boost] Request:`, req.query);
-
-        // Parse params
-        const aspectRatio = req.query.ratio || "16:9";
-        const brand = req.query.brand || "Unknown Brand";
-        const scope = req.query.scope || "national";
-        const slot = req.query.slot || "prime";
-
-        // New Params
-        const planType = req.query.planType || "engagement";
-        const format = req.query.format || "standard";
-
-        demoBoostMultiplier += 0.5;
-
-        // Pricing Logic (Mirroring Frontend)
-        let basePrice = 10000;
-        let duration = 30;
-
-        if (format === 'image') { basePrice = 3000; duration = 10; }
-        if (format === 'short') { basePrice = 5000; duration = 15; }
-        if (format === 'youtube') { basePrice = 10000; duration = 30; }
-        if (format === 'shorts') { basePrice = 5000; duration = 15; }
-        if (format === 'standard') { basePrice = 10000; duration = 30; }
-        if (format === 'enterprise') { basePrice = 500000; duration = 30; }
-
-        // Slot Multiplier
-        let multiplier = 1.0;
-        if (slot === 'spot') multiplier = 0.2;
-        if (slot === 'morning') multiplier = 0.6;
-        if (slot === 'lunch') multiplier = 0.8;
-
-        let price = basePrice * multiplier;
-        if (format === 'enterprise') price = 500000; // Fixed
-
-        // Record Transaction
-        totalRevenue += price;
-        transactions.push({
-            brand, scope, slot, amount: price, timestamp: new Date().toISOString(), format, planType
-        });
-
-        // Log
-        console.log(`[Campaign Purchase] ${brand} | ${format.toUpperCase()} (${duration}s) | ${planType} | ¥${price.toLocaleString()}`);
-
-        // Inject campaign (PAID Priority)
-        const metadata = {
-            brand, scope, slot,
-            duration: duration,
-            is_image: (format === 'image'),
-            title: `${brand} Campaign`
-        };
-
-        // Special Demo Logic: If user requests 'cooking' content
-        if (req.query.contentType === 'cooking') {
-            metadata.title = "Spaghetti Bolognese (Uploaded)";
-
-            if (req.query.format === 'image') {
-                metadata.is_image = true;
-                metadata.url = "https://images.unsplash.com/photo-1551183053-bf91a1d81141?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"; // Demo Image
-                console.log(`[Demo] 📸 Injecting Cooking IMAGE!`);
-            } else {
-                metadata.url = "/local-media/mixkit-serving-parmesan-cheese-in-spaghetti-bolognese-close-up-engraving-12171-hd-ready.mp4";
-            }
-            console.log(`[Demo] 🍝 Injecting Local Cooking Video (No System QR)`);
-        }
-
-        // Special Demo Logic: YouTube Link Input
-        if (req.query.youtube) {
-            // [MODIFICATION] If 'cooking' demo is active, IGNORE YouTube link to enforce Spaghetti Demo
-            if (req.query.contentType === 'cooking') {
-                console.log(`[Demo] ⚠️ YouTube Link Ignored due to Cooking Demo Enforcement.`);
-            } else {
-                console.log(`[Demo] 📺 YouTube Import Requested: ${req.query.youtube}`);
-                metadata.title = `YouTube Ad`;
-                metadata.url = req.query.youtube; // Pass Real URL
-                metadata.is_youtube = true;       // Flag for Player
-                metadata.is_image = false;
-            }
-        }
-
-        // Inject the campaign
-        if (typeof signageServer !== 'undefined' && signageServer.injectCampaign) {
-            signageServer.injectCampaign(aspectRatio, metadata, 'PAID');
-        } else {
-            console.warn("[System] SignageServer not found, skipping injection.");
-        }
-
-        res.json({ success: true, multiplier: demoBoostMultiplier });
-    } catch (e) {
-        console.error("[Boost Error]", e);
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// Official Campaign Creation Endpoint (Dashboard)
-app.post('/api/campaigns', (req, res) => {
-    try {
-        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email } = req.body;
-        console.log(`[API] Creating Campaign: ${name} (${plan}) | Advertiser: ${ad_email}`);
-
-        // Handle Agency Commission Match
-        let appliedPrice = parseInt(budget) || 10000;
-        let matchedAgency = agencyReferrals.find(r => r.advertise === ad_email && r.status === 'Pending');
-        if (matchedAgency) {
-            matchedAgency.status = '稼働中';
-            matchedAgency.price = appliedPrice; // Update to actual budget
-            const commission = Math.floor(appliedPrice * 0.2);
-            console.log(`[Agency] Match found! 20% Commission (¥${commission}) applied for ${matchedAgency.agency}`);
-            
-            // Subtract commission from the platform/store's total revenue side
-            // For demo purposes, we reflect it in global totalRevenue
-            totalRevenue += (appliedPrice - commission);
-        } else {
-            totalRevenue += appliedPrice;
-        }
-
-        // Map Plan to Server Types
-        let type = 'PAID';
-        if (plan === 'moment') type = 'MOMENT';
-        if (plan === 'impression') type = 'IMPRESSION';
-        // CPA is also PAID but with specific tracking setup
-
-        const processAndInject = (finalUrl) => {
-            const metadata = {
-                title: name,
-                format: format, // Pass format (image/video/youtube)
-                // Prioritize passed URL (Base64) or YouTube URL. DO NOT default to Sintel anymore.
-                url: finalUrl,
-                youtube_url: finalUrl && finalUrl.includes('youtu') ? finalUrl : youtube_url,
-                duration: 15,
-                start_date: start,
-                end_date: end,
-                budget: budget,
-                plan_type: plan,
-                trigger: trigger,          // For Moment
-                target_imp: target_imp     // For Impression
-            };
-
-            // Inject into Server Logic
-            if (signageServer && signageServer.injectCampaign) {
-                signageServer.injectCampaign('16:9', metadata, type);
-            }
-        };
-
-        const rawUrl = url || file_url || youtube_url || "";
-
-        if (rawUrl.startsWith('data:video/quicktime;base64,') || rawUrl.startsWith('data:video/mp4;base64,')) {
-            console.log("[AdUpload] Detected raw video file, uploading directly to S3...");
-            const base64Data = rawUrl.split(';base64,').pop();
-            const ext = rawUrl.startsWith('data:video/quicktime') ? 'mov' : 'mp4';
-            const tempId = Date.now();
-            const filename = `ad_video_${tempId}.${ext}`;
-            const buffer = Buffer.from(base64Data, 'base64');
-            
-            if (s3Client && bucketName) {
-                const { PutObjectCommand } = require('@aws-sdk/client-s3');
-                s3Client.send(new PutObjectCommand({ 
-                    Bucket: bucketName, 
-                    Key: 'uploads/' + filename, 
-                    Body: buffer, 
-                    ContentType: 'video/' + ext 
-                })).then(() => {
-                    console.log("[AdUpload] Successfully uploaded to S3: " + filename);
-                    processAndInject(`/uploads/${filename}`);
-                    if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
-                }).catch(e => {
-                    console.error("[AdUpload] S3 Upload Failed", e);
-                    processAndInject(rawUrl);
-                });
-            } else {
-                // Local Fallback
-                const fs = require('fs');
-                const localPath = require('path').join(__dirname, 'uploads', filename);
-                fs.writeFileSync(localPath, buffer);
-                processAndInject(`/uploads/${filename}`);
-                if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
-            }
-            res.json({ success: true, message: "Campaign Created (S3 Uploading in background)" });
-        } else {ire('@aws-sdk/client-s3');
-const cors = require('cors');
-const path = require('path');
-const os = require('os');
-try { require('dotenv').config(); } catch (e) { console.log('[System] dotenv module not found, skipping.'); }
-
-const fs = require('fs');
-
-const adEngine = require('./ad_engine');
-const signageServer = require('./signage_server');
-// GMO dependency removed in favor of Square + Google Cloud flow
-
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-
-const app = express();
-const PORT = 3000;
-
-app.use(cors());
-app.use(express.json({ limit: '500mb' })); // Allow large file uploads (Base64)
-app.use(express.urlencoded({ limit: '500mb', extended: true }));
-express.static.mime.define({ 'video/quicktime': ['mov'] });
-app.use(express.static(__dirname, { dotfiles: 'allow' })); // Serve root files
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
-
-// Serve uploads from S3 (Fallback to local if no S3)
-app.get('/uploads/:filename', async (req, res) => {
-    const filename = req.params.filename;
-    // Basic local check
-    const localPath = require('path').join(__dirname, 'uploads', filename);
-    if (fs.existsSync(localPath)) {
-        return res.sendFile(localPath);
-    }
-    
-    // S3 Fetch
-    if (s3Client && bucketName) {
-        try {
-            const { GetObjectCommand } = require('@aws-sdk/client-s3');
-            const data = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: 'uploads/' + filename }));
-            res.setHeader('Content-Type', data.ContentType || 'video/mp4');
-            data.Body.pipe(res);
-            return;
-        } catch (e) {
-            console.log('[S3] Video not found:', filename);
+app.post('/api/review/unlock/:id/approve', (req, res) => {
+    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
+    const item = CREATOR_STATE.unlockRequests.find(r => r.id == req.params.id);
+    if(item) {
+        item.status = 'approved';
+        // Unlock all banned videos for this creator
+        if (CREATOR_STATE.videos) {
+            CREATOR_STATE.videos.forEach(v => {
+                if (v.status === 'ban') {
+                    v.status = 'active';
+                    v.totalAttention = 0; // Reset metrics
+                    v.totalSkip = 0;
+                    v.views = 0;
+                    v.uplift = 0;
+                }
+            });
         }
     }
-    res.status(404).send('Not Found');
-});
- // Serve assets explicitly
-
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
- // Serve transcoded video files
-
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
-
-// State
-const LOCAL_MEDIA_PATH = path.join(os.homedir(), 'Desktop', 'aaa');
-if (require('fs').existsSync(LOCAL_MEDIA_PATH)) {
-    app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
-    console.log(`[System] Serving Local Media from: ${LOCAL_MEDIA_PATH}`);
-} else {
-    console.log(`[System] Local Media folder not found at: ${LOCAL_MEDIA_PATH}`);
-}
-
-// State
-let demoBoostMultiplier = 1.0;
-let isProductionMode = false;
-let totalRevenue = 0;
-let transactions = [];
-
-// CREATOR STATE
-let CREATOR_STATE = {
-    total_views: 0,
-    total_revenue: 0,
-    videos: []
-};
-
-
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-// --- SSE Stream (Real-time Interruptions) ---
-const sseClients = [];
-app.get('/events', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
-    sseClients.push(res);
-    req.on('close', () => {
-        const idx = sseClients.indexOf(res);
-        if (idx !== -1) sseClients.splice(idx, 1);
-    });
+    res.json({ success: true });
 });
 
-function broadcastEvent(data) {
-    sseClients.forEach(client => client.write(`data: ${JSON.stringify(data)}\n\n`));
-}
-
-// --- ROUTES ---
-// 1. Unified Login (Entry Point)
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-
-// 2. Dashboards
-app.get('/advertiser', (req, res) => res.sendFile(path.join(__dirname, 'ad_dashboard.html')));
-app.get('/store-portal', (req, res) => res.sendFile(path.join(__dirname, 'store_portal.html')));
-app.get('/player', (req, res) => res.sendFile(path.join(__dirname, 'signage_player.html')));
-app.get('/anywhere-regi', (req, res) => res.sendFile(path.join(__dirname, 'anywhere_regi.html')));
-app.get('/creator-portal', (req, res) => res.sendFile(path.join(__dirname, 'creator_portal.html')));
-// NEW: Analytics Dashboard Route
-app.get('/advertiser/analytics', (req, res) => res.sendFile(path.join(__dirname, 'advertiser_dashboard.html')));
-app.get('/shift', (req, res) => res.sendFile(path.join(__dirname, 'shift_manager.html')));
-
-// Anti-Gravity Routes (URL Routing separation)
-app.get('/ag-login', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
-app.get('/corp', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
-app.get('/employee', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
-// Default admin route overridden
-
-// Legacy Routes (Redirect to Portal)
-app.get('/store-owner', (req, res) => res.redirect('/store-portal'));
-app.get('/ai-studio', (req, res) => res.redirect('/store-portal'));
-// Privacy Policy
-app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_policy.html')));
-
-// --- CREATOR API ---
 app.get('/api/creator/stats', (req, res) => {
     // Removed automatic demo increment. Views now stay accurate (0 until real views happen).
     CREATOR_STATE.total_views = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.views, 0);
@@ -783,28 +202,35 @@ app.post('/api/creator/upload', (req, res) => {
         res.json({ success: true, video: newVideo, finalUrl: finalUrl });
     };
 
-    if (src && src.startsWith('data:video/quicktime;base64,')) {
-        console.log("[Creator] Detected .mov file, transcoding to .mp4...");
+    if (src && (src.startsWith('data:video/quicktime;base64,') || src.startsWith('data:video/mp4;base64,'))) {
+        console.log("[Creator] Detected raw video file, uploading directly to S3...");
         const base64Data = src.split(';base64,').pop();
-        const inputPath = path.join(__dirname, 'uploads', `temp_${newId}.mov`);
-
-
-        const outputPath = path.join(__dirname, 'uploads', `video_${newId}.mp4`);
-        fs.writeFileSync(inputPath, base64Data, { encoding: 'base64' });
-
-        ffmpeg(inputPath)
-            .output(outputPath)
-            .videoCodec('libx264')
-            .addOption('-preset', 'fast')
-            .on('end', () => {
-                console.log("[Creator] Transcoding finished.");
-                fs.unlinkSync(inputPath); // Clean up temp mov file
-                finishUpload(`/uploads/video_${newId}.mp4`);
-            })
-            .on('error', (err) => {
-                console.error("[Creator] Transcoding error:", err);
-                finishUpload(src); // Fallback to original just in case
-            })
+        const ext = src.startsWith('data:video/quicktime') ? 'mov' : 'mp4';
+        const filename = "creator_video_" + newId + "." + ext;
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        if (typeof s3Client !== 'undefined' && s3Client && typeof bucketName !== 'undefined' && bucketName) {
+            const { PutObjectCommand } = require('@aws-sdk/client-s3');
+            s3Client.send(new PutObjectCommand({ 
+                Bucket: bucketName, 
+                Key: 'uploads/' + filename, 
+                Body: buffer, 
+                ContentType: 'video/' + ext 
+            })).then(() => {
+                console.log("[Creator] Successfully uploaded to S3: " + filename);
+                finishUpload("/uploads/" + filename);
+            }).catch(e => {
+                console.error("[Creator] S3 Upload Failed", e);
+                finishUpload(src);
+            });
+        } else {
+            const savePath = require('path').join(__dirname, 'uploads', filename);
+            fs.writeFileSync(savePath, buffer);
+            finishUpload("/uploads/" + filename);
+        }
+    } else {
+        finishUpload(src);
+    })
             .run();
     } else if (src && src.startsWith('data:')) {
         // Save MP4 or Image to disk to prevent massive base64 broadcast
@@ -2498,7 +1924,8 @@ setInterval(() => {
                 creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
                 transactions: typeof transactions !== 'undefined' ? transactions : [],
                 sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
-                globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {}
+                globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
+                agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : []
             }, null, 2);
             fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
             if (dataStr !== lastDBString && lastDBString !== "") {
