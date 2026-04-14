@@ -2,8 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const inventoryDB = require('./inventory_db');
-const spApiClient = require('./sp_api_client');
+const fs = require('fs');
+
+
 
 const app = express();
 const PORT = 3000;
@@ -244,8 +245,8 @@ app.post('/api/reset', (req, res) => {
 });
 
 // --- Social Commerce API (Phase 5) ---
-const socialEngine = require('./social_engine');
-const mockWMS = require('./mock_wms');
+// Removed social_engine
+// Removed mock_wms
 
 // Creator Dashboard
 app.get('/creator', (req, res) => {
@@ -273,7 +274,7 @@ app.get('/api/wms/slots', (req, res) => {
 });
 
 // --- Retail Media API (Phase 6) ---
-const adEngine = require('./ad_engine');
+// Removed ad_engine
 const signageServer = require('./signage_server');
 
 // Advertiser Dashboard
