@@ -1788,6 +1788,9 @@ async function pullFromS3() {
         const str = await response.Body.transformToString();
         const parsed = JSON.parse(str);
 
+        if (parsed.signageState && signageServer.setState) {
+            signageServer.setState(parsed.signageState);
+        }
         if (parsed.campaigns && typeof campaigns !== 'undefined') {
             campaigns.length = 0;
             parsed.campaigns.forEach(c => campaigns.push(c));
@@ -1843,7 +1846,8 @@ let lastDBString = "";
 setInterval(() => {
     try {
         if(true) {
-            const dataStr = JSON.stringify({ 
+            const dataStr = JSON.stringify({
+                signageState: signageServer.getState ? signageServer.getState() : {}, 
                 campaigns: typeof campaigns !== 'undefined' ? campaigns : [], 
                 clients: typeof clients !== 'undefined' ? clients : [],
                 storeData: typeof storeData !== 'undefined' ? storeData : {},
