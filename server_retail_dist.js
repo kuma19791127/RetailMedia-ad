@@ -1723,29 +1723,20 @@ app.post('/api/campaigns/:id/status', (req, res) => {
 // --- AWS & Google Cloud Video to Steps AI (ManualHelp) ---
 app.post('/api/manualhelp/video-to-steps', async (req, res) => {
     try {
-        console.log("[ManualHelp AI] Processing video via Google Vertex AI (Gemini 1.5)...");
+        console.log("[ManualHelp AI] Processing video via Google Gemini 1.5 Flash API...");
         
         let videoData = req.body.video_base64;
         if (!videoData) return res.status(400).json({ error: "No video provided" });
 
-        // Remove base64 prefix if it exists (e.g., 'data:video/mp4;base64,')
         if (videoData.includes(';base64,')) {
             videoData = videoData.split(';base64,').pop();
         }
 
-        const { GoogleAuth } = require('google-auth-library');
-        const keyPath = "C:\\Users\\one\\Desktop\\RetailMedia_System\\my-project-89579lifeai-de780f052f58.json";
-        
-        // 1. Authenticate with Google Cloud Vertex AI
-        const auth = new GoogleAuth({
-            keyFilename: keyPath,
-            scopes: ['https://www.googleapis.com/auth/cloud-platform']
-        });
-        const client = await auth.getClient();
-        const tokenInfo = await client.getAccessToken();
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
 
-        // 2. Call Gemini 1.5 Flash for Video Understanding
-        const url = 'https://us-central1-aiplatform.googleapis.com/v1beta1/projects/my-project-89579lifeai/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent';
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
         const promptText = "あなたはプロのマニュアル作成者です。添付された動画の内容を解析し、具体的な作業手順をステップごとに分けてJSON形式の配列で出力してください。\n" + 
                            "出力フォーマットは以下を厳守してください:\n" + 
@@ -1760,57 +1751,44 @@ app.post('/api/manualhelp/video-to-steps', async (req, res) => {
                 ]
             }],
             generationConfig: {
-                temperature: 0.2, // Low variance for data extraction
+                temperature: 0.2,
                 responseMimeType: "application/json"
             }
         };
 
-        console.log("[ManualHelp AI] Requesting Vertex AI Gemini 1.5...");
-        const apiRes = await globalThis.fetch(url, {
+        const apiRes = await fetch(FIXED_URL, {
             method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + tokenInfo.token,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
 
         const data = await apiRes.json();
         
-        if (data.error) {
-            console.error("[ManualHelp AI API Error]", data.error);
-            // Fallback for demo if video is too large for inline payload
-            throw new Error(data.error.message || "Gemini API rejected request.");
+        if (!apiRes.ok || data.error) {
+            console.error("[ManualHelp AI API Error]", data.error || data);
+            throw new Error(data.error?.message || "Gemini API rejected request.");
         }
 
-        // 3. Parse JSON Response from Gemini
         let generatedText = data.candidates[0].content.parts[0].text;
-        // In case the model returns markdown code block wraps '```json ... ```'
-        if (generatedText.startsWith('```json')) generatedText = generatedText.replace(/```json\n|```/g, '');
-        else if (generatedText.startsWith('```')) generatedText = generatedText.replace(/```\n|```/g, '');
-        
-        const generatedSteps = JSON.parse(generatedText.trim());
-        console.log("[ManualHelp AI] Success! Steps generated:", generatedSteps.length);
+        if (generatedText.startsWith('```json')) {
+            generatedText = generatedText.replace(/```json\n|```/g, '');
+        }
 
-        return res.json({ success: true, steps: generatedSteps });
+        let steps;
+        try {
+            steps = JSON.parse(generatedText);
+        } catch(e) {
+            console.error("[AI JSON Parse Error]", e, generatedText);
+            throw new Error("AI returned invalid JSON format.");
+        }
 
+        res.json({ success: true, steps });
     } catch (e) {
-        console.error("[ManualHelp AI Error]", e);
-        
-        // --- SAFE FALLBACK (Simulation) if API fails due to size limits in Demo ---
-        console.log("[ManualHelp AI] Falling back to structured simulation due to API error.");
-        const fallbackSteps = [
-            { title: "✅ [AI自動生成] 作業前の準備・チェック", desc: "必要な備品が揃っているか確認します。" },
-            { title: "✅ [AI自動生成] レジの起動とログイン", desc: "スタッフ用のIDでシステムにログインします。" },
-            { title: "✅ [AI自動生成] 商品のスキャン", desc: "バーコードを確実に読み取ります。" },
-            { title: "✅ [AI自動生成] 現金・カードでの精算処理", desc: "お客様の希望する決済方法を入力します。" },
-            { title: "✅ [AI自動生成] レシートのお渡しと感謝のご挨拶", desc: "両手でレシートをお渡しし、お礼を伝えます。" }
-        ];
-        return res.json({ success: true, steps: fallbackSteps, note: "API Error Fallback Executed" });
+        console.error("[ManualHelp Video Error]", e.message);
+        res.status(500).json({ error: e.message });
     }
 });
 
-// --- GCP Cloud Translation API (Secure Proxy) ---
 app.post('/api/manualhelp/translate-steps', async (req, res) => {
     try {
         const { texts, target } = req.body;
