@@ -718,122 +718,45 @@ app.get('/api/ai/generate', (req, res) => {
 let TextToSpeechClient = null;
 
 app.post('/api/ai/tts', async (req, res) => {
-    const { text, speed, voiceEngine } = req.body;
-    if (!text) return res.status(400).json({ error: "Text required" });
-
     try {
-        console.log(`[TTS] Requesting TTS (${voiceEngine || 'default'})...`);
+        const { text, speed, voiceEngine } = req.body;
+        if (!text) return res.status(400).json({ error: "Text required" });
+        
+        console.log(`[TTS API Proxy] Redirecting legacy /api/ai/tts to Gemini 2.5 Flash...`);
         const stylePrompt = req.body.stylePrompt || "元気な感じ";
-        const keyPath = "C:\\Users\\one\\Desktop\\RetailMedia_System\\my-project-89579lifeai-de780f052f58.json";
+        const voiceName = (voiceEngine && voiceEngine.includes('gemini_')) ? voiceEngine.replace('gemini_', '') : 'Aoede';
 
-        // === Vertex AI Gemini 2.5 Flash TTS ===
-        if (voiceEngine && voiceEngine.startsWith('gemini_')) {
-            const parts = voiceEngine.split('_');
-            let geminiVoiceName = 'Aoede'; // Default Vertex voice
-            if (parts.length >= 2 && parts[1] !== 'flash') {
-                // Capitalize first letter: "achernar" -> "Achernar"
-                geminiVoiceName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase();
-            } else if (parts[1] === 'flash') {
-                geminiVoiceName = 'Aoede';
-            }
-
-            console.log(`[TTS Vertex] Using Gemini 2.5 Flash Voice: ${geminiVoiceName}`);
-
-            try {
-                const { GoogleAuth } = require('google-auth-library');
-                const auth = new GoogleAuth({
-                    keyFilename: keyPath,
-                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                });
-                const client = await auth.getClient();
-                const tokenInfo = await client.getAccessToken();
-
-                const url = 'https://us-central1-aiplatform.googleapis.com/v1beta1/projects/my-project-89579lifeai/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent';
-
-                // Instruct Gemini on how to speak
-                const finalPrompt = stylePrompt ? `以下のテキストを「${stylePrompt}」という感情やテンションで、自然な抑揚をつけて読み上げてください。\n\nテキスト: ${text}` : text;
-
-                const body = {
-                    contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-                    generationConfig: {
-                        responseModalities: ['AUDIO'],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: {
-                                    voiceName: geminiVoiceName
-                                }
-                            }
-                        }
-                    }
-                };
-
-                const apiRes = await globalThis.fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + tokenInfo.token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                });
-                const data = await apiRes.json();
-
-                if (data.candidates && data.candidates[0].content.parts) {
-                    const audioPart = data.candidates[0].content.parts.find(p => p.inlineData && p.inlineData.data);
-                    if (audioPart) {
-                        return res.json({ audioContent: audioPart.inlineData.data });
-                    }
-                }
-                console.warn("[TTS Vertex Warning] No audio returned (possibly not allowlisted). Falling back to Cloud TTS. Data:", JSON.stringify(data));
-                // Fallthrough to standard Cloud TTS
-            } catch (err) {
-                console.warn("[TTS Vertex Exception] Falling back to Cloud TTS. Error:", err.message);
-                // Fallthrough to standard Cloud TTS
-            }
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) return res.status(500).json({ success: false, error: 'GEMINI_API_KEY is not set in .env' });
+        
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: `You are an AI voice generator. Generate a pristine voice track of the following text with this style: ${stylePrompt}. Text: ${text}` }] }],
+                generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } } }
+            })
+        });
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('Gemini TTS Error:', err);
+            return res.status(response.status).json({ success: false, error: err });
         }
-
-        // === Standard Google Cloud TTS (Fallback/Neural2) ===
-        console.log(`[TTS Cloud] Using Standard Google Cloud TTS: ${voiceEngine}`);
-        let voiceName = 'ja-JP-Neural2-B'; // Default (Female)
-        let ssmlGender = 'FEMALE';
-
-        if (voiceEngine === 'api_neural_male') {
-            voiceName = 'ja-JP-Neural2-C';
-            ssmlGender = 'MALE';
+        const data = await response.json();
+        let audioPart = null;
+        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+            audioPart = data.candidates[0].content.parts.find(p => p.inlineData);
         }
-
-        // Initialize SDK client lazily
-        if (!TextToSpeechClient) {
-            try {
-                const textToSpeech = require('@google-cloud/text-to-speech');
-                const fs = require('fs');
-                let clientOptions = {};
-                if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(keyPath)) {
-                    clientOptions = { keyFilename: keyPath };
-                }
-                TextToSpeechClient = new textToSpeech.TextToSpeechClient(clientOptions);
-            } catch (e) {
-                console.error("[TTS Error] Failed to initialize Google TTS SDK:", e);
-                return res.status(500).json({ error: "Failed to initialize Google TTS SDK. " + e.message });
-            }
+        if (audioPart && audioPart.inlineData) {
+            res.json({ audioContent: audioPart.inlineData.data });
+        } else {
+            res.status(500).json({ success: false, error: 'No audio data returned from Gemini' });
         }
-
-        const request = {
-            input: { text: text },
-            voice: { languageCode: 'ja-JP', name: voiceName, ssmlGender: ssmlGender },
-            audioConfig: {
-                audioEncoding: 'MP3',
-                speakingRate: parseFloat(speed || 1.0),
-                pitch: parseFloat(req.body.pitch || 0.0)
-            },
-        };
-
-        const [response] = await TextToSpeechClient.synthesizeSpeech(request);
-        const base64Audio = response.audioContent.toString('base64');
-        res.json({ audioContent: base64Audio });
-
-    } catch (e) {
-        console.error("[TTS Proxy Error]", e.details || e.message);
-        res.status(500).json({ error: (e.details || e.message) });
+    } catch (error) {
+        console.error('Gemini Proxy Exception:', error);
+        res.status(500).json({ success: false, error: error.toString() });
     }
 });
 
