@@ -481,7 +481,8 @@ app.post('/api/voice/synthesize', async (req, res) => {
         const { text, voiceName, stylePrompt } = req.body;
         
         // Read key from .env or environment variable
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         if (!GEMINI_API_KEY) {
             return res.status(500).json({ success: false, message: "Server configuration missing: GEMINI_API_KEY is not set in .env" });
         }
@@ -493,7 +494,7 @@ app.post('/api/voice/synthesize', async (req, res) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: `${stylePrompt}: ${text}` }] }],
+                contents: [{ role: "user", parts: [{ text: `You are an AI voice generator. Generate a pristine voice track of the following text with this style: ${stylePrompt}. Text: ${text}` }] }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } }
