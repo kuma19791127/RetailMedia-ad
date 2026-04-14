@@ -1886,14 +1886,33 @@ async function pullFromS3() {
         const response = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: 'database.json' }));
         const str = await response.Body.transformToString();
         const parsed = JSON.parse(str);
-        if (parsed.campaigns && campaignsDB) {
-            campaignsDB.length = 0;
-            parsed.campaigns.forEach(c => campaignsDB.push(c));
+
+        if (parsed.campaigns && typeof campaigns !== 'undefined') {
+            campaigns.length = 0;
+            parsed.campaigns.forEach(c => campaigns.push(c));
         }
-        if (parsed.admins && adminAccounts) {
-            adminAccounts.length = 0;
-            parsed.admins.forEach(a => adminAccounts.push(a));
+        if (parsed.clients && typeof clients !== 'undefined') {
+            clients.length = 0;
+            parsed.clients.forEach(c => clients.push(c));
         }
+        if (parsed.storeData && typeof storeData !== 'undefined') {
+            Object.assign(storeData, parsed.storeData);
+        }
+        if (parsed.creatorState && typeof CREATOR_STATE !== 'undefined') {
+            Object.assign(CREATOR_STATE, parsed.creatorState);
+        }
+        if (parsed.transactions && typeof transactions !== 'undefined') {
+            transactions.length = 0;
+            parsed.transactions.forEach(t => transactions.push(t));
+        }
+        if (parsed.sensorLogs && typeof sensorLogs !== 'undefined') {
+            sensorLogs.length = 0;
+            parsed.sensorLogs.forEach(l => sensorLogs.push(l));
+        }
+        if (parsed.globalDashboardStats && typeof globalDashboardStats !== 'undefined') {
+            Object.assign(globalDashboardStats, parsed.globalDashboardStats);
+        }
+
         const crypto = require('crypto');
         fs.writeFileSync(require('path').join(__dirname, 'database.json'), str, 'utf8');
         console.log('[S3] Successfully pulled database.json from cloud!');
@@ -1922,8 +1941,16 @@ setTimeout(pullFromS3, 2000);
 let lastDBString = "";
 setInterval(() => {
     try {
-        if(typeof campaignsDB !== 'undefined' && typeof adminAccounts !== 'undefined') {
-            const dataStr = JSON.stringify({ campaigns: campaignsDB, admins: adminAccounts }, null, 2);
+        if(true) {
+            const dataStr = JSON.stringify({ 
+                campaigns: typeof campaigns !== 'undefined' ? campaigns : [], 
+                clients: typeof clients !== 'undefined' ? clients : [],
+                storeData: typeof storeData !== 'undefined' ? storeData : {},
+                creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
+                transactions: typeof transactions !== 'undefined' ? transactions : [],
+                sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
+                globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {}
+            }, null, 2);
             fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
             if (dataStr !== lastDBString && lastDBString !== "") {
                 pushToS3(dataStr);
