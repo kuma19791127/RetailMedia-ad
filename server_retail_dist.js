@@ -92,7 +92,7 @@ app.get('/shift', (req, res) => res.sendFile(path.join(__dirname, 'shift_manager
 app.get('/ag-login', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
 app.get('/corp', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
 app.get('/employee', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'Anti-Gravity.html')));
+// Default admin route overridden
 
 // Legacy Routes (Redirect to Portal)
 app.get('/store-owner', (req, res) => res.redirect('/store-portal'));
