@@ -160,6 +160,14 @@ app.post('/api/review/unlock/:id/approve', (req, res) => {
                 }
             });
         }
+        // Unlock all banned campaigns for advertiser
+        if (typeof campaigns !== 'undefined') {
+            campaigns.forEach(c => {
+                if (c.status === 'ban') {
+                    c.status = 'active';
+                }
+            });
+        }
     }
     res.json({ success: true });
 });
