@@ -1836,6 +1836,73 @@ app.post('/api/manualhelp/translate-steps', async (req, res) => {
     }
 });
 
+
+app.post('/api/voice/synthesize', async (req, res) => {
+    try {
+        const { text, voiceName, stylePrompt } = req.body;
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) return res.status(500).json({ success: false, message: 'Server configuration missing: GEMINI_API_KEY is not set in .env' });
+        
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: `You are an AI voice generator. Generate a pristine voice track of the following text with this style: ${stylePrompt}. Text: ${text}` }] }],
+                generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } } }
+            })
+        });
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('Gemini TTS Error:', err);
+            return res.status(response.status).json({ success: false, message: err });
+        }
+        const data = await response.json();
+        let audioPart = null;
+        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+            audioPart = data.candidates[0].content.parts.find(p => p.inlineData);
+        }
+        if (audioPart && audioPart.inlineData) {
+            res.json({ success: true, audioBase64: audioPart.inlineData.data });
+        } else {
+            res.status(500).json({ success: false, message: 'No audio data returned from Gemini' });
+        }
+    } catch (error) {
+        console.error('Gemini Proxy Exception:', error);
+        res.status(500).json({ success: false, message: error.toString() });
+    }
+});
+
+
+setInterval(() => {
+    try {
+        if(typeof campaignsDB !== 'undefined' && typeof adminAccounts !== 'undefined') {
+            const data = JSON.stringify({ campaigns: campaignsDB, admins: adminAccounts }, null, 2);
+            fs.writeFileSync(path.join(__dirname, 'database.json'), data, 'utf8');
+        }
+    } catch(e){}
+}, 5000);
+
+// Load DB on boot
+setTimeout(() => {
+    try {
+        if (fs.existsSync(path.join(__dirname, 'database.json'))) {
+            const data = fs.readFileSync(path.join(__dirname, 'database.json'), 'utf8');
+            const parsed = JSON.parse(data);
+            if (parsed.campaigns && campaignsDB) {
+                campaignsDB.length = 0; // Clear
+                parsed.campaigns.forEach(c => campaignsDB.push(c));
+            }
+            if (parsed.admins && adminAccounts) {
+                adminAccounts.length = 0;
+                parsed.admins.forEach(a => adminAccounts.push(a));
+            }
+            console.log('[DB] Restored persistence from database.json');
+        }
+    } catch(e){}
+}, 1000);
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
     console.log(`[Entry] Login Portal: http://localhost:${PORT}/`);
