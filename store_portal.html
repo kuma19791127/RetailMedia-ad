@@ -769,87 +769,22 @@
                     }
 
                     try {
-                        const res = await fetch('/api/ai/broadcast', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                text: adText,
-                                mascot: mascotPath,
-                                style: adStyle,
-                                speed: voiceSpeed,
-                                voiceEngine: voiceEngine,
-                                audioContent: lastApiAudio // Send base64 audio if available
-                            })
-                        });
-
-                        if (!res.ok) {
-                            const errorData = await res.json();
-                            throw new Error(errorData.error || '配信に失敗しました。');
-                        }
-
-                        Swal.fire({ icon: 'success', title: '優先配信を実行しました', text: '店舗サイネージに割り込み放送を行いました。' });
-                    } catch (e) {
-                        console.error(e);
-                        alert("配信サーバーに接続できません");
-                    }
-                }
-
-                // --- Voice Logic (Server-Side Proxy) ---
-
-                window.addEventListener('load', () => {
-                    initVoiceList();
-                    setTimeout(populateVoiceList, 500);
-                });
-
-                async function speakText(text, type, forcePreview = false) {
-                    const manualSelection = document.getElementById('voice-engine').selectedOptions[0];
-                    const isCloudApi = manualSelection && manualSelection.value.startsWith("api_");
-                    const isGeminiApi = manualSelection && manualSelection.value.startsWith("gemini_");
-
-                    if (isGeminiApi) {
-                        console.log("[Voice] Using Gemini 2.5 Flash TTS");
-                        const preview = document.getElementById('video-preview');
-                        const originalHtml = preview.innerHTML;
-                        preview.innerHTML = '<div style="color:#e67e22; padding:20px;">🤖 Generating Gemini Voice...</div>';
-
-                        try {
-                            const GEMINI_API_KEY = 'API_KEY_REMOVED_FOR_SECURITY';
-                            const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-                            // Gemini 2.5 Flash does not return AUDIO from generateContent when requested like this by default unless it's a specific endpoint, but the user is using `gemini-2.5-flash`.
-                            // Let's use `gemini-2.5-flash-preview-tts` which is the currently correct model ID for audio output generation.
-                            const API_MODEL = "gemini-2.5-flash-preview-tts";
-                            const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
                             const stylePrompt = document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "cheerfully";
                             const voiceName = manualSelection.value.replace('gemini_', '');
 
-                            const response = await fetch(FIXED_URL, {
+                            const response = await fetch('/api/voice/synthesize', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    contents: [{ role: "user", parts: [{ text: `${stylePrompt}: ${text}` }] }],
-                                    generationConfig: {
-                                        responseModalities: ["AUDIO"],
-                                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } }
-                                    }
-                                })
+                                body: JSON.stringify({ text, voiceName, stylePrompt })
                             });
 
-                            if (!response.ok) {
-                                const errorBody = await response.text();
-                                console.error("Full Gemini API Error Response:", errorBody);
-                                throw new Error(`Gemini API Error ${response.status}: ${errorBody}`);
-                            }
                             const data = await response.json();
-
-                            let audioPart = null;
-                            if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
-                                audioPart = data.candidates[0].content.parts.find(p => p.inlineData);
+                            if (!response.ok || !data.success) {
+                                throw new Error(data.message || "Failed to generate voice via backend proxy");
                             }
 
-                            if (audioPart && audioPart.inlineData) {
-                                window.lastApiAudio = audioPart.inlineData.data;
+                            if (data.audioBase64) {
+                                window.lastApiAudio = data.audioBase64;
 
                                 const binaryString = window.atob(data.audioBase64);
                                 const bytes = new Uint8Array(binaryString.length);
