@@ -1,4 +1,5 @@
 const express = require('express');
+const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const cors = require('cors');
 const path = require('path');
 const os = require('os');
@@ -1875,33 +1876,62 @@ app.post('/api/voice/synthesize', async (req, res) => {
 });
 
 
+
+const s3Client = new S3Client({ region: process.env.AWS_DEFAULT_REGION || "us-east-1" });
+const bucketName = process.env.AWS_S3_BUCKET_NAME;
+
+async function pullFromS3() {
+    if (!bucketName) return;
+    try {
+        const response = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: 'database.json' }));
+        const str = await response.Body.transformToString();
+        const parsed = JSON.parse(str);
+        if (parsed.campaigns && campaignsDB) {
+            campaignsDB.length = 0;
+            parsed.campaigns.forEach(c => campaignsDB.push(c));
+        }
+        if (parsed.admins && adminAccounts) {
+            adminAccounts.length = 0;
+            parsed.admins.forEach(a => adminAccounts.push(a));
+        }
+        const crypto = require('crypto');
+        fs.writeFileSync(require('path').join(__dirname, 'database.json'), str, 'utf8');
+        console.log('[S3] Successfully pulled database.json from cloud!');
+    } catch (e) {
+        console.log('[S3] Notice: No existing database found on S3, starting fresh or using local.');
+    }
+}
+
+async function pushToS3(dataStr) {
+    if (!bucketName) return;
+    try {
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: 'database.json',
+            Body: dataStr,
+            ContentType: 'application/json'
+        }));
+        console.log('[S3] Uploaded latest database.json to cloud');
+    } catch(e) {
+        console.error('[S3] Sync failed:', e.message);
+    }
+}
+
+setTimeout(pullFromS3, 2000);
+
+let lastDBString = "";
 setInterval(() => {
     try {
         if(typeof campaignsDB !== 'undefined' && typeof adminAccounts !== 'undefined') {
-            const data = JSON.stringify({ campaigns: campaignsDB, admins: adminAccounts }, null, 2);
-            fs.writeFileSync(path.join(__dirname, 'database.json'), data, 'utf8');
+            const dataStr = JSON.stringify({ campaigns: campaignsDB, admins: adminAccounts }, null, 2);
+            fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
+            if (dataStr !== lastDBString && lastDBString !== "") {
+                pushToS3(dataStr);
+            }
+            lastDBString = dataStr;
         }
     } catch(e){}
-}, 5000);
-
-// Load DB on boot
-setTimeout(() => {
-    try {
-        if (fs.existsSync(path.join(__dirname, 'database.json'))) {
-            const data = fs.readFileSync(path.join(__dirname, 'database.json'), 'utf8');
-            const parsed = JSON.parse(data);
-            if (parsed.campaigns && campaignsDB) {
-                campaignsDB.length = 0; // Clear
-                parsed.campaigns.forEach(c => campaignsDB.push(c));
-            }
-            if (parsed.admins && adminAccounts) {
-                adminAccounts.length = 0;
-                parsed.admins.forEach(a => adminAccounts.push(a));
-            }
-            console.log('[DB] Restored persistence from database.json');
-        }
-    } catch(e){}
-}, 1000);
+}, 10000);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
