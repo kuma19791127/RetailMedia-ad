@@ -236,10 +236,6 @@ app.post('/api/creator/upload', (req, res) => {
             fs.writeFileSync(savePath, buffer);
             finishUpload("/uploads/" + filename);
         }
-    } else {
-        finishUpload(src);
-    })
-            .run();
     } else if (src && src.startsWith('data:')) {
         console.log("[Creator] Saving generic media file to S3...");
         const mime = src.split(';')[0].split(':')[1] || 'application/octet-stream';
@@ -399,17 +395,6 @@ app.post('/api/auth/login', (req, res) => {
         return res.json({ success: true, redirect: getRedirectUrl(user.role) });
     }
 
-    if (user && user.password === password) {
-        console.log(`[Auth] ✅ Login Success: ${email}`);
-        currentUser = { email, role: user.role }; // Set Session
-        res.json({ success: true, redirect: getRedirectUrl(user.role) });
-    } else {
-        console.log(`[Auth] ❌ Login Failed: ${email}`);
-        res.json({ success: false, error: "Invalid Email or Password" });
-    }
-});
-
-    const user = users[email];
     if (user && user.password === password) {
         console.log(`[Auth] ✅ Login Success: ${email}`);
         currentUser = { email, role: user.role }; // Set Session
@@ -715,13 +700,6 @@ app.post('/api/campaigns', (req, res) => {
                         if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
                     }
                 });
-                })
-                .on('error', (err) => {
-                    console.error("[AdUpload] Transcoding error:", err);
-                    processAndInject(rawUrl); // Fallback
-                    if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
-                })
-                .run();
 
             res.json({ success: true, message: "Campaign Created (Transcoding in background)" });
         } else {
