@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>小売り向け設定パネル</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
@@ -20,7 +21,7 @@
             padding: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        h2 { text-align: center; color: #2563EB; }
+        h2 { text-align: center; color: #10B981; }
         
         /* 16文字程度での改行を促すための幅制限と文字組み */
         .desc-text {
@@ -50,11 +51,64 @@
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background: #F8FAFC;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: #2563EB;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>📱 どこでもレジ <br><span style="font-size:14px; color:#64748B;">store@demo.com</span></h2>
+    <!-- Login Screen -->
+    <div id="page-login" class="container" style="text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+        <h2 style="margin:0;">anywhere Login</h2>
+        <p style="color:#10B981; font-weight:bold; margin-top:5px; font-size:14px;">(retail)</p>
+        
+        <form onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:20px 0 0 0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
+            <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
+            <input type="password" id="input-pass" class="login-input" placeholder="Password" autocomplete="current-password">
+            <button type="submit" class="btn-primary">ログインして開始</button>
+        </form>
+
+        <div style="margin-top:15px; font-size:12px;">
+            <a href="#" style="color:#2563EB;">Forgot Password?</a>
+        </div>
+
+        <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
+            <b style="color:#1F2937; margin-bottom:5px; display:inline-block;">Demo Account (タップで自動入力＆コピー)</b><br>
+            Email: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; margin-bottom:5px;" onclick="document.getElementById('input-email').value='store@demo.com'">store@demo.com</span><br>
+            Pass: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block;" onclick="document.getElementById('input-pass').value='DemoPass2026!'">DemoPass2026!</span>
+        </div>
+        <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
+            <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
+        </div>
+        
+        <a href="anywhere_regi.html" style="display:block; margin-top:20px; font-size:12px; text-decoration:underline;">一般のお買い物客向けログインはこちら</a>
+    </div>
+
+    <!-- Management Portal (Hidden by default) -->
+    <div id="page-portal" class="container" style="display: none;">
+        <h2>📱 どこでもレジ <br><span id="user-email-display" style="font-size:14px; color:#64748B;"></span></h2>
         
         <p class="desc-text">
             こちらのページは<br>
@@ -64,14 +118,35 @@
             売上確認が可能です。
         </p>
 
-        <a href="anywhere_lp.html" class="menu-btn" style="background:#3b82f6;">📖 LPを見る</a>
+        <a href="anywhere_lp.html" target="_blank" class="menu-btn" style="background:#3b82f6;">📖 LPを見る</a>
         <button onclick="alert('会社別売上データ取得機能')" class="menu-btn" style="background:#0ea5e9;">📊 会社別売上</button>
         <button onclick="document.getElementById('excel-master-upload').click()" class="menu-btn" style="background:#10B981;">📥 商品データ取込</button>
         <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="alert('商品データファイルを選択しました')">
         <button onclick="alert('POS・システム連携設定機能')" class="menu-btn" style="background:#8e44ad;">⚙️ 連携設定</button>
         <button onclick="alert('スキャン履歴一覧機能')" class="menu-btn" style="background:#f59e0b;">🛠 スキャン履歴</button>
         
-        <a href="anywhere_regi.html" style="display:block; text-align:center; margin-top:20px; color:#2563EB; font-weight:bold; text-decoration:underline;">← ログイン画面へ戻る</a>
+        <button class="menu-btn" style="background:#ef4444; margin-top:20px;" onclick="doLogout()">ログアウト</button>
     </div>
+
+    <script>
+        function doLogin() {
+            const email = document.getElementById('input-email').value;
+            const pass = document.getElementById('input-pass').value;
+            if(!email || !pass) {
+                Swal.fire({icon: 'error', title: 'エラー', text: 'Emailとパスワードを入力してください'});
+                return;
+            }
+            // Mock login for demo
+            document.getElementById('page-login').style.display = 'none';
+            document.getElementById('page-portal').style.display = 'block';
+            document.getElementById('user-email-display').innerText = email;
+            Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'ログインしました', showConfirmButton: false, timer: 1500});
+        }
+        function doLogout() {
+            document.getElementById('page-login').style.display = 'block';
+            document.getElementById('page-portal').style.display = 'none';
+            document.getElementById('input-pass').value = '';
+        }
+    </script>
 </body>
 </html>
