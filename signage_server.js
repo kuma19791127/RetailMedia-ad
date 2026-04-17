@@ -215,7 +215,10 @@ module.exports = {
         return newAd;
     },
 
-    getState: () => STATE,\n    setState: (newState) => { STATE = newState; },\n\n    clearCampaigns: () => {
+    getState: () => STATE,
+    setState: (newState) => { STATE = newState; },
+
+    clearCampaigns: () => {
         STATE["register_side"].paid = null;
         STATE["register_side"].moment = null;
         STATE["register_side"].impression = null;
