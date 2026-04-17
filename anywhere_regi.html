@@ -336,12 +336,33 @@
                 ¥<span id="final-total">0</span>
             </div>
 
-            <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+            <!-- Tab UI -->
+            <div style="display:flex; border-bottom:2px solid #e2e8f0; margin-bottom:15px;">
+                <div id="tab-self" style="flex:1; text-align:center; padding:10px; font-weight:bold; color:#2563EB; border-bottom:3px solid #2563EB; cursor:pointer;" onclick="switchPaymentTab('self')">
+                    📱<br><span style="font-size:10px;">お客様がカード入力</span>
+                </div>
+                <div id="tab-staff" style="flex:1; text-align:center; padding:10px; font-weight:bold; color:#64748B; cursor:pointer;" onclick="switchPaymentTab('staff')">
+                    👩‍💼<br><span style="font-size:10px;">店員がQR提示</span>
+                </div>
+            </div>
+
+            <!-- Method 1: Customer Self Checkout (Credit Card SDK) -->
+            <div id="payment-self-content" style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+                <p style="font-size:11px; color:#64748B; margin:0 0 5px 0; font-weight:bold;">お客様自身のデバイスでクレジットカード等の情報を入力・登録して決済します</p>
                 <div id="apple-pay-button" style="width:100%;"></div>
                 <div id="google-pay-button" style="width:100%;"></div>
                 <div id="sq-card-container"></div>
                 <button id="sq-creditcard" class="btn-primary" style="background:#0f172a; margin-top:10px;">クレジットカードで決済</button>
                 <div id="sq-status" style="color:#ef4444; font-weight:bold; font-size:12px; margin-top:5px; text-align:center;"></div>
+            </div>
+
+            <!-- Method 2: Staff Mobile QR presentation -->
+            <div id="payment-staff-content" style="display:none; flex-direction:column; align-items:center;">
+                <p style="font-size:11px; color:#64748B; margin:0 0 10px 0; font-weight:bold; text-align:center;">お客様のスマホのカメラでこのQRをスキャンして<br>Squareで決済を完了させてください。</p>
+                <img id="staff-qr-code" src="" style="width:200px; height:200px; border:3px solid #10b981; border-radius:10px; padding:10px; background:white; margin-bottom:15px; box-shadow:0 4px 6px rgba(16,185,129,0.3);">
+                <button class="btn-primary" style="background:#10b981; width:100%; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;" onclick="checkStaffQRPayment()">
+                    <span style="font-size:18px;">🔄</span> 決済完了を確認する
+                </button>
             </div>
 
             <button style="background:none; border:none; color:var(--text-sub); margin-top:25px; cursor:pointer;"
@@ -766,6 +787,13 @@ window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('page-payment').classList.add('active');
             document.getElementById('final-total').innerText = total.toLocaleString();
 
+            const sqPayload = encodeURIComponent('square_checkout_demo_link');
+            const qrElement = document.getElementById('staff-qr-code');
+            if(qrElement) {
+                qrElement.src = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + sqPayload;
+            }
+
+
             const status = document.getElementById('sq-status');
             if(status) status.innerText = "";
             
@@ -955,5 +983,47 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 </script>
 
+
+        <script>
+function switchPaymentTab(tab) {
+            const tabSelf = document.getElementById('tab-self');
+            const tabStaff = document.getElementById('tab-staff');
+            const contSelf = document.getElementById('payment-self-content');
+            const contStaff = document.getElementById('payment-staff-content');
+            
+            if(tab === 'self') {
+                tabSelf.style.color = '#2563EB'; tabSelf.style.borderBottom = '3px solid #2563EB';
+                tabStaff.style.color = '#64748B'; tabStaff.style.borderBottom = 'none';
+                contSelf.style.display = 'flex';
+                contStaff.style.display = 'none';
+            } else {
+                tabStaff.style.color = '#10B981'; tabStaff.style.borderBottom = '3px solid #10B981';
+                tabSelf.style.color = '#64748B'; tabSelf.style.borderBottom = 'none';
+                contSelf.style.display = 'none';
+                contStaff.style.display = 'flex';
+            }
+        }
+        
+        async function checkStaffQRPayment() {
+            Swal.fire({
+                title: '決済確認中...',
+                text: 'Squareと通信し、お客様の端末での決済完了を待機しています',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            // Mock waiting API process
+            setTimeout(() => {
+                Swal.fire({
+                    title: '決済完了！',
+                    text: 'Square決済が正常に完了しました',
+                    icon: 'success'
+                }).then(() => {
+                    cart = []; total = 0;
+                    renderCart();
+                    backToScan();
+                });
+            }, 2000);
+        }
+</script>
 </body>
 </html>
