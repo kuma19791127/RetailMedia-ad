@@ -2143,8 +2143,9 @@
         async function initiateCampaign(plan) {
 
             // === KYC Authorization Gate ===
+            const isDemoUser = window.currentUser && window.currentUser.email && window.currentUser.email.includes('@demo.com');
             const isRealUser = window.currentUser && window.currentUser.email && window.currentUser.email !== 'Guest' && window.currentUser.email !== 'Unknown';
-            if (isRealUser) {
+            if (isRealUser && !isDemoUser) {
                 const kycStatus = localStorage.getItem('retail_kyc_approved');
                 if (kycStatus !== 'true') {
                     Swal.fire({
