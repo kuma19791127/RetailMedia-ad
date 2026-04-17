@@ -74,6 +74,7 @@
         }
         
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <!-- Login Screen -->
@@ -108,14 +109,11 @@
 
     <!-- Management Portal (Hidden by default) -->
     <div id="page-portal" class="container" style="display: none;">
-        <h2>📱 どこでもレジ <br><span id="user-email-display" style="font-size:14px; color:#64748B;"></span></h2>
+        <h2>📱 どこでもレジ <i class="fa-solid fa-pen-to-square" style="cursor:pointer; color:#94a3b8; font-size:16px; margin-left:10px;" onclick="openProfileModal()"></i><br><span id="user-email-display" style="font-size:14px; color:#64748B;"></span></h2>
         
         <p class="desc-text">
-            こちらのページは<br>
-            小売り店舗様の<br>
-            設定専用ページです。<br>
-            各種データ取込や<br>
-            売上確認が可能です。
+            こちらのページは小売り店舗様の設定専用ページです。<br>
+            各種データ取込や売上確認が可能です。
         </p>
 
         <a href="anywhere_lp.html" target="_blank" class="menu-btn" style="background:#3b82f6;">📖 LPを見る</a>
@@ -124,6 +122,8 @@
         <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="alert('商品データファイルを選択しました')">
         <button onclick="alert('POS・システム連携設定機能')" class="menu-btn" style="background:#8e44ad;">⚙️ 連携設定</button>
         <button onclick="alert('スキャン履歴一覧機能')" class="menu-btn" style="background:#f59e0b;">🛠 スキャン履歴</button>
+        <button onclick="window.location.href='anywhere_regi.html?skipAuth=1'" class="menu-btn" style="background:#ec4899;">🛒 商品を店員が読む</button>
+        <button onclick="window.open('business_lp.html', '_blank')" class="menu-btn" style="background:#8b5cf6;">📺 サイネージ広告</button>
         
         <button class="menu-btn" style="background:#ef4444; margin-top:20px;" onclick="doLogout()">ログアウト</button>
     </div>
@@ -148,5 +148,44 @@
             document.getElementById('input-pass').value = '';
         }
     </script>
+
+<!-- Context-Agnostic Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:left;">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        
+        <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="Demo Store" autocomplete="organization">
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+            <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="store@demo.com" autocomplete="username">
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード" autocomplete="new-password">
+            
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openProfileModal() {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
+        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+        document.getElementById('user-email-display').innerText = document.getElementById('prof-org').value + ' / ' + document.getElementById('prof-email').value;
+        document.getElementById('modal-profile').style.display = 'none';
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+    }
+</script>
+
 </body>
 </html>

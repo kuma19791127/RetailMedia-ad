@@ -378,6 +378,16 @@
     </div>
 
     <script src="products.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    if (new URLSearchParams(window.location.search).get('skipAuth') === '1') {
+        const loginPage = document.getElementById('page-login');
+        if(loginPage) loginPage.classList.remove('active');
+        const posPage = document.getElementById('page-pos');
+        if(posPage) posPage.classList.add('active');
+        if(typeof initApp === 'function') initApp();
+    }
+});</script>
     <script>
         // --- Debug Log System ---
         function toggleDebugLog() {
