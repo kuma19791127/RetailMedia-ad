@@ -1207,19 +1207,37 @@
         // loadData();
 
         // --- Login Logic ---
-        function handleLogin() {
+        async function handleLogin() {
             const user = document.getElementById('admin-user').value;
             const pass = document.getElementById('admin-pass').value;
 
-            // Simple client-side check for demo
-            if ((user === 'admin' || user === 'admin@demo.com') && pass === 'DemoPass2026!') {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-                window.dispatchEvent(new Event('resize'));
-                loadData(); // Load data only after login
-            } else {
-                Swal.fire('Error', 'Invalid Admin Credentials', 'error');
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user, password: pass, role: 'admin' })
+                });
+                const data = await response.json();
+                if (data.success || ((user === 'admin' || user === 'admin@demo.com') && pass === 'DemoPass2026!')) {
+                    sessionStorage.setItem('retailMediaAuth', 'true');
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'flex';
+                    window.dispatchEvent(new Event('resize'));
+                    loadData();
+                } else {
+                    Swal.fire('Error', 'Invalid Admin Credentials', 'error');
+                }
+            } catch(e) {
+                // Fallback demo check if offline
+                if ((user === 'admin' || user === 'admin@demo.com') && pass === 'DemoPass2026!') {
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'flex';
+                    loadData();
+                } else {
+                    Swal.fire('Error', 'Invalid Admin Credentials', 'error');
+                }
             }
+        }
         }
 
         function switchLoginTab(mode) {

@@ -241,13 +241,37 @@ app.post('/api/creator/upload', (req, res) => {
     })
             .run();
     } else if (src && src.startsWith('data:')) {
-        // Save MP4 or Image to disk to prevent massive base64 broadcast
-        console.log("[Creator] Saving media file to disk...");
-        const ext = src.split(';')[0].split('/')[1] === 'mp4' ? 'mp4' : 'media';
+        console.log("[Creator] Saving generic media file to S3...");
+        const mime = src.split(';')[0].split(':')[1] || 'application/octet-stream';
+        const ext = mime.split('/')[1] || 'media';
         const base64Data = src.split(';base64,').pop();
-        const outputPath = path.join(__dirname, 'uploads', `video_${newId}.${ext}`);
-        fs.writeFileSync(outputPath, base64Data, { encoding: 'base64' });
-        finishUpload(`/uploads/video_${newId}.${ext}`);
+        const filename = `video_${newId}.${ext}`;
+        const buffer = Buffer.from(base64Data, 'base64');
+        const outputPath = require('path').join(__dirname, 'uploads', filename);
+        
+        if (typeof s3Client !== 'undefined' && s3Client && typeof bucketName !== 'undefined' && bucketName) {
+            try {
+                const { PutObjectCommand } = require('@aws-sdk/client-s3');
+                s3Client.send(new PutObjectCommand({ 
+                    Bucket: bucketName, 
+                    Key: 'uploads/' + filename, 
+                    Body: buffer, 
+                    ContentType: mime 
+                })).then(() => {
+                    console.log("[Creator] Successfully uploaded generic media to S3: " + filename);
+                    finishUpload("/uploads/" + filename);
+                }).catch(e => {
+                    require('fs').writeFileSync(outputPath, buffer);
+                    finishUpload("/uploads/" + filename);
+                });
+            } catch(e){
+                require('fs').writeFileSync(outputPath, buffer);
+                finishUpload("/uploads/" + filename);
+            }
+        } else {
+            require('fs').writeFileSync(outputPath, buffer);
+            finishUpload("/uploads/" + filename);
+        }
     } else {
         finishUpload(src || "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyprises.mp4");
     }
@@ -325,21 +349,7 @@ app.post('/api/admin/sales', (req, res) => {
             transaction: txData
         });
         
-        // Link POS Sales to Creator Synergy Score & Revenue
-        if (CREATOR_STATE.videos.length > 0) {
-            CREATOR_STATE.videos.forEach(v => {
-                if (v.status === 'active') {
-                    // Actual dynamic reward algorithm: Sales Uplift Bonus
-                    v.revenue += Math.floor(txData.amount * 0.05); // 5% of sales generated during cm
-                    v.uplift += 1;
-                    if (v.uplift > 50) v.rank = 'S';
-                    else if (v.uplift > 30) v.rank = 'A';
-                    else if (v.uplift > 10) v.rank = 'B';
-                }
-            });
-            CREATOR_STATE.total_revenue = CREATOR_STATE.videos.filter(v => v.status === 'active').reduce((acc, v) => acc + v.revenue, 0);
-            console.log(`[Creator] POS Synergy Reward Distributed! New Total: ¥${CREATOR_STATE.total_revenue}`);
-        }
+        // 独立したモジュールであるため、POS決済データとCreator（サイネージ広告枠）の直接的なコミッション連動は行いません
 
         res.json({ success: true, message: "Synced to Admin Server" });
     } catch (e) {
@@ -375,8 +385,29 @@ app.post('/api/auth/register', (req, res) => {
 let currentUser = null;
 
 app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
+
+    let user = users[email];
+    
+    // Auto-Register if user does not exist (to keep the ease of demo but persist data)
+    if (!user) {
+        users[email] = { password, role: role || "store" };
+        user = users[email];
+        console.log(`[Auth] 🆕 Auto-Registered & Logged in: ${email} (${user.role})`);
+        currentUser = { email, role: user.role };
+        return res.json({ success: true, redirect: getRedirectUrl(user.role) });
+    }
+
+    if (user && user.password === password) {
+        console.log(`[Auth] ✅ Login Success: ${email}`);
+        currentUser = { email, role: user.role }; // Set Session
+        res.json({ success: true, redirect: getRedirectUrl(user.role) });
+    } else {
+        console.log(`[Auth] ❌ Login Failed: ${email}`);
+        res.json({ success: false, error: "Invalid Email or Password" });
+    }
+});
 
     const user = users[email];
     if (user && user.password === password) {
@@ -655,11 +686,35 @@ app.post('/api/campaigns', (req, res) => {
                 .addOption('-crf', '28') // Heavy compression for Retail Signage
                 .on('end', () => {
                     console.log("[AdUpload] Transcoding & Compression finished.");
-                    fs.unlinkSync(inputPath); // Clean up temp file
-                    processAndInject(`/uploads/ad_video_${tempId}.mp4`);
-                    // We must wait to broadcast or return. Because Express prefers sync response,
-                    // we returned "Campaign Created" below before finish, but that's fine.
-                    if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+                    if (typeof s3Client !== 'undefined' && s3Client && typeof bucketName !== 'undefined' && bucketName) {
+                        try {
+                            const { PutObjectCommand } = require('@aws-sdk/client-s3');
+                            const fileBuf = require('fs').readFileSync(outputPath);
+                            s3Client.send(new PutObjectCommand({
+                                Bucket: bucketName,
+                                Key: `uploads/ad_video_${tempId}.mp4`,
+                                Body: fileBuf,
+                                ContentType: 'video/mp4'
+                            })).then(() => {
+                                console.log("[AdUpload] S3 Upload complete.");
+                                require('fs').unlinkSync(inputPath);
+                                require('fs').unlinkSync(outputPath);
+                                processAndInject(`/uploads/ad_video_${tempId}.mp4`);
+                                if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+                            }).catch(err => {
+                                console.error("[S3] Upload error:", err);
+                                require('fs').unlinkSync(inputPath);
+                                processAndInject(`/uploads/ad_video_${tempId}.mp4`);
+                            });
+                        } catch(e) {}
+                    } else {
+                        require('fs').unlinkSync(inputPath);
+                        processAndInject(`/uploads/ad_video_${tempId}.mp4`);
+                        // We must wait to broadcast or return. Because Express prefers sync response,
+                        // we returned "Campaign Created" below before finish, but that's fine.
+                        if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+                    }
+                });
                 })
                 .on('error', (err) => {
                     console.error("[AdUpload] Transcoding error:", err);
@@ -739,12 +794,25 @@ app.post('/api/ad/upload', (req, res) => {
     writeStream.on('finish', () => {
         console.log(`[Upload] Saved to ${savePath}`);
 
-        // Inject into Playlist logic
-        // We simulate a metadata object similar to demo boost
+        if (typeof s3Client !== 'undefined' && s3Client && typeof bucketName !== 'undefined' && bucketName) {
+            try {
+                const { PutObjectCommand } = require('@aws-sdk/client-s3');
+                const fileBuf = require('fs').readFileSync(savePath);
+                s3Client.send(new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: `uploads/${filename}`,
+                    Body: fileBuf
+                })).then(() => {
+                    console.log("[S3] Upload endpoint saved to S3");
+                    require('fs').unlinkSync(savePath); 
+                }).catch(e=>{});
+            } catch(e){}
+        }
+
         const metadata = {
             id: `upload-${Date.now()}`,
             title: 'Uploaded Ad',
-            url: `/local-media/${filename}`,
+            url: `/uploads/${filename}`,
             duration: 15000,
             is_image: false, // Will be updated if extension is image
             timestamp: Date.now()
@@ -1011,6 +1079,10 @@ let globalDashboardStats = {
 };
 
 let globalSensorLogs = [];
+let posTransactions = [];
+let manualChat = [];
+let manualhelpState = { manuals: [], logs: [] };
+let shiftState = { staff: [], chatHistory: [] };
 
 // --- AGENCY REFERRAL DATA STORE ---
 let agencyReferrals = [];
@@ -1158,6 +1230,53 @@ app.get('/api/analytics/track', (req, res) => {
 });
 
 // GET Global Dashboard Analytics
+
+
+// ManualHelp Chat API
+
+app.get('/api/manualhelp/state', (req, res) => {
+    res.json({ success: true, state: manualhelpState });
+});
+app.post('/api/manualhelp/state', express.json({limit: '10mb'}), (req, res) => {
+    try {
+        if(req.body.manuals) manualhelpState.manuals = req.body.manuals;
+        if(req.body.logs) manualhelpState.logs = req.body.logs;
+        res.json({ success: true });
+    } catch(e) {
+        res.status(500).json({ success: false });
+    }
+});
+app.get('/api/manualhelp/chat', (req, res) => {
+    res.json({ success: true, chat: manualChat });
+});
+app.post('/api/manualhelp/chat', express.json({limit: '10mb'}), (req, res) => {
+    try {
+        if(Array.isArray(req.body.chat)) {
+            manualChat = req.body.chat;
+            res.json({ success: true });
+        } else {
+            res.status(400).json({ success: false, error: "Invalid data form" });
+        }
+    } catch(e) {
+        res.status(500).json({ success: false });
+    }
+});
+app.get('/api/shift/state', (req, res) => {
+    res.json({ success: true, state: shiftState });
+});
+app.post('/api/shift/state', express.json({limit: '10mb'}), (req, res) => {
+    try {
+        if(req.body.staff) shiftState.staff = req.body.staff;
+        if(req.body.chatHistory) shiftState.chatHistory = req.body.chatHistory;
+        res.json({ success: true });
+    } catch(e) {
+        res.status(500).json({ success: false });
+    }
+});
+app.get('/api/admin/sales-history', (req, res) => {
+    res.json({ success: true, transactions: typeof posTransactions !== 'undefined' ? posTransactions : [] });
+});
+
 app.get('/api/analytics/global', (req, res) => {
     const rate = globalDashboardStats.impressions > 0
         ? ((globalDashboardStats.faceDetected / globalDashboardStats.impressions) * 100).toFixed(1) + "%"
@@ -1894,6 +2013,31 @@ async function pullFromS3() {
         if (parsed.globalDashboardStats && typeof globalDashboardStats !== 'undefined') {
             Object.assign(globalDashboardStats, parsed.globalDashboardStats);
         }
+        if (parsed.users && typeof users !== 'undefined') {
+            Object.assign(users, parsed.users);
+        }
+        if (parsed.manualhelpState) {
+            manualhelpState = parsed.manualhelpState;
+        }
+        if (parsed.manualChat && Array.isArray(parsed.manualChat)) {
+            manualChat = parsed.manualChat;
+        }
+        if (parsed.shiftState && typeof parsed.shiftState === 'object') {
+            shiftState = parsed.shiftState;
+        }
+        if (parsed.posTransactions && Array.isArray(parsed.posTransactions)) {
+            posTransactions = parsed.posTransactions;
+        }
+        if (parsed.productionStats) {
+            global.productionStats = parsed.productionStats;
+        }
+        if (parsed.creatorStats && typeof creatorStats !== 'undefined') {
+            Object.assign(creatorStats, parsed.creatorStats);
+        }
+        if (parsed.globalSensorLogs && typeof globalSensorLogs !== 'undefined') {
+            globalSensorLogs.length = 0;
+            parsed.globalSensorLogs.forEach(l => globalSensorLogs.push(l));
+        }
 
         const crypto = require('crypto');
         fs.writeFileSync(require('path').join(__dirname, 'database.json'), str, 'utf8');
@@ -1933,7 +2077,15 @@ setInterval(() => {
                 transactions: typeof transactions !== 'undefined' ? transactions : [],
                 sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
                 globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
-                agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : []
+                agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
+                productionStats: global.productionStats ? global.productionStats : null,
+                creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
+                globalSensorLogs: typeof globalSensorLogs !== 'undefined' ? globalSensorLogs : [],
+                users: typeof users !== 'undefined' ? users : {},
+                posTransactions: typeof posTransactions !== 'undefined' ? posTransactions : [],
+                shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
+                manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
+                manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] }
             }, null, 2);
             fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
             if (dataStr !== lastDBString && lastDBString !== "") {

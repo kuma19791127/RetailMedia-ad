@@ -18,7 +18,7 @@ if not exist "node_modules\" (
 )
 
 echo.
-echo [2/2] Starting server (node server_retail_dist.js)...
+echo [2/2] Starting server (start http://localhost:3000/admin\nnode server_retail_dist.js)...
 echo.
 echo === Login Portal: http://localhost:3000/ ===
 echo ========================================================

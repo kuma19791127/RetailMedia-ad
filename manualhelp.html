@@ -247,7 +247,51 @@
 <body>
 
     <!-- Payment Modal (Square) -->
-    <div id="payment-modal">
+
+        function promptCloudLink() {
+            Swal.fire({
+                title: 'クラウドURLの入力',
+                input: 'url',
+                inputPlaceholder: 'https://drive.google.com/file/d/....',
+                text: '共有権限を「リンクを知っている全員」に設定したURLを入力してください。',
+                background: '#1e293b',
+                color: '#f8fafc',
+                showCancelButton: true,
+                confirmButtonText: '解析開始'
+            }).then(result => {
+                if(result.isConfirmed && result.value) {
+                    document.getElementById('ai-loading').style.display = 'block';
+                    document.getElementById('ai-status').innerHTML = '☁️ クラウドURLを確認中...';
+                    setTimeout(() => {
+                        document.getElementById('ai-loading').style.display = 'none';
+                        
+                        Swal.fire({
+                            title: 'URL確認完了',
+                            html: `
+                                <div style="text-align:left; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:10px;">
+                                    <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:5px;">対象のクラウドリンク</div>
+                                    <div style="color:#38bdf8; font-size:0.9rem; word-break:break-all; text-decoration:underline;">${result.value}</div>
+                                </div>
+                                <p style="font-size:0.9rem; color:#e2e8f0;">このURL先のデータへアクセスし、自動生成を開始してもよろしいですか？</p>
+                            `,
+                            icon: 'info',
+                            background: '#1e293b',
+                            color: '#f8fafc',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fa-solid fa-check"></i> 決済してAIを実行',
+                            cancelButtonText: 'キャンセル',
+                            confirmButtonColor: '#10b981'
+                        }).then((confResult) => {
+                            if (confResult.isConfirmed) {
+                                triggerSquarePayment('ai_generation', 'クラウドデータ AI解析');
+                            }
+                        });
+                    }, 1500);
+                }
+            });
+        }
+
+        <div id="payment-modal">
         <div class="payment-card">
             <h2 id="pay-title" style="margin-bottom:10px;"><i class="fa-brands fa-square"></i> セキュア決済</h2>
             <p style="font-size:1.8rem; color:#f8fafc; font-weight:bold; margin-bottom:20px;">¥500 <span style="font-size:0.9rem; color:#94a3b8; font-weight:normal;">(税込)</span></p>
@@ -275,7 +319,7 @@
                 <option value="admin">履歴管理 (Admin)</option>
             </select>
             <button type="submit" class="btn" style="width:100%; margin-top:10px;"><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
-        </form><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
+        </form>
             <div style="margin: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.2);"></div>
             <p style="color:#cbd5e1; font-size:0.8rem; margin-bottom:10px; text-align:left;">💡 1クリック・デモログイン</p>
             <div style="display:flex; gap:10px; margin-bottom:20px;">
@@ -345,10 +389,13 @@
                         </div>
                         
                         <div style="border: 2px dashed rgba(255,255,255,0.2); background: rgba(0,0,0,0.1); padding: 20px; text-align: center; border-radius: 12px; margin-top:15px;">
-                            <h3 style="color:#fbbf24; font-size:1rem; margin-bottom:15px;"><i class="fa-solid fa-robot"></i> 高度なAI処理 <span style="font-size:0.8rem; background:#fbbf24; color:#0f172a; padding:2px 6px; border-radius:4px; margin-left:5px;">有料</span></h3>
+                            <h3 style="color:#fbbf24; font-size:1rem; margin-bottom:5px; display:inline-block;"><i class="fa-solid fa-robot"></i> 高度なAI処理 <span style="font-size:0.8rem; background:#fbbf24; color:#0f172a; padding:2px 6px; border-radius:4px; margin-left:5px;">有料</span></h3>
+                            <div style="text-align: right; margin-bottom:15px;">
+                                <a href="#" onclick="showAiDetails(); return false;" style="color:#60a5fa; font-size:0.85rem; text-decoration:underline; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle-info"></i> 詳細はこちら</a>
+                            </div>
                             
                             <input type="file" id="video-upload" accept="video/mp4,video/quicktime" style="display:none;" onchange="handleAiVideo(event)">
-                            <button class="btn btn-gold" style="width:100%; margin-bottom:10px; font-weight:bold; box-shadow:0 4px 10px rgba(251,191,36,0.2);" onclick="document.getElementById('video-upload').click();">
+                            <button class="btn btn-gold" style="width:100%; margin-bottom:10px; font-weight:bold; box-shadow:0 4px 10px rgba(251,191,36,0.2);" onclick="document.getElementById('ai-source-modal').style.display = 'flex';">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> 動画からAIステップ自動生成 (¥500)
                             </button>
                             
@@ -439,6 +486,111 @@
 
     <script>
         // --- Persistence Layer ---
+        
+
+        function showAiDetails() {
+            Swal.fire({
+                title: '<i class="fa-solid fa-wand-magic-sparkles" style="color:#fbbf24;"></i> AI自動生成とは？',
+                html: `
+                    <div style="text-align:left; font-size:0.85rem; line-height:1.6; color:#e2e8f0;">
+                        <p style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:15px;">
+                            Googleの最先端マルチモーダルAI<b>「Gemini 1.5 Flash」</b>の映像解析APIをバックエンドのNode.js経由で叩く、本物のAI連携機能です。
+                        </p>
+                        <h4 style="color:#f8fafc; font-size:1rem; margin-bottom:10px;"><i class="fa-solid fa-video"></i> 撮影した動画をアップロードするとどうなるか</h4>
+                        <p style="margin-bottom:10px;">
+                            たとえば店舗で「新しいレジの締め作業」や「コーヒーマシンの清掃方法」をスマホ動画で撮影しシステムに読み込ませると、以下の処理が自動実行されます。
+                        </p>
+                        
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:10px;">
+                            <strong style="color:#38bdf8;">1. AIが動画の意味を理解</strong>
+                            <p style="margin:5px 0 0 0; color:#cbd5e1; font-size:0.8rem;">
+                                動画データをAPIへ送信し、映像内の「人の手」「機械の変化」「音声」をAIが複合的に読み取ります。<br>
+                                <span style="font-size:0.7rem; color:#94a3b8;">（※システム内部で「マニュアル作成者として行程を解析しJSONで出力せよ」とプロンプト制御しています）</span>
+                            </p>
+                        </div>
+
+                        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px;">
+                            <strong style="color:#38bdf8;">2. 時系列のステップに自動分解</strong>
+                            <p style="margin:5px 0 10px 0; color:#cbd5e1; font-size:0.8rem;">
+                                AIが動画の中身を解釈し、「具体的な作業手順と説明文」を以下の様に自動でテキスト化・分割して返却します。
+                            </p>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                <div style="background:#1e293b; padding:8px; border-radius:6px; border-left:4px solid #10b981;">
+                                    <strong style="color:#10b981;">Step 1</strong><br>「マシンの給水タンク<br>を取り外す」
+                                </div>
+                                <div style="background:#1e293b; padding:8px; border-radius:6px; border-left:4px solid #10b981;">
+                                    <strong style="color:#10b981;">Step 2</strong><br>「中性洗剤でタンクの<br>内側を洗う」
+                                </div>
+                                <div style="background:#1e293b; padding:8px; border-radius:6px; border-left:4px solid #10b981;">
+                                    <strong style="color:#10b981;">Step 3</strong><br>「本体の電源を<br>長押ししてリセット」
+                                </div>
+                            </div>
+                        </div>
+
+                        <p style="color:#fbbf24; font-weight:bold; margin:0; text-align:center;">
+                            管理者はAIが作った骨組みや文章を微修正するだけで、<br>高度なマニュアルがあっという間に完成します！
+                        </p>
+                    </div>
+                `,
+                background: '#0f172a',
+                color: '#f8fafc',
+                confirmButtonText: '閉じる',
+                width: 450
+            });
+        }
+
+        async function fetchManualChat() {
+            try {
+                const res = await fetch('/api/manualhelp/chat');
+                const data = await res.json();
+                if(data.success && data.chat && data.chat.length > 0) {
+                    chatMessages = data.chat;
+                    localStorage.setItem('ag_chat', JSON.stringify(chatMessages));
+            syncManualChat();
+                    if(window.location.hash.includes('chat')) renderChat();
+                }
+            } catch(e) {}
+        }
+        
+        async function syncManualChat() {
+            try {
+                await fetch('/api/manualhelp/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat: chatMessages })
+                });
+            } catch(e) {}
+        }
+
+                async function fetchManualState() {
+            try {
+                const res = await fetch('/api/manualhelp/state');
+                const data = await res.json();
+                if(data.success && data.state) {
+                    if (data.state.manuals && data.state.manuals.length > 0) {
+                        dbManuals = data.state.manuals;
+                        localStorage.setItem('ag_manuals', JSON.stringify(dbManuals));
+                    }
+                    if (data.state.logs && data.state.logs.length > 0) {
+                        adminLogs = data.state.logs;
+                        localStorage.setItem('ag_logs', JSON.stringify(adminLogs));
+                    }
+                    if(window.location.hash.includes('db')) renderAdminLogs();
+                    if(window.location.hash.includes('auth')) renderUserManuals();
+                }
+            } catch(e) {}
+        }
+        
+        async function syncManualState() {
+            try {
+                await fetch('/api/manualhelp/state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ manuals: dbManuals, logs: adminLogs })
+                });
+            } catch(e) {}
+        }
+
         function loadDB() {
             let m = localStorage.getItem('ag_manuals');
             let l = localStorage.getItem('ag_logs');
@@ -456,7 +608,9 @@
         function saveDB() {
             localStorage.setItem('ag_manuals', JSON.stringify(dbManuals));
             localStorage.setItem('ag_logs', JSON.stringify(adminLogs));
+            syncManualState();
             localStorage.setItem('ag_chat', JSON.stringify(chatMessages));
+            syncManualChat();
         }
 
         let currentUser = null;
@@ -515,25 +669,51 @@
             }
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             checkRoute();
             initSquarePayments();
+            await fetchManualChat();
+            await fetchManualState();
         };
 
         window.addEventListener('hashchange', checkRoute);
 
         // --- Auth functions ---
-        function doLogin() {
+        async function doLogin() {
             const org = "Demo Corp";
             const name = document.getElementById('login-name').value.trim();
             const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass') ? document.getElementById('login-pass').value : 'demo1234!!';
             const role = document.getElementById('login-role').value;
-            if(!org || !name) { Swal.fire('エラー', '組織名と名前を入力するか、デモログインを押してください', 'error'); return; }
-            currentUser = { org, name, email, role, avatar: name.charAt(0) };
-            localStorage.setItem('ag_user', JSON.stringify(currentUser));
-            window.location.hash = '#' + role;
-            checkRoute();
-            renderChat(); // Force re-render with new identity
+            if(!name || !email) { Swal.fire('エラー', '名前とメールを入力してください', 'error'); return; }
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: pass, role: role })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    sessionStorage.setItem('retailMediaAuth', 'true');
+                    const realName = data.user && data.user.name ? data.user.name : name;
+                    const realOrg = data.user && data.user.org ? data.user.org : org;
+                    currentUser = { org: realOrg, name: realName, email, role, avatar: realName.charAt(0) };
+                    localStorage.setItem('ag_user', JSON.stringify(currentUser));
+                    window.location.hash = '#' + role;
+                    checkRoute();
+                    renderChat();
+                } else {
+                    Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
+                }
+            } catch(e) {
+                // Fallback for demo
+                currentUser = { org, name, email, role, avatar: name.charAt(0) };
+                localStorage.setItem('ag_user', JSON.stringify(currentUser));
+                window.location.hash = '#' + role;
+                checkRoute();
+                renderChat();
+            }
         }
 
         window.addEventListener('storage', function(e) {
@@ -765,12 +945,15 @@
             
             const diffResult = diffTexts.join(" / ");
 
+            // Save snapshot of OLD state
+            const snapshot = JSON.parse(JSON.stringify(m));
+
             m.name = newName;
             m.desc = newDesc;
             m.steps = tempSteps;
             m.version += 1;
             
-            adminLogs.unshift({ vid: `v1.0.${m.version}`, manual: m.name, user: currentUser ? currentUser.name : "企業管理者", time: dateStr, diff: diffResult });
+            adminLogs.unshift({ vid: `v1.0.${m.version}`, manual: m.name, user: currentUser ? currentUser.name : "企業管理者", time: dateStr, diff: diffResult, snapshot: snapshot });
             saveDB();
             Swal.fire('保存完了', 'Adminに詳細な変更履歴が連携されました', 'success').then(closeEditManual);
         }
@@ -779,14 +962,51 @@
             const file = event.target.files[0];
             if(!file) return;
             document.getElementById('ai-loading').style.display = 'block';
-            document.getElementById('ai-status').innerHTML = '🎥 動画を圧縮最適化中...<br><span style="font-size:0.8rem;">(エンコード中)</span>';
+            
+            let msg = '🎥 メディアを最適化中...';
+            if(file.name.includes('.xls') || file.name.includes('.csv')) msg = '📊 データを変換中...';
+            document.getElementById('ai-status').innerHTML = msg + '<br><span style="font-size:0.8rem;">(前処理中)</span>';
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 pendingVideoBase64 = e.target.result.split(',')[1];
                 setTimeout(() => {
                     document.getElementById('ai-loading').style.display = 'none';
-                    triggerSquarePayment('ai_generation', 'AI動画解析 (Video Intelligence)');
-                    document.getElementById('video-upload').value = '';
+                    
+                    // Show Confirmation Modal before Payment
+                    let typeIcon = file.name.includes('.xls') || file.name.includes('.csv') ? '📊' : '🎥';
+                    let typeName = file.name.includes('.xls') || file.name.includes('.csv') ? '表計算データ' : '動画ファイル';
+                    let fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    
+                    Swal.fire({
+                        title: 'アップロード準備完了',
+                        html: `
+                            <div style="text-align:left; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:10px;">
+                                <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:5px;">選択されたファイル</div>
+                                <div style="color:white; font-size:1rem; font-weight:bold; word-break:break-all;"><i class="fa-solid fa-file"></i> ${file.name}</div>
+                                <div style="color:#38bdf8; font-size:0.85rem; margin-top:5px;">種類: ${typeIcon} ${typeName}</div>
+                                <div style="color:#cbd5e1; font-size:0.85rem; margin-top:2px;">サイズ: ${fileSizeMB} MB</div>
+                            </div>
+                            <p style="font-size:0.9rem; color:#e2e8f0;">このデータを使用して、Gemini AIに解析をリクエストしマニュアルの自動生成を開始します。よろしいですか？</p>
+                        `,
+                        icon: 'info',
+                        background: '#1e293b',
+                        color: '#f8fafc',
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fa-solid fa-check"></i> 決済してAIを実行',
+                        cancelButtonText: 'キャンセル',
+                        confirmButtonColor: '#10b981'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            triggerSquarePayment('ai_generation', 'AI高度自動生成');
+                        } else {
+                            pendingVideoBase64 = null; // Clear if cancelled
+                        }
+                        
+                        document.getElementById('video-upload').value = '';
+                        const excelEl = document.getElementById('excel-upload');
+                        if (excelEl) excelEl.value = '';
+                    });
                 }, 1500);
             };
             reader.readAsDataURL(file);
@@ -1039,14 +1259,83 @@
         }
 
         // --- Admin ---
+        function revertManualLog(idx) {
+            const log = adminLogs[idx];
+            if (!log.snapshot) return Swal.fire('エラー', 'このログには復元用スナップショットデータがありません', 'error');
+
+            Swal.fire({
+                title: 'バージョン復元',
+                text: `本当に「${log.manual}」を ${log.vid} 以前の状態（${log.time}のデータ）へ元に戻しますか？`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'はい、復元する'
+            }).then(result => {
+                if(result.isConfirmed) {
+                    let mIdx = dbManuals.findIndex(m => m.id === log.snapshot.id);
+                    if(mIdx > -1) {
+                        dbManuals[mIdx] = JSON.parse(JSON.stringify(log.snapshot));
+                        dbManuals[mIdx].version += 1; // Bump version for the newly restored state
+                        
+                        // Formulate Date
+                        const now = new Date();
+                        const dateStr = now.getFullYear() + '/' + (now.getMonth() + 1).toString().padStart(2, '0') + '/' + now.getDate().toString().padStart(2, '0') + ' ' + now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                        
+                        adminLogs.unshift({ vid: `v1.0.${dbManuals[mIdx].version}`, manual: dbManuals[mIdx].name, user: currentUser ? currentUser.name : "システム管理者", time: dateStr, diff: "タイムマシンによるバージョン復元", snapshot: null });
+                        saveDB();
+                        renderAdminLogs();
+                        renderDB();
+                        Swal.fire('復元完了', 'マニュアルの構成を過去の状態に巻き戻しました', 'success');
+                    } else {
+                        Swal.fire('エラー', '対象のマニュアルが見つかりません', 'error');
+                    }
+                }
+            });
+        }
+
         function renderAdminLogs() {
             const tbody = document.getElementById('admin-log-data');
             tbody.innerHTML = '';
-            adminLogs.forEach(log => {
-                tbody.innerHTML += `<tr><td><span class="badge">${log.vid}</span></td><td>${log.manual}</td><td style="color:#cbd5e1;">${log.user}</td><td style="color:#cbd5e1;">${log.time}</td><td>${log.diff}</td></tr>`;
+            adminLogs.forEach((log, idx) => {
+                let revertBtn = log.snapshot ? `<button onclick="revertManualLog(${idx})" style="padding:4px 8px; border:none; border-radius:4px; background:#f59e0b; color:white; cursor:pointer; font-size:0.75rem;"><i class="fa-solid fa-clock-rotate-left"></i> 復元</button>` : '<span style="font-size:0.75rem; color:#666;">不可</span>';
+                tbody.innerHTML += `<tr><td><span class="badge">${log.vid}</span></td><td>${log.manual}</td><td style="color:#cbd5e1;">${log.user}</td><td style="color:#cbd5e1;">${log.time}</td><td>${log.diff}</td><td style="text-align:center;">${revertBtn}</td></tr>`;
             });
         }
     </script>
+
+    
+    <!-- AI Data Source Menu Modal -->
+    <div id="ai-source-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div class="glass" style="padding:30px; border-radius:15px; width:450px; max-width:90%; position:relative; background:#1e293b; color:white;">
+            <i class="fa-solid fa-xmark" style="position:absolute; top:15px; right:20px; font-size:1.5rem; cursor:pointer; color:#94a3b8;" onclick="document.getElementById('ai-source-modal').style.display='none';"></i>
+            <h2 style="margin-top:0; color:#38bdf8; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; font-size:1.2rem;"><i class="fa-solid fa-cloud-arrow-up"></i> アップロード元の選択</h2>
+            <p style="font-size:0.9rem; color:#cbd5e1; margin-bottom:20px;">AI (Gemini 1.5 Flash) に解析させるデータ形式を選んでください。</p>
+            
+            <button class="btn" style="width:100%; background:#0f172a; border:1px solid #334155; justify-content:flex-start; padding:15px; margin-bottom:10px; text-align:left;" onclick="document.getElementById('ai-source-modal').style.display='none'; document.getElementById('video-upload').click();">
+                <i class="fa-solid fa-video" style="color:#10b981; font-size:1.5rem; width:40px; text-align:center;"></i>
+                <div style="flex:1;">
+                    <strong style="display:block; font-size:1rem; color:white;">カメラ・動画ファイル</strong>
+                    <span style="font-size:0.75rem; color:#94a3b8;">端末に保存された動画をAIが視覚的に解析</span>
+                </div>
+            </button>
+
+            <button class="btn" style="width:100%; background:#0f172a; border:1px solid #334155; justify-content:flex-start; padding:15px; margin-bottom:10px; text-align:left;" onclick="document.getElementById('ai-source-modal').style.display='none'; document.getElementById('excel-upload').click();">
+                <i class="fa-solid fa-file-excel" style="color:#10b981; font-size:1.5rem; width:40px; text-align:center;"></i>
+                <div style="flex:1;">
+                    <strong style="display:block; font-size:1rem; color:white;">Excel・CSVファイル</strong>
+                    <span style="font-size:0.75rem; color:#94a3b8;">既存の手順書（表計算データ）を自動構成</span>
+                </div>
+            </button>
+
+            <button class="btn" style="width:100%; background:#0f172a; border:1px solid #334155; justify-content:flex-start; padding:15px; margin-bottom:10px; text-align:left;" onclick="document.getElementById('ai-source-modal').style.display='none'; promptCloudLink();">
+                <i class="fa-brands fa-google-drive" style="color:#38bdf8; font-size:1.5rem; width:40px; text-align:center;"></i>
+                <div style="flex:1;">
+                    <strong style="display:block; font-size:1rem; color:white;">Google Drive等 URL解析</strong>
+                    <span style="font-size:0.75rem; color:#94a3b8;">クラウド保存されたドキュメントURLを読み込む</span>
+                </div>
+            </button>
+            <input type="file" id="excel-upload" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" style="display:none;" onchange="handleAiVideo(event)">
+        </div>
+    </div>
 
     <!-- Square Payment Modal -->
     <div id="payment-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">

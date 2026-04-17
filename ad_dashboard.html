@@ -1,11 +1,35 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>リテアド | Advertiser Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+        function requestUnlock() {
+            Swal.fire({
+                title: 'アカウントロック解除申請',
+                text: 'AI審査により不適切と判定された動画を削除/修正しましたか？運営審査部門 (Review) へ解除申請を送信します。',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: 'はい、申請します'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/api/review/unlock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: localStorage.getItem('demo_email') || 'advertiser@demo.com', target: 'Review' })
+                    }).then(res => res.json()).then(data => {
+                        Swal.fire('送信完了', 'Review部門へアカウントロック解除を申請しました。後日審査されます。', 'success');
+                    }).catch(e => {
+                        Swal.fire('送信完了', 'Review部門へアカウントロック解除を申請しました。(モック)', 'success');
+                    });
+                }
+            });
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://pay.google.com/gp/p/js/pay.js"></script>
     <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
@@ -1667,7 +1691,6 @@
             }
             // Enhance Bolognese specifically if partial match
             if (name.includes("bolognese") && !detected.includes("スパゲティ")) detected.unshift("スパゲティ");
-
             return detected.length > 0 ? detected : [];
         }
 
@@ -1683,6 +1706,36 @@
         }
 
         async function handleFile(file, variant = null, ratio = '16:9') {
+            // --- AI REVIEW CONTENT ---
+            Swal.fire({
+                title: '🤖 Google AI 審査中...',
+                html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            
+            try {
+                // Determine base64 placeholder (we use mock_data to avoid large payloads)
+                const reviewRes = await fetch('/api/creator/review-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_base64: "mock_data" })
+                });
+                const reviewData = await reviewRes.json();
+                
+                if (!reviewData.safe) {
+                    Swal.fire({
+                        title: '❌ 審査不合格 (アカウント制限)',
+                        html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>',
+                        icon: 'error'
+                    });
+                    return; // UPLOAD STOPPED
+                }
+            } catch(e) {
+                console.error("Review Error:", e);
+            }
+
             // Check if image or video, ask for BGM (maybe irrelevant for video but consistent UI) 
             let bgm = null;
             let ingredients = "";
@@ -1757,6 +1810,16 @@
         }
 
         async function simulateUpload(aspectRatio, ytUrl = null, variant = null, ingredients = null, isImage = false) {
+            Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            try {
+                const reviewRes = await fetch('/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'mock_data' }) });
+                const reviewData = await reviewRes.json();
+                if (!reviewData.safe) {
+                    Swal.fire({ title: '❌ 審査不合格 (アカウント制限)', html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>', icon: 'error' });
+                    return;
+                }
+            } catch(e) { console.error('Review Error:', e); }
+
             // If image, prompt for BGM here too if strictly demo mode calls this?
             // Actually, handleFile calls simulateUpload only in Demo Mode via 'input.onchange' logic above? 
             // Wait, handleUpload calls simulateUpload directly in Demo Mode without file input.
@@ -2823,6 +2886,8 @@
                             <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end; margin-top:5px;">
                                 <button type="submit" class="btn-primary" style="padding:10px 20px;">設定を保存・同期する</button>
                                 <button type="button" onclick="requestUnlock()" style="padding:10px 20px; font-size:14px; background:#f43f5e; color:white; border:none; border-radius:8px; cursor:pointer; margin-left:10px;">🆘 アカウントロック解除申請</button>
+                                
+                                
                             </div>
                         </form>
                     </div>

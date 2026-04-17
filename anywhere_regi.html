@@ -301,13 +301,6 @@
                 <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px; cursor:pointer;" onclick="openProfileModal(false)" title="プロフィール編集"></span>
             </div>
             <div class="header-buttons" style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
-                <button onclick="window.open('anywhere_lp.html', '_blank')" class="btn-sm" style="background:#3b82f6; color:white; padding:8px 8px; font-weight:bold;">📖 LPを見る</button>
-                <button onclick="showSalesByCompany()" class="btn-sm" style="background:#0ea5e9; color:white; padding:8px 8px; font-weight:bold;">📊 会社別売上</button>
-                <!-- EXCEL IMPORT BUTTON -->
-                <button onclick="document.getElementById('excel-master-upload').click()" class="btn-sm nav-btn-mobile" style="background:#10B981; color:white; padding:8px 8px; font-weight:bold;">📥 商品データ取込</button>
-                <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="importProductMaster(event)">
-                <button onclick="showIntegrationSettings()" class="btn-sm" style="background:#8e44ad; color:white; padding:8px 8px; font-weight:bold;">⚙️ 連携設定</button>
-                <button onclick="toggleDebugLog()" class="btn-sm nav-btn-mobile" style="background:#f59e0b; color:white; padding:8px 8px; font-weight:bold;">🛠 スキャン履歴</button>
                 <button class="btn-sm btn-logout nav-btn-mobile" onclick="logout()" style="padding:8px 8px;">ログアウト</button>
             </div>
         </div>
