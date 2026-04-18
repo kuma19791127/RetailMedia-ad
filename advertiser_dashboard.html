@@ -411,6 +411,17 @@
     <!-- END TYPOGRAPHY FIX -->
 
 
+    <script>
+        // Dynamic Budget Limit based on Demo/Prod Mode
+        window.addEventListener('DOMContentLoaded', () => {
+            const isDemoUser = (sessionStorage.getItem('retailUserEmail') || '').includes('@demo.com');
+            const budgetInput = document.getElementById('cp-budget');
+            if(budgetInput) {
+                budgetInput.min = isDemoUser ? 0 : 1000;
+                budgetInput.placeholder = isDemoUser ? '0 (デモ無料)' : '1000';
+            }
+        });
+    </script>
 </head>
 
 <body>
