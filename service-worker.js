@@ -31,11 +31,11 @@ self.addEventListener('fetch', (e) => {
       // ネットワーク通信成功時はキャッシュを更新（HTMLなどを常に新しく保つ）
       if (response && response.status === 200 && response.type === 'basic') {
         const url = e.request.url;
-        if (url.startsWith('http://') || url.startsWith('https://')) {
+        if ((url.startsWith('http://') || url.startsWith('https://')) && !url.includes('chrome-extension')) {
           if (e.request.method === 'GET' && !url.includes('/api/') && !url.includes('/uploads/')) {
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(e.request, responseClone).catch(err => console.error(err));
+              cache.put(e.request, responseClone).catch(() => {}); // Suppress caching warnings
             });
           }
         }
