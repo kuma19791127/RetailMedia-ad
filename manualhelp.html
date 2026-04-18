@@ -1020,9 +1020,6 @@
                 document.getElementById('pdf-preview-name').innerText = file.name;
             }
             // --------------------------------
-            
-            const file = event.target.files[0];
-            if(!file) return;
             document.getElementById('ai-loading').style.display = 'block';
             document.getElementById('ai-status').innerHTML = '📄 PDFを解析中...<br><span style="font-size:0.8rem;">(ステップ自動階層化処理)</span>';
             
