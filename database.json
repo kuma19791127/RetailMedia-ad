@@ -1,0 +1,102 @@
+{
+  "signageState": {
+    "register_side": {
+      "interrupt": null,
+      "paid": null,
+      "moment": null,
+      "impression": null,
+      "network": null,
+      "default": []
+    }
+  },
+  "campaigns": [
+    {
+      "id": 1,
+      "name": "Spring Sale 2026 (A/B Test)",
+      "start": "2026-03-01",
+      "end": "2026-03-31",
+      "budget": 10000,
+      "spend": 2500,
+      "imp": 2459,
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "name": "New Product Launch Video",
+      "start": "2026-04-01",
+      "end": "2026-04-15",
+      "budget": 15000,
+      "spend": 0,
+      "imp": 0,
+      "status": "pending"
+    }
+  ],
+  "clients": [],
+  "storeData": {
+    "default_store": {
+      "id": "STORE_001",
+      "name": "retail-ad Demo Store",
+      "billing_email": "store@example.com",
+      "bank_info": {
+        "bank_name": "",
+        "branch_name": "",
+        "account_number": "",
+        "account_holder": ""
+      },
+      "total_pos_sales": 0,
+      "total_ad_revenue": 0
+    }
+  },
+  "creatorState": {
+    "total_views": 0,
+    "total_revenue": 0,
+    "videos": []
+  },
+  "transactions": [],
+  "sensorLogs": [],
+  "globalDashboardStats": {
+    "impressions": 0,
+    "faceDetected": 0,
+    "attentionTime": 0,
+    "male": 0,
+    "female": 0,
+    "unknown": 0,
+    "age10s": 0,
+    "age20s": 0,
+    "age30s": 0,
+    "age40s": 0,
+    "age50s": 0
+  },
+  "agencyReferrals": [],
+  "productionStats": null,
+  "creatorStats": {},
+  "globalSensorLogs": [],
+  "users": {
+    "advertiser@demo.com": {
+      "password": "DemoPass2026!",
+      "role": "advertiser"
+    },
+    "store@demo.com": {
+      "password": "DemoPass2026!",
+      "role": "store"
+    },
+    "agency@demo.com": {
+      "password": "DemoPass2026!",
+      "role": "agency"
+    },
+    "creator@demo.com": {
+      "password": "DemoPass2026!",
+      "role": "creator"
+    }
+  },
+  "posTransactions": [],
+  "shiftState": {
+    "staff": [],
+    "chatHistory": []
+  },
+  "manualChat": [],
+  "manualhelpState": {
+    "manuals": [],
+    "logs": []
+  }
+}
