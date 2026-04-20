@@ -613,10 +613,20 @@
 
             <!-- PLAN SELECTION -->
             <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-bottom:20px;">
+                
+                <!-- CPM -->
+                <div class="card" onclick="openNewCampaignModal('cpm')"
+                    style="cursor:pointer; border-left: 5px solid #e74c3c; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                    <h3 style="margin-top:0; font-size:15px; color:#c0392b; margin-bottom: 5px;">📢 1. エンゲージメント配信<br><span style="font-size:12px;">（CPV: 約2円〜）</span></h3>
+                    <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">ブランドの認知度やエンゲージメントを最大化したい場合に最適なプランです。</p>
+                    <div style="background:#f9ebea; padding:8px; border-radius:6px; margin-top:10px;">
+                        <p style="font-size: 10px; color: #c0392b; margin:0; line-height:1.4;">※ 1,000円の消化イメージ: 約500回の完全視聴を獲得できます。</p>
+                    </div>
+                </div>
                 <!-- Impression -->
                 <div class="card" onclick="openNewCampaignModal('impression')"
                     style="cursor:pointer; border-left: 5px solid #2980b9; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                    <h3 style="margin-top:0; font-size:15px; color:#2980b9; margin-bottom: 5px;">👁️ 1. インプレッション配信<br><span style="font-size:12px;">（1再生： 1円〜）</span></h3>
+                    <h3 style="margin-top:0; font-size:15px; color:#2980b9; margin-bottom: 5px;">👁️ 2. インプレッション配信<br><span style="font-size:12px;">（1再生： 1円〜）</span></h3>
                     <p style="font-size: 12px; color: #34495e; font-weight:bold; margin-bottom:4px;">特徴：</p>
                     <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">不特定多数にとにかく数を打って認知を拡大したい場合の最安プランです。</p>
                     <div style="background:#f1f5f9; padding:8px; border-radius:6px; margin-top:10px;">
@@ -628,7 +638,7 @@
                 <!-- Moment -->
                 <div class="card" onclick="openNewCampaignModal('moment')"
                     style="cursor:pointer; border-left: 5px solid #e67e22; background:#fffaf0; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                    <h3 style="margin-top:0; font-size:15px; color:#d35400; margin-bottom: 5px;">☔ 2. モーメント配信<br><span style="font-size:12px;">（1再生： 3円〜）</span></h3>
+                    <h3 style="margin-top:0; font-size:15px; color:#d35400; margin-bottom: 5px;">☔ 3. モーメント配信<br><span style="font-size:12px;">（1再生： 3円〜）</span></h3>
                     <p style="font-size: 12px; color: #34495e; font-weight:bold; margin-bottom:4px;">特徴：</p>
                     <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">通常のランダム再生ではなく、「気温・天気」や「見る人の性別・年齢」の条件にガッチリと一致した瞬間にだけ流す、少しリッチなプランです。</p>
                     <div style="background:#fff3e0; padding:8px; border-radius:6px; margin-top:10px;">
@@ -640,7 +650,7 @@
                 <!-- POS/CPA -->
                 <div class="card" onclick="openNewCampaignModal('cpa')"
                     style="cursor:pointer; border-left: 5px solid #27ae60; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                    <h3 style="margin-top:0; font-size:15px; color:#27ae60; margin-bottom: 5px;">🛒 3. POS連動・成果報酬<br><span style="font-size:12px;">（1再生： 10円〜）</span></h3>
+                    <h3 style="margin-top:0; font-size:15px; color:#27ae60; margin-bottom: 5px;">🛒 4. POS連動・成果報酬<br><span style="font-size:12px;">（1再生： 10円〜）</span></h3>
                     <p style="font-size: 12px; color: #34495e; font-weight:bold; margin-bottom:4px;">特徴：</p>
                     <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">広告をただ流すだけでなく、「ABテスト」結果や、店舗のPOSデータと高度に統計・連携した専用のレポートが出力されるプレミアプランです。</p>
                     <div style="background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">

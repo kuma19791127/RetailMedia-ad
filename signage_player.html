@@ -541,7 +541,7 @@
             }
 
             // Handle YouTube
-            if (item.is_youtube || (item.url && item.url.includes('youtu'))) {
+            if (item.is_youtube || (item.url && !item.url.startsWith('data:') && item.url.includes('youtu'))) {
                 video.style.display = 'none';
                 imgScreen.style.display = 'none';
                 speedBadge.style.display = 'none';
