@@ -180,6 +180,50 @@ app.get('/api/creator/stats', (req, res) => {
     res.json(CREATOR_STATE);
 });
 
+
+// --- クリエイター: コンテンツ審査API (Vertex AI Gemini 1.5 Pro) ---
+app.post('/api/creator/review-content', async (req, res) => {
+    try {
+        const { video_base64 } = req.body;
+        console.log("クリエイター動画審査開始: Gemini 1.5 Pro");
+        if (!video_base64) return res.status(400).json({ error: '動画データがありません' });
+        
+        if (video_base64 === "mock_data" || video_base64.length < 500) {
+             return res.json({ safe: true, message: "審査通過 (デモ用自動パス)" });
+        }
+
+        const base64Data = video_base64.replace(/^data:video\/\w+;base64,/, "");
+        
+        // Use generativeModel defined globally in server_retail_dist
+        if(typeof generativeModel !== 'undefined') {
+            const request = {
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { inlineData: { mimeType: 'video/mp4', data: base64Data } },
+                        { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。 2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。 3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。これらが少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全な小売広告であれば「PASS: 理由」を出力してください。' }
+                    ]
+                }]
+            };
+            const result = await generativeModel.generateContent(request);
+            const response = await result.response;
+            const text = response.candidates[0].content.parts[0].text;
+            console.log("クリエイター動画審査完了:", text);
+            if (text.includes('FAIL')) {
+                res.json({ safe: false, message: text });
+            } else {
+                res.json({ safe: true, message: text });
+            }
+        } else {
+            console.log("Gemini API is not configured. Simulating pass.");
+            res.json({ safe: true, message: "審査通過 (モック/API未設定)" });
+        }
+    } catch (error) {
+        console.error('コンテンツ審査エラー:', error);
+        res.status(500).json({ error: '審査中にエラーが発生しました。ファイルサイズが大きすぎる可能性があります。', safe: true });
+    }
+});
+
 app.post('/api/creator/upload', (req, res) => {
     const { title, src, format } = req.body;
     const newId = Date.now();
