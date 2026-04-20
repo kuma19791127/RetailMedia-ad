@@ -304,6 +304,7 @@ h2 {
 
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+<script>if(window.customElements.get('budoux-ja')) { console.log('Already defined'); } else { /* loaded */ }</script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof budoux !== 'undefined') {

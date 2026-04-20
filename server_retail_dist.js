@@ -244,7 +244,7 @@ app.post('/api/creator/upload', (req, res) => {
             url: finalUrl,
             duration: 45,
             brand: "Creator",
-            youtube_url: finalUrl.includes('youtu') ? finalUrl : null
+            youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : null
         };
         signageServer.injectCampaign('9:16', adData, 'INTERRUPT'); // Inject as INTERRUPT for immediate demo playback
         console.log(`[Creator] Video Uploaded & Linked to Signage: ${adData.title}`);
@@ -681,7 +681,7 @@ app.post('/api/campaigns', (req, res) => {
                 format: format, // Pass format (image/video/youtube)
                 // Prioritize passed URL (Base64) or YouTube URL. DO NOT default to Sintel anymore.
                 url: finalUrl,
-                youtube_url: finalUrl && finalUrl.includes('youtu') ? finalUrl : youtube_url,
+                youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : youtube_url,
                 duration: 15,
                 start_date: start,
                 end_date: end,
@@ -713,6 +713,12 @@ app.post('/api/campaigns', (req, res) => {
                 .videoCodec('libx264')
                 .addOption('-preset', 'fast')
                 .addOption('-crf', '28') // Heavy compression for Retail Signage
+                .on('error', (err) => {
+                    console.error("[AdUpload] FFmpeg transcoding failed (likely missing on Windows). Fallback to raw base64 data.", err);
+                    try { require('fs').unlinkSync(inputPath); } catch(e){}
+                    processAndInject(rawUrl);
+                    if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+                })
                 .on('end', () => {
                     console.log("[AdUpload] Transcoding & Compression finished.");
                     if (typeof s3Client !== 'undefined' && s3Client && typeof bucketName !== 'undefined' && bucketName) {

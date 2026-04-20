@@ -183,7 +183,7 @@ module.exports = {
             duration: metadata.duration || 45,
             aspect_ratio: aspectRatio,
             location_qr: metadata.location_qr || ("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(metadata.brand)),
-            is_youtube: !!(metadata.youtube_url || (metadata.url && (metadata.url.includes('youtube') || metadata.url.includes('youtu.be')))),
+            is_youtube: !!( (metadata.youtube_url && !metadata.youtube_url.startsWith('data:')) || (metadata.url && !metadata.url.startsWith('data:') && (metadata.url.includes('youtube') || metadata.url.includes('youtu.be'))) ),
             is_image: (metadata.format === 'image') || (metadata.url && (/\.(jpg|jpeg|png|gif|webp)$/i.test(metadata.url) || metadata.url.startsWith('data:image/'))),
             is_recipe: !!metadata.ai_text,
             status: metadata.status || 'pending', // Default to pending for approval
