@@ -136,96 +136,6 @@
         .nav-links { display: flex; gap: 25px; }
         .nav-links a { text-decoration: none; color: var(--dark); font-weight: 700; font-size: 14px; transition: 0.2s; }
         .nav-links a:hover { color: var(--primary); }
-    <meta property="og:site_name" content="リテアド (retail-ad)">
-    <link rel="canonical" href="https://retail-ad.com/">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-glow: rgba(37, 99, 235, 0.4);
-            --secondary: #10b981;
-            --bg-base: #f8fafc;
-            --dark: #0f172a;
-            --gray: #64748b;
-            --glass: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --input-bg: rgba(255, 255, 255, 0.9);
-            --input-border: #cbd5e1;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: var(--bg-base);
-            color: #333;
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Hero Login Section (100vh) */
-        .login-hero-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            position: relative;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 20%);
-            background-attachment: fixed;
-            padding: 80px 20px;
-        }
-
-        .orb {
-            position: absolute; border-radius: 50%; filter: blur(80px); z-index: 0; animation: float 20s infinite ease-in-out;
-        }
-        .orb-1 { width: 400px; height: 400px; background: #e0e7ff; top: -100px; left: -100px; opacity: 0.8; }
-        .orb-2 { width: 300px; height: 300px; background: #d1fae5; bottom: -50px; right: -50px; opacity: 0.8; animation-delay: -5s; }
-        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -50px); } }
-
-        .login-card {
-            background: var(--glass);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            padding: 40px; border-radius: 24px;
-            width: 100%; max-width: 420px;
-            box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.05);
-            position: relative; z-index: 10;
-        }
-
-        .login-card h1 { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; text-align: center; color: var(--dark); margin-bottom: 5px; }
-        .login-card p.subtitle { font-size: 0.9rem; text-align: center; color: var(--gray); margin-bottom: 30px; letter-spacing: 0.05em; }
-
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--dark); }
-        .form-group input { width: 100%; padding: 14px; border: 1px solid var(--input-border); border-radius: 12px; font-size: 1rem; }
-        .form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
-        
-        button.btn-primary {
-            width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px;
-            font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.3s;
-        }
-        button.btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
-
-        .demo-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
-        .role-chip { background: white; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: var(--gray); cursor: pointer; transition: 0.3s; }
-        .role-chip:hover { background: #f1f5f9; border-color: var(--primary); color: var(--primary); }
-        .role-chip.active-chip { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow); }
-
-        .scroll-indicator { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); text-align: center; color: var(--gray); font-size: 0.9rem; font-weight: bold; animation: bounce 2s infinite; cursor: pointer; z-index: 20; }
-        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); } 40% { transform: translateY(-10px) translateX(-50%); } 60% { transform: translateY(-5px) translateX(-50%); } }
-
-        /* Navigation */
-        header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: fixed; width: 100%; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; box-shadow: 0 1px 10px rgba(0,0,0,0.05); }
-        .logo { font-size: 24px; font-weight: 900; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-        .nav-links { display: flex; gap: 25px; }
-        .nav-links a { text-decoration: none; color: var(--dark); font-weight: 700; font-size: 14px; transition: 0.2s; }
-        .nav-links a:hover { color: var(--primary); }
 
         /* SEO LP Sections */
         .section { padding: 80px 20px; max-width: 1000px; margin: 0 auto; }
@@ -251,240 +161,6 @@
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="/app-icon.png">
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js');
-        });
-      }
-    </script>
-
-    <!-- Global Mobile Typography Fix -->
-    <style>
-        body, h1, h2, h3, h4, h5, p, span, div {
-            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
-            word-break: normal; /* Fallback for Safari/iOS */
-            overflow-wrap: break-word;
-        }
-        .mobile-br { display: none; }
-        .desktop-br { display: block; }
-        @media (max-width: 768px) {
-            .mobile-br { display: block; }
-            .desktop-br { display: none; }
-            
-            /* スマホ等でログイン画面の上部が見えなくなるバグを修正 */
-            .login-hero-container {
-                align-items: flex-start !important;
-                padding-top: 120px !important;
-                height: auto !important;
-                min-height: 100vh !important;
-            }
-            
-            /* Auto-reduce huge headings on mobile globally to prevent overflow */
-            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
-            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
-            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
-        }
-    </style>
-
-    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
-    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                // Apply to standard text elements avoiding breaking components
-                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
-                elements.forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
-
-    
-    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
-    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <style>
-        h1, h2, h3, h4, h5 {
-            text-wrap: balance !important;
-            word-break: keep-all !important;
-            overflow-wrap: break-word !important;
-        }
-        p, .subtitle, li, .card p, .card h3 {
-            word-break: keep-all !important;
-            overflow-wrap: break-word !important;
-        }
-        @media (max-width: 768px) {
-            .desktop-br { display: none !important; }
-            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
-            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
-        }
-    </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
-    <!-- END TYPOGRAPHY FIX -->
-                <button type="submit" class="btn-primary">メールアドレスでログイン</button>
-            </form>
-            
-            <p style="text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:20px;">本サービスへのログインにより、プライバシーポリシーに同意したものとみなされます。</p>
-        </div>
-
-        <div class="scroll-indicator" onclick="document.getElementById('about').scrollIntoView({behavior: 'smooth'})">
-            スクロールして詳細を見る<br>↓
-        </div>
-    </div>
-
-    
-    <!-- SECTION 2: SEO & Main Content -->
-    <div id="about" class="section" style="text-align: center; max-width: 800px; margin: 0 auto;">
-        <h1 style="font-size:2.5rem; text-align:center; color:var(--dark); margin-bottom:20px; line-height:1.4;">
-            小売りの現場を<br class="mobile-br"><span class="nw">「利益を生むメディア」へ</span><br class="mobile-br">サイネージ広告システム<br class="mobile-br">『リテアド』
-        </h1>
-        <p style="text-align:center; font-size:1.2rem; color:var(--gray); margin-bottom:60px;">
-            リテールメディア<br>
-            「10円単位の経費削減」に苦しむ<br class="mobile-br">
-            小売りの現場を変えたい。
-        </p>
-
-        <h2 class="section-title">開発の背景と想い<br class="mobile-br">（なぜリテアドを作ったか）</h2>
-        <p class="text-body" style="display:inline-block; text-align:left;">
-            小売り・スーパーの現場は、 10円単位で<br class="mobile-br">
-            経費削減の 努力を重ねています。<br>
-            しかし現場の従業員は ITに不慣れや<br class="mobile-br">
-            今だに紙でマニュアル作成を 行ったり<br class="mobile-br">
-            キャッシュレスに 移行できない企業が<br class="mobile-br">
-            数多く存在します。<br>
-            <br>
-            これは小売り業特有の 「低利益率」が<br class="mobile-br">
-            原因で<br class="mobile-br">
-            売り上げ以外の改善やDXに対して<br class="mobile-br">
-            経営資源を投下するのを<br class="mobile-br">
-            躊躇してしまっている現状があります。<br>
-            <br>
-            この「低利益」と「経営環境」の改善を<br class="mobile-br">
-            両立できれば、業界全体のイメージを<br class="mobile-br">
-            変えるキッカケになると思い、<br class="mobile-br">
-            リテアドを開発しました。
-        </p>
-
-        <h2 class="section-title">リテアドの仕組みと<br class="mobile-br">提供する価値</h2>
-        
-        <h3 class="sub-title">1. サイネージ広告の共同運用</h3>
-        <p class="text-body">
-            違う会社・スーパー同士であっても、<br class="mobile-br">
-            同じ広告事業を共同運営することで<br class="mobile-br">
-            バラバラな仕組みを統一します。<br>
-            窓口の一本化により、広告主は<br class="mobile-br">
-            同じ地域・他店同士のネットワークへ<br class="mobile-br">
-            横断的に広告を配信可能となります。
-        </p>
-
-        <h3 class="sub-title">2. リアルタイム・データ連携</h3>
-        <p class="text-body">
-            POSレジとの連携により、<br class="mobile-br">
-            現場の売れ行きをリアルタイムに<br class="mobile-br">
-            可視化できるAPIの仕組みを提供。<br>
-            広告がどう売上に直結したのか<br class="mobile-br">
-            確実な効果測定を実現します。
-        </p>
-
-        <h3 class="sub-title">3. 顧客と店舗へのメリット</h3>
-        <p class="text-body">
-            小売り企業はサイネージを設置するだけで<br class="mobile-br">
-            新たな広告事業を始められ、<br class="mobile-br">
-            すぐに収益改善の環境が整います。<br>
-            一方、来店される顧客にはAIを利用した<br class="mobile-br">
-            安売り告知などのお得な情報や、<br class="mobile-br">
-            配信クリエイターによる料理レシピ、<br class="mobile-br">
-            地元の情報配信などをお届け。<br>
-            質の高いサイネージによって<br class="mobile-br">
-            買い物中の数秒でも楽しんでいただける<br class="mobile-br">
-            瞬間を提供します。
-        </p>
-
-        <h2 class="section-title">広告収益＋DX化<br class="mobile-br">（経営環境の劇的な改善へ）</h2>
-        <p class="text-body">
-            リテアドは広告配信にとどまらず、<br class="mobile-br">
-            店舗のDX化を強力に後押しします。
-        </p>
-        <div class="highlight-box" style="text-align:left; display:inline-block; border-radius:12px; padding:25px;">
-            <strong style="font-size:1.1rem; color:var(--dark);">基本無料で使える豊富なDXツール群</strong>
-            <ul style="margin-top:10px; margin-bottom:0; padding-left:20px;">
-                <li><strong>マニュアル作成無料サービス:</strong> AI活用で動画やPDFを高速テキスト化</li>
-                <li><strong>店内アナウンスAI:</strong> 多言語対応の自動音声合成システム</li>
-                <li><strong>キャッシュレスレジのモバイル化:</strong> スタッフがスマホ一つで決済可能</li>
-                <li><strong>スマート・シフト生成:</strong> チャット送信などで一瞬でシフト作成完了</li>
-            </ul>
-        </div>
-        <p class="text-body" style="margin-top:20px;">
-            一部の外部API（有料サービス）を除き、<br class="mobile-br">
-            これらのDX機能は<strong style="color:var(--primary); font-size:1.1em;">基本無料</strong>で提供。<br class="mobile-br">
-            リテアドにログインしていただくだけで、<br class="mobile-br">
-            すぐにすべての機能を導入できます。
-        </p>
-
-        <h2 class="section-title">私たちの思想</h2>
-        <p class="text-body" style="font-style:italic;">
-            「自分の会社だけが良ければいい、<br class="mobile-br">
-            というのは全く面白くない。」<br>
-            それがこのプラットフォームの<br class="mobile-br">
-            思想の根底にあります。<br>
-            <br>
-            企業という組織であっても、<br class="mobile-br">
-            この考え方を共に共有し運営することで<br class="mobile-br">
-            世界が少しでも良くなると<br class="mobile-br">
-            本気で考えております。
-        </p>
-    </div>
-
-    <!-- Contact & Company Info -->
-    <div id="contact" style="background: white; padding: 60px 20px; border-top: 1px solid #e2e8f0; text-align:center;">
-        <h2 class="section-title">会社概要</h2>
-        <div style="max-width:400px; margin: 0 auto; text-align:left; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; font-size:0.95rem; color:#334155;">
-            <strong>会社名：</strong> non-logi株式会社<br>
-            <strong>代表者：</strong> 代表取締役 熊澤 一<br>
-            <strong>所在地：</strong> 神奈川県 横浜市<br>
-            <strong>事業内容：</strong><br>
-            ・AIサービス開発<br>
-            ・インバウンド向けAIサービス開発<br>
-            ・リテールメディアプラットフォーム運営
-        </div>
-
-        <h2 class="section-title" style="margin-top:50px;">お問い合わせ</h2>
-        <p class="text-body" style="max-width: 600px; margin: 0 auto 30px;">
-            リテアドの無料導入、店舗のDX化についてのご相談・お問い合わせはこちらから。
-        </p>
-        <a href="mailto:info@retail-ad.awsapps.com" style="display:inline-block; background:var(--primary); color:white; padding:15px 40px; border-radius:30px; font-weight:bold; text-decoration:none; font-size:1.1rem;">
-            ✉️ 担当者へメールで問い合わせる
-        </a>
-        <p style="margin-top:15px; font-size:0.9rem; color:var(--gray);">info@retail-ad.awsapps.com</p>
-    </div>
-
-    <footer>
-        <div style="font-size:20px; font-weight:bold; margin-bottom:20px; color:white;">retail-ad</div>
-        <div style="margin-bottom:20px;">
-            <a href="business_lp.html">店舗用ポータル (retail-Ad Store)</a> | 
-            <a href="ad_dashboard-LP.html">広告主向け</a> | 
-            <a href="agency_lp.html">代理店ポータル</a> | 
-            <a href="creator_lp.html">クリエイター (retail-Ad Creator)</a>
-        </div>
-        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:10px;">
-            <a href="about_retail_media.html" style="color:#94a3b8; text-decoration:underline;">リテールメディアに関するコラム</a> |<br><br>
-            <a href="terms_of_service.html" style="color:#94a3b8; text-decoration:underline;">利用規約</a> | 
-            <a href="privacy_policy.html" style="color:#94a3b8; text-decoration:underline;">プライバシーポリシー</a> | 
-            <a href="commercial_law.html" style="color:#94a3b8; text-decoration:underline;">特定商取引法に基づく表記</a>
-        </p>
-        <p style="color:#64748b; font-size:0.8rem;">© 2026 non-logi .Inc All rights reserved.</p>
-    </footer>
-<script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js');
@@ -640,107 +316,123 @@
         </div>
     </div>
 
+    
     <!-- SECTION 2: SEO & Main Content -->
-    <div id="about" class="section">
+    <div id="about" class="section" style="text-align: center; max-width: 800px; margin: 0 auto;">
         <h1 style="font-size:2.5rem; text-align:center; color:var(--dark); margin-bottom:20px; line-height:1.4;">
-            小売り店舗を<br class="mobile-br"><span class="nw">「リアルなメディア」に変える</span><br class="mobile-br">サイネージ広告<br class="mobile-br">『リテアド』
+            小売りの現場を<br class="mobile-br"><span class="nw">「利益を生むメディア」へ</span><br class="mobile-br">サイネージ広告システム<br class="mobile-br">『リテアド』
         </h1>
         <p style="text-align:center; font-size:1.2rem; color:var(--gray); margin-bottom:60px;">
-            小売業は利益率が低い〃<br class="mobile-br">顧客は目の前にいるから<br class="mobile-br">方法を変えればいいだけです！<br class="mobile-br">単なる「サイネージの設置」ではなく、<br class="mobile-br">「売り場のYouTube化」によって<br class="mobile-br">収益化を実現。<br class="mobile-br">広告主、クリエイター、代理店を<br class="mobile-br">一つのプラットフォームに統合する<br class="mobile-br">新たな価値共創エコシステム。
+            リテールメディア<br>
+            「10円単位の経費削減」に苦しむ<br class="mobile-br">
+            小売りの現場を変えたい。
         </p>
 
-        <h2 class="section-title">リテールメディア<br class="mobile-br">（Retail Media）とは？</h2>
+        <h2 class="section-title">開発の背景と想い<br class="mobile-br">（なぜリテアドを作ったか）</h2>
+        <p class="text-body" style="display:inline-block; text-align:left;">
+            小売り・スーパーの現場は、 10円単位で<br class="mobile-br">
+            経費削減の 努力を重ねています。<br>
+            しかし現場の従業員は ITに不慣れや<br class="mobile-br">
+            今だに紙でマニュアル作成を 行ったり<br class="mobile-br">
+            キャッシュレスに 移行できない企業が<br class="mobile-br">
+            数多く存在します。<br>
+            <br>
+            これは小売り業特有の 「低利益率」が<br class="mobile-br">
+            原因で<br class="mobile-br">
+            売り上げ以外の改善やDXに対して<br class="mobile-br">
+            経営資源を投下するのを<br class="mobile-br">
+            躊躇してしまっている現状があります。<br>
+            <br>
+            この「低利益」と「経営環境」の改善を<br class="mobile-br">
+            両立できれば、業界全体のイメージを<br class="mobile-br">
+            変えるキッカケになると思い、<br class="mobile-br">
+            リテアドを開発しました。
+        </p>
+
+        <h2 class="section-title">リテアドの仕組みと<br class="mobile-br">提供する価値</h2>
         
-        <h3 class="sub-title">1. リテールメディアの定義と<br class="mobile-br">注目される背景</h3>
+        <h3 class="sub-title">1. サイネージ広告の共同運用</h3>
         <p class="text-body">
-            リテールメディアとは、スーパーマーケットやドラッグストア、コンビニなどの実店舗（小売り）から得られる「購買データ（POSデータ）」や「顧客データ」、そして店舗という物理的な「空間情報」を組み合わせた、<br class="mobile-br"><span class="nw">独自の</span>広告媒体（メディア）のことです。<br>
-            サードパーティCookieの規制（Cookieレス時代）が本格化する中で、マスキングした属性分析や視認時間（自社データ）を活用できるリテールメディアは、デジタルマーケティングにおける「第3の波」として<br class="mobile-br"><span class="nw">急成長</span>しています。
+            違う会社・スーパー同士であっても、<br class="mobile-br">
+            同じ広告事業を共同運営することで<br class="mobile-br">
+            バラバラな仕組みを統一します。<br>
+            窓口の一本化により、広告主は<br class="mobile-br">
+            同じ地域・他店同士のネットワークへ<br class="mobile-br">
+            横断的に広告を配信可能となります。
         </p>
 
-        <h3 class="sub-title">2. メリット・デメリットと導入の壁</h3>
-        <div class="grid-cards">
-            <div class="card-seo" style="border-top: 4px solid var(--secondary);">
-                <h4>✅ リテールメディアのメリット</h4>
-                <p class="text-body" style="font-size:0.95rem;">
-                    <strong>・確実な効果測定:</strong> 「このCMを流した時間帯に、実際にその商品が何個売れたか」という究極の効果（CVR）を完全に可視化することを目指してます。<br>
-                    <strong>・新たな収益源:</strong> 小売業にとって、商品を売るという本業とは別の「広告収益」という新しい柱が生まれます。<br>
-                    <strong>・購買直前の強力なアプローチ:</strong> レジや棚前で広告を打つため、決定率が<br class="mobile-br"><span class="nw">最も高い状態</span>でのPRが可能です。
-                </p>
-            </div>
-            <div class="card-seo" style="border-top: 4px solid #ef4444;">
-                <h4>⚠️ 導入のデメリット・課題点</h4>
-                <p class="text-body" style="font-size:0.95rem;">
-                    <strong>・システム構築コスト:</strong> サイネージ機器の導入や<br class="mobile-br">
-                    広告主を募るための配信システムの<br class="mobile-br">
-                    開発に莫大な費用がかかります。<br>
-                    <strong>・営業・運用のリソース不足:</strong> 店舗のインフラを整備しても<br class="mobile-br">
-                    動画を作成するクリエイターや<br class="mobile-br">
-                    広告を出稿する代理店の<br class="mobile-br">
-                    ネットワークがなければ「ただの看板」<br class="mobile-br">
-                    になってしまいます。
-                </p>
-            </div>
-        </div>
-
-        <h3 class="sub-title">3. リテアドが提供する<br class="mobile-br">
-<span class="nw">新しい広告可能性</span></h3>
+        <h3 class="sub-title">2. リアルタイム・データ連携</h3>
         <p class="text-body">
-            &nbsp;&nbsp;上記のような課題をクリアするために<br class="mobile-br">
-            &nbsp;&nbsp;開発されたのが<br class="mobile-br">
-            &nbsp;&nbsp;<strong>『リテアド』</strong>です。<br class="mobile-br">
-            &nbsp;&nbsp;<strong>すべて解決できます！</strong><br>
-            &nbsp;&nbsp;サイネージさえあれば<br class="mobile-br">
-            &nbsp;&nbsp;無料で1店舗からでも<br class="mobile-br">
-            &nbsp;&nbsp;利用できます！<br class="mobile-br">
-            &nbsp;&nbsp;営業は広告代理店に任せることで、<br class="mobile-br">
-            &nbsp;&nbsp;1企業では難しい「広告事業化」を<br class="mobile-br">
-            &nbsp;&nbsp;当社と共同運用で実現します。<br>
-            &nbsp;&nbsp;小売り、広告代理店、<br class="mobile-br">
-            &nbsp;&nbsp;映像クリエイターなどを包括した<br class="mobile-br">
-            &nbsp;&nbsp;プラットフォームを提供します。
+            POSレジとの連携により、<br class="mobile-br">
+            現場の売れ行きをリアルタイムに<br class="mobile-br">
+            可視化できるAPIの仕組みを提供。<br>
+            広告がどう売上に直結したのか<br class="mobile-br">
+            確実な効果測定を実現します。
         </p>
-        <div class="highlight-box">
-            <strong style="font-size:1.1rem; color:var(--dark);">💡 リテアドの<br class="mobile-br">
-仕組みと<br class="mobile-br">
-最新の活用事例</strong>
-            <ul>
-                <li><strong>AIカメラによるリアルタイム属性解析:</strong><br class="mobile-br">性別や年齢、さらには天候・時間帯<br class="mobile-br">
-といった文脈、環境に合わせて、<br class="mobile-br">
-最も売れやすい広告を<br class="mobile-br">
-瞬時に表示します。<br class="mobile-br">
-<span style="font-size:0.8rem; display:inline-block; margin-top:3px;">（※プライバシー・バイ・デザインを遵守）</span></li>
-                <li><strong>クリエイターエコノミーの融合:</strong><br class="mobile-br">「リテアド クリエイター」<br class="mobile-br">
-ネットワークにより<br class="mobile-br">
-一般クリエイターの高い質のショート動画を<br class="mobile-br">
-店頭で配信。<br class="mobile-br">
-クリエイターには再生数に応じた<br class="mobile-br">
-収益が還元されます。</li>
-                <li><strong>Googleアド・ネットワークとの連動:</strong><br class="mobile-br">純広告が入っていない枠には、既存の<br class="mobile-br">
-ウェブ広告（Google AdSense等）<br class="mobile-br">
-をリアルタイム入札<br class="mobile-br">
-（RTB）で放映し、<br class="mobile-br">
-空き枠をゼロにします。</li>
+
+        <h3 class="sub-title">3. 顧客と店舗へのメリット</h3>
+        <p class="text-body">
+            小売り企業はサイネージを設置するだけで<br class="mobile-br">
+            新たな広告事業を始められ、<br class="mobile-br">
+            すぐに収益改善の環境が整います。<br>
+            一方、来店される顧客にはAIを利用した<br class="mobile-br">
+            安売り告知などのお得な情報や、<br class="mobile-br">
+            配信クリエイターによる料理レシピ、<br class="mobile-br">
+            地元の情報配信などをお届け。<br>
+            質の高いサイネージによって<br class="mobile-br">
+            買い物中の数秒でも楽しんでいただける<br class="mobile-br">
+            瞬間を提供します。
+        </p>
+
+        <h2 class="section-title">広告収益＋DX化<br class="mobile-br">（経営環境の劇的な改善へ）</h2>
+        <p class="text-body">
+            リテアドは広告配信にとどまらず、<br class="mobile-br">
+            店舗のDX化を強力に後押しします。
+        </p>
+        <div class="highlight-box" style="text-align:left; display:inline-block; border-radius:12px; padding:25px;">
+            <strong style="font-size:1.1rem; color:var(--dark);">基本無料で使える豊富なDXツール群</strong>
+            <ul style="margin-top:10px; margin-bottom:0; padding-left:20px;">
+                <li><strong>マニュアル作成無料サービス:</strong> AI活用で動画やPDFを高速テキスト化</li>
+                <li><strong>店内アナウンスAI:</strong> 多言語対応の自動音声合成システム</li>
+                <li><strong>キャッシュレスレジのモバイル化:</strong> スタッフがスマホ一つで決済可能</li>
+                <li><strong>スマート・シフト生成:</strong> チャット送信などで一瞬でシフト作成完了</li>
             </ul>
         </div>
+        <p class="text-body" style="margin-top:20px;">
+            一部の外部API（有料サービス）を除き、<br class="mobile-br">
+            これらのDX機能は<strong style="color:var(--primary); font-size:1.1em;">基本無料</strong>で提供。<br class="mobile-br">
+            リテアドにログインしていただくだけで、<br class="mobile-br">
+            すぐにすべての機能を導入できます。
+        </p>
 
-        <h3 class="sub-title">4. 今後の展望とDX推進</h3>
-        <p class="text-body">
-            リテアドは、単なる「広告業」ではなく<br class="mobile-br">
-            店舗の（DX）の中核を担います。<br class="mobile-br">
-            「リテアド」は、<br class="mobile-br">
-            POSシステムやアプリ決済（どこでもレジ）<br class="mobile-br">
-            とのAPI連携を強化し、<br class="mobile-br">
-            オフラインの購買行動を<br class="mobile-br">
-            オンライン並みの精度で可視化する<br class="mobile-br">
-            世界の実現を目指します。
+        <h2 class="section-title">私たちの思想</h2>
+        <p class="text-body" style="font-style:italic;">
+            「自分の会社だけが良ければいい、<br class="mobile-br">
+            というのは全く面白くない。」<br>
+            <br>
+            企業という組織であっても、<br class="mobile-br">
+            その考え方を共に共有し運営することで<br class="mobile-br">
+            世界が少しでも良くなると<br class="mobile-br">
+            本気で考えております。
         </p>
     </div>
 
-    <!-- Contact & Footer -->
+    <!-- Contact & Company Info -->
     <div id="contact" style="background: white; padding: 60px 20px; border-top: 1px solid #e2e8f0; text-align:center;">
-        <h2 class="section-title">導入についてのお問い合わせ</h2>
+        <h2 class="section-title">会社概要</h2>
+        <div style="max-width:400px; margin: 0 auto; text-align:left; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; font-size:0.95rem; color:#334155;">
+            <strong>会社名：</strong> non-logi株式会社<br>
+            <strong>代表者：</strong> 代表取締役 熊澤 一<br>
+            <strong>所在地：</strong> 神奈川県 横浜市<br>
+            <strong>事業内容：</strong><br>
+            ・AIサービス開発<br>
+            ・インバウンド向けAIサービス開発<br>
+            ・リテールメディアプラットフォーム運営
+        </div>
+
+        <h2 class="section-title" style="margin-top:50px;">お問い合わせ</h2>
         <p class="text-body" style="max-width: 600px; margin: 0 auto 30px;">
-            リテアドの導入、店舗サイネージの収益化について具体的なご相談を承ります。
+            リテアドの無料導入、店舗のDX化についてのご相談・お問い合わせはこちらから。
         </p>
         <a href="mailto:info@retail-ad.awsapps.com" style="display:inline-block; background:var(--primary); color:white; padding:15px 40px; border-radius:30px; font-weight:bold; text-decoration:none; font-size:1.1rem;">
             ✉️ 担当者へメールで問い合わせる
@@ -757,12 +449,12 @@
             <a href="creator_lp.html">クリエイター (retail-Ad Creator)</a>
         </div>
         <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:10px;">
-            <a href="about_retail_media.html" style="color:#94a3b8; text-decoration:underline;">リテールメディアに関するコラム・会社概要</a> |<br><br>
+            <a href="about_retail_media.html" style="color:#94a3b8; text-decoration:underline;">リテールメディアに関するコラム</a> |<br><br>
             <a href="terms_of_service.html" style="color:#94a3b8; text-decoration:underline;">利用規約</a> | 
             <a href="privacy_policy.html" style="color:#94a3b8; text-decoration:underline;">プライバシーポリシー</a> | 
             <a href="commercial_law.html" style="color:#94a3b8; text-decoration:underline;">特定商取引法に基づく表記</a>
         </p>
-        <p style="color:#64748b; font-size:0.8rem;">© 2026 nonlogi .Inc All rights reserved.</p>
+        <p style="color:#64748b; font-size:0.8rem;">© 2026 non-logi .Inc All rights reserved.</p>
     </footer>
 
     <script>
