@@ -136,6 +136,96 @@
         .nav-links { display: flex; gap: 25px; }
         .nav-links a { text-decoration: none; color: var(--dark); font-weight: 700; font-size: 14px; transition: 0.2s; }
         .nav-links a:hover { color: var(--primary); }
+    <meta property="og:site_name" content="リテアド (retail-ad)">
+    <link rel="canonical" href="https://retail-ad.com/">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-glow: rgba(37, 99, 235, 0.4);
+            --secondary: #10b981;
+            --bg-base: #f8fafc;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --glass: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --input-border: #cbd5e1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-base);
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero Login Section (100vh) */
+        .login-hero-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 20%);
+            background-attachment: fixed;
+            padding: 80px 20px;
+        }
+
+        .orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); z-index: 0; animation: float 20s infinite ease-in-out;
+        }
+        .orb-1 { width: 400px; height: 400px; background: #e0e7ff; top: -100px; left: -100px; opacity: 0.8; }
+        .orb-2 { width: 300px; height: 300px; background: #d1fae5; bottom: -50px; right: -50px; opacity: 0.8; animation-delay: -5s; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -50px); } }
+
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            padding: 40px; border-radius: 24px;
+            width: 100%; max-width: 420px;
+            box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.05);
+            position: relative; z-index: 10;
+        }
+
+        .login-card h1 { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; text-align: center; color: var(--dark); margin-bottom: 5px; }
+        .login-card p.subtitle { font-size: 0.9rem; text-align: center; color: var(--gray); margin-bottom: 30px; letter-spacing: 0.05em; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--dark); }
+        .form-group input { width: 100%; padding: 14px; border: 1px solid var(--input-border); border-radius: 12px; font-size: 1rem; }
+        .form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+        
+        button.btn-primary {
+            width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        button.btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+        .demo-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
+        .role-chip { background: white; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: var(--gray); cursor: pointer; transition: 0.3s; }
+        .role-chip:hover { background: #f1f5f9; border-color: var(--primary); color: var(--primary); }
+        .role-chip.active-chip { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow); }
+
+        .scroll-indicator { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); text-align: center; color: var(--gray); font-size: 0.9rem; font-weight: bold; animation: bounce 2s infinite; cursor: pointer; z-index: 20; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); } 40% { transform: translateY(-10px) translateX(-50%); } 60% { transform: translateY(-5px) translateX(-50%); } }
+
+        /* Navigation */
+        header { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: fixed; width: 100%; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; box-shadow: 0 1px 10px rgba(0,0,0,0.05); }
+        .logo { font-size: 24px; font-weight: 900; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 25px; }
+        .nav-links a { text-decoration: none; color: var(--dark); font-weight: 700; font-size: 14px; transition: 0.2s; }
+        .nav-links a:hover { color: var(--primary); }
 
         /* SEO LP Sections */
         .section { padding: 80px 20px; max-width: 1000px; margin: 0 auto; }
@@ -233,78 +323,6 @@
         });
     </script>
     <!-- END TYPOGRAPHY FIX -->
-
-
-</head>
-
-<body>
-
-    <header>
-        <a href="#" class="logo">
-            <img src="./ロゴ.png" alt="retail-ad Logo" style="width:30px; height:30px; border-radius:50%;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%232563eb\'/></svg>'">
-            retail-ad
-        </a>
-        <nav class="nav-links">
-            <!-- 削除指定: リテールメディアとは, ecosystem, お問い合わせ -->
-        </nav>
-    </header>
-
-    <!-- SECTION 1: Login Portal (Hero) -->
-    <div class="login-hero-container">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-
-        <div class="login-card">
-            <div style="text-align:center; margin-bottom:20px;">
-                <img src="./ロゴ.png" alt="Logo" style="width:80px; height:auto; margin-bottom:10px;" onerror="this.style.display='none'">
-            </div>
-            <h1>retail-ad ログイン</h1>
-            <p class="subtitle">Retail Media Platform</p>
-
-            <!-- 1. Role Selection Tabs (No email overwrite) -->
-            <div style="margin-bottom:25px;">
-                <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); text-align:center; margin-bottom:10px;">① あなたの「役割」を選択してください</p>
-                <div class="demo-chips">
-                    <div class="role-chip" onclick="selectRole('store', this)">🏪 店舗</div>
-                    <div class="role-chip" onclick="selectRole('advertiser', this)">👔 広告主</div>
-                    <div class="role-chip" onclick="selectRole('agency', this)">🕴️ 代理店</div>
-                    <div class="role-chip" onclick="selectRole('creator', this)">🎨 クリエイター</div>
-                </div>
-            </div>
-
-
-
-            <!-- 3. Standard Form Login -->
-            
-            
-<form id="loginForm" method="dialog" onsubmit="handleLogin(event)">
-                <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); text-align:center; margin-bottom:15px;">またはメールアドレスでログイン</p>
-
-                <!-- Hidden select to store the chosen role -->
-                <select id="login-role" name="role" required style="display:none;">
-                    <option value="">-- Role --</option>
-                    <option value="advertiser">広告主</option>
-                    <option value="store">店舗</option>
-                    <option value="agency">代理店</option>
-                    <option value="creator">クリエイター</option>
-                </select>
-
-                <div class="form-group">
-                    <label>メールアドレス</label>
-                    <input type="email" id="email" name="email" placeholder="user@retail-ad.com" autocomplete="username" required>
-                </div>
-                <div class="form-group">
-                    <label>パスワード</label>
-                    <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
-                </div>
-
-                <div style="margin-bottom:20px; font-size:0.85rem; display:flex; align-items:center; justify-content:space-between;">
-                    <label style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="remember" name="remember" checked> ログインを保持
-                    </label>
-                    <span style="color:var(--primary); cursor:pointer; font-weight:bold;" onclick="autoFillDemo()">※デモ入力</span>
-                </div>
-
                 <button type="submit" class="btn-primary">メールアドレスでログイン</button>
             </form>
             
@@ -409,9 +427,11 @@
         <p class="text-body" style="font-style:italic;">
             「自分の会社だけが良ければいい、<br class="mobile-br">
             というのは全く面白くない。」<br>
+            それがこのプラットフォームの<br class="mobile-br">
+            思想の根底にあります。<br>
             <br>
             企業という組織であっても、<br class="mobile-br">
-            その考え方を共に共有し運営することで<br class="mobile-br">
+            この考え方を共に共有し運営することで<br class="mobile-br">
             世界が少しでも良くなると<br class="mobile-br">
             本気で考えております。
         </p>
