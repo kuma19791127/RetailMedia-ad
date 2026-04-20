@@ -1016,6 +1016,17 @@
             const targetImp = document.getElementById('cp-target-imp').value;
             const bidMax = document.getElementById('cp-bid-max').value;
             
+                        // === AI Moderation & Rules ===
+            Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            try {
+                const reviewRes = await fetch(API_URL + '/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'mock_data' }) });
+                const reviewData = await reviewRes.json();
+                if (!reviewData.safe) {
+                    Swal.fire({ title: '❌ 審査不合格 (アカウント制限)', html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>', icon: 'error' });
+                    return;
+                }
+            } catch(e) { console.error('Review Error:', e); }
+
             Swal.fire({ title: 'アップロード中...', timerProgressBar: true, didOpen: () => Swal.showLoading() });
 
             // File to Base64 (Data Compression for Local storage)

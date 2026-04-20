@@ -1620,6 +1620,25 @@
         });
 
         function handleFile(file) {
+            
+            // Add 15s check for real users
+            if (file.type.startsWith('video/')) {
+                try {
+                    const duration = await window.getVideoDuration(file);
+                    const currentUser = window.currentUser || {};
+                    const isDemoUser = currentUser.email && currentUser.email.includes('@demo.com');
+                    
+                    if (duration > 16) {
+                        if (isDemoUser) {
+                            Swal.fire({ toast:true, position:'top-end', html:'デモアカウントのため15秒超過を許可しました', icon:'info', showConfirmButton:false, timer:3000 });
+                        } else {
+                            Swal.fire('⚠️ 配信規定（15秒超過）', '本番環境では15秒以内のショート動画のみ配信可能です。\n※15秒以内の動画を再選択してください。', 'warning');
+                            return;
+                        }
+                    }
+                } catch(e) {}
+            }
+            
             // Check file type
             if (!file.type.startsWith('video/') && !file.type.startsWith('image/')) {
                 Swal.fire('Error', 'Only Video or Image files are allowed.', 'error');
