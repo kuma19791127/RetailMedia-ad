@@ -17,7 +17,7 @@
                 confirmButtonText: 'はい、申請します'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch('/api/review/unlock', {
+                    fetch(API_URL + '/api/review/unlock', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: localStorage.getItem('demo_email') || 'advertiser@demo.com', target: 'Review' })
@@ -1513,7 +1513,7 @@
             // Hack: Use simulateUpload logic but force ai_text
             // format=image to show a placeholder "On Air" image?
             const params = `?ratio=16:9&format=image&ai_text=${encodeURIComponent(text)}&duration=15`;
-            await fetch(`/api/ad/demo/boost${params}`);
+            await fetch(`${API_URL}/api/ad/demo/boost${params}`);
         }
 
         async function editProfile() {
@@ -1717,7 +1717,7 @@
             
             try {
                 // Determine base64 placeholder (we use mock_data to avoid large payloads)
-                const reviewRes = await fetch('/api/creator/review-content', {
+                const reviewRes = await fetch(API_URL + '/api/creator/review-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ video_base64: "mock_data" })
@@ -1786,7 +1786,7 @@
                 if (bgm) query += '&bgm=' + encodeURIComponent(bgm);
                 if (ingredients) query += '&ingredients=' + encodeURIComponent(ingredients);
 
-                const res = await fetch('/api/ad/upload' + query, {
+                const res = await fetch(API_URL + '/api/ad/upload' + query, {
                     method: 'POST',
                     headers: { 'Content-Type': file.type },
                     body: file
@@ -1812,7 +1812,7 @@
         async function simulateUpload(aspectRatio, ytUrl = null, variant = null, ingredients = null, isImage = false) {
             Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             try {
-                const reviewRes = await fetch('/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'mock_data' }) });
+                const reviewRes = await fetch(API_URL + '/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'mock_data' }) });
                 const reviewData = await reviewRes.json();
                 if (!reviewData.safe) {
                     Swal.fire({ title: '❌ 審査不合格 (アカウント制限)', html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>', icon: 'error' });
@@ -1861,7 +1861,7 @@
             // Fetch latest real data
             let abStats = { A: { views: 0, scans: 0, sales: 0 }, B: { views: 0, scans: 0, sales: 0 } };
             try {
-                const res = await fetch('/api/ad/analytics');
+                const res = await fetch(API_URL + '/api/ad/analytics');
                 const data = await res.json();
                 if (data.ab_stats) abStats = data.ab_stats;
             } catch (e) { console.error("Failed to fetch AB stats", e); }
