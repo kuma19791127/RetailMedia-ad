@@ -1357,7 +1357,7 @@
         // Initialize Dashboard Components
 
         // Helper: Get Video Duration
-        function getVideoDuration(file) {
+        window.getVideoDuration = function(file) {
             return new Promise((resolve, reject) => {
                 const video = document.createElement('video');
                 video.preload = 'metadata';
@@ -1371,7 +1371,7 @@
         }
 
         // Helper: Convert File to Base64
-        function fileToBase64(file) {
+        window.fileToBase64 = function(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -2428,7 +2428,7 @@
                             }
                         } else if (file.type.startsWith('video/')) {
                             try {
-                                const duration = await getVideoDuration(file);
+                                const duration = await window.getVideoDuration(file);
                                 let isValid = true;
                                 let expected = "";
 
@@ -2453,7 +2453,7 @@
                     let fileUrl = null;
                     if (fileInput.files.length > 0) {
                         try {
-                            fileUrl = await fileToBase64(fileInput.files[0]);
+                            fileUrl = await window.fileToBase64(fileInput.files[0]);
                         } catch (e) {
                             console.error("File Read Error:", e);
                             Swal.showValidationMessage('ファイルの読み込みに失敗しました');
