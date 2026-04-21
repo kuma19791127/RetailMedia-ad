@@ -713,7 +713,7 @@
                             errDiv.style.cssText = "position:absolute; top:30%; left:10%; right:10%; background:rgba(231,76,60,0.95); color:white; padding:30px; border-radius:12px; font-weight:bold; font-size:1.5rem; text-align:center; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.5);";
                             document.getElementById('player-container').appendChild(errDiv);
                         }
-                        errDiv.innerHTML = '⚠️ 再生エラー<br><span style="font-size:1rem;font-weight:normal;display:block;margin-top:10px;">アップロードされた動画形式（.mov等）は現在のブラウザでサポートされていません。<br>iPhone等で撮影した動画は <b>.mp4</b> に変換してアップロードをお願いします。<br><br>(5秒後に次のコンテンツへスキップします...)</span>';
+                        errDiv.innerHTML = '⚠️ 再生エラー<br><span style="font-size:1rem;font-weight:normal;display:block;margin-top:10px;">動画の読み込みに失敗しました。<br><br>(5秒後に次のコンテンツへスキップします...)</span>';
                         errDiv.style.display = 'block';
                         setTimeout(() => {
                             errDiv.style.display = 'none';
