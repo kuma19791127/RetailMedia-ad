@@ -479,7 +479,10 @@
 
             function onPlayerError(event) {
                 console.error("YouTube Player Error:", event.data);
-                playNext(); // Skip on error
+                const currentItem = currentPlaylist[currentIndex];
+                if (currentItem && (currentItem.is_youtube || (currentItem.url && currentItem.url.includes('youtu')))) {
+                    playNext(); // Skip on error only if playing a YouTube video
+                }
             }
 
             function onPlayerStateChange(event) {

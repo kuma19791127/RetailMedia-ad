@@ -278,6 +278,7 @@ app.post('/api/creator/upload', (req, res) => {
                 .videoCodec('libx264')
                 .addOption('-preset', 'fast')
                 .addOption('-pix_fmt', 'yuv420p')
+                .addOption('-crf', '28') // Add heavy compression for Retail Signage
                 .on('end', () => {
                     console.log("[Creator] Transcoding finished.");
                     try { require('fs').unlinkSync(savePathIn); } catch(e){}
