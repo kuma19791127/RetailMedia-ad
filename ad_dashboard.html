@@ -2443,8 +2443,8 @@
                                     return false;
                                 }
                             } catch (e) {
-                                Swal.showValidationMessage('動画ファイルの検証に失敗しました');
-                                return false;
+                                console.warn('Browser could not parse video duration (likely unsupported codec like .mov). Bypassing duration check.', e);
+                                // Do not block upload, let server handle it
                             }
                         }
                     }
