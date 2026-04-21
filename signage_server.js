@@ -186,7 +186,7 @@ module.exports = {
             is_youtube: !!( (metadata.youtube_url && !metadata.youtube_url.startsWith('data:')) || (metadata.url && !metadata.url.startsWith('data:') && (metadata.url.includes('youtube') || metadata.url.includes('youtu.be'))) ),
             is_image: (metadata.format === 'image') || (metadata.url && (/\.(jpg|jpeg|png|gif|webp)$/i.test(metadata.url) || metadata.url.startsWith('data:image/'))),
             is_recipe: !!metadata.ai_text,
-            status: metadata.status || 'active', // Automatically active for demo purposes
+            status: metadata.status || 'pending', // Default to pending for approval
             ...metadata
         };
 

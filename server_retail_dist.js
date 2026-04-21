@@ -711,10 +711,43 @@ app.post('/api/campaigns', (req, res) => {
         if (plan === 'impression') type = 'IMPRESSION';
         // CPA is also PAID but with specific tracking setup
 
-        const processAndInject = (finalUrl) => {
+        const processAndInject = async (finalUrl) => {
+            let adStatus = 'pending';
+            try {
+                if (finalUrl && finalUrl.startsWith('data:')) {
+                    const base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
+                    if (base64Data.length < 500) {
+                        adStatus = 'active';
+                    } else if (typeof generativeModel !== 'undefined') {
+                        const mimeType = finalUrl.startsWith('data:image') ? 'image/jpeg' : 'video/mp4';
+                        const request = {
+                            contents: [{
+                                role: 'user',
+                                parts: [
+                                    { inlineData: { mimeType: mimeType, data: base64Data } },
+                                    { text: 'あなたは広告プラットフォームのAIモデレーターです。暴力的、性的、または詐欺的な内容が含まれる場合は「FAIL」、完全に安全であれば「PASS」を出力してください。' }
+                                ]
+                            }]
+                        };
+                        const result = await generativeModel.generateContent(request);
+                        const text = result.response.candidates[0].content.parts[0].text;
+                        adStatus = text.includes('FAIL') ? 'pending' : 'active';
+                    } else {
+                        adStatus = 'active'; // Fallback
+                    }
+                } else {
+                    adStatus = 'active'; // YouTube/Empty
+                }
+            } catch (err) {
+                console.error("[AutoReview] AI Review failed:", err);
+                adStatus = 'pending'; // Failsafe
+            }
+            console.log(`[AutoReview] Campaign '${name}' auto-review result: ${adStatus}`);
+
             const metadata = {
                 title: name,
                 format: format, // Pass format (image/video/youtube)
+                status: adStatus, // Result of automatic review
                 // Prioritize passed URL (Base64) or YouTube URL. DO NOT default to Sintel anymore.
                 url: finalUrl,
                 youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : youtube_url,
