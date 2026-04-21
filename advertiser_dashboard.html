@@ -992,7 +992,8 @@
             // === KYC Authorization Gate ===
             const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
             const isRealUser2 = checkUser && checkUser.email && checkUser.email !== 'guest@example.com' && checkUser.email !== 'Guest';
-            if (isRealUser2) {
+            const isDemoUser2 = checkUser && checkUser.email && checkUser.email.includes('@demo.com');
+            if (isRealUser2 && !isDemoUser2) {
                 const kycStatus = localStorage.getItem('retail_kyc_approved');
                 if (kycStatus !== 'true') {
                     Swal.fire({
