@@ -67,7 +67,7 @@ echo sLinkFile = "%STARTUP_FOLDER%\%SHORTCUT_NAME%" >> "%VBS_SCRIPT%"
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
 echo oLink.TargetPath = "%CHROME_PATH%" >> "%VBS_SCRIPT%"
 :: 引数にキオスクモード、初回起動チェックのバイパス、カメラの自動許可を追加
-echo oLink.Arguments = "--kiosk """ ^& "%TARGET_URL%" ^& """ --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check --disable-translate" >> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk """ ^& "%TARGET_URL%" ^& """ --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check --disable-translate" >> "%VBS_SCRIPT%"
 echo oLink.Save >> "%VBS_SCRIPT%"
 
 :: VBS実行とクリーンアップ
