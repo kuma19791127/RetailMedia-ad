@@ -546,7 +546,9 @@
                 const location = urlParams.get('location') || 'register_side';
                 const storeId = urlParams.get('storeId') || 'STORE_001'; // Default to Demo Store
 
-                const res = await fetch(`/api/signage/playlist?location=${location}&storeId=${storeId}`);
+                console.log(`[Signage API] Requesting playlist from: /api/signage/playlist?location=${location}&storeId=${storeId}`);
+            const res = await fetch(`/api/signage/playlist?location=${location}&storeId=${storeId}`);
+            if (!res.ok) console.error(`[Signage API] Error fetching playlist! Endpoint: /api/signage/playlist, Status: ${res.status} ${res.statusText}`);
                 const newPlaylist = await res.json();
 
                 if (JSON.stringify(newPlaylist) !== JSON.stringify(currentPlaylist)) {
@@ -569,6 +571,7 @@
         }
 
         function playContent(item) {
+        console.log(`[Signage Player] Starting playback for item: ${item.title} (ID: ${item.id}, Type: ${item.youtube_url ? 'YouTube' : 'Local File'})`);
             console.log("Playing:", item.title);
 
             // Reset UI
@@ -774,7 +777,10 @@
                 attention = 20; // Default baseline so it doesn't instantly zero out if camera is off
             }
 
-            fetch(`/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}`).catch(err => console.error("Beacon Error:", err));
+            console.log(`[Analytics API] Sending beacon data for Ad: ${adId} (Attention: ${attention}%, Skip: ${skip})`);
+            fetch(`/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}`).then(r => {
+                if(!r.ok) console.error(`[Analytics API] Beacon Failed! Status: ${r.status}`);
+            }).catch(err => console.error(`[Analytics API] Network Error on endpoint /api/analytics/track! Error: ${err.message}`));
         }
 
         function playNext() {

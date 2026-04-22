@@ -2286,7 +2286,8 @@
                         }
                     } catch(e) {}
 
-                    const res = await fetch(`${API_URL}/api/campaigns`, {
+                    console.log(`[Campaign API] Submitting new campaign data to endpoint: ${API_URL}/api/campaigns`);
+                        const res = await fetch(`${API_URL}/api/campaigns`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

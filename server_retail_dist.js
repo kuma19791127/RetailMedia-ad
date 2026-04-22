@@ -228,6 +228,7 @@ app.post('/api/creator/review-content', async (req, res) => {
 });
 
 app.post('/api/creator/upload', (req, res) => {
+    console.log(`[API /api/creator/upload] Received new creator video upload request. Data size: ${JSON.stringify(req.body).length} bytes`);
     const { title, src, format } = req.body;
     const newId = Date.now();
     const newVideo = {
@@ -689,6 +690,7 @@ app.get('/api/ad/demo/boost', (req, res) => {
 
 // Official Campaign Creation Endpoint (Dashboard)
 app.post('/api/campaigns', (req, res) => {
+    console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
         const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email } = req.body;
         console.log(`[API] Creating Campaign: ${name} (${plan}) | Advertiser: ${ad_email}`);
@@ -1104,6 +1106,7 @@ app.get('/api/ad/mode', (req, res) => {
 });
 
 app.get('/api/signage/playlist', (req, res) => {
+    console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
     const location = req.query.location || 'register_side';
     let playlist = signageServer.getPlaylist(location);
 
