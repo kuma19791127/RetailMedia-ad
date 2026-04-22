@@ -29,8 +29,10 @@ files.forEach(file => {
     }
 });
 
+const isQuiet = process.argv.includes('--quiet');
+
 if (videosToCompress.length === 0) {
-    console.log("🎉 圧縮が必要な大きな動画はありませんでした。");
+    if (!isQuiet) console.log("🎉 圧縮が必要な大きな動画はありませんでした。");
     process.exit(0);
 }
 
