@@ -1041,8 +1041,29 @@
                     // Add 15s check for real users
                     if (file.type.startsWith('video/')) {
                         try {
-                            // Duration validation removed
-            } catch (e) {
+                            const duration = await window.getVideoDuration(file);
+                            const currentUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+                            const isDemoUser = currentUser.email && currentUser.email.includes('@demo.com');
+                            
+                            if (duration > 16) {
+                                if (isDemoUser) {
+                                    Swal.fire({ toast:true, position:'top-end', html:'デモアカウントのため15秒超過を許可しました', icon:'info', showConfirmButton:false, timer:3000 });
+                                } else {
+                                    Swal.fire('⚠️ 配信規定（15秒超過）', '本番環境では15秒以内のショート動画のみ配信可能です。\n※15秒以内の動画を再選択してください。', 'warning');
+                                    return;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    fileName = file.name;
+                    const reader = new FileReader();
+                    fileUrl = await new Promise((resolve, reject) => {
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                    });
+                } catch (e) {
                     console.error("File Read Error:", e);
                 }
             }
