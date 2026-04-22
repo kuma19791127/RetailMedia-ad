@@ -1075,7 +1075,7 @@ app.get('/api/ad/analytics', async (req, res) => {
         attribution.revenue = global.productionStats.revenue;
         attribution.sales = global.productionStats.sales;
         // Traffic Logic? Keep mock for OS share or randomize slightly
-        traffic.os_share = { "iOS": 60 + Math.floor(Math.random() * 10), "Android": 30 + Math.floor(Math.random() * 10) };
+        traffic.os_share = { 'iOS': 60, 'Android': 40 };
     } else {
         // Demo Mode - Keep existing multiplied logic
         attribution.sales = Math.floor(attribution.sales * demoBoostMultiplier);
@@ -1346,7 +1346,6 @@ app.get('/api/analytics/track', (req, res) => {
     // Update global dashboard stats
     globalDashboardStats.impressions++;
     // Simulate ~35% of impressions having a face detected
-    if (Math.random() < 0.35) globalDashboardStats.faceDetected++;
 
     res.json({ success: true, recorded, status: creatorStats[adId] ? creatorStats[adId].status : 'unknown' });
 });
