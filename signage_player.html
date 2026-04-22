@@ -787,13 +787,7 @@
             // Move index
             currentIndex = (currentIndex + 1);
             if (currentIndex >= currentPlaylist.length) {
-                // Stop playback and hide UI (No Loop)
-                document.getElementById('video-screen').style.display = 'none';
-                document.getElementById('image-screen').style.display = 'none';
-                document.getElementById('yt-player-container').style.display = 'none';
-                document.getElementById('qr-screen').style.display = 'none';
-                document.getElementById('video-screen').pause();
-                return;
+                currentIndex = 0; // Loop
             }
 
             playContent(currentPlaylist[currentIndex]);

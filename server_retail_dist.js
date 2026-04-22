@@ -59,11 +59,14 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // State
 const LOCAL_MEDIA_PATH = path.join(os.homedir(), 'Desktop', 'aaa');
 if (require('fs').existsSync(LOCAL_MEDIA_PATH)) {
-    app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
+app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
     console.log(`[System] Serving Local Media from: ${LOCAL_MEDIA_PATH}`);
 } else {
     console.log(`[System] Local Media folder not found at: ${LOCAL_MEDIA_PATH}`);
 }
+
+// Ensure the new short loop folder is served correctly, regardless of 'aaa' folder
+app.use('/desktop_shorts', express.static(path.join(require('os').homedir(), 'Desktop', '広告ショート')));
 
 // State
 let demoBoostMultiplier = 1.0;
