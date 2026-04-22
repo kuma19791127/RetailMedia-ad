@@ -65,8 +65,8 @@ app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
     console.log(`[System] Local Media folder not found at: ${LOCAL_MEDIA_PATH}`);
 }
 
-// Ensure the new short loop folder is served correctly, regardless of 'aaa' folder
-app.use('/desktop_shorts', express.static(path.join(require('os').homedir(), 'Desktop', '広告ショート')));
+// Ensure the base loop folder is served correctly
+app.use('/desktop_shorts', express.static(path.join(__dirname, 'base_loop_videos')));
 
 // State
 let demoBoostMultiplier = 1.0;

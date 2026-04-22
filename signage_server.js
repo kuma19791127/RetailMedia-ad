@@ -63,11 +63,10 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
             if (current < target) playlist.push(state.impression);
         }
 
-        // 3. Scan local Desktop "広告ショート" folder
+        // 3. Scan project-relative base loop folder
         const fs = require('fs');
         const path = require('path');
-        const os = require('os');
-        const desktopPath = path.join(os.homedir(), 'Desktop', '広告ショート');
+        const desktopPath = path.join(__dirname, 'base_loop_videos');
         
         if (fs.existsSync(desktopPath)) {
             try {
