@@ -811,7 +811,6 @@ app.post('/api/campaigns', (req, res) => {
                     try { require('fs').unlinkSync(inputPath); } catch(e){}
                     processAndInject(rawUrl);
                     if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
-                .run();
                 })
                 .on('end', () => {
                     console.log("[AdUpload] Transcoding & Compression finished.");
@@ -843,7 +842,7 @@ app.post('/api/campaigns', (req, res) => {
                         // we returned "Campaign Created" below before finish, but that's fine.
                         if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
                     }
-                });
+                }).run();
 
             res.json({ success: true, message: "Campaign Created (Transcoding in background)" });
         } else {
