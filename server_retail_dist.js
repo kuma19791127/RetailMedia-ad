@@ -246,11 +246,12 @@ app.post('/api/creator/upload', (req, res) => {
             title: `Creator: ${newVideo.title}`,
             url: finalUrl,
             duration: 45,
+            status: 'active', // Forces it to be active
             brand: "Creator",
             youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : null
         };
-        signageServer.injectCampaign('9:16', adData, 'INTERRUPT'); // Inject as INTERRUPT for immediate demo playback
-        console.log(`[Creator] Video Uploaded & Linked to Signage: ${adData.title}`);
+        signageServer.injectCampaign('9:16', adData, 'PAID'); // Inject as PAID so it joins the loop
+        console.log(`[Creator] Video Uploaded & Linked to Signage Loop: ${adData.title}`);
 
         // Broadcast reload event to all signage players
         broadcastEvent({ type: 'force_reload' });
