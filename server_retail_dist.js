@@ -577,7 +577,7 @@ app.get('/api/admin/dashboard', (req, res) => {
 
     res.json({
         success: true,
-        accounting_email: "admin-accounting@anywhere-regi.com",
+        accounting_email: "info@retail-ad.awsapps.com",
         billing: [
             { id: "STORE_001", name: "本店スーパー", sales: 15400000, fee_1_2_percent: 184800, email: "store@demo.com", status: "未請求" }
         ],
@@ -1637,7 +1637,7 @@ let storeData = {
 };
 
 let adminSettings = {
-    accounting_email: "admin-accounting@anywhere-regi.com"
+    accounting_email: "info@retail-ad.awsapps.com"
 };
 
 // Admin Portal Route
@@ -1737,7 +1737,7 @@ async function sendSESEmail(toAddress, subject, bodyText) {
             Body: { Text: { Data: bodyText } },
             Subject: { Data: subject }
         },
-        Source: process.env.SES_SENDER_EMAIL || "admin-accounting@anywhere-regi.com" 
+        Source: process.env.SES_SENDER_EMAIL || "info@retail-ad.awsapps.com" 
     };
     try {
         await sesClient.send(new SendEmailCommand(params));
