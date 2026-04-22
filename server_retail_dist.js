@@ -209,12 +209,12 @@ app.post('/api/creator/review-content', async (req, res) => {
             const response = await result.response;
             const text = response.candidates[0].content.parts[0].text;
             console.log("クリエイター動画審査完了:", text);
-            if (text.includes('FAIL')) {
-                res.json({ safe: false, message: text });
-            } else {
-                res.json({ safe: true, message: text });
-            }
-        } else {
+                    // 実装段階のため、FAIL判定が出てもブロックせず警告メッセージ付きで通す（審査待ちをなくす）
+                    if (text.includes('FAIL')) {
+                        res.json({ safe: true, message: 'AI判定: ' + text + '\n(※現在は実装テスト段階のため自動承認されました)' });
+                    } else {
+                        res.json({ safe: true, message: text });
+                    }
             console.log("Gemini API is not configured. Simulating pass.");
             res.json({ safe: true, message: "審査通過 (モック/API未設定)" });
         }
@@ -725,13 +725,15 @@ app.post('/api/campaigns', (req, res) => {
                                 role: 'user',
                                 parts: [
                                     { inlineData: { mimeType: mimeType, data: base64Data } },
-                                    { text: 'あなたは広告プラットフォームのAIモデレーターです。暴力的、性的、または詐欺的な内容が含まれる場合は「FAIL」、完全に安全であれば「PASS」を出力してください。' }
+                                    { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。\n1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容\n2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告\n3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。これらが少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全な小売広告であれば「PASS: 理由」を出力してください。' }
                                 ]
                             }]
                         };
                         const result = await generativeModel.generateContent(request);
                         const text = result.response.candidates[0].content.parts[0].text;
-                        adStatus = text.includes('FAIL') ? 'pending' : 'active';
+                        // 実装段階のため、FAIL判定でも配信中(active)にする
+                        adStatus = 'active'; 
+                        console.log(`[AutoReview] AI Result: ${text} -> (実装テスト中のため active として処理)`);
                     } else {
                         adStatus = 'active'; // Fallback
                     }
