@@ -565,39 +565,6 @@ function getRedirectUrl(role) {
 // --- ADMIN API ---
 
 
-app.get('/api/admin/dashboard', (req, res) => {
-    // Return mock billing and payout data for the admin portal
-    const retailAdRevenue = CREATOR_STATE.total_revenue * 1.5;
-    const adsenseRevenue = 45000;
-    const agencyCommission = Math.floor(retailAdRevenue * 0.2); // 20%
-    const creatorReward = Math.floor(CREATOR_STATE.total_revenue + (adsenseRevenue * 0.1) + 10000); // 10% + cm bonus
-    const operatingCost = 30000;
-    const totalNetRevenue = retailAdRevenue + adsenseRevenue - agencyCommission - creatorReward - operatingCost;
-    const adRevenueShare = Math.floor(totalNetRevenue * 0.5);
-
-    res.json({
-        success: true,
-        accounting_email: "info@retail-ad.awsapps.com",
-        billing: [
-            { id: "STORE_001", name: "本店スーパー", sales: 15400000, fee_1_2_percent: 184800, email: "store@demo.com", status: "未請求" }
-        ],
-        payouts: [
-            {
-                id: "STORE_001", name: "本店スーパー",
-                retail_ad_revenue: retailAdRevenue,
-                adsense_revenue: adsenseRevenue,
-                agency_commission: agencyCommission,
-                creator_reward: creatorReward,
-                operating_cost: operatingCost,
-                total_net_revenue: totalNetRevenue,
-                ad_revenue_share: adRevenueShare,
-                email: "store@demo.com",
-                status: "未払",
-                bank_info: { bank: "みずほ銀行", account: "普通 1234567" }
-            }
-        ]
-    });
-});
 
 app.get('/api/ad/mode', (req, res) => {
     isProductionMode = (req.query.prod === 'true');
@@ -1697,19 +1664,9 @@ app.get('/api/admin/dashboard', (req, res) => {
 
 // --- AWS SES Email Integration ---
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
-const sesClient = new SESClient({ 
-    region: "ap-northeast-1", 
-    credentials: { 
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "SKIP", 
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "SKIP" 
-    } 
-});
+const sesClient = new SESClient({ region: "us-east-1" }); // AWS App Runner automatically injects credentials via IAM Role
 
 async function sendSESEmail(toAddress, subject, bodyText) {
-    if(process.env.AWS_ACCESS_KEY_ID === "SKIP" || !process.env.AWS_ACCESS_KEY_ID) {
-        console.warn("[SES] AWS Credentials missing. Skipping real email send to " + toAddress);
-        return true;
-    }
     const params = {
         Destination: { ToAddresses: [toAddress] },
         Message: {
@@ -1753,11 +1710,11 @@ app.post('/api/admin/creators/send-email', async (req, res) => {
   let subject = "";
   let body = "";
   if (type === 'store_payout') {
-    subject = 【リテアド】今月の広告収益振込予定のお知らせ ();
-    body = ${to} 様\n\n今月のリテアド動画配信による報酬明細をお送りします。\n--------------------------------\n[計算ロジック]\n月間有効再生数:  回\nベース再生単価: ¥2 / 回\n--------------------------------\nお支払予定金額: ¥\n--------------------------------\nよろしくお願いいたします。;
+    subject = `【リテアド】今月の広告収益振込予定のお知らせ (${dateStr})`;
+    body = `${to} 様\n\n今月のリテアド動画配信による報酬明細をお送りします。\n--------------------------------\n[計算ロジック]\n月間有効再生数: ${playCount.toLocaleString()} 回\nベース再生単価: ¥2 / 回\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\nよろしくお願いいたします。`;
   } else {
-    subject = 【リテアド】クリエイター報酬振込予定のお知らせ ();
-    body = ${to} 様\n\n今月の広告収益額が確定いたしました。\n--------------------------------\nお支払予定金額: ¥\n--------------------------------\n引き続き、素晴らしい動画のご投稿をお待ちしております。;
+    subject = `【リテアド】クリエイター報酬振込予定のお知らせ (${dateStr})`;
+    body = `${to} 様\n\n今月の広告収益額が確定いたしました。\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\n引き続き、素晴らしい動画のご投稿をお待ちしております。`;
   }
   await sendSESEmail(to, subject, body);
   res.json({ success: true, message: "Email triggered successfully" });
