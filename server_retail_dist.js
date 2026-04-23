@@ -1647,10 +1647,10 @@ app.get('/api/admin/dashboard', (req, res) => {
 app.post("/api/admin/invite", async (req, res) => {
     const { name, email, budget, ccEmail } = req.body;
     const tempPassword = Math.random().toString(36).slice(-8); // 8-char random password
-    users[email] = { password: tempPassword, role: "advertiser", name: name, org: name };
+    users[email] = { password: tempPassword, role: "advertiser", name: name, org: name, budget: Number(budget) || 0 };
     const dateStr = new Date().toISOString().split("T")[0];
-    const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 ()`;
-    const body = ` 様\n\nリテアドのアカウントが発行され、ご入金いただいた予算がシステムに反映されました。\n\n--------------------------------\n[アカウント情報]\nログインID (Email): \n初期パスワード: \nログインURL: https://admin-portal-demo.com/login\n\n[チャージ残高]\n利用可能ご予算: ¥\n--------------------------------\n\n早速システムにログインし、広告キャンペーンを作成してください。\nご不明な点がございましたら、当メールにそのままご返信ください。`;
+    const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 (${dateStr})`;
+    const body = `${name} 様\n\nリテアドのアカウントが発行され、ご入金いただいた予算がシステムに反映されました。\n\n--------------------------------\n[アカウント情報]\nログインID (Email): ${email}\n初期パスワード: ${tempPassword}\nログインURL: https://admin-portal-demo.com/login\n\n[チャージ残高]\n利用可能ご予算: ¥${Number(budget).toLocaleString()}\n--------------------------------\n\n早速システムにログインし、広告キャンペーンを作成してください。\nご不明な点がございましたら、当メールにそのままご返信ください。`;
     await sendSESEmail(email, subject, body);
     if (ccEmail) { await sendSESEmail(ccEmail, subject, body); }
     res.json({ success: true, message: "Account created and email sent via SES" });
