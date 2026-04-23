@@ -9,6 +9,56 @@ const fs = require('fs');
 
 const adEngine = require('./ad_engine');
 const signageServer = require('./signage_server');
+
+// --- Scheduled Broadcast System ---
+let scheduledBroadcasts = [];
+setInterval(() => {
+    const now = Date.now();
+    scheduledBroadcasts = scheduledBroadcasts.filter(b => {
+        if (b.scheduleTime <= now) {
+            console.log([Schedule] ⏰ Executing scheduled broadcast: );
+            signageServer.injectCampaign('16:9', b.metadata, 'INTERRUPT');
+            return false; // Remove from queue
+        }
+        return true; // Keep in queue
+    });
+}, 10000); // Check every 10 seconds
+
+
+// --- ⏰ Schedule / Broadcast Voice via AI Voice Studio ---
+app.post('/api/signage/schedule_voice', (req, res) => {
+    const { title, text, audio_url, schedule_time, target_store_id } = req.body;
+    if (!audio_url && !text) {
+        return res.status(400).json({ error: "Missing audio data or text" });
+    }
+
+    const metadata = {
+        title: title || "館内放送",
+        format: "audio",
+        url: audio_url,
+        text_content: text,
+        target_store_id: target_store_id || 'all'
+    };
+
+    if (schedule_time) {
+        // Schedule it
+        const sTime = new Date(schedule_time).getTime();
+        if (sTime > Date.now()) {
+            scheduledBroadcasts.push({
+                scheduleTime: sTime,
+                metadata: metadata
+            });
+            console.log([Schedule] Added broadcast:  for );
+            return res.json({ success: true, message: "予約配信を設定しました", scheduled_for: sTime });
+        }
+    }
+    
+    // Immediate broadcast
+    console.log([Signage] Immediate voice broadcast: );
+    signageServer.injectCampaign('16:9', metadata, 'INTERRUPT');
+    res.json({ success: true, message: "サイネージへ即時配信しました" });
+});
+
 // GMO dependency removed in favor of Square + Google Cloud flow
 
 const ffmpeg = require('fluent-ffmpeg');

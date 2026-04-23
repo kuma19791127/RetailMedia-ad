@@ -164,13 +164,56 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Simple placeholder handlers – replace with real API calls later
-        document.getElementById('save-btn').addEventListener('click', () => {
-            Swal.fire('保存しました', '原稿と音声が保存されました。', 'success');
+        // Real API calls for Scheduling and Priority
+async function sendToSignage(isPriority) {
+    const text = document.getElementById('ai-text-result').value;
+    const audioPlayer = document.getElementById('ai-audio-player');
+    const audio_url = audioPlayer.src; // Data URI or URL
+    
+    if (!text && (!audio_url || !audio_url.startsWith('data:'))) {
+        Swal.fire('エラー', '先に音声を生成してください。', 'error');
+        return;
+    }
+
+    const isImmediate = document.getElementById('immediate').checked;
+    const scheduleDate = document.getElementById('schedule-date').value;
+    let schedule_time = null;
+    
+    if (!isPriority && !isImmediate && scheduleDate) {
+        schedule_time = new Date(scheduleDate).toISOString();
+    }
+
+    const payload = {
+        title: "館内放送 (" + new Date().toLocaleTimeString() + ")",
+        text: text,
+        audio_url: audio_url,
+        schedule_time: isPriority ? null : schedule_time
+    };
+
+    try {
+        const res = await fetch('/api/signage/schedule_voice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
-        document.getElementById('priority-btn').addEventListener('click', () => {
-            Swal.fire('優先配信', 'サイネージへ即時割り込み配信を開始しました。', 'info');
-        });
+        const data = await res.json();
+        if (data.success) {
+            Swal.fire('成功', data.message, 'success');
+        } else {
+            Swal.fire('エラー', data.error || '送信に失敗しました', 'error');
+        }
+    } catch(e) {
+        Swal.fire('エラー', 'サーバーに接続できません', 'error');
+    }
+}
+
+document.getElementById('save-btn').addEventListener('click', () => {
+    sendToSignage(false);
+});
+
+document.getElementById('priority-btn').addEventListener('click', () => {
+    sendToSignage(true);
+});
         document.getElementById('select-mascot').addEventListener('click', () => {
             Swal.fire({
                 title: 'マスコット選択',
