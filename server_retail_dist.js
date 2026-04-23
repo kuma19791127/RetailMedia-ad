@@ -1271,27 +1271,6 @@ app.get('/api/admin/creators', (req, res) => {
 });
 
 // Admin to Creator Bulk Email Handler
-app.post('/api/admin/creators/send-email', (req, res) => {
-    const { to, amount } = req.body;
-
-    console.log(`\n========================================`);
-    console.log(`📧 AUTOMATIC EMAIL SENT (Payout)`);
-    console.log(`To: ${to}`);
-    console.log(`Subject: 【retail-ad】今月の広告収益振込予定のお知らせ`);
-    console.log(`Body: 
-    クリエイター様
-    
-    今月の広告収益額が確定いたしました。
-    
-    【振込予定額】: ¥${amount.toLocaleString()}
-    【振込予定日】: 翌月末日
-    【振込先】: 登録済みの銀行口座
-    
-    引き続き、素晴らしい動画のご投稿をお待ちしております。
-    ========================================\n`);
-
-    res.json({ success: true, message: "Email triggered successfully" });
-});
 
 app.get('/api/analytics/track', (req, res) => {
     const adId = req.query.adId;
@@ -1767,30 +1746,21 @@ app.post('/api/admin/billing/send-email', async (req, res) => {
 
 // AWS SES Payout Emails for Creators and Stores
 app.post('/api/admin/creators/send-email', async (req, res) => {
-    const { to, amount, type } = req.body;
-    const dateStr = new Date().toISOString().split('T')[0];
-    const payoutAmount = Number(amount);
-    
-    let subject = "";
-    let body = "";
-
-    if (type === 'store_payout') {
-        console.log(`Subject: ${subject}`);
-        console.log(`Body:`);
-        console.log(`   ${to} 様`);
-        console.log(`   今月のリテアド動画配信による報酬明細をお送りします。`);
-        console.log(`   --------------------------------`);
-        console.log(`   [計算ロジック]`);
-        console.log(`   月間有効再生数: ${playCount.toLocaleString()} 回`);
-        console.log(`   ベース再生単価: ¥2 / 回`);
-        console.log(`   --------------------------------`);
-        console.log(`   お支払予定金額: ¥${payoutAmount.toLocaleString()}`);
-        console.log(`   --------------------------------`);
-        console.log(`[System] 📎 Generated PDF Attachment: Creator_Statement_${dateStr}.pdf ... [OK]`);
-        console.log(`==================================\n`);
-    }
-
-    res.json({ success: true });
+  const { to, amount, type } = req.body;
+  const dateStr = new Date().toISOString().split('T')[0];
+  const payoutAmount = Number(amount) || 0;
+  const playCount = Math.floor(payoutAmount / 2);
+  let subject = "";
+  let body = "";
+  if (type === 'store_payout') {
+    subject = 【リテアド】今月の広告収益振込予定のお知らせ ();
+    body = ${to} 様\n\n今月のリテアド動画配信による報酬明細をお送りします。\n--------------------------------\n[計算ロジック]\n月間有効再生数:  回\nベース再生単価: ¥2 / 回\n--------------------------------\nお支払予定金額: ¥\n--------------------------------\nよろしくお願いいたします。;
+  } else {
+    subject = 【リテアド】クリエイター報酬振込予定のお知らせ ();
+    body = ${to} 様\n\n今月の広告収益額が確定いたしました。\n--------------------------------\nお支払予定金額: ¥\n--------------------------------\n引き続き、素晴らしい動画のご投稿をお待ちしております。;
+  }
+  await sendSESEmail(to, subject, body);
+  res.json({ success: true, message: "Email triggered successfully" });
 });
 
 // Square SSoT Validation Endpoint
