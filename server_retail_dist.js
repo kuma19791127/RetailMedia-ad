@@ -477,14 +477,14 @@ app.post('/api/auth/login', (req, res) => {
         user = users[email];
         console.log(`[Auth] 🆕 Auto-Registered & Logged in: ${email} (${user.role})`);
         currentUser = { email, role: user.role };
-        saveUsers();
+        
         return res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
     } else {
         // Update name and org if provided and different
         let updated = false;
         if (name && user.name !== name) { user.name = name; updated = true; }
         if (org && user.org !== org) { user.org = org; updated = true; }
-        if (updated) saveUsers();
+        if (updated) 
     }
 
     if (user && user.password === password) {
