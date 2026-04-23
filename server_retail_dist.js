@@ -1190,7 +1190,7 @@ app.post('/api/admin/agency-submit', express.json(), async (req, res) => {
         const dateStr = new Date().toISOString().split("T")[0];
         const subject = `【リテアド】新規の広告主紹介・登録申請がありました (${req.body.agency})`;
         const body = `管理者 様\n\nAd Agency Proより、以下の通り新規の広告主（案件）登録申請がありました。\nAdmin Portalより承認（Verify）作業とアカウント発行を行ってください。\n\n--------------------------------\n[申請内容]\n申請日: ${req.body.date}\n代理店名: ${req.body.agency}\n紹介先広告主 (Email): ${req.body.advertise}\n予定予算額: ¥${parseInt(req.body.price).toLocaleString()}\n--------------------------------\n\nよろしくお願いいたします。`;
-        await sendSESEmail(adminSettings.accounting_email || "info@retail-ad.com", subject, body);
+        await sendSESEmail("info@retail-ad.awsapps.com", subject, body);
     } catch (e) {
         console.error("[Agency] Admin notification email failed", e);
     }
