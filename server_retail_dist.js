@@ -1583,7 +1583,7 @@ let storeData = {
 };
 
 let adminSettings = {
-    accounting_email: "info@retail-ad.awsapps.com"
+    accounting_email: "info@retail-ad.com"
 };
 
 // Admin Portal Route
@@ -1623,43 +1623,35 @@ app.post('/api/admin/settings/billing-email', express.json(), (req, res) => {
 
 // Get Unified Dashboard Data
 app.get('/api/admin/dashboard', (req, res) => {
-    const s = storeData["default_store"];
+    const billingData = [];
+    const payoutData = [];
+    for (const key of Object.keys(storeData)) {
+        if (key === "default_store") continue;
+        const s = storeData[key];
+        const displayPosSales = s.total_pos_sales || 0;
+        const billingAmount = Math.floor(displayPosSales * 0.012);
+        if (billingAmount > 0) {
+            billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_1_2_percent: billingAmount, email: s.billing_email, status: "未請求" });
+        }
+        const storeAdRevenue = s.total_ad_revenue || 0;
+        const creatorReward = Math.floor(storeAdRevenue * 0.1);
+        const pureStoreRevenue = storeAdRevenue - creatorReward;
+        const shareAmount = Math.floor(pureStoreRevenue * 0.5);
+        if (shareAmount > 0) {
+            payoutData.push({ id: s.id, name: s.name, retail_ad_revenue: storeAdRevenue, creator_reward: creatorReward, total_net_revenue: pureStoreRevenue, ad_revenue_share: shareAmount, bank_info: s.bank_info, status: "未払", email: s.billing_email });
+        }
+    }
+    res.json({ accounting_email: adminSettings.accounting_email, billing: billingData, payouts: payoutData });
+});
 
-    // Prepare Billing Data (Receivable: 1.2% of POS Sales)
-    // If 0, mock a realistic number for demo
-    const displayPosSales = s.total_pos_sales || 0;
-    const billingAmount = Math.floor(displayPosSales * 0.012);
-
-    // Prepare Payout Data (Payable: 50% of Ad Revenue)
-    const retailAdRevenue = totalRevenue || 0;
-    const creatorReward = Math.floor(retailAdRevenue * 0.1); // 10% to creators
-    const adsenseRevenue = 0; // Cleared Mock Google AdSense Revenue
-    const pureTotalRevenue = (retailAdRevenue - creatorReward) + adsenseRevenue;
-    const shareAmount = Math.floor(pureTotalRevenue * 0.5);
-
-    res.json({
-        accounting_email: adminSettings.accounting_email,
-        billing: [{
-            id: s.id,
-            name: s.name,
-            sales: displayPosSales,
-            fee_1_2_percent: billingAmount,
-            email: s.billing_email,
-            status: 'Pending'
-        }],
-        payouts: [{
-            id: s.id,
-            name: s.name,
-            retail_ad_revenue: retailAdRevenue,
-            creator_reward: creatorReward,
-            adsense_revenue: adsenseRevenue,
-            total_net_revenue: pureTotalRevenue,
-            ad_revenue_share: shareAmount,
-            bank_info: s.bank_info,
-            status: 'Unpaid',
-            email: s.billing_email || "store@example.com"
-        }]
-    });
+app.post("/api/admin/invite", async (req, res) => {
+    const { name, email, budget, ccEmail } = req.body;
+    const dateStr = new Date().toISOString().split("T")[0];
+    const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 ()`;
+    const body = ` 様\n\nリテアドのアカウントが発行され、ご入金いただいた予算がシステムに反映されました。\n\n--------------------------------\n[アカウント情報]\nログインID (Email): \n初期パスワード: system_generated_pass\nログインURL: https://admin-portal-demo.com/login\n\n[チャージ残高]\n利用可能ご予算: ¥\n--------------------------------\n\n早速システムにログインし、広告キャンペーンを作成してください。\nご不明な点がございましたら、当メールにそのままご返信ください。`;
+    await sendSESEmail(email, subject, body);
+    if (ccEmail) { await sendSESEmail(ccEmail, subject, body); }
+    res.json({ success: true, message: "Account created and email sent via SES" });
 });
 
 // --- AWS SES Email Integration ---
