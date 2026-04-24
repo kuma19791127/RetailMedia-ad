@@ -2950,6 +2950,24 @@
 <script>
     
 
+
+    // Check KYC status on load
+    window.addEventListener('load', async () => {
+        const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+        const email = checkUser.email || 'advertiser@example.com';
+        try {
+            const res = await fetch('/api/kyc/status?email=' + encodeURIComponent(email));
+            const data = await res.json();
+            if (data.status === 'approved') {
+                localStorage.setItem('retail_kyc_approved', 'true');
+            } else if (data.status === 'pending') {
+                localStorage.setItem('retail_kyc_approved', 'pending');
+            } else if (data.status === 'rejected') {
+                localStorage.setItem('retail_kyc_approved', 'false');
+            }
+        } catch(e) {}
+    });
+
     async function submitKyc() {
         const corpId = document.getElementById('kyc-corp-id').value;
         if (!corpId || corpId.length !== 13) {
@@ -2968,18 +2986,32 @@
             didOpen: () => { Swal.showLoading(); }
         });
 
-        // Simulate network/AI processing delay
-        setTimeout(() => {
-            // Success
-            localStorage.setItem('retail_kyc_approved', 'true');
-            Swal.fire({
-                title: '✅ 審査完了',
-                html: '書類の確認が完了し、法人アカウントが<b>承認</b>されました。<br>これで広告キャンペーンの登録・配信が可能になります。',
-                icon: 'success'
-            }).then(() => {
-                location.reload();
+        const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+        const email = checkUser.email || 'advertiser@example.com';
+
+        try {
+            const res = await fetch('/api/kyc', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userEmail: email, corpId, duns })
             });
-        }, 3000);
+            const data = await res.json();
+            if (data.success) {
+                // Set to pending locally
+                localStorage.setItem('retail_kyc_approved', 'pending');
+                Swal.fire({
+                    title: '✅ 書類提出完了',
+                    html: '審査書類の提出が完了しました。<br>運営(Review)ダッシュボードでの<b>承認をお待ちください。</b>',
+                    icon: 'success'
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire('エラー', '提出に失敗しました', 'error');
+            }
+        } catch(e) {
+            Swal.fire('エラー', 'サーバーに接続できません', 'error');
+        }
     }
 
     let uploadedKycFile = null;

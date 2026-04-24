@@ -77,6 +77,53 @@ express.static.mime.define({ 'video/quicktime': ['mov'] });
 app.use(express.static(__dirname, { dotfiles: 'allow' })); // Serve root files
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
+
+// --- Advertiser KYC (Review) System ---
+let kycRequests = [];
+
+app.post('/api/kyc', (req, res) => {
+    const newReq = {
+        id: 'kyc_' + Date.now(),
+        userEmail: req.body.userEmail || 'unknown',
+        corpId: req.body.corpId,
+        duns: req.body.duns || '',
+        createdAt: Date.now(),
+        status: 'pending'
+    };
+    kycRequests.push(newReq);
+    console.log([KYC] New request from );
+    res.json({ success: true, id: newReq.id });
+});
+
+app.get('/api/kyc', (req, res) => {
+    res.json(kycRequests);
+});
+
+app.post('/api/kyc/:id/status', (req, res) => {
+    const reqId = req.params.id;
+    const { status } = req.body;
+    const target = kycRequests.find(r => r.id === reqId);
+    if (target) {
+        target.status = status;
+        console.log([KYC] Request  status updated to );
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "Not found" });
+    }
+});
+
+// --- User Profile/KYC check endpoint for polling ---
+app.get('/api/kyc/status', (req, res) => {
+    const userEmail = req.query.email;
+    const reqs = kycRequests.filter(r => r.userEmail === userEmail);
+    if (reqs.length > 0) {
+        // Return latest
+        res.json(reqs[reqs.length - 1]);
+    } else {
+        res.json({ status: 'unsubmitted' });
+    }
+});
+
 // Serve uploads from S3 (Fallback to local if no S3)
 app.get('/uploads/:filename', async (req, res) => {
     const filename = req.params.filename;
