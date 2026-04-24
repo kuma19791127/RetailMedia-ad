@@ -10,6 +10,18 @@ const fs = require('fs');
 const adEngine = require('./ad_engine');
 const signageServer = require('./signage_server');
 
+
+// GMO dependency removed in favor of Square + Google Cloud flow
+
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+
+const app = express();
+const PORT = 3000;
+
+app.use(cors());
+
 // --- Scheduled Broadcast System ---
 let scheduledBroadcasts = [];
 setInterval(() => {
@@ -59,16 +71,6 @@ app.post('/api/signage/schedule_voice', (req, res) => {
     res.json({ success: true, message: "サイネージへ即時配信しました" });
 });
 
-// GMO dependency removed in favor of Square + Google Cloud flow
-
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-
-const app = express();
-const PORT = 3000;
-
-app.use(cors());
 app.use(express.json({ limit: '500mb' })); // Allow large file uploads (Base64)
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 express.static.mime.define({ 'video/quicktime': ['mov'] });
