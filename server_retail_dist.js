@@ -1713,7 +1713,7 @@ app.get('/api/admin/dashboard', (req, res) => {
         const pureStoreRevenue = storeAdRevenue - creatorReward;
         const shareAmount = Math.floor(pureStoreRevenue * 0.5);
         if (shareAmount > 0) {
-            payoutData.push({ id: s.id, name: s.name, retail_ad_revenue: storeAdRevenue, creator_reward: creatorReward, total_net_revenue: pureStoreRevenue, ad_revenue_share: shareAmount, bank_info: s.bank_info, status: "未払", email: s.billing_email });
+            payoutData.push({ id: s.id, name: s.name, retail_ad_revenue: storeAdRevenue, creator_reward: creatorReward, total_net_revenue: pureStoreRevenue, ad_revenue_share: shareAmount, bank_info: s.bank_info, status: "未払", email: (s.bank_info && s.bank_info.email) ? s.bank_info.email : s.billing_email });
         }
     }
     res.json({ accounting_email: adminSettings.accounting_email, billing: billingData, payouts: payoutData });
@@ -1780,10 +1780,12 @@ app.post('/api/admin/creators/send-email', async (req, res) => {
   let body = "";
   if (type === 'store_payout') {
     subject = `【リテアド】今月の広告収益振込予定のお知らせ (${dateStr})`;
-    body = `${to} 様\n\n今月のリテアド動画配信による報酬明細をお送りします。\n--------------------------------\n[計算ロジック]\n月間有効再生数: ${playCount.toLocaleString()} 回\nベース再生単価: ¥2 / 回\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\nよろしくお願いいたします。`;
+    body = `${to} 様\n\n今月のリテアド動画配信による報酬明細をお送りします。\n--------------------------------\n[計算ロジック]\n月間有効再生数: ${playCount.toLocaleString()} 回\nベース再生単価: ¥2 / 回\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\n※送信用mailアドレスなので返信はできません
+よろしくお願いいたします。`;
   } else {
     subject = `【リテアド】クリエイター報酬振込予定のお知らせ (${dateStr})`;
-    body = `${to} 様\n\n今月の広告収益額が確定いたしました。\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\n引き続き、素晴らしい動画のご投稿をお待ちしております。`;
+    body = `${to} 様\n\n今月の広告収益額が確定いたしました。\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\n※送信用mailアドレスなので返信はできません
+引き続き、素晴らしい動画のご投稿をお待ちしております。`;
   }
   await sendSESEmail(to, subject, body);
   res.json({ success: true, message: "Email triggered successfully" });

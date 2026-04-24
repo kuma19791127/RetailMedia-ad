@@ -1228,6 +1228,10 @@
                     <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">口座名義 (Account
                         Holder)</label>
                     <input type="text" id="bank-holder" placeholder="例: カ) リテアドショップ" class="bank-input"
+                        style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
+
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">銀行登録メールアドレス (Email)</label>
+                    <input type="email" id="bank-email" placeholder="store@example.com" class="bank-input"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:15px;">
                 </div>
             </div>
@@ -1266,12 +1270,13 @@
                         bank_name: bankInputs[0].value,
                         branch_name: bankInputs[1].value,
                         account_number: bankInputs[2].value,
-                        account_holder: bankInputs[3].value
+                        account_holder: bankInputs[3].value,
+                        email: bankInputs[4].value
                     };
                     const email = document.getElementById('billing-email').value;
 
                     try {
-                        const res = await fetch(`${API_URL_SETTINGS} /api/store / settings`, {
+                        const res = await fetch(`${API_URL_SETTINGS}/api/store/settings`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ bank_info: bankInfo, billing_email: email })
@@ -1767,14 +1772,17 @@
 
                 // Populate Bank Info if available
                 if (data.bank_info) {
-                    const inputs = document.querySelectorAll('.bank-input');
-                    if (inputs.length >= 4) {
-                        inputs[0].value = data.bank_info.bank_name || '';
-                        inputs[1].value = data.bank_info.branch_name || '';
-                        inputs[2].value = data.bank_info.account_number || '';
-                        inputs[3].value = data.bank_info.account_holder || '';
-                    }
+            const inputs = document.querySelectorAll('.bank-input');
+            if (inputs.length >= 4) {
+                inputs[0].value = data.bank_info.bank_name || '';
+                inputs[1].value = data.bank_info.branch_name || '';
+                inputs[2].value = data.bank_info.account_number || '';
+                inputs[3].value = data.bank_info.account_holder || '';
+                if(inputs.length >= 5) {
+                    inputs[4].value = data.bank_info.email || '';
                 }
+            }
+        }
 
                 // Populate Billing Email
                 if (data.billing_email) {
