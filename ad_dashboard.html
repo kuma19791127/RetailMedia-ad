@@ -2334,7 +2334,7 @@
                         <div id="swal-dropzone" style="border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-top: 10px; cursor: pointer; background: #f8f9fa; transition: 0.3s;">
                             <div style="font-size: 24px; color: #3498db; margin-bottom: 5px;">📥</div>
                             <div style="font-size: 13px; font-weight: bold; color: #2c3e50;" id="swal-filename">クリックまたはドラッグ＆ドロップでアップロード</div>
-                            <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov / 画像ファイル (最大30秒)</div>
+                            <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov / 画像ファイル (最大60秒)</div>
                         </div>
                         <input type="file" id="swal-file" accept="video/mp4,video/webm,video/quicktime,image/*" style="display:none;">
 
@@ -2426,20 +2426,11 @@
                                 Swal.showValidationMessage('画像スライドプランには画像ファイルをアップロードしてください');
                                 return false;
                             }
-                        } else if (file.type.startsWith('video/')) {
+                                                } else if (file.type.startsWith('video/')) {
                             try {
                                 const duration = await window.getVideoDuration(file);
-                                let isValid = true;
-                                let expected = "";
-
-                                if (format === 'standard' && (duration < 14 || duration > 46)) {
-                                    isValid = false; expected = "最大45秒";
-                                } else if (format === 'short' && (duration < 4 || duration > 10)) { // 5-8s but slightly lenient
-                                    isValid = false; expected = "5~8秒";
-                                }
-
-                                if (!isValid) {
-                                    Swal.showValidationMessage(`動画の長さが一致しません。\n現在: ${duration.toFixed(1)}秒 / プラン規定: ${expected}`);
+                                if (duration > 60) {
+                                    Swal.showValidationMessage(`エラー: 動画の長さが60秒を超えています (現在: ${Math.round(duration)}秒)。`);
                                     return false;
                                 }
                             } catch (e) {

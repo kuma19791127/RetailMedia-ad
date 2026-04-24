@@ -612,10 +612,26 @@ h2 {
 
                     if (fileInput.files.length > 0) {
                         try {
-                            fileUrl = await fileToBase64(fileInput.files[0]);
-                            title = fileInput.files[0].name;
+                            const file = fileInput.files[0];
+                            if (file.type.startsWith('video/')) {
+                                const duration = await new Promise((resolve) => {
+                                    const video = document.createElement('video');
+                                    video.preload = 'metadata';
+                                    video.onloadedmetadata = function() {
+                                        window.URL.revokeObjectURL(video.src);
+                                        resolve(video.duration);
+                                    }
+                                    video.src = URL.createObjectURL(file);
+                                });
+                                if (duration > 60) {
+                                    Swal.showValidationMessage(`エラー: 動画の長さが60秒を超えています (現在: ${Math.round(duration)}秒)。`);
+                                    return false;
+                                }
+                            }
+                            fileUrl = await fileToBase64(file);
+                            title = file.name;
                         } catch (e) {
-                            Swal.showValidationMessage('ファイルの変換に失敗しました');
+                            Swal.showValidationMessage('ファイルの読み込みに失敗しました');
                             return false;
                         }
                     } else if (!ytUrl) {

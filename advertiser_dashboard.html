@@ -757,8 +757,13 @@
                     <label>予算 (円)</label>
                     <input type="number" id="cp-budget" placeholder="0" min="0" required>
 
-                    <label>クリエイティブ (動画/画像) <span style="font-size:12px; font-weight:normal; color:#eab308; background:#fefce8; padding:3px 8px; border-radius:12px; margin-left:10px; border:1px solid #fef08a;">💡 推奨: 15秒の動画 (最も離脱率が低く効果的です)</span></label>
-                    <input type="file" id="cp-file" required>
+                    <label>🎥 動画/画像ファイル (※動画は .mp4 / .mov 推奨) <span style="font-size:12px; font-weight:normal; color:#eab308; background:#fefce8; padding:3px 8px; border-radius:12px; margin-left:10px; border:1px solid #fef08a;">💡 推奨: 15秒の動画 (最も離脱率が低く効果的です)</span></label>
+                    <div id="swal-dropzone" style="border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-top: 10px; cursor: pointer; background: #f8f9fa; transition: 0.3s;" onclick="document.getElementById('cp-file').click()">
+                        <div style="font-size: 24px; color: #3498db; margin-bottom: 5px;">📥</div>
+                        <div style="font-size: 13px; font-weight: bold; color: #2c3e50;" id="swal-filename">クリックまたはドラッグ＆ドロップでアップロード</div>
+                        <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov / 画像ファイル (最大60秒)</div>
+                    </div>
+                    <input type="file" id="cp-file" accept="video/mp4,video/webm,video/quicktime,image/*" style="display:none;" required onchange="document.getElementById('swal-filename').innerText = this.files[0] ? this.files[0].name : 'クリックまたはドラッグ＆ドロップでアップロード'">
 
                     <div class="form-actions">
                         <button type="button" onclick="closeModal()" class="btn-secondary">キャンセル</button>
@@ -1045,13 +1050,9 @@
                             const currentUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
                             const isDemoUser = currentUser.email && currentUser.email.includes('@demo.com');
                             
-                            if (duration > 16) {
-                                if (isDemoUser) {
-                                    Swal.fire({ toast:true, position:'top-end', html:'デモアカウントのため15秒超過を許可しました', icon:'info', showConfirmButton:false, timer:3000 });
-                                } else {
-                                    Swal.fire('⚠️ 配信規定（15秒超過）', '本番環境では15秒以内のショート動画のみ配信可能です。\n※15秒以内の動画を再選択してください。', 'warning');
-                                    return;
-                                }
+                            if (duration > 60) {
+                                Swal.fire('⚠️ 配信規定（60秒超過）', '本番環境では60秒以内の動画のみ配信可能です。\n※60秒以内の動画を再選択してください。', 'warning');
+                                return;
                             }
                         } catch(e) {}
                     }
