@@ -579,7 +579,44 @@
             const imgScreen = document.getElementById('image-screen');
             const speedBadge = document.getElementById('speed-indicator');
 
+
+            // Handle Audio Content (AI Voice Studio)
+            if (item.format === 'audio') {
+                video.pause();
+                video.style.display = 'none';
+                imgScreen.style.display = 'block';
+                // Provide a generic announcement background if no image is supplied
+                imgScreen.src = item.url && item.url.startsWith('http') && (item.url.includes('.jpg') || item.url.includes('.png')) ? item.url : 'https://images.unsplash.com/photo-1589903308904-1010c2294adc?auto=format&fit=crop&w=1200&q=80';
+                speedBadge.style.display = 'none';
+                
+                const bgmPlayer = document.getElementById('bgm-player');
+                if (bgmPlayer) bgmPlayer.pause();
+                
+                const textToSpeak = item.text_content || item.ai_text;
+                // Rough duration calculation: 1 second per 5 characters, minimum 10 seconds, maximum 30 seconds
+                const duration = textToSpeak ? Math.max(10000, Math.min(30000, textToSpeak.length * 200)) : 10000;
+                
+                if (textToSpeak) {
+                    speakText(textToSpeak, 0.9);
+                } else if (item.url && !item.url.includes('.jpg') && !item.url.includes('.png')) {
+                    // Play audio file if URL exists and is not an image
+                    if (bgmPlayer) {
+                        bgmPlayer.src = item.url;
+                        bgmPlayer.volume = 1.0;
+                        bgmPlayer.play().catch(e => console.log(e));
+                    }
+                }
+
+                setTimeout(() => {
+                    if (bgmPlayer) bgmPlayer.pause();
+                    sendBeacon(item.id);
+                    playNext();
+                }, duration);
+                return;
+            }
+
             // Handle Image Content
+
             if (item.is_image) {
                 video.pause();
                 video.style.display = 'none';
