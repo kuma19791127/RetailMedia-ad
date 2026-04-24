@@ -16,7 +16,7 @@ setInterval(() => {
     const now = Date.now();
     scheduledBroadcasts = scheduledBroadcasts.filter(b => {
         if (b.scheduleTime <= now) {
-            console.log([Schedule] ⏰ Executing scheduled broadcast: );
+            console.log(`[Schedule] ⏰ Executing scheduled broadcast: ${b.metadata.title}`);
             signageServer.injectCampaign('16:9', b.metadata, 'INTERRUPT');
             return false; // Remove from queue
         }
@@ -534,7 +534,9 @@ app.post('/api/auth/login', (req, res) => {
         let updated = false;
         if (name && user.name !== name) { user.name = name; updated = true; }
         if (org && user.org !== org) { user.org = org; updated = true; }
-        if (updated) 
+        if (updated) {
+            saveDatabase();
+        }
     }
 
     if (user && user.password === password) {
