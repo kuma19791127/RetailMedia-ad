@@ -957,10 +957,10 @@
                         isRealAI = false;
 
                         // Run once immediately
-                        simulateAI(document.getElementById('analysis-overlay'));
+                        
 
                         analysisInterval = setInterval(() => {
-                            simulateAI(document.getElementById('analysis-overlay'));
+                            
                         }, 3000);
                     }
                 }
@@ -999,31 +999,11 @@
                 }
             } else {
                 // SIMULATION
-                simulateAI(overlay);
+                
             }
         }
 
-        function simulateAI(overlay) {
-            const genders = ['male', 'female'];
-            const ages = ['10s', '20s', '30s', '40s', '50s'];
-
-            if (Math.random() > 0.3) {
-                const g = genders[Math.floor(Math.random() * genders.length)];
-                const a = ages[Math.floor(Math.random() * ages.length)];
-
-                overlay.innerText = `SIM: ${g.toUpperCase()} ${a}`;
-                overlay.style.color = '#f1c40f'; // Sim color
-
-                // Track Synergy
-                currentAdStats.faceTimeMs += 3000; // Analysis runs every 3000ms in Sim mode
-                currentAdStats.lastFaceTick = Date.now();
-
-                sendSensorData({ gender: g, age: a });
-            } else {
-                overlay.innerText = "Scanning (Sim)...";
-                overlay.style.color = "#aaa";
-            }
-        }
+        function simulateAI(overlay) { /* Removed mock AI camera simulation */ }
 
         // Throttled Sender
         let lastSent = 0;

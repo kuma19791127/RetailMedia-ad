@@ -433,7 +433,7 @@ h2 {
                 const res = await fetch(`${API_BASE}/api/creator/stats`);
                 if (res.ok) {
                     const data = await res.json();
-                    mockVideos = data.videos;
+                    mockVideos = data.videos || [];
                     renderVideos(data.total_views, data.total_revenue);
                 }
             } catch (err) {
