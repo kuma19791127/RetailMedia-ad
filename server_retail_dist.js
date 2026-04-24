@@ -48,13 +48,13 @@ app.post('/api/signage/schedule_voice', (req, res) => {
                 scheduleTime: sTime,
                 metadata: metadata
             });
-            console.log([Schedule] Added broadcast:  for );
+            console.log(`[Schedule] Added broadcast: ${JSON.stringify(metadata)} for ${new Date(sTime).toLocaleString()}`);
             return res.json({ success: true, message: "予約配信を設定しました", scheduled_for: sTime });
         }
     }
     
     // Immediate broadcast
-    console.log([Signage] Immediate voice broadcast: );
+    console.log(`[Signage] Immediate voice broadcast: ${JSON.stringify(metadata)}`);
     signageServer.injectCampaign('16:9', metadata, 'INTERRUPT');
     res.json({ success: true, message: "サイネージへ即時配信しました" });
 });
