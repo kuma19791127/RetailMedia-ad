@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -710,7 +710,6 @@
                             <th>契約金額</th>
                             <th>コミッション (20%)</th>
                             <th>ステータス</th>
-                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="agency-table-body">
@@ -946,6 +945,26 @@
             });
         }
 
+        async function verifyAgencyApplication(advertise) {
+            if(!confirm(advertise + ' の申請を承認(Verify)しますか？')) return;
+            try {
+                const res = await fetch('/api/admin/agency-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ advertise })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadAgencyData();
+                } else {
+                    alert('エラー: ' + data.error);
+                }
+            } catch(e) {
+                console.error(e);
+                alert('通信エラーが発生しました');
+            }
+        }
+
         async function loadAgencyData() {
             try {
                 const res = await fetch(`${API_BASE}/api/admin/agency`);
@@ -960,15 +979,19 @@
                             <td>${r.advertise}<br><span style="font-size:11px;color:#7f8c8d;">${r.advContact || '未登録'} / ${r.advPhone || '未登録'}</span></td>
                             <td>¥${r.price.toLocaleString()}</td>
                             <td style="color:#e67e22; font-weight:bold;">¥${Math.floor(r.price * 0.2).toLocaleString()}</td>
-                            <td><span class="badge badge-pending">${r.status}</span></td>
-                            <td><button class="btn-action" onclick="alert('承認しました')">Verify</button></td>
+                            <td>
+                            ${r.status === 'Pending' ? 
+                                `<span class="badge badge-pending" style="cursor:pointer;" onclick="verifyAgencyApplication('${r.advertise}')">${r.status}</span>` : 
+                                `<span class="badge badge-active" style="background:rgba(46, 204, 113, 0.2); color:#2ecc71;">${r.status}</span>`
+                            }
+                        </td>
                         </tr>
                     `).join('');
                 }
             } catch (e) {
                 console.error("Error loading agency data", e);
                 const tbody = document.getElementById('agency-table-body');
-                if(tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">データがありません</td></tr>';
+                if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">データがありません</td></tr>';
             }
         }
 

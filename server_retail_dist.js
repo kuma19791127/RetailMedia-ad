@@ -1255,6 +1255,18 @@ app.get('/api/admin/agency', (req, res) => {
     res.json(agencyReferrals);
 });
 
+app.post('/api/admin/agency-verify', express.json(), (req, res) => {
+    const { advertise } = req.body;
+    const ref = agencyReferrals.find(r => r.advertise === advertise);
+    if (ref) {
+        ref.status = 'Verified';
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "Not found" });
+    }
+});
+
+
 
 // --- CREATOR BANK DATA STORE ---
 const creatorBankData = {};
