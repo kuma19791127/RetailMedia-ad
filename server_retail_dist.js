@@ -919,7 +919,7 @@ app.get('/api/ad/demo/boost', (req, res) => {
 app.post('/api/campaigns', (req, res) => {
     console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
-        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email } = req.body;
+        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email, ytUrl, fileUrl } = req.body;
         console.log(`[API] Creating Campaign: ${name} (${plan}) | Advertiser: ${ad_email}`);
 
         // Handle Agency Commission Match
@@ -964,8 +964,7 @@ app.post('/api/campaigns', (req, res) => {
                         };
                         const result = await generativeModel.generateContent(request);
                         const text = result.response.candidates[0].content.parts[0].text;
-                        // 実装段階のため、FAIL判定でも配信中(active)にする
-                        adStatus = 'active'; 
+                        if (text.includes('FAIL')) { adStatus = 'rejected'; } else { adStatus = 'active'; } 
                         console.log(`[AutoReview] AI Result: ${text} -> (実装テスト中のため active として処理)`);
                     } else {
                         adStatus = 'active'; // Fallback
@@ -985,7 +984,7 @@ app.post('/api/campaigns', (req, res) => {
                 status: adStatus, // Result of automatic review
                 // Prioritize passed URL (Base64) or YouTube URL. DO NOT default to Sintel anymore.
                 url: finalUrl,
-                youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : youtube_url,
+                youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : (youtube_url || ytUrl),
                 duration: 15,
                 start_date: start,
                 end_date: end,
