@@ -658,7 +658,7 @@ h2 {
                         const reviewRes = await fetch(API_BASE + '/api/creator/review-content', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ video_base64: fileUrl || "mock_data" })
+                            body: JSON.stringify({ video_base64: fileUrl || "mock_data", title: title })
                         });
                         const reviewData = await reviewRes.json();
                         
