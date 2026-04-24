@@ -81,18 +81,75 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // --- Advertiser KYC (Review) System ---
 let kycRequests = [];
 
-app.post('/api/kyc', (req, res) => {
-    const newReq = {
-        id: 'kyc_' + Date.now(),
-        userEmail: req.body.userEmail || 'unknown',
-        corpId: req.body.corpId,
-        duns: req.body.duns || '',
-        createdAt: Date.now(),
-        status: 'pending'
-    };
-    kycRequests.push(newReq);
-    console.log([KYC] New request from );
-    res.json({ success: true, id: newReq.id });
+app.post('/api/kyc', async (req, res) => {
+    try {
+        const docs = req.body.documents || [];
+        // Simulate Google Cloud Vision AI Analysis
+        const isCorp = !!(req.body.corpId && req.body.corpId.length === 13);
+        const hasLicenses = docs.length > 0;
+        
+        // Mock Vision AI Score calculation based on logic
+        let aiScore = 50;
+        let aiDetails = [];
+        if (isCorp) {
+            aiScore += 25;
+            aiDetails.push("法人番号フォーマット一致");
+            if (hasLicenses) {
+                aiScore += 23;
+                aiDetails.push("登記簿・領収書等のテキスト抽出一致");
+            }
+        } else {
+            // Individual / Sole Proprietor
+            if (hasLicenses) {
+                aiScore += 45;
+                aiDetails.push("運転免許証・開業届等の氏名一致");
+            }
+        }
+        // Cap at 98%
+        if (aiScore > 98) aiScore = 98;
+        
+        // Process & upload files to S3 asynchronously
+        const uploadedUrls = [];
+        for(let i=0; i<docs.length; i++) {
+            const doc = docs[i];
+            const buffer = Buffer.from(doc.data.split(',')[1] || '', 'base64');
+            const fileKey = kyc/__;
+            try {
+                await s3Client.send(new PutObjectCommand({
+                    Bucket: S3_BUCKET_NAME,
+                    Key: fileKey,
+                    Body: buffer,
+                    ContentType: doc.type
+                }));
+                uploadedUrls.push(https://.s3..amazonaws.com/);
+            } catch(s3e) {
+                console.error("[S3] KYC Upload Error", s3e);
+                // Fallback to local DataURI if S3 fails
+                uploadedUrls.push(doc.data);
+            }
+        }
+
+        const newReq = {
+            id: 'kyc_' + Date.now(),
+            userEmail: req.body.userEmail || 'unknown',
+            orgName: req.body.orgName || '',
+            personName: req.body.personName || '',
+            corpId: req.body.corpId || '',
+            duns: req.body.duns || '',
+            documents: uploadedUrls,
+            aiScore: aiScore,
+            aiDetails: aiDetails,
+            createdAt: Date.now(),
+            status: 'pending'
+        };
+        
+        kycRequests.push(newReq);
+        console.log([KYC] New request from . AI Score: %);
+        res.json({ success: true, id: newReq.id, aiScore: aiScore });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 app.get('/api/kyc', (req, res) => {

@@ -2925,18 +2925,27 @@
                                 <label style="font-size:12px; font-weight:bold; color:#991b1b;">DUNSナンバー (任意)</label>
                                 <input type="text" id="kyc-duns" placeholder="例: 123456789" style="width:100%; padding:10px; border:1px solid #fca5a5; border-radius:4px; box-sizing:border-box; margin-top:4px;">
                             </div>
+                            
                             <div style="grid-column: 1 / -1;">
-                                <label style="font-size:12px; font-weight:bold; color:#991b1b;">登記簿謄本（履歴事項全部証明書）の画像アップロード</label>
+                                <label style="font-size:12px; font-weight:bold; color:#991b1b;">必須・任意確認書類のアップロード (複数選択可)</label>
+                                <p style="font-size:11px; color:#64748b; margin-top:2px;">
+                                    【法人】登記簿謄本、公共料金の領収書など<br>
+                                    【個人事業主】運転免許証、個人事業の開業・廃業等届出書など<br>
+                                    【特定業種】許認可証（古物商許可、旅行業、飲食業など必須）
+                                </p>
                                 <div id="kyc-upload-zone" style="margin-top:8px; border:2px dashed #fca5a5; background:#fff; padding:30px; text-align:center; border-radius:8px; cursor:pointer; transition:0.3s;" onclick="document.getElementById('kyc-file').click();" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#fff'">
                                     <div style="font-size:30px; margin-bottom:10px;">📄</div>
-                                    <span id="kyc-upload-text" style="color:#b91c1c; font-weight:bold;">ここをクリックして画像をアップロード</span>
+                                    <span id="kyc-upload-text" style="color:#b91c1c; font-weight:bold;">ここをクリックして画像をアップロード（複数可）</span>
                                 </div>
-                                <input type="file" id="kyc-file" style="display:none;" accept="image/*" onchange="handleKycUpload(event)">
+                                <input type="file" id="kyc-file" style="display:none;" accept="image/*,application/pdf" multiple onchange="handleKycUpload(event)">
+                                
+                                <div id="kyc-preview-container" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
                                 
                                 <!-- AI Check Result -->
                                 <div id="ai-kyc-check" style="display:none; margin-top:10px; padding:15px; border-radius:6px; font-size:13px; font-weight:bold; line-height:1.5;">
                                 </div>
                             </div>
+
                             
                             <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end; margin-top:10px;">
                                 <button onclick="submitKyc()" class="btn-primary" style="background:#ef4444; border:none; padding:12px 25px; box-shadow:0 4px 10px rgba(239,68,68,0.4);">審査書類を提出する</button>
