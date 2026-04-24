@@ -2620,6 +2620,7 @@
             if (typeof loadData === 'function') setTimeout(loadData, 500);
         });
 
+        const minBudgetNum = 1000;
         async function registerCreditCard() {
             const { value: amount } = await Swal.fire({
                 title: '予算チャージ (Square決済)',
