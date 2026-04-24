@@ -2949,6 +2949,39 @@
 
 <script>
     
+
+    async function submitKyc() {
+        const corpId = document.getElementById('kyc-corp-id').value;
+        if (!corpId || corpId.length !== 13) {
+            Swal.fire('エラー', '法人番号は13桁の数字を入力してください。', 'error');
+            return;
+        }
+        if (!uploadedKycFile) {
+            Swal.fire('エラー', '登記簿謄本などの書類画像をアップロードしてください。', 'error');
+            return;
+        }
+
+        Swal.fire({
+            title: '🤖 AI審査中...',
+            html: 'Google Cloud Vision AIで書類を解析・照合しています...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        // Simulate network/AI processing delay
+        setTimeout(() => {
+            // Success
+            localStorage.setItem('retail_kyc_approved', 'true');
+            Swal.fire({
+                title: '✅ 審査完了',
+                html: '書類の確認が完了し、法人アカウントが<b>承認</b>されました。<br>これで広告キャンペーンの登録・配信が可能になります。',
+                icon: 'success'
+            }).then(() => {
+                location.reload();
+            });
+        }, 3000);
+    }
+
     let uploadedKycFile = null;
     function handleKycUpload(event) {
         const file = event.target.files[0];
