@@ -1091,6 +1091,7 @@ app.post('/api/campaigns', (req, res) => {
             res.json({ success: true, message: "Campaign Created (Transcoding in background)" });
         } else {
             processAndInject(rawUrl);
+            if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
             res.json({ success: true, message: "Campaign Created" });
         }
     } catch (e) {

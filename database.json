@@ -2,7 +2,7 @@
   "signageState": {
     "register_side": {
       "interrupt": null,
-      "paid": null,
+      "paid": [],
       "moment": null,
       "impression": null,
       "network": null,

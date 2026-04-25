@@ -667,6 +667,15 @@
                 if (vidId && window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
                     document.getElementById('yt-player-container').style.display = 'block';
                     window.ytPlayer.loadVideoById(vidId);
+                    
+                    // Force skip after max 60 seconds (or item.duration) to prevent long videos hogging the loop
+                    const maxDuration = Math.min(item.duration || 60, 60);
+                    setTimeout(() => {
+                        if (currentPlaylist[currentIndex] === item && document.getElementById('yt-player-container').style.display === 'block') {
+                            console.log(`[YouTube] Reached max duration of ${maxDuration}s. Force skipping.`);
+                            playNext();
+                        }
+                    }, maxDuration * 1000);
                 } else {
                     console.log("YT Player not ready, skipping");
                     setTimeout(playNext, 2000);

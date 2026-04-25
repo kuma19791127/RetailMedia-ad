@@ -1,3 +1,35 @@
-291 : '            設定したマクロを読み取り、<br class="mobile-br">コピーしてAIがスタッフの希望チャットを<br class="mobile-br">読み取り、最適なシフトカレンダーを自動編成します。\n'
-328 : '                    スタッフは専用のチャット画面（スマホ）から、まるで店長にLINEを送るような感覚で<br class="mobile-br">希望を伝えるだけ。<br>\n'
-329 : '                    AIがそれを自動で読み取り、シフト表に「休み(休)」や「時短(15:00-)」として<br class="mobile-br">リアルタイムに反映させます。店長の転記作業はゼロになります。\n'
+226: res.status(500).json({ error: '審査中にエラーが発生しました。ファイルサイズが大きすぎる可能性があります。', safe: true });
+227: }
+228: });
+229: 
+230: app.post('/api/creator/upload', (req, res) => {
+231: const { title, src, format } = req.body;
+232: const newId = Date.now();
+233: const newVideo = {
+234: id: newId,
+235: title: title || "動画タイトル未定",
+236: format: format || "縦型 (Shorts)",
+237: views: 0, revenue: 0, status: 'active',
+238: attention: "--", skip: "--", uplift: "--", rank: '-', color: '#64748b'
+239: };
+240: CREATOR_STATE.videos.unshift(newVideo);
+241: 
+242: const finishUpload = (finalUrl) => {
+243: // Auto-inject into signage player (as PAID or IMPRESSION so it shows up)
+244: const adData = {
+245: id: `creator_${newId}`,
+246: title: `Creator: ${newVideo.title}`,
+247: url: finalUrl,
+248: duration: 45,
+249: brand: "Creator",
+250: youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : null
+251: };
+252: signageServer.injectCampaign('9:16', adData, 'INTERRUPT'); // Inject as INTERRUPT for immediate demo playback
+253: console.log(`[Creator] Video Uploaded & Linked to Signage: ${adData.title}`);
+254: 
+255: // Broadcast reload event to all signage players
+256: broadcastEvent({ type: 'force_reload' });
+257: res.json({ success: true, video: newVideo, finalUrl: finalUrl });
+258: };
+259: 
+260: if (src && (src.startsWith('data:video/quicktime;base64,') || src.startsWith('data:video/mp4;base64,'))) {
