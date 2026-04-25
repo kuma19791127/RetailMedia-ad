@@ -1,6 +1,16 @@
 @echo off
 setlocal enabledelayedexpansion
 chcp 65001 >nul
+
+:: --- 管理者権限の自動取得（UACプロンプトの表示） ---
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo 管理者権限が必要です。昇格プロンプトを表示します...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+:: ---------------------------------------------------
+
 echo =========================================================
 echo Retail Media サイネージ自動起動セットアップ
 echo =========================================================
