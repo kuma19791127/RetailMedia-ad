@@ -471,7 +471,7 @@ app.post('/api/creator/review-content', async (req, res) => {
 
 app.post('/api/creator/upload', (req, res) => {
     console.log(`[API /api/creator/upload] Received new creator video upload request. Data size: ${JSON.stringify(req.body).length} bytes`);
-    const { title, src, format } = req.body;
+    const { title, src, format, isAd } = req.body;
     const newId = Date.now();
     const newVideo = {
         id: newId,
@@ -490,6 +490,7 @@ app.post('/api/creator/upload', (req, res) => {
             url: finalUrl,
             duration: 45,
             status: 'active', // Forces it to be active
+        isAd: isAd,
             brand: "Creator",
             youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : null
         };

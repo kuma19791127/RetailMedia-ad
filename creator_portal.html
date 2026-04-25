@@ -639,7 +639,8 @@ h2 {
                         return false;
                     }
 
-                    return { fileUrl, ytUrl, title };
+                    const isAd = document.getElementById('creator-is-ad').checked;
+return { fileUrl, ytUrl, title, isAd };
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
@@ -652,7 +653,7 @@ h2 {
                     });
                     
                     try {
-                        const { fileUrl, ytUrl, title } = result.value;
+                        const { fileUrl, ytUrl, title, isAd } = result.value;
                         
                         // Backend API Call for Moderation
                         const reviewRes = await fetch(API_BASE + '/api/creator/review-content', {
