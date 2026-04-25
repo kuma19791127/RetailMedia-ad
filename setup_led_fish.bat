@@ -22,7 +22,7 @@ echo.
 echo 設定中...
 
 set "TARGET_URL=https://retail-ad.com/signage_player.html?panel=fish"
-set "STARTUP_FOLDER=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
 set "SHORTCUT_NAME=RetailAd_Signage_fish.lnk"
 set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
 set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
@@ -32,7 +32,7 @@ set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
 echo.
 echo 【セキュリティ設定】
 echo USBメモリの無効化と、サイネージ専用ユーザーの作成を行いますか？
-echo （※管理者として実行している場合のみ機能します。個人PCの場合は N を推奨）
+echo （※個人PCやテスト用途の場合は N を推奨します）
 set /p DO_SECURE="設定を適用しますか？ (Y/N): "
 if /I "%DO_SECURE%"=="Y" (
     echo [1/2] USBメモリ（マスストレージ）を無効化しています...
