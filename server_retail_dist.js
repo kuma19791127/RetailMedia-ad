@@ -19,6 +19,19 @@ const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const app = express();
+
+app.get('/api/db-status', async (req, res) => {
+    if (!pool) {
+        return res.send("<h2>[DB Status] DATABASE_URL is NOT set. Running in Memory mode.</h2>");
+    }
+    try {
+        const result = await pool.query('SELECT NOW()');
+        res.send("<h2 style='color:green;'>[DB Status] ✅ SUCCESS! Connected to RDS PostgreSQL!</h2><p>Time: " + result.rows[0].now + "</p>");
+    } catch(e) {
+        res.send("<h2 style='color:red;'>[DB Status] ❌ FAILED to connect to RDS PostgreSQL!</h2><p>Error: " + e.message + "</p><p>Cause: Security Group firewall is likely blocking App Runner.</p>");
+    }
+});
+
 const PORT = 3000;
 
 app.use(cors());
