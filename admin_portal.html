@@ -1247,7 +1247,7 @@
                     window.dispatchEvent(new Event('resize'));
                     loadData();
                 } else {
-                    Swal.fire('Error', 'Invalid Admin Credentials', 'error');
+                    Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
                 }
             } catch(e) {
                 // Fallback demo check if offline
@@ -1256,7 +1256,7 @@
                     document.getElementById('main-app').style.display = 'flex';
                     loadData();
                 } else {
-                    Swal.fire('Error', 'Invalid Admin Credentials', 'error');
+                    Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
                 }
             }
         }

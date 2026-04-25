@@ -708,8 +708,41 @@ app.post('/api/auth/register', (req, res) => {
 // Simple Session State for Demo
 let currentUser = null;
 
+// --- 2FA Setup ---
+app.post('/api/auth/2fa/setup', (req, res) => {
+    const { email } = req.body;
+    try {
+        const speakeasy = require('speakeasy');
+        const qrcode = require('qrcode');
+        const secret = speakeasy.generateSecret({ name: RetailMedia () });
+        qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+            if (err) return res.status(500).json({ error: "QRコード生成失敗" });
+            res.json({ secret: secret.base32, qrcode: data_url });
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/auth/2fa/enable', (req, res) => {
+    const { email, secret, token } = req.body;
+    try {
+        const speakeasy = require('speakeasy');
+        const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
+        if (verified && users[email]) {
+            users[email].twoFactorSecret = secret;
+            saveDatabase();
+            res.json({ success: true });
+        } else {
+            res.json({ success: false, error: "無効なコードです" });
+        }
+    } catch (e) {
+        res.json({ success: false, error: e.message });
+    }
+});
+
 app.post('/api/auth/login', (req, res) => {
-    const { email, password, role, name, org } = req.body;
+    const { email, password, role, name, org, totpCode } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     let user = users[email];
