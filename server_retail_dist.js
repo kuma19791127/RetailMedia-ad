@@ -1,3 +1,4 @@
+const pool = require('./db_connector');
 const express = require('express');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const cors = require('cors');
