@@ -1892,8 +1892,8 @@ app.post('/api/admin/settings/billing-email', express.json(), (req, res) => {
 app.get('/api/admin/dashboard', (req, res) => {
     const billingData = [];
     const payoutData = [];
+    storeData["default_store"].total_ad_revenue = totalRevenue; // Sync global revenue to default_store
     for (const key of Object.keys(storeData)) {
-        if (key === "default_store") continue;
         const s = storeData[key];
         const displayPosSales = s.total_pos_sales || 0;
         const billingAmount = Math.floor(displayPosSales * 0.012);
