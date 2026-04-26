@@ -2444,6 +2444,37 @@ setInterval(() => {
             fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
             if (dataStr !== lastDBString && lastDBString !== "") {
                 pushToS3(dataStr);
+                // Also push to PostgreSQL
+                if (pool) {
+                    try {
+                        // Sync users
+                        for (const email in users) {
+                            const u = users[email];
+                            pool.query(
+                                'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (, , , , , ) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
+                                [email, u.password, u.role, u.name, u.org, u.twoFactorSecret]
+                            ).catch(e => console.error("[DB] Users Sync Error:", e.message));
+                        }
+                        
+                        // Sync transactions
+                        for (const t of transactions) {
+                            pool.query(
+                                'INSERT INTO transactions (transaction_id, amount, store_id, items, timestamp) VALUES (, , , , ) ON CONFLICT (transaction_id) DO NOTHING',
+                                [t.id, t.total, t.storeId, JSON.stringify(t.items), new Date(t.timestamp)]
+                            ).catch(e => console.error("[DB] Transactions Sync Error:", e.message));
+                        }
+
+                        // Sync campaigns
+                        for (const c of storeCampaigns) {
+                            pool.query(
+                                'INSERT INTO campaigns (id, url, advertiser, budget, daily_limit, spent, status) VALUES (, , , , , , ) ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, budget = EXCLUDED.budget, daily_limit = EXCLUDED.daily_limit, spent = EXCLUDED.spent, status = EXCLUDED.status',
+                                [c.id, c.url, c.advertiser, c.budget, c.daily_limit, c.spent, c.status]
+                            ).catch(e => console.error("[DB] Campaigns Sync Error:", e.message));
+                        }
+                    } catch (err) {
+                        console.error("[DB] Push Error:", err.message);
+                    }
+                }
             }
             lastDBString = dataStr;
         }
