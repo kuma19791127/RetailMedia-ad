@@ -1,4 +1,4 @@
-﻿const { Pool } = require('pg');
+const { Pool } = require('pg');
 
 let pool = null;
 
@@ -12,7 +12,7 @@ if (process.env.DATABASE_URL) {
     // 起動時にテーブルを自動作成
     const initDB = async () => {
         try {
-            await pool.query(
+            await pool.query(`
                 CREATE TABLE IF NOT EXISTS users (
                     email VARCHAR(255) PRIMARY KEY,
                     password VARCHAR(255),
@@ -44,7 +44,7 @@ if (process.env.DATABASE_URL) {
                     status VARCHAR(50),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-            );
+            `);
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
         } catch (e) {
             console.error('[DB] ❌ テーブル作成エラー:', e);

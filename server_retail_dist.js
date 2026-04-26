@@ -202,11 +202,6 @@ app.post('/api/kyc', async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
-    } catch(err) {
-        console.error(err);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
 
 app.get('/api/kyc', (req, res) => {
     res.json(kycRequests);
@@ -218,7 +213,7 @@ app.post('/api/kyc/:id/status', (req, res) => {
     const target = kycRequests.find(r => r.id === reqId);
     if (target) {
         target.status = status;
-        console.log([KYC] Request  status updated to );
+        console.log(`[KYC] Request ${reqId} status updated to ${status}`);
         res.json({ success: true });
     } else {
         res.status(404).json({ error: "Not found" });
