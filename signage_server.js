@@ -76,7 +76,7 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
                         playlist.push({
                             id: `local_${f}`,
                             title: f,
-                            url: `/desktop_shorts/${f}`,
+                            url: `/desktop_shorts/${encodeURIComponent(f)}`,
                             aspect_ratio: '16:9',
                             status: 'active'
                         });
