@@ -457,11 +457,12 @@
                 window.ytPlayer = new YT.Player('yt-player', {
                     height: '100%',
                     width: '100%',
+                    videoId: 'M7lc1UVf-VE', // Dummy ID to prevent Error 2 on load
                     playerVars: {
-                        'autoplay': 1,
+                        'autoplay': 0, // Don't autoplay the dummy
                         'controls': 0,
                         'rel': 0,
-                        'enablejsapi': 1, // REQUIRED for postMessage to work
+                        'enablejsapi': 1,
                         'origin': window.location.protocol + '//' + window.location.host
                     },
                     events: {
