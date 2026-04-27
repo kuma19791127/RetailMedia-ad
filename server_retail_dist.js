@@ -723,7 +723,7 @@ app.post('/api/auth/2fa/setup', (req, res) => {
     try {
         const speakeasy = require('speakeasy');
         const qrcode = require('qrcode');
-        const secret = speakeasy.generateSecret({ name: RetailMedia () });
+        const secret = speakeasy.generateSecret({ name: `RetailMedia (${email})` });
         qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
             if (err) return res.status(500).json({ error: "QRコード生成失敗" });
             res.json({ secret: secret.base32, qrcode: data_url });
