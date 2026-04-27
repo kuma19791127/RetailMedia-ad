@@ -478,8 +478,10 @@
             }
 
             function onPlayerError(event) {
-                console.error("YouTube Player Error:", event.data);
                 const currentItem = currentPlaylist[currentIndex];
+                let title = currentItem ? currentItem.title : "不明なコンテンツ";
+                console.error(`[配信エラー] 広告/クリエイター配信に失敗しました: ${title} (YouTube Player Error: ${event.data})`);
+                
                 if (currentItem && (currentItem.is_youtube || (currentItem.url && currentItem.url.includes('youtu')))) {
                     playNext(); // Skip on error only if playing a YouTube video
                 }
@@ -487,9 +489,12 @@
 
             function onPlayerStateChange(event) {
                 if (event.data === YT.PlayerState.ENDED) {
+                    const currentItem = currentPlaylist[currentIndex];
+                    let title = currentItem ? currentItem.title : "不明なコンテンツ";
+                    console.log(`[配信成功] 広告/クリエイター動画の再生が完了しました: ${title}`);
+                    
                     document.getElementById('yt-player-container').style.display = 'none';
                     // Send Beacon for YouTube
-                    const currentItem = currentPlaylist[currentIndex];
                     if (currentItem) sendBeacon(currentItem.id);
                     playNext();
                 }
@@ -750,6 +755,10 @@
             }
 
             video.play().catch(e => {
+                const currentItem = currentPlaylist[currentIndex];
+                let title = currentItem ? currentItem.title : "不明なコンテンツ";
+                console.log(`[配信エラー] 広告/クリエイター動画の再生に失敗しました: ${title} (Error: ${e.message})`);
+                
                 console.log("Autoplay blocked or Playback failed:", e);
                 video.muted = true;
                 video.play().catch(e2 => {
@@ -788,6 +797,9 @@
         
         video.onended = () => {
             const currentItem = currentPlaylist[currentIndex];
+            let title = currentItem ? currentItem.title : "不明なコンテンツ";
+            console.log(`[配信成功] 広告/クリエイター動画の再生が完了しました: ${title}`);
+            
             sendBeacon(currentItem.id); // Report Impression
             playNext();
         };
