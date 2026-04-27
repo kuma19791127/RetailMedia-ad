@@ -639,8 +639,8 @@ h2 {
                         return false;
                     }
 
-                    const isAd = document.getElementById('creator-is-ad').checked;
-return { fileUrl, ytUrl, title, isAd };
+                    const isAd = false; // Checkbox removed from UI
+                    return { fileUrl, ytUrl, title, isAd };
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
