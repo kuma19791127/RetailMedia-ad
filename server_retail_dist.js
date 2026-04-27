@@ -761,15 +761,12 @@ app.post('/api/auth/login', (req, res) => {
         users[email] = { password, role: role || "store", name: name, org: org };
         user = users[email];
         console.log(`[Auth] 🆕 Auto-Registered: ${email} (${user.role})`);
-        saveDatabase();
+        // RDS sync will handle persistence automatically in background
     } else {
         // Update name and org if provided and different
         let updated = false;
         if (name && user.name !== name) { user.name = name; updated = true; }
         if (org && user.org !== org) { user.org = org; updated = true; }
-        if (updated) {
-            saveDatabase();
-        }
     }
 
     if (user && user.password === password) {
