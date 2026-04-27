@@ -497,6 +497,12 @@
             <div class="nav-item" id="nav-advertisers" onclick="switchTab('advertisers')">
                 💰 入金・アカウント発行
             </div>
+
+            <div style="margin-top: auto; padding: 20px;">
+                <button onclick="logoutAdmin()" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;">
+                    🚪 ログアウト
+                </button>
+            </div>
         </div>
 
         <div class="main">
@@ -1338,25 +1344,27 @@
             }
         }
 
-        function handleRegister() {
+        async function handleRegister() {
             const email = document.getElementById('reg-email').value;
             const pass = document.getElementById('reg-pass').value;
 
             if (!email || !pass) return Swal.fire('Error', 'Please fill all fields', 'warning');
 
-            // For demo context, simulate success
-            Swal.fire({
-                title: 'Account Created',
-                text: `Demo Admin account created for ${email}.Logging in...`,
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-                window.dispatchEvent(new Event('resize'));
-                loadData();
-            });
+            // Set to login fields so handleLogin can process 2FA setup correctly
+            document.getElementById('admin-user').value = email;
+            document.getElementById('admin-pass').value = pass;
+            
+            // Auto-login which will trigger account creation and 2FA setup
+            handleLogin();
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('retailMediaAuth');
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('admin-user').value = '';
+            document.getElementById('admin-pass').value = '';
+            Swal.fire({ toast: true, position: 'top', title: 'ログアウトしました', icon: 'info', showConfirmButton: false, timer: 1500 });
         }
 
         // Accessibility Fix: Ensure login overlay is not hidden from screen readers
