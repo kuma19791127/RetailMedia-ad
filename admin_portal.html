@@ -1312,7 +1312,7 @@
                     document.getElementById('main-app').style.display = 'flex';
                     loadData();
                 } else {
-                    Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
+                    Swal.fire('Error', e.message || 'Server Connection Failed', 'error');
                 }
             }
         }

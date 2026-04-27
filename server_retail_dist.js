@@ -740,7 +740,6 @@ app.post('/api/auth/2fa/enable', (req, res) => {
         const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
         if (verified && users[email]) {
             users[email].twoFactorSecret = secret;
-            saveDatabase();
             res.json({ success: true });
         } else {
             res.json({ success: false, error: "無効なコードです" });
