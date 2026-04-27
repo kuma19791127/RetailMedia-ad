@@ -561,6 +561,14 @@ h2 {
                         <input id="creator-yt-url" class="swal2-input" placeholder="https://youtu.be/... (ショート動画も可)" style="margin-top:5px; font-size:14px;">
                         <div style="font-size:10px; color:#999;">※ファイルアップロードの代わりに使用</div>
                     </div>
+                    
+                    <div style="margin-top:15px; text-align:left; background:#fff3cd; padding:10px; border-radius:5px; border-left:4px solid #ffc107;">
+                        <label style="font-size:13px; font-weight:bold; color:#856404; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="creator-is-ad" style="width:16px; height:16px;">
+                            <span>これは「企業案件・広告動画（PR）」ですか？</span>
+                        </label>
+                        <div style="font-size:11px; color:#666; margin-top:5px; padding-left:24px;">※チェックを入れると、サイネージ再生時に「PR」と明記されます。</div>
+                    </div>
                 `,
                 showCancelButton: true,
                 confirmButtonText: 'アップロード',
@@ -639,7 +647,7 @@ h2 {
                         return false;
                     }
 
-                    const isAd = false; // Checkbox removed from UI
+                    const isAd = document.getElementById('creator-is-ad').checked;
                     return { fileUrl, ytUrl, title, isAd };
                 }
             }).then(async (result) => {
