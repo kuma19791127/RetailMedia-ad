@@ -519,6 +519,58 @@
                 
                 const data = await response.json();
                 
+                if (data.require2FASetup) {
+                    const qrRes = await fetch('/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email})});
+                    const qrData = await qrRes.json();
+                    const code = await Swal.fire({
+                        title: '二重認証の初期設定',
+                        html: `<p>Google Authenticator等のアプリでQRコードを読み込み、表示された6桁のコードを入力してください。</p><img src="${qrData.qrCodeUrl}" style="margin: 10px auto;"><br><input type="text" id="totpCodeInput" class="swal2-input" placeholder="6桁のコード" autocomplete="off">`,
+                        preConfirm: () => document.getElementById('totpCodeInput').value,
+                        showCancelButton: true
+                    });
+                    if (code.value) {
+                        const vRes = await fetch('/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email, token: code.value, secret: qrData.secret})});
+                        const vData = await vRes.json();
+                        if(vData.success) {
+                            Swal.fire('完了', '二重認証が設定されました。再度ログインしてください。', 'success');
+                        } else {
+                            Swal.fire('エラー', 'コードが違います。もう一度やり直してください。', 'error');
+                        }
+                    }
+                    btn.innerText = 'メールアドレスでログイン';
+                    return;
+                }
+
+                if (data.require2FA) {
+                    const code = await Swal.fire({
+                        title: '二重認証',
+                        text: '認証アプリに表示されている6桁のコードを入力してください',
+                        input: 'text',
+                        inputPlaceholder: '000000',
+                        showCancelButton: true
+                    });
+                    if (code.value) {
+                        const response2 = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password, role, totpCode: code.value })
+                        });
+                        const data2 = await response2.json();
+                        if (data2.success) {
+                            sessionStorage.setItem('retailMediaAuth', 'true');
+                            sessionStorage.setItem('retailUserEmail', email);
+                            if (document.getElementById('remember') && document.getElementById('remember').checked) {
+                                localStorage.setItem('retailMediaSavedEmail', email);
+                            }
+                            window.location.href = data2.redirect;
+                        } else {
+                            Swal.fire('エラー', data2.error || '無効なコードです', 'error');
+                        }
+                    }
+                    btn.innerText = 'メールアドレスでログイン';
+                    return;
+                }
+
                 if (data.success) {
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     sessionStorage.setItem('retailUserEmail', email);
