@@ -2,7 +2,21 @@
   "signageState": {
     "register_side": {
       "interrupt": null,
-      "paid": [],
+      "paid": {
+        "id": "creator_1777297929783",
+        "title": "Creator: Test YouTube Video",
+        "url": "https://www.youtube.com/shorts/3iV5kHLEiZI",
+        "duration": 45,
+        "aspect_ratio": "9:16",
+        "location_qr": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Creator",
+        "is_youtube": true,
+        "is_image": false,
+        "is_recipe": false,
+        "status": "active",
+        "isAd": false,
+        "brand": "Creator",
+        "youtube_url": "https://www.youtube.com/shorts/3iV5kHLEiZI"
+      },
       "moment": null,
       "impression": null,
       "network": null,
@@ -50,7 +64,21 @@
   "creatorState": {
     "total_views": 0,
     "total_revenue": 0,
-    "videos": []
+    "videos": [
+      {
+        "id": 1777297929783,
+        "title": "Test YouTube Video",
+        "format": "縦型 (Shorts)",
+        "views": 0,
+        "revenue": 0,
+        "status": "active",
+        "attention": "--",
+        "skip": "--",
+        "uplift": "--",
+        "rank": "-",
+        "color": "#64748b"
+      }
+    ]
   },
   "transactions": [],
   "sensorLogs": [],

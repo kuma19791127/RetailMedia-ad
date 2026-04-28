@@ -577,6 +577,22 @@ h2 {
                     const dropzone = document.getElementById('creator-dropzone');
                     const fileInput = document.getElementById('creator-file');
                     const filenameDisplay = document.getElementById('creator-filename');
+                    const ytInput = document.getElementById('creator-yt-url');
+
+                    window._bgReviewPromise = null;
+                    const startBgReview = async (file, title) => {
+                        let base64 = "mock_data";
+                        if(file) base64 = await fileToBase64(file);
+                        window._bgReviewPromise = fetch(API_BASE + '/api/creator/review-content', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ video_base64: base64, title: title })
+                        }).then(r => r.json());
+                    };
+
+                    ytInput.addEventListener('input', () => {
+                        if(ytInput.value.length > 10) startBgReview(null, "YouTube Video");
+                    });
 
                     // Click to open dialog
                     dropzone.addEventListener('click', () => fileInput.click());
@@ -601,14 +617,16 @@ h2 {
 
                         if (e.dataTransfer.files.length > 0) {
                             fileInput.files = e.dataTransfer.files; // Assign to hidden input
-                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${e.dataTransfer.files[0].name}</span>`;
+                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${e.dataTransfer.files[0].name}<br><small style="font-size:0.8rem;color:#888;">(裏でAI審査を開始しました...)</small></span>`;
+                            startBgReview(e.dataTransfer.files[0], e.dataTransfer.files[0].name);
                         }
                     });
 
                     // Handle classic selection
                     fileInput.addEventListener('change', () => {
                         if (fileInput.files.length > 0) {
-                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${fileInput.files[0].name}</span>`;
+                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${fileInput.files[0].name}<br><small style="font-size:0.8rem;color:#888;">(裏でAI審査を開始しました...)</small></span>`;
+                            startBgReview(fileInput.files[0], fileInput.files[0].name);
                         }
                     });
                 },
@@ -664,12 +682,17 @@ h2 {
                         const { fileUrl, ytUrl, title, isAd } = result.value;
                         
                         // Backend API Call for Moderation
-                        const reviewRes = await fetch(API_BASE + '/api/creator/review-content', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ video_base64: fileUrl || "mock_data", title: title })
-                        });
-                        const reviewData = await reviewRes.json();
+                        let reviewData;
+                        if (window._bgReviewPromise) {
+                            reviewData = await window._bgReviewPromise;
+                        } else {
+                            const reviewRes = await fetch(API_BASE + '/api/creator/review-content', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ video_base64: fileUrl || "mock_data", title: title })
+                            });
+                            reviewData = await reviewRes.json();
+                        }
                         
                         if (!reviewData.safe) {
                             Swal.fire({
