@@ -71,7 +71,8 @@ function compressNext() {
             fs.unlinkSync(video.filePath);
             
             // 拡張子がmovの場合はmp4に変更して保存
-            const finalName = video.file.toLowerCase().endsWith('.mov') ? video.file.replace(/\.mov$/i, '.mp4') : video.file;
+            let basename = video.file.replace(/\.(mp4|mov)$/i, '');
+            const finalName = basename + '_compressed.mp4';
             const finalPath = path.join(targetDir, finalName);
             
             fs.renameSync(tempOutPath, finalPath);
