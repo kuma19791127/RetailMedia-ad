@@ -796,7 +796,12 @@
             }
         });
         
-        video.onended = () => {
+        video.onerror = () => {
+                console.error([Player] Error loading video. Skipping.);
+                playNext();
+            };
+
+            video.onended = () => {
             const currentItem = currentPlaylist[currentIndex];
             let title = currentItem ? currentItem.title : "不明なコンテンツ";
             console.log(`[配信成功] 広告/クリエイター動画の再生が完了しました: ${title}`);
