@@ -479,6 +479,7 @@
             }
 
             function onPlayerError(event) {
+                document.getElementById('yt-player-container').style.display = 'none';
                 const currentItem = currentPlaylist[currentIndex];
                 let title = currentItem ? currentItem.title : "不明なコンテンツ";
                 console.error(`[配信エラー] 広告/クリエイター配信に失敗しました: ${title} (YouTube Player Error: ${event.data})`);
@@ -692,6 +693,7 @@
             // Handle Video (File)
             video.style.display = 'block';
             imgScreen.style.display = 'none';
+            document.getElementById('yt-player-container').style.display = 'none';
             if (window.ytPlayer && typeof window.ytPlayer.stopVideo === 'function') {
                 document.getElementById('yt-player-container').style.display = 'none';
                 window.ytPlayer.stopVideo();
