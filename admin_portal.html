@@ -1252,12 +1252,12 @@
                     const qrData = await qrRes.json();
                     const code = await Swal.fire({
                         title: '二重認証の初期設定',
-                        html: `<p>Google Authenticator等のアプリでQRコードを読み込み、表示された6桁のコードを入力してください。</p><img src="${qrData.qrCodeUrl}" style="margin: 10px auto;"><br><input type="text" id="totpCodeInput" class="swal2-input" placeholder="6桁のコード" autocomplete="off">`,
+                        html: `<p>Google Authenticator等のアプリでQRコードを読み込み、表示された6桁のコードを入力してください。</p><img src="${qrData.qrcode}" style="margin: 10px auto;"><br><input type="text" id="totpCodeInput" class="swal2-input" placeholder="6桁のコード" autocomplete="off">`,
                         preConfirm: () => document.getElementById('totpCodeInput').value,
                         showCancelButton: true
                     });
                     if (code.value) {
-                        const vRes = await fetch('/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code.value, secret: qrData.secret})});
+                        const vRes = await fetch('/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code.value, secret: qrData.secret})});
                         const vData = await vRes.json();
                         if(vData.success) {
                             Swal.fire('完了', '二重認証が設定されました。再度ログインしてください。', 'success');
