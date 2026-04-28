@@ -3,19 +3,23 @@
     "register_side": {
       "interrupt": null,
       "paid": {
-        "id": "creator_1777297929783",
-        "title": "Creator: Test YouTube Video",
-        "url": "https://www.youtube.com/shorts/3iV5kHLEiZI",
-        "duration": 45,
-        "aspect_ratio": "9:16",
-        "location_qr": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Creator",
-        "is_youtube": true,
+        "id": "ad_1777364294973",
+        "title": "aaa",
+        "url": "/uploads/ad_video_1777364293390.mp4",
+        "duration": 15,
+        "aspect_ratio": "16:9",
+        "location_qr": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=undefined",
+        "is_youtube": false,
         "is_image": false,
         "is_recipe": false,
         "status": "active",
-        "isAd": false,
-        "brand": "Creator",
-        "youtube_url": "https://www.youtube.com/shorts/3iV5kHLEiZI"
+        "format": "standard",
+        "start_date": "",
+        "end_date": "",
+        "budget": "100",
+        "plan_type": "cpm",
+        "trigger": null,
+        "target_imp": null
       },
       "moment": null,
       "impression": null,
@@ -64,41 +68,60 @@
   "creatorState": {
     "total_views": 0,
     "total_revenue": 0,
-    "videos": [
-      {
-        "id": 1777297929783,
-        "title": "Test YouTube Video",
-        "format": "縦型 (Shorts)",
-        "views": 0,
-        "revenue": 0,
-        "status": "active",
-        "attention": "--",
-        "skip": "--",
-        "uplift": "--",
-        "rank": "-",
-        "color": "#64748b"
-      }
-    ]
+    "videos": []
   },
   "transactions": [],
   "sensorLogs": [],
   "globalDashboardStats": {
     "impressions": 0,
-    "faceDetected": 0,
-    "attentionTime": 0,
-    "male": 0,
+    "faceDetected": 4,
+    "attentionTime": 12,
+    "male": 4,
     "female": 0,
     "unknown": 0,
     "age10s": 0,
     "age20s": 0,
     "age30s": 0,
-    "age40s": 0,
-    "age50s": 0
+    "age40s": 3,
+    "age50s": 1
   },
   "agencyReferrals": [],
-  "productionStats": null,
+  "productionStats": {
+    "revenue": 0,
+    "sales": 0,
+    "scans": 0,
+    "ab": {
+      "A": {
+        "views": 0,
+        "scans": 0,
+        "sales": 0
+      },
+      "B": {
+        "views": 0,
+        "scans": 0,
+        "sales": 0
+      }
+    }
+  },
   "creatorStats": {},
-  "globalSensorLogs": [],
+  "globalSensorLogs": [
+    {
+      "gender": "male",
+      "age": "50s"
+    },
+    {
+      "gender": "male",
+      "age": "40s"
+    },
+    {
+      "gender": "male",
+      "age": "40s"
+    },
+    {
+      "gender": "male",
+      "age": "40s"
+    }
+  ],
   "users": {
     "advertiser@demo.com": {
       "password": "DemoPass2026!",
@@ -115,10 +138,6 @@
     "creator@demo.com": {
       "password": "DemoPass2026!",
       "role": "creator"
-    },
-    "admin@retail-ad.com": {
-      "password": "Admin2026!",
-      "role": "admin"
     }
   },
   "posTransactions": [],

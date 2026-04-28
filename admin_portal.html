@@ -441,7 +441,7 @@
                     autocomplete="username">
                 <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password"
                     autocomplete="current-password">
-                <button type="submit" class="login-btn">Login</button>
+                <button type="button" class="login-btn" onclick="handleLogin()">Login</button>
             </form>
 
             <!-- Sign Up Form -->
@@ -1302,7 +1302,8 @@
                     Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
                 }
             } catch(e) {
-                Swal.fire('Error', e.message || 'Server Connection Failed', 'error');
+                alert("Login Error: " + e.message);
+                try { Swal.fire('Error', e.message || 'Server Connection Failed', 'error'); } catch(err){}
             }
         }
 
