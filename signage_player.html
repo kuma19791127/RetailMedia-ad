@@ -567,7 +567,7 @@
                             playContent(currentPlaylist[0]);
                         }
                         // Or if nothing is currently playing (initial load)
-                        else if (video.paused && document.getElementById('yt-player-container').style.display === 'none' && document.getElementById('image-screen').style.display === 'none') {
+                        else if (video.paused && document.getElementById('yt-player-container').style.display !== 'block' && document.getElementById('image-screen').style.display !== 'block') {
                             playContent(currentPlaylist[0]);
                         }
                     }
