@@ -551,50 +551,47 @@
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const location = urlParams.get('location') || 'register_side';
-                const storeId = urlParams.get('storeId') || 'STORE_001'; // Default to Demo Store
+                const storeId = urlParams.get('storeId') || 'STORE_001';
 
-                console.log(`[Signage API] Requesting playlist from: /api/signage/playlist?location=${location}&storeId=${storeId}`);
-            const res = await fetch(`/api/signage/playlist?location=${location}&storeId=${storeId}`);
-            if (!res.ok) console.error(`[Signage API] Error fetching playlist! Endpoint: /api/signage/playlist, Status: ${res.status} ${res.statusText}`);
+                const res = await fetch(/api/signage/playlist?location=&storeId=);
+                if (!res.ok) console.error([Signage API] Error fetching playlist! Status: );
                 const newPlaylist = await res.json();
 
                 if (JSON.stringify(newPlaylist) !== JSON.stringify(currentPlaylist)) {
-            const oldPlaylist = currentPlaylist || [];
-            currentPlaylist = newPlaylist;
-            
-            if (currentPlaylist.length > 0) {
-                // If this is the very first load
-                if (oldPlaylist.length === 0) {
-                    currentIndex = 0;
-                    playContent(currentPlaylist[0]);
-                } else {
-                    // Check if a NEW priority ad was added (Advertiser/Creator)
-                    // Priority ads usually don't start with 'local_'
-                    const oldIds = oldPlaylist.map(p => p.id);
-                    const newAds = currentPlaylist.filter(p => !p.id.startsWith('local_') && !oldIds.includes(p.id));
+                    const oldPlaylist = currentPlaylist || [];
+                    currentPlaylist = newPlaylist;
                     
-                    if (newAds.length > 0) {
-                        console.log("[Signage Player] 🎯 新しい優先広告を検知しました。現在のベース動画を中断して割り込み再生します。");
-                        // Find the index of the new ad
-                        currentIndex = currentPlaylist.findIndex(p => p.id === newAds[0].id);
-                        playContent(currentPlaylist[currentIndex]);
-                    } else {
-                        // Just update the list, do NOT reset currentIndex.
-                        // Ensure currentIndex is still within bounds.
-                        if (currentIndex >= currentPlaylist.length) {
+                    if (currentPlaylist.length > 0) {
+                        if (oldPlaylist.length === 0) {
                             currentIndex = 0;
-                        }
-                    }
-                }
-            }
-        }
-                        // Or if nothing is currently playing (initial load)
-                        else if (video.paused && document.getElementById('yt-player-container').style.display !== 'block' && document.getElementById('image-screen').style.display !== 'block') {
                             playContent(currentPlaylist[0]);
+                        } else {
+                            const oldIds = oldPlaylist.map(p => p.id);
+                            const newAds = currentPlaylist.filter(p => !p.id.startsWith('local_') && !oldIds.includes(p.id));
+                            
+                            if (newAds.length > 0) {
+                                console.log("[Signage Player] 🎯 新しい優先広告を検知しました。現在のベース動画を中断して割り込み再生します。");
+                                currentIndex = currentPlaylist.findIndex(p => p.id === newAds[0].id);
+                                playContent(currentPlaylist[currentIndex]);
+                            } else {
+                                if (currentIndex >= currentPlaylist.length) {
+                                    currentIndex = 0;
+                                }
+                            }
                         }
                     }
+                } else if (currentPlaylist && currentPlaylist.length > 0) {
+                    // Fallback if nothing is playing
+                    const imgScreen = document.getElementById('image-screen');
+                    const ytContainer = document.getElementById('yt-player-container');
+                    const videoElem = document.getElementById('main-video');
+                    if (videoElem.paused && ytContainer.style.display !== 'block' && imgScreen.style.display !== 'block') {
+                        playContent(currentPlaylist[currentIndex]);
+                    }
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e); 
+            }
             clearTimeout(fetchTimer);
             fetchTimer = setTimeout(fetchPlaylist, POLL_INTERVAL);
         }
