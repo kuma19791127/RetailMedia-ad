@@ -2473,7 +2473,7 @@ setInterval(() => {
                         }
 
                         // Sync campaigns
-                        for (const c of STATE.ads) {
+                        for (const c of campaigns) {
                             pool.query(
                                 'INSERT INTO campaigns (id, url, advertiser, budget, daily_limit, spent, status) VALUES (, , , , , , ) ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, budget = EXCLUDED.budget, daily_limit = EXCLUDED.daily_limit, spent = EXCLUDED.spent, status = EXCLUDED.status',
                                 [c.id, c.url, c.advertiser, c.budget, c.daily_limit, c.spent, c.status]
