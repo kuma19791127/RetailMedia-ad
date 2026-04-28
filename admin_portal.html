@@ -454,11 +454,7 @@
                 <button type="submit" class="login-btn" style="background:#27ae60;">Create Account</button>
             </form>
 
-            <p style="margin-top:15px; font-size:12px; color:#7f8c8d; line-height:1.6;">
-                <b>Demo Account:</b><br>
-                ID: admin@demo.com<br>
-                Pass: DemoPass2026!
-            </p>
+
         </div>
     </div>
 
@@ -1296,7 +1292,7 @@
                     return;
                 }
 
-                if (data.success || ((user === 'admin' || user === 'admin@demo.com') && pass === 'DemoPass2026!')) {
+                if (data.success) {
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     document.getElementById('login-overlay').style.display = 'none';
                     document.getElementById('main-app').style.display = 'flex';
@@ -1306,14 +1302,7 @@
                     Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
                 }
             } catch(e) {
-                // Fallback demo check if offline
-                if ((user === 'admin' || user === 'admin@demo.com') && pass === 'DemoPass2026!') {
-                    document.getElementById('login-overlay').style.display = 'none';
-                    document.getElementById('main-app').style.display = 'flex';
-                    loadData();
-                } else {
-                    Swal.fire('Error', e.message || 'Server Connection Failed', 'error');
-                }
+                Swal.fire('Error', e.message || 'Server Connection Failed', 'error');
             }
         }
 
