@@ -559,13 +559,35 @@
                 const newPlaylist = await res.json();
 
                 if (JSON.stringify(newPlaylist) !== JSON.stringify(currentPlaylist)) {
-                    currentPlaylist = newPlaylist;
-                    if (currentPlaylist.length > 0) {
-                        currentIndex = 0;
-                        // Immediately play if it's an emergency/interrupt
-                        if (currentPlaylist[0].is_interrupt) {
-                            playContent(currentPlaylist[0]);
+            const oldPlaylist = currentPlaylist || [];
+            currentPlaylist = newPlaylist;
+            
+            if (currentPlaylist.length > 0) {
+                // If this is the very first load
+                if (oldPlaylist.length === 0) {
+                    currentIndex = 0;
+                    playContent(currentPlaylist[0]);
+                } else {
+                    // Check if a NEW priority ad was added (Advertiser/Creator)
+                    // Priority ads usually don't start with 'local_'
+                    const oldIds = oldPlaylist.map(p => p.id);
+                    const newAds = currentPlaylist.filter(p => !p.id.startsWith('local_') && !oldIds.includes(p.id));
+                    
+                    if (newAds.length > 0) {
+                        console.log("[Signage Player] 🎯 新しい優先広告を検知しました。現在のベース動画を中断して割り込み再生します。");
+                        // Find the index of the new ad
+                        currentIndex = currentPlaylist.findIndex(p => p.id === newAds[0].id);
+                        playContent(currentPlaylist[currentIndex]);
+                    } else {
+                        // Just update the list, do NOT reset currentIndex.
+                        // Ensure currentIndex is still within bounds.
+                        if (currentIndex >= currentPlaylist.length) {
+                            currentIndex = 0;
                         }
+                    }
+                }
+            }
+        }
                         // Or if nothing is currently playing (initial load)
                         else if (video.paused && document.getElementById('yt-player-container').style.display !== 'block' && document.getElementById('image-screen').style.display !== 'block') {
                             playContent(currentPlaylist[0]);
