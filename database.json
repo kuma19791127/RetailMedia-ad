@@ -115,6 +115,10 @@
     "creator@demo.com": {
       "password": "DemoPass2026!",
       "role": "creator"
+    },
+    "admin@retail-ad.com": {
+      "password": "Admin2026!",
+      "role": "admin"
     }
   },
   "posTransactions": [],
