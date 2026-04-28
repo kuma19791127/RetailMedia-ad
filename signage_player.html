@@ -797,9 +797,9 @@
         });
         
         video.onerror = () => {
-                console.error([Player] Error loading video. Skipping.);
-                playNext();
-            };
+            console.error('[Player] Error loading video. Skipping.');
+            playNext();
+        };
 
             video.onended = () => {
             const currentItem = currentPlaylist[currentIndex];
