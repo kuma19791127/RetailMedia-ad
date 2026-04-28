@@ -437,9 +437,9 @@
 
             <!-- Login Form -->
             <form id="form-login" onsubmit="event.preventDefault(); handleLogin();" autocomplete="on">
-                <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID"
+                <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID" value="admin@demo.com"
                     autocomplete="username">
-                <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password"
+                <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password" value="Admin2026!"
                     autocomplete="current-password">
                 <button type="button" class="login-btn" onclick="handleLogin()">Login</button>
             </form>
@@ -1232,7 +1232,12 @@
 
         // --- Login Logic ---
         async function handleLogin() {
-            const user = document.getElementById('admin-user').value.trim();
+        if (typeof Swal === "undefined") { alert("SweetAlert(ポップアップ機能)がブラウザの拡張機能によってブロックされています！アドブロック等をオフにしてください。"); }
+
+    alert("【システム診断】
+ボタンクリック発火確認！
+これからサーバーへ通信します...");
+    const user = document.getElementById('admin-user').value.trim();
             const pass = document.getElementById('admin-pass').value.trim();
 
             try {
@@ -1303,7 +1308,7 @@
                 }
             } catch(e) {
                 alert("Login Error: " + e.message);
-                try { Swal.fire('Error', e.message || 'Server Connection Failed', 'error'); } catch(err){}
+                try { Swal.fire('Error', e.message || 'Server Connection Failed', 'error'); } catch(err){ alert("通信エラーまたは拡張機能によるブロックが発生しました: " + e.message); }
             }
         }
 

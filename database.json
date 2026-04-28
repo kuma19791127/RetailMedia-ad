@@ -2,25 +2,7 @@
   "signageState": {
     "register_side": {
       "interrupt": null,
-      "paid": {
-        "id": "ad_1777364294973",
-        "title": "aaa",
-        "url": "/uploads/ad_video_1777364293390.mp4",
-        "duration": 15,
-        "aspect_ratio": "16:9",
-        "location_qr": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=undefined",
-        "is_youtube": false,
-        "is_image": false,
-        "is_recipe": false,
-        "status": "active",
-        "format": "standard",
-        "start_date": "",
-        "end_date": "",
-        "budget": "100",
-        "plan_type": "cpm",
-        "trigger": null,
-        "target_imp": null
-      },
+      "paid": [],
       "moment": null,
       "impression": null,
       "network": null,
@@ -74,54 +56,21 @@
   "sensorLogs": [],
   "globalDashboardStats": {
     "impressions": 0,
-    "faceDetected": 4,
-    "attentionTime": 12,
-    "male": 4,
+    "faceDetected": 0,
+    "attentionTime": 0,
+    "male": 0,
     "female": 0,
     "unknown": 0,
     "age10s": 0,
     "age20s": 0,
     "age30s": 0,
-    "age40s": 3,
-    "age50s": 1
+    "age40s": 0,
+    "age50s": 0
   },
   "agencyReferrals": [],
-  "productionStats": {
-    "revenue": 0,
-    "sales": 0,
-    "scans": 0,
-    "ab": {
-      "A": {
-        "views": 0,
-        "scans": 0,
-        "sales": 0
-      },
-      "B": {
-        "views": 0,
-        "scans": 0,
-        "sales": 0
-      }
-    }
-  },
+  "productionStats": null,
   "creatorStats": {},
-  "globalSensorLogs": [
-    {
-      "gender": "male",
-      "age": "50s"
-    },
-    {
-      "gender": "male",
-      "age": "40s"
-    },
-    {
-      "gender": "male",
-      "age": "40s"
-    },
-    {
-      "gender": "male",
-      "age": "40s"
-    }
-  ],
+  "globalSensorLogs": [],
   "users": {
     "advertiser@demo.com": {
       "password": "DemoPass2026!",
@@ -138,6 +87,10 @@
     "creator@demo.com": {
       "password": "DemoPass2026!",
       "role": "creator"
+    },
+    "admin@retail-ad.com": {
+      "password": "Admin2026!",
+      "role": "admin"
     }
   },
   "posTransactions": [],
