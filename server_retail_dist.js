@@ -733,6 +733,26 @@ app.post('/api/auth/2fa/setup', (req, res) => {
     }
 });
 
+
+app.post('/api/auth/2fa/verify', (req, res) => {
+    const { email, token } = req.body;
+    try {
+        const speakeasy = require('speakeasy');
+        if (users[email] && users[email].twoFactorSecret) {
+            const verified = speakeasy.totp.verify({ secret: users[email].twoFactorSecret, encoding: 'base32', token: token, window: 1 });
+            if (verified) {
+                res.json({ success: true });
+            } else {
+                res.json({ success: false, error: "コードが違います" });
+            }
+        } else {
+            res.json({ success: false, error: "ユーザーが見つからないか2FA未設定です" });
+        }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.post('/api/auth/2fa/enable', (req, res) => {
     const { email, secret, token } = req.body;
     try {
