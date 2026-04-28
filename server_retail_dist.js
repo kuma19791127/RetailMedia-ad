@@ -789,21 +789,38 @@ app.post('/api/auth/login', (req, res) => {
     }
 
     if (user && user.password === password) {
+        // Track login count for 2FA suggestion
+        user.loginCount = (user.loginCount || 0) + 1;
+
         if ((user.role === 'admin' || user.role === 'system_admin') ) {
             if (!totpCode) {
                 if (!user.twoFactorSecret) {
-                     return res.json({ success: true, require2FASetup: true, email: email });
+                    return res.json({ success: true, require2FASetup: true, email: email });
                 } else {
-                     return res.json({ success: true, require2FA: true, email: email });
+                    return res.json({ success: true, require2FA: true, email: email });
                 }
             } else {
                 const speakeasy = require('speakeasy');
                 const verified = speakeasy.totp.verify({ secret: user.twoFactorSecret, encoding: 'base32', token: totpCode, window: 1 });
                 if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
             }
+        } else {
+            // For general users: Suggest 2FA on their 3rd login if not already setup
+            if (user.loginCount === 3 && !user.twoFactorSecret && email !== 'demo@retail-ad.com') {
+                return res.json({ success: true, suggest2FASetup: true, email: email, redirect: getRedirectUrl(user.role), role: user.role });
+            }
+            // If they have 2FA enabled, enforce it
+            if (user.twoFactorSecret) {
+                if (!totpCode) {
+                    return res.json({ success: true, require2FA: true, email: email });
+                } else {
+                    const speakeasy = require('speakeasy');
+                    const verified = speakeasy.totp.verify({ secret: user.twoFactorSecret, encoding: 'base32', token: totpCode, window: 1 });
+                    if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
+                }
+            }
         }
 
-        console.log(`[Auth] ✅ Login Success: ${email}`);
         currentUser = { email, role: user.role }; // Set Session
         res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
     } else {
