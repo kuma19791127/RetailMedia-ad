@@ -1232,8 +1232,8 @@
 
         // --- Login Logic ---
         async function handleLogin() {
-            const user = document.getElementById('admin-user').value;
-            const pass = document.getElementById('admin-pass').value;
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
 
             try {
                 const response = await fetch('/api/auth/login', {
