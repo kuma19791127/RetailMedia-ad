@@ -1156,9 +1156,14 @@
                         stuckCounter++;
                         // 10秒間同じフレームから動かない場合はバッファリングフリーズと判定
                         if (stuckCounter > 10) {
-                            console.error("[Watchdog] ビデオフリーズを検知。ページを強制リロードします。");
-                            location.reload();
-                        }
+                    console.error("[Watchdog] Video freeze detected. Skipping to next.");
+                    stuckCounter = 0;
+                    if (typeof playNext === "function") {
+                        playNext();
+                    } else {
+                        location.reload();
+                    }
+                }
                     } else {
                         lastVidTime = vid.currentTime;
                         stuckCounter = 0;
