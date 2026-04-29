@@ -543,7 +543,7 @@
             waiting.style.display = 'none';
             video.muted = false;
             fetchPlaylist();
-            // if (!cameraStream) toggleCamera(); // Disabled auto-start to prevent permission popups blocking unattended boot
+            if (!cameraStream) toggleCamera();
         });
 
         let fetchTimer = null;
@@ -1016,7 +1016,7 @@
         }
 
         // Attempt immediate start, might be blocked by browser without interaction
-        setTimeout(() => { // if (!cameraStream) toggleCamera(); // Disabled auto-start to prevent permission popups blocking unattended boot }, 1000);
+        setTimeout(() => { if (!cameraStream) toggleCamera(); }, 1000);
 
         async function runAnalysis() {
             const videoEl = document.getElementById('camera-feed');
