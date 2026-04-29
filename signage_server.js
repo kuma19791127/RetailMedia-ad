@@ -68,23 +68,37 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         const path = require('path');
         const desktopPath = path.join(__dirname, 'base_loop_videos');
         
-        if (fs.existsSync(desktopPath)) {
-            try {
-                const files = fs.readdirSync(desktopPath);
-                for (const f of files) {
-                    if (f.toLowerCase().endsWith('.mp4') || f.toLowerCase().endsWith('.mov')) {
-                        playlist.push({
-                            id: `local_${f}`,
-                            title: f,
-                            url: `/desktop_shorts/${encodeURIComponent(f)}`,
-                            aspect_ratio: '16:9',
-                            status: 'active'
-                        });
+        if (!global.cachedBaseVideos || Date.now() - (global.lastBaseVideoScan || 0) > 60000) {
+            if (fs.existsSync(desktopPath)) {
+                try {
+                    const files = fs.readdirSync(desktopPath);
+                    let baseVideos = [];
+                    for (const f of files) {
+                        if (f.toLowerCase().endsWith('.mp4') || f.toLowerCase().endsWith('.mov')) {
+                            baseVideos.push({
+                                id: `local_${f}`,
+                                title: f,
+                                url: `/desktop_shorts/${encodeURIComponent(f)}`,
+                                aspect_ratio: '16:9',
+                                status: 'active'
+                            });
+                        }
                     }
+                    // Shuffle the array randomly
+                    for (let i = baseVideos.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [baseVideos[i], baseVideos[j]] = [baseVideos[j], baseVideos[i]];
+                    }
+                    global.cachedBaseVideos = baseVideos;
+                    global.lastBaseVideoScan = Date.now();
+                } catch (e) {
+                    console.error("[CMS] Error reading Desktop shorts:", e);
                 }
-            } catch (e) {
-                console.error("[CMS] Error reading Desktop shorts:", e);
             }
+        }
+        
+        if (global.cachedBaseVideos) {
+            playlist.push(...global.cachedBaseVideos);
         }
 
         if (playlist.length > 0) return playlist;
