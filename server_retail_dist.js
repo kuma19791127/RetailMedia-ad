@@ -1197,6 +1197,67 @@ app.get('/api/reports/csv', (req, res) => {
 });
 
 // Real Upload Endpoint (Production Mode)
+
+// --- Retailer Video Upload (S3 Direct) ---
+app.post('/api/retailer/upload', (req, res) => {
+    try {
+        const { fileData, filename, prefix, targetStore } = req.body;
+        if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
+
+        const ext = require('path').extname(filename).toLowerCase();
+        const newFilename = 
+etail__;
+        const s3Key = uploads/;
+        
+        // Ensure global is initialized
+        if (!global.retailer_videos) global.retailer_videos = [];
+
+        // Save to S3 using AWS SDK
+        const { PutObjectCommand } = require('@aws-sdk/client-s3');
+        const buffer = Buffer.from(fileData.split(',')[1], 'base64');
+        
+        s3Client.send(new PutObjectCommand({
+            Bucket: S3_BUCKET_NAME || process.env.AWS_S3_BUCKET_NAME,
+            Key: s3Key,
+            Body: buffer,
+            ContentType: ext === '.mp4' ? 'video/mp4' : 'video/quicktime'
+        })).then(() => {
+            console.log([Retailer] Successfully uploaded  to S3.);
+            const newVideo = {
+                id: 
+etailer_,
+                title: filename,
+                url: /uploads/,
+                aspect_ratio: '16:9',
+                status: 'active',
+                retailer_prefix: prefix,
+                target_store: targetStore || 'ALL'
+            };
+            global.retailer_videos.push(newVideo);
+            res.json({ success: true, video: newVideo });
+        }).catch(err => {
+            console.error("[Retailer] S3 Upload Error:", err);
+            res.status(500).json({ success: false, error: err.message });
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.get('/api/retailer/videos', (req, res) => {
+    const prefix = req.query.prefix;
+    if (!global.retailer_videos) global.retailer_videos = [];
+    const vids = global.retailer_videos.filter(v => v.retailer_prefix === prefix);
+    res.json(vids);
+});
+
+app.delete('/api/retailer/videos/:id', (req, res) => {
+    if (!global.retailer_videos) return res.json({success:false});
+    global.retailer_videos = global.retailer_videos.filter(v => v.id !== req.params.id);
+    res.json({success:true});
+});
+
 app.post('/api/ad/upload', (req, res) => {
     // Determine extension from original filename
     const originalName = req.query.filename || "upload.mp4";
@@ -2475,7 +2536,8 @@ setInterval(() => {
                 creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
                 transactions: typeof transactions !== 'undefined' ? transactions : [],
                 sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
-                globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
+                retailer_videos: global.retailer_videos || [],
+                            globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
                 agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
                 productionStats: global.productionStats ? global.productionStats : null,
                 creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},

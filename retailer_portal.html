@@ -280,38 +280,82 @@ exit /b
             if(fileInput.files.length) handleUpload(fileInput.files[0]);
         });
 
-        function handleUpload(file) {
+        async function handleUpload(file) {
             document.getElementById('upload-status').style.display = 'block';
             const progress = document.getElementById('upload-progress');
             const text = document.getElementById('upload-text');
+            progress.style.width = '30%';
+            text.innerText = "圧縮・送信準備中...";
             
-            // Simulate upload progress
-            let p = 0;
-            const iv = setInterval(() => {
-                p += Math.random() * 15;
-                if(p >= 100) {
-                    clearInterval(iv);
-                    progress.style.width = '100%';
-                    text.innerText = "AWS S3への保存完了！配信がスタートしました。";
-                    text.style.color = "#10b981";
-                    setTimeout(() => {
-                        document.getElementById('upload-status').style.display = 'none';
-                        loadVideos(); // Refresh list
-                        Swal.fire("配信開始", "動画がS3に保存され、5秒以内に全国のサイネージと同期されます。", "success");
-                    }, 2000);
-                } else {
-                    progress.style.width = p + '%';
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                progress.style.width = '60%';
+                text.innerText = "AWS S3へ送信中...";
+                
+                const targetStore = document.querySelector('input[name="targetStore"]:checked').value === 'ALL' ? 'ALL' : document.getElementById('specific-store-id').value;
+                
+                try {
+                    const res = await fetch('/api/retailer/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filename: file.name,
+                            fileData: reader.result,
+                            prefix: currentPrefix,
+                            targetStore: targetStore
+                        })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        progress.style.width = '100%';
+                        text.innerText = "AWS S3への保存完了！配信がスタートしました。";
+                        text.style.color = "#10b981";
+                        setTimeout(() => {
+                            document.getElementById('upload-status').style.display = 'none';
+                            loadVideos();
+                            Swal.fire("配信開始", "動画がS3に保存され、5秒以内に全国の指定サイネージと同期されます。", "success");
+                        }, 2000);
+                    } else {
+                        throw new Error(data.error || "Unknown error");
+                    }
+                } catch(e) {
+                    Swal.fire("エラー", "アップロードに失敗しました: " + e.message, "error");
+                    document.getElementById('upload-status').style.display = 'none';
                 }
-            }, 300);
+            };
         }
 
-        function loadVideos() {
-            document.getElementById('video-list').innerHTML = 
-                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                    <div><strong>社長からのメッセージ.mp4</strong> (全店舗共通)</div>
-                    <button style="color:red; background:none; border:none; cursor:pointer;">削除</button>
-                </div>
-            ;
+        async function loadVideos() {
+            try {
+                const res = await fetch('/api/retailer/videos?prefix=' + currentPrefix);
+                const videos = await res.json();
+                let html = '';
+                if(videos.length === 0) {
+                    html = '<p style="padding:15px; color:#94a3b8;">現在配信中の独自動画はありません。</p>';
+                } else {
+                    videos.forEach(v => {
+                        html += 
+                        <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <strong style="color:#1e293b;"></strong><br>
+                                <span style="font-size:0.85rem; color:#64748b;">配信先: </span>
+                            </div>
+                            <button onclick="deleteVideo('')" style="color:red; background:none; border:1px solid red; border-radius:5px; padding:5px 10px; cursor:pointer;">配信停止</button>
+                        </div>;
+                    });
+                }
+                document.getElementById('video-list').innerHTML = html;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        
+        async function deleteVideo(id) {
+            if(confirm("この動画の配信を停止し、削除しますか？")) {
+                await fetch('/api/retailer/videos/' + id, { method: 'DELETE' });
+                loadVideos();
+            }
         }
     </script>
 </body>

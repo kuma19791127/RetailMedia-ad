@@ -100,6 +100,22 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         if (global.cachedBaseVideos) {
             playlist.push(...global.cachedBaseVideos);
         }
+        
+        // 4. Inject Retailer S3 Videos (Dynamic specific or ALL)
+        if (global.retailer_videos) {
+            for (const rv of global.retailer_videos) {
+                if (rv.status !== 'active') continue;
+                
+                // Match Logic: Check if the video is meant for ALL stores, or just this specific chain, or this specific store
+                const isMatch = (rv.target_store === 'ALL') || 
+                                (requestStoreId && requestStoreId.startsWith(rv.retailer_prefix)) ||
+                                (rv.target_store === requestStoreId);
+                
+                if (isMatch) {
+                    playlist.push(rv);
+                }
+            }
+        }
 
         if (playlist.length > 0) return playlist;
         return state.default;
