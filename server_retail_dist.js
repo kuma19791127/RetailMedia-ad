@@ -319,6 +319,8 @@ app.get('/store-portal', (req, res) => res.sendFile(path.join(__dirname, 'store_
 app.get('/player', (req, res) => res.sendFile(path.join(__dirname, 'signage_player.html')));
 app.get('/anywhere-regi', (req, res) => res.sendFile(path.join(__dirname, 'anywhere_regi.html')));
 app.get('/creator-portal', (req, res) => res.sendFile(path.join(__dirname, 'creator_portal.html')));
+app.get('/retailer-portal', (req, res) => res.sendFile(path.join(__dirname, 'retailer_portal.html')));
+app.get('/retailer_portal.html', (req, res) => res.sendFile(path.join(__dirname, 'retailer_portal.html')));
 // NEW: Analytics Dashboard Route
 app.get('/advertiser/analytics', (req, res) => res.sendFile(path.join(__dirname, 'advertiser_dashboard.html')));
 app.get('/shift', (req, res) => res.sendFile(path.join(__dirname, 'shift_manager.html')));
