@@ -389,8 +389,8 @@ async function loadVideos() {
                 html += `
                 <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                     <div>
-                        <strong style="color:#1e293b;">${v.filename}</strong><br>
-                        <span style="font-size:0.85rem; color:#64748b;">配信先: ${v.targetStore === 'ALL' ? '全店舗' : v.targetStore}</span>
+                        <strong style="color:#1e293b;">${v.title}</strong><br>
+                        <span style="font-size:0.85rem; color:#64748b;">配信先: ${v.target_store === 'ALL' ? '全店舗' : v.target_store}</span>
                     </div>
                     <button onclick="deleteVideo('${v.id}')" style="color:red; background:none; border:1px solid red; border-radius:5px; padding:5px 10px; cursor:pointer;">配信停止</button>
                 </div>`;
