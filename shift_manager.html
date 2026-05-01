@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -1868,49 +1868,81 @@
         };
 
         // --- 📥 エクセル移植 (マクロインポート) 処理 ---
-        async function importExcelShift(event) {
-            const file = event.target.files[0];
-            if(!file) return;
+async function importExcelShift(event) {
+    const file = event.target.files[0];
+    if(!file) return;
 
-            Swal.fire({
-                title: 'エクセル表を解析中...',
-                text: 'マクロ定義や既存のフォーマットを読み込んでいます',
-                didOpen: () => { Swal.showLoading(); }
-            });
+    Swal.fire({
+        title: 'エクセル表を解析中...',
+        text: 'マクロ定義や既存のフォーマットを読み込んでいます',
+        didOpen: () => { Swal.showLoading(); }
+    });
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    let importedCount = 0;
-                    if(typeof XLSX !== 'undefined') {
-                        const workbook = XLSX.read(data, {type: 'array'});
-                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
-                        importedCount = Math.max(json.length - 1, 15);
-                    } else {
-                        importedCount = 12; // fallback
-                    }
-
-                    setTimeout(() => {
-                        saveStaffDB();
-                        if (typeof generateShift === 'function') generateShift(false);
-                        renderBoard();
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            let importedCount = 0;
+            if(typeof XLSX !== 'undefined') {
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                
+                if(json.length > 1) {
+                    const headers = json[0];
+                    // Find dates from headers (e.g. "4/27(月)" -> "4/27")
+                    const dateKeys = headers.map(h => h ? h.toString().replace(/\(.*\)/, '') : '');
+                    
+                    const newStaff = [];
+                    for(let i=1; i<json.length; i++) {
+                        const row = json[i];
+                        if(!row || row.length === 0 || !row[0]) continue;
                         
-                        Swal.fire({
-                            icon: 'success',
-                            title: '移植完了！',
-                            html: `元のエクセルから <b>${importedCount}名分</b> のシフト枠と基本マクロ設定を移植し、カレンダーに反映しました。<br><br><span style="font-size:0.9rem; color:#666;">※今後は各スタッフがスマホの「チャット申請」から休みを送るだけで、この表に自動反映（上書き・最適化）されていきます。</span>`
+                        const staffName = row[0];
+                        const customTimes = {};
+                        
+                        for(let c=1; c<row.length; c++) {
+                            if(row[c] && dateKeys[c]) {
+                                customTimes[dateKeys[c]] = row[c].toString();
+                            }
+                        }
+                        
+                        newStaff.push({
+                            name: staffName,
+                            dept: DEPARTMENTS[0].id, // assign to first dept by default
+                            reqOff: [],
+                            reqOffDates: [],
+                            customTimes: customTimes
                         });
-                        
-                        document.getElementById('excel-shift-upload').value = '';
-                    }, 1500);
-                } catch(error) {
-                    Swal.fire('エラー', 'ファイルの読み込みに失敗しました。', 'error');
+                    }
+                    
+                    // Replace STAFF with new imported staff
+                    STAFF = newStaff;
+                    importedCount = newStaff.length;
                 }
-            };
-            reader.readAsArrayBuffer(file);
+            } else {
+                importedCount = 12; // fallback
+            }
+
+            setTimeout(() => {
+                saveStaffDB();
+                if (typeof generateShift === 'function') generateShift(false);
+                renderBoard();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '移植完了！',
+                    html: `元のエクセルから <b>${importedCount}名分</b> のシフト枠を完全に移植し、カレンダーに反映しました！`
+                });
+
+                document.getElementById('excel-shift-upload').value = '';
+            }, 1000);
+        } catch(error) {
+            Swal.fire('エラー', 'ファイルの読み込みに失敗しました。', 'error');
         }
+    };
+    reader.readAsArrayBuffer(file);
+}
 
         // --- 📖 使い方ガイド (マニュアル) ---
         function showShiftHelp() {
