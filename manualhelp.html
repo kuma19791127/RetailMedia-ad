@@ -259,7 +259,8 @@
 
     <script>
         function promptCloudLink() {
-            Swal.fire({
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({
                 title: 'クラウドURLの入力',
                 input: 'url',
                 inputPlaceholder: 'https://drive.google.com/file/d/....',
@@ -275,7 +276,8 @@
                     setTimeout(() => {
                         document.getElementById('ai-loading').style.display = 'none';
                         
-                        Swal.fire({
+                        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({
                             title: 'URL確認完了',
                             html: `
                                 <div style="text-align:left; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:10px;">
@@ -495,7 +497,8 @@
         
 
         function showAiDetails() {
-            Swal.fire({
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({
                 title: '<i class="fa-solid fa-wand-magic-sparkles" style="color:#fbbf24;"></i> AI自動生成とは？',
                 html: `
                     <div style="text-align:left; font-size:0.85rem; line-height:1.6; color:#e2e8f0;">
@@ -744,6 +747,7 @@
                         // Check if it's a DM specifically directed to me, or if my name is @mentioned
                         if(newMsg.target === myName || (newMsg.text && newMsg.text.includes('@' + myName))) {
                             let alertTitle = newMsg.target === myName ? `📩 ${newMsg.sender} からのDM` : `📣 ${newMsg.sender} からのメンション`;
+                            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
                             Swal.fire({
                                 toast: true, position: 'top-end', icon: 'info',
                                 title: alertTitle,
@@ -827,7 +831,8 @@
         function closePayment() { document.getElementById('payment-modal').style.display = 'none'; }
 
         async function processPaymentOnServer(token) {
-            Swal.fire({ title: '決済処理中...', text: 'Square APIと通信しています', didOpen: () => { Swal.showLoading(); }});
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({ title: '決済処理中...', text: 'Square APIと通信しています', didOpen: () => { Swal.showLoading(); }});
             try {
                 const res = await fetch('/api/payment/square-charge', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -897,7 +902,8 @@
         window.attachMediaToStep = function(event, idx) {
             const file = event.target.files[0];
             if(!file) return;
-            Swal.fire({title: 'メディア圧縮中...', text:'モバイル端末用(.mov, .mp4)に最適化しています...', timer: 1500, didOpen:()=>{Swal.showLoading()}});
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({title: 'メディア圧縮中...', text:'モバイル端末用(.mov, .mp4)に最適化しています...', timer: 1500, didOpen:()=>{Swal.showLoading()}});
             setTimeout(() => {
                 const url = URL.createObjectURL(file);
                 tempSteps[idx].mediaUrl = url;
@@ -992,7 +998,8 @@
                     let typeName = file.name.includes('.xls') || file.name.includes('.csv') ? '表計算データ' : '動画ファイル';
                     let fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
                     
-                    Swal.fire({
+                    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({
                         title: 'アップロード準備完了',
                         html: `
                             <div style="text-align:left; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:10px;">
@@ -1089,7 +1096,8 @@
                 const data = await res.json();
                 
                 if (res.ok && data.success) {
-                    Swal.fire({
+                    try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({
                         title: 'AI解析完了！', 
                         text: '動画から手順を自動生成しました', 
                         icon: 'success',
@@ -1190,7 +1198,7 @@
             const myOrg = currentUser ? currentUser.org : '未所属';
             const myName = currentUser ? currentUser.name : '';
             
-            const uniqueUsers = new Set(['熊澤', '森下', '店長']); // Default demo users
+            const uniqueUsers = new Set();
             
             // Try fetching real users from backend
             try {
@@ -1198,7 +1206,8 @@
                 const data = await res.json();
                 if (data.success && data.users) {
                     data.users.forEach(u => {
-                        if (u.name && u.name !== myName && (u.org === myOrg || u.org === 'Demo Corp')) {
+                        const dummyNames = ['Advertiser', 'Store Manager', 'Agency', 'Creator', 'Admin', 'advertiser', 'store', 'agency', 'creator'];
+                        if (u.name && u.name !== myName && !dummyNames.includes(u.name) && (u.org === myOrg || u.org === 'Demo Corp')) {
                             uniqueUsers.add(u.name);
                         }
                     });
@@ -1267,7 +1276,7 @@
                 
                 let html = `<div class="mention-hint-item" onclick="insertMention('@全体連絡')"><i class="fa-solid fa-bullhorn"></i> @全体連絡</div>`;
                 users.forEach(u => {
-                    html += `<div class="mention-hint-item" onclick="insertMention('@${u}')">👤 @${u}</div>`;
+                    html += `<div class="mention-hint-item" onclick="insertMention('@${u}')">${u}</div>`;
                 });
                 hint.innerHTML = html;
                 hint.style.display = 'flex';
@@ -1287,7 +1296,7 @@
             const txt = document.getElementById('chat-input').value.trim();
             if(!txt && !pendingFile) return;
             const u = currentUser ? currentUser : {org: "未所属", name:"名前なし", avatar:"?"};
-            chatMessages.push({ id: Date.now(), org: u.org, sender: u.name, target: currentChannel, avatar: u.avatar, color: '#10b981', time: "今", text: txt, file: pendingFile });
+            chatMessages.push({ id: Date.now(), org: u.org, sender: u.name, target: currentChannel, avatar: u.avatar, color: '#10b981', time: "今", timestamp: Date.now(), text: txt, file: pendingFile });
             document.getElementById('chat-input').value = ''; removePendingFile(); document.getElementById('mention-hint').style.display='none';
             saveDB(); renderChat(); setTimeout(() => {
                         const box = document.getElementById('chat-box');
@@ -1300,7 +1309,8 @@
             const log = adminLogs[idx];
             if (!log.snapshot) return Swal.fire('エラー', 'このログには復元用スナップショットデータがありません', 'error');
 
-            Swal.fire({
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({
                 title: 'バージョン復元',
                 text: `本当に「${log.manual}」を ${log.vid} 以前の状態（${log.time}のデータ）へ元に戻しますか？`,
                 icon: 'warning',
@@ -1429,7 +1439,8 @@
             localStorage.setItem('demo_name', document.getElementById('prof-name').value);
         }
         document.getElementById('modal-profile').style.display = 'none';
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
         // Try triggering local update if exists
         try{ updateProfileDisplay(); }catch(e){}
     }
