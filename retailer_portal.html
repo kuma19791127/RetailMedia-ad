@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -225,6 +225,47 @@
                 Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error");
                 return;
             }
+            
+            const storeId = ${currentPrefix}_;
+            const targetUrl = https://retail-ad.com/signage_player.html?storeId=;
+            
+            const batContent = @echo off
+echo =========================================================
+echo Retail Media サイネージ自動起動セットアップ ()
+echo =========================================================
+set "TARGET_URL="
+set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
+set "SHORTCUT_NAME=RetailAd_Signage_.lnk"
+set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if not exist "%CHROME_PATH%" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+
+set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
+echo Set oWS = WScript.CreateObject("WScript.Shell") ^> "%VBS_SCRIPT%"
+echo sLinkFile = "%STARTUP_FOLDER%\%SHORTCUT_NAME%" ^>^> "%VBS_SCRIPT%"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) ^>^> "%VBS_SCRIPT%"
+echo oLink.TargetPath = "%CHROME_PATH%" ^>^> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk """ ^^^& "%TARGET_URL%" ^^^& """ --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" ^>^> "%VBS_SCRIPT%"
+echo oLink.Save ^>^> "%VBS_SCRIPT%"
+
+cscript /nologo "%VBS_SCRIPT%"
+del "%VBS_SCRIPT%"
+
+echo セットアップが完了しました！
+echo 次回起動時から自動的にカメラが許可され、動画がループ再生されます。
+timeout /t 3 ^>nul
+start "" "%CHROME_PATH%" --kiosk "%TARGET_URL%" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run
+exit /b;
+            
+            const blob = new Blob([batContent], { type: 'application/x-bat' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = setup_.bat;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            Swal.fire("発行完了", 店舗スタッフに「setup_.bat」を配布してください。, "success");
+        }
             
             const storeId = ${currentPrefix}_;
             const targetUrl = https://retail-ad.com/signage_player.html?storeId=;
