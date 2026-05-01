@@ -54,6 +54,7 @@
   },
   "transactions": [],
   "sensorLogs": [],
+  "retailer_videos": [],
   "globalDashboardStats": {
     "impressions": 0,
     "faceDetected": 0,
@@ -87,10 +88,6 @@
     "creator@demo.com": {
       "password": "DemoPass2026!",
       "role": "creator"
-    },
-    "admin@retail-ad.com": {
-      "password": "Admin2026!",
-      "role": "admin"
     }
   },
   "posTransactions": [],

@@ -1207,9 +1207,8 @@ app.post('/api/retailer/upload', (req, res) => {
         if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
 
         const ext = require('path').extname(filename).toLowerCase();
-        const newFilename = 
-etail__;
-        const s3Key = uploads/;
+        const newFilename = `retail_${prefix}_${Date.now()}${ext}`;
+        const s3Key = `uploads/${newFilename}`;
         
         // Ensure global is initialized
         if (!global.retailer_videos) global.retailer_videos = [];
@@ -1224,12 +1223,11 @@ etail__;
             Body: buffer,
             ContentType: ext === '.mp4' ? 'video/mp4' : 'video/quicktime'
         })).then(() => {
-            console.log([Retailer] Successfully uploaded  to S3.);
+            console.log(`[Retailer] Successfully uploaded ${newFilename} to S3.`);
             const newVideo = {
-                id: 
-etailer_,
+                id: `retailer_${Date.now()}`,
                 title: filename,
-                url: /uploads/,
+                url: `/uploads/${newFilename}`,
                 aspect_ratio: '16:9',
                 status: 'active',
                 retailer_prefix: prefix,
