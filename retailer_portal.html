@@ -100,7 +100,7 @@
                     <strong>【運用フローのご案内】</strong><br><br>
                     <strong>ステップ1：「店舗サイネージ設定」</strong><br>
                     左メニューの「店舗サイネージ設定」から、各店舗のパネルに設定するための「専用セットアップファイル（.bat）」を発行します。<br>
-                    このファイルを店舗スタッフに配布し、現場のパソコンで実行してもらうだけで、その端末が自動的に貴社のサイネージとして登録されます。（スタッフの面倒な入力作業は一切不要です）<br><br>
+                    このファイルを店舗スタッフに配布し、<br>サイネージパネルのコントローラーで<br>batをクリックしてもらうだけで、<br>その端末が自動的にサイネージとして登録されます。<br><br>
                     <strong>ステップ2：「ベース動画の配信」</strong><br>
                     左メニューの「ベース動画の配信」から、お店でループ再生させたいCM動画をアップロードします。<br>
                     アップロードされた動画は、高画質のまま自動でクラウド（S3）へ保存され、全国の指定した店舗のサイネージで数秒以内に自動配信がスタートします。
@@ -110,12 +110,15 @@
 
         <!-- Store Setup Tab -->
         <div id="tab-store-setup" style="display:none;">
-            <h1>店舗サイネージのセットアップ発行</h1>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
+                <h1 style="border:none; padding:0; margin:0;">店舗サイネージのセットアップ発行</h1>
+                <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+            </div>
             <div class="card">
                 <h3>店舗専用のセットアップファイル生成</h3>
                 <div class="guide-text">
                     店舗のスタッフが迷わないように、<strong>店舗IDが埋め込まれた専用の「自動セットアップファイル（.bat）」</strong>をここで作成します。<br>
-                    作成したファイルを現場のスタッフにメール等で送り、「ダブルクリックして実行してね」と伝えるだけで、カメラ許可から動画ループまで全てが全自動で完了します。
+                    このファイルを店舗スタッフに配布し、<br>サイネージパネルのコントローラーで<br>batをクリックしてもらうだけで、<br>その端末が自動的にサイネージとして登録されます。
                 </div>
                 
                 <div style="margin-bottom:15px;">
@@ -128,15 +131,19 @@
                     <input type="text" id="store-suffix" placeholder="例: 001 または SHINJUKU" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;">
                 </div>
                 
-                <button onclick="generateBatFile()" style="background:#10b981; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">
-                    ⏬ この店舗専用のセットアップ(.bat)を発行する
-                </button>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="generateBatFile()" style="background:#10b981; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer; flex:1;">⏬ この店舗専用のセットアップ(.bat)を発行する</button>
+                    <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+                </div>
             </div>
         </div>
 
         <!-- Video Upload Tab -->
         <div id="tab-video-upload" style="display:none;">
-            <h1>ベース動画の配信（クラウド保存）</h1>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
+                <h1 style="border:none; padding:0; margin:0;">ベース動画の配信（クラウド保存）</h1>
+                <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+            </div>
             <div class="card">
                 <h3>お店の雰囲気を作る独自動画のアップロード</h3>
                 <div class="guide-text">
@@ -148,7 +155,12 @@
                     <label style="font-weight:bold;">配信ターゲット:</label><br>
                     <label style="margin-right:15px;"><input type="radio" name="targetStore" value="ALL" checked> 全店舗に配信する</label>
                     <label><input type="radio" name="targetStore" value="SPECIFIC"> 特定の店舗のみに配信する</label>
-                    <input type="text" id="specific-store-id" placeholder="例: LIFE_001" style="display:none; margin-top:10px; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <div id="specific-store-container" style="display:none; margin-top:10px;">
+                        <div class="store-input-row" style="display:flex; gap:5px; margin-bottom:5px;">
+                            <input type="text" class="specific-store-id" placeholder="例: LIFE_001" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                            <button onclick="addStoreInput()" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">➕ 追加</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
@@ -183,9 +195,20 @@
 
         document.querySelectorAll('input[name="targetStore"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                document.getElementById('specific-store-id').style.display = e.target.value === 'SPECIFIC' ? 'block' : 'none';
+                document.getElementById('specific-store-container').style.display = e.target.value === 'SPECIFIC' ? 'block' : 'none';
             });
         });
+
+        
+        function addStoreInput() {
+            const container = document.getElementById('specific-store-container');
+            const row = document.createElement('div');
+            row.className = 'store-input-row';
+            row.style.cssText = 'display:flex; gap:5px; margin-bottom:5px;';
+            row.innerHTML = `<input type="text" class="specific-store-id" placeholder="例: LIFE_002" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                             <button onclick="this.parentElement.remove()" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">❌ 削除</button>`;
+            container.appendChild(row);
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.main-content > div').forEach(div => div.style.display = 'none');
@@ -203,10 +226,8 @@
             if(email.includes('@') && pass.length > 3) {
                 currentEmail = email;
                 // Extract retailer prefix from email (e.g. info@life.co.jp -> LIFE)
-                const domain = email.split('@')[1];
-                if(domain) {
-                    currentPrefix = domain.split('.')[0].toUpperCase();
-                }
+                // Use the full email address instead of domain prefix
+                currentPrefix = email;
                 document.getElementById('retailer-prefix').value = currentPrefix;
                 document.getElementById('login-overlay').style.display = 'none';
                 loadVideos();
@@ -297,7 +318,7 @@ async function handleUpload(file) {
         progress.style.width = '60%';
         text.innerText = "AWS S3へ送信中...";
 
-        const targetStore = document.querySelector('input[name="targetStore"]:checked').value === 'ALL' ? 'ALL' : document.getElementById('specific-store-id').value;
+        const targetStore = document.querySelector('input[name="targetStore"]:checked').value === 'ALL' ? 'ALL' : Array.from(document.querySelectorAll('.specific-store-id')).map(input => input.value.trim()).filter(val => val !== '').join(',');
 
         try {
             const res = await fetch('/api/retailer/upload', {
