@@ -878,7 +878,7 @@
                     使い方ガイド</button>
                 <button class="btn-generate" onclick="openTotalHours()" style="background:#0f172a; color:white;">⏱️
                     総労働時間 (管理者)</button>
-                <button class="btn-generate" onclick="document.getElementById('excel-shift-upload').click()" style="background:#10b981; color:white;">📥 エクセル表を移植</button>
+<button class="btn-generate" onclick="showUploadGuide()" style="background:#10b981; color:white;">📥 エクセル表を移植</button>
                 <input type="file" id="excel-shift-upload" accept=".xlsx, .xls, .xlsm, .csv" style="display:none;" onchange="importExcelShift(event)">
                 <button class="btn-generate" onclick="generateShift()">✨ AI最適化 (反映)</button>
             </div>
@@ -1868,6 +1868,40 @@
         };
 
         // --- 📥 エクセル移植 (マクロインポート) 処理 ---
+function showUploadGuide() {
+    Swal.fire({
+        title: 'CSV(Excel)入力ルール',
+        html: `
+        <div style="text-align:left; font-size:0.9rem; line-height:1.6; color:#334155;">
+            <b>【1行目（見出し）】</b><br>
+            A列：名前など(適当でOK)<br>
+            B列〜：日付や曜日<br>
+            例：4/27、4/27(月)<br>
+            mon、tue など<br>
+            <span style="font-size:0.8rem;color:#64748b;">※カッコの中身は無視され<br>
+            日付だけ読まれます</span><br><br>
+            <b>【2行目以降（データ）】</b><br>
+            A列：スタッフの名前<br>
+            （例：山田）<br>
+            B列〜：その日の時間<br>
+            （例：9:00 - 18:00）<br>
+            や空白（休み）を入力<br><br>
+            このように入力して<br>
+            アップロードするだけで<br>
+            自動で紐付けされ<br>
+            カレンダーにはまります！
+        </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'ファイルを選択',
+        showCancelButton: true,
+        cancelButtonText: 'キャンセル'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('excel-shift-upload').click();
+        }
+    });
+}
 async function importExcelShift(event) {
     const file = event.target.files[0];
     if(!file) return;
