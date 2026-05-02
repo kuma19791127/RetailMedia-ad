@@ -1,0 +1,165 @@
+
+                // ... event listeners ...
+
+                async function broadcastPriority() {
+                    const adText = document.getElementById('ad-text').value;
+                    const mascotPath = document.getElementById('preset-path').value;
+                    const adStyle = document.getElementById('ad-style').value;
+                    const voiceSpeed = parseFloat(document.getElementById('voice-speed').value);
+                    const voiceEngine = document.getElementById('voice-engine').value;
+                    const lastApiAudio = window.lastApiAudio; // Get the last generated API audio
+
+                    if (!adText) {
+                        Swal.fire('エラー', '放送原稿を入力してください。', 'error');
+                        return;
+                    }
+
+                    try {
+                            const stylePrompt = document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "cheerfully";
+                            const voiceName = manualSelection.value.replace('gemini_', '');
+
+                            const response = await fetch('/api/voice/synthesize', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text, voiceName, stylePrompt })
+                            });
+
+                            const data = await response.json();
+                            if (!response.ok || !data.success) {
+                                throw new Error(data.message || "Failed to generate voice via backend proxy");
+                            }
+
+                            if (data.audioBase64) {
+                                window.lastApiAudio = data.audioBase64;
+
+                                const binaryString = window.atob(data.audioBase64);
+                                const bytes = new Uint8Array(binaryString.length);
+                                for (let i = 0; i < binaryString.length; i++) {
+                                    bytes[i] = binaryString.charCodeAt(i);
+                                }
+
+                                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                                const playAudioBuffer = (buffer) => {
+                                    const source = audioCtx.createBufferSource();
+                                    source.buffer = buffer;
+                                    source.connect(audioCtx.destination);
+                                    source.onended = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'none'; };
+                                    const m = document.querySelector('.mascot-anim');
+                                    if (m) m.style.animation = 'bounce 0.3s infinite alternate';
+                                    source.start(0);
+                                };
+
+                                try {
+                                    // Try decoding as WAV/MP3 first
+                                    const bufferCopy = bytes.buffer.slice(0);
+                                    const audioBuffer = await audioCtx.decodeAudioData(bufferCopy);
+                                    playAudioBuffer(audioBuffer);
+                                } catch (decodeErr) {
+                                    console.log("Audio decode failed, assuming raw PCM 24000Hz 16-bit:", decodeErr);
+                                    // Fallback: Read as raw 16-bit PCM little-endian
+                                    const int16Array = new Int16Array(bytes.buffer);
+                                    const audioBuffer = audioCtx.createBuffer(1, int16Array.length, 24000);
+                                    const channelData = audioBuffer.getChannelData(0);
+                                    for (let i = 0; i < int16Array.length; i++) {
+                                        channelData[i] = int16Array[i] / 32768.0;
+                                    }
+                                    playAudioBuffer(audioBuffer);
+                                }
+                            } else {
+                                throw new Error("No audio content returned from Gemini");
+                            }
+                        } catch (e) {
+                            console.error("Gemini TTS Error:", e);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gemini Voice Generation Failed',
+                                html: `<div style="text-align:left; font-size:11px; color:red; max-height:150px; overflow:auto;">${e.message}</div>`
+                            });
+                        } finally {
+                            preview.innerHTML = originalHtml;
+                        }
+                        return;
+                    }
+
+                    if (isCloudApi) {
+                        // --- Google Cloud TTS (via Server Proxy) ---
+                        console.log("[Voice] Using Google Cloud Neural2 (Proxy)");
+
+                        const preview = document.getElementById('video-preview');
+                        const originalHtml = preview.innerHTML;
+                        preview.innerHTML = '<div style="color:#e67e22; padding:20px;">🤖 Generating Server Voice...</div>';
+
+                        // Try API 1
+                        const api1 = window.location.origin + "/api/ai/tts";
+                        const fallbackApi = "http://localhost:5000/api/ai/tts";
+
+                        let fetchUrl = fallbackApi; // Try remote API normally, but ensure we have logic
+                        let fetchOptions = {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: text,
+                                speed: parseFloat(document.getElementById('voice-speed').value),
+                                pitch: parseFloat(document.getElementById('voice-pitch').value || 0.0),
+                                voiceEngine: manualSelection.value,
+                                stylePrompt: document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "元気な感じ"
+                            })
+                        };
+
+                        try {
+                            const response = await fetch(api1, fetchOptions);
+
+                            if (!response.ok) {
+                                const err = await response.json().catch(() => ({}));
+                                throw new Error(err.error || "Server Proxy Error: " + response.status);
+                            }
+
+                            const data = await response.json();
+                            if (data.audioContent) {
+                                window.lastApiAudio = data.audioContent;
+                                const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+                                audio.onplay = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'bounce 0.3s infinite alternate'; };
+                                audio.onended = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'none'; };
+                                audio.play();
+                            }
+
+                        } catch (e) {
+                            console.error("TTS Proxy Error:", e);
+
+                            try {
+                                console.log("Retrying on fallback...");
+                                const response2 = await fetch(fallbackApi, fetchOptions);
+
+                                if (!response2.ok) {
+                                    const err2 = await response2.json().catch(() => ({}));
+                                    throw new Error(err2.error || "Fallback failed with status: " + response2.status);
+                                }
+
+                                const data2 = await response2.json();
+                                if (data2.audioContent) {
+                                    window.lastApiAudio = data2.audioContent;
+                                    const audio = new Audio("data:audio/mp3;base64," + data2.audioContent);
+                                    audio.onplay = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'bounce 0.3s infinite alternate'; };
+                                    audio.onended = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'none'; };
+                                    audio.play();
+                                }
+                            } catch (e2) {
+                                console.error(e2);
+                                // Fallback silent
+                                const currentEngine = document.getElementById('voice-engine');
+                                if (currentEngine.value !== "") {
+                                    currentEngine.selectedIndex = 0; // Reset to Auto
+                                    speakText(text, type, forcePreview);
+                                }
+                            }
+                        } finally {
+                            preview.innerHTML = originalHtml;
+                        }
+                        return;
+                    }
+
+                    // Fallback to Web Speech API
+                    if (typeof speechSynthesis === 'undefined') {
+                        // alert("Web Speech API not supported.");
+                        return;
