@@ -200,11 +200,21 @@
 <div id="modal-qr" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
     <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center;">
         <h3 style="margin-top:0; color:#10B981; margin-bottom:10px; font-size:1.2rem;">顧客用セルフレジ QRコード</h3>
-        <p style="font-size:12px; color:#6B7280; margin-bottom:10px;">お客様にこのQRコードを読み取っていただくか、URLをLINE等で送信してください。</p>
+        <p style="font-size:12px; color:#6B7280; margin-bottom:20px;">URLをLINE等で送信してください。</p>
+        
+        <div id="qrcode-container" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
+        
         <div style="background:#F9FAFB; border:1px solid #E5E7EB; padding:10px; border-radius:6px; font-size:12px; color:#4B5563; text-align:left; margin-bottom:15px; line-height:1.6;">
-            <b style="color:#2563EB;">【これによる運用メリット】　<span style="color:#ef4444; font-size:10px;">※有効化するには本番accountを作成してください</span></b><br>
-            <b>・LINE等での遠隔配信が可能に:</b><br>店頭にQRコードを置くだけでなく、コピーしたURLをお店の公式LINEやメルマガで上位顧客（VIP）に一斉送信することができます。<br>
-            <b>・店側の完全コントロール:</b><br>お客様がそのURLを開いて買い物をすれば、システム側には「パラメータに入っている貴社の売上」として自動で確実に記録されるため、お店側が配信先を完全にコントロールしながら運用できます。
+            <b style="color:#2563EB;">【これによる運用メリット】</b><br>
+            <span style="color:#ef4444; font-size:10px;">※有効化するには本番accountを作成してください</span><br><br>
+            <b>・LINE等での遠隔配信が可能に:</b><br>
+            店頭にQRコードを置くだけでなく、コピーしたURLを<br>
+            お店の公式LINEやメルマガで上位顧客（VIP）に一斉送信することができます。<br><br>
+            <b>・店側の完全コントロール:</b><br>
+            お客様がそのURLを開いて買い物をすれば、<br>
+            システム側には「パラメータに入っている貴社の売上」として<br>
+            確実に記録されるため、<br>
+            お店側が配信先を完全にコントロールしながら運用できます。
         </div>
         
         <div id="qrcode-container" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
