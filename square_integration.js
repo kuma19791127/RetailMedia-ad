@@ -90,10 +90,19 @@ async function processSquarePayment(token, amount, onSuccess) {
     const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') ? 'http://localhost:3000' : '';
     try {
         // Send data to backend hook (admin_portal sync)
+        // Get store_id from session or URL (Customer Self-Checkout QR)
+        let storeRef = "Unknown_Store";
+        try {
+            const sess = JSON.parse(localStorage.getItem('admin_pos_session'));
+            if (sess && sess.email) storeRef = sess.email;
+        } catch(e){}
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('store_id')) storeRef = urlParams.get('store_id');
+
         const res = await fetch(API_URL + '/api/payment/square-charge', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token, amount: amount, source: window.location.pathname })
+            body: JSON.stringify({ token: token, amount: amount, source: window.location.pathname, store_id: storeRef })
         });
         
         if (res.ok) {

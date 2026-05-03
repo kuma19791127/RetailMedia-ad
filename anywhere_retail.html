@@ -38,6 +38,9 @@
 
         .menu-btn {
             display: block;
+            box-sizing: border-box;
+            text-align: center;
+            text-decoration: none;
             width: 100%;
             padding: 15px;
             margin-bottom: 10px;
@@ -78,6 +81,7 @@
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <!-- Login Screen -->
@@ -126,6 +130,7 @@
         <button onclick="alert('POS・システム連携設定機能')" class="menu-btn" style="background:#8e44ad;">⚙️ 連携設定</button>
         <button onclick="alert('スキャン履歴一覧機能')" class="menu-btn" style="background:#f59e0b;">🛠 スキャン履歴</button>
         <button onclick="window.location.href='anywhere_regi.html?skipAuth=1'" class="menu-btn" style="background:#ec4899;">🛒 商品を店員が読む</button>
+    <button onclick="generateQR()" class="menu-btn" style="background:#14b8a6;">📷 顧客用スマホレジQR発行</button>
         <button onclick="window.open('business_lp.html', '_blank')" class="menu-btn" style="background:#8b5cf6;">📺 サイネージ広告</button>
         
         <button class="menu-btn" style="background:#ef4444; margin-top:20px;" onclick="doLogout()">ログアウト</button>
@@ -190,5 +195,61 @@
     }
 </script>
 
+
+<!-- QR Code Modal -->
+<div id="modal-qr" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center;">
+        <h3 style="margin-top:0; color:#10B981; margin-bottom:10px; font-size:1.2rem;">顧客用セルフレジ QRコード</h3>
+        <p style="font-size:12px; color:#6B7280; margin-bottom:10px;">お客様にこのQRコードを読み取っていただくか、URLをLINE等で送信してください。</p>
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; padding:10px; border-radius:6px; font-size:10px; color:#4B5563; text-align:left; margin-bottom:15px; line-height:1.6;">
+            <b style="color:#2563EB;">【これによる運用メリット】</b><br>
+            <b>・LINE等での遠隔配信が可能に:</b><br>店頭にQRコードを置くだけでなく、コピーしたURLをお店の公式LINEやメルマガで上位顧客（VIP）に一斉送信することができます。<br>
+            <b>・店側の完全コントロール:</b><br>お客様がそのURLを開いて買い物をすれば、システム側には「パラメータに入っている貴社の売上」として自動で確実に記録されるため、お店側が配信先を完全にコントロールしながら運用できます。
+        </div>
+        
+        <div id="qrcode-container" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
+        
+        <input type="text" id="qr-url-display" readonly style="width:100%; padding:10px; font-size:10px; color:#64748B; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; margin-bottom:15px; box-sizing:border-box;">
+        
+        <button onclick="copyQrUrl()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">URLをコピーする</button>
+        <button onclick="document.getElementById('modal-qr').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">閉じる</button>
+    </div>
+</div>
+
+<script>
+let qrcodeObj = null;
+function generateQR() {
+    const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value || 'store@demo.com';
+    
+    // Construct the URL for customer self-checkout
+    const currentDomain = window.location.origin;
+    const path = window.location.pathname.replace('anywhere_retail.html', 'anywhere_regi.html');
+    const fullUrl = currentDomain + path + "?store_id=" + encodeURIComponent(email);
+    
+    document.getElementById('qr-url-display').value = fullUrl;
+    
+    const container = document.getElementById('qrcode-container');
+    container.innerHTML = ''; // Clear old QR
+    
+    qrcodeObj = new QRCode(container, {
+        text: fullUrl,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+    
+    document.getElementById('modal-qr').style.display = 'flex';
+}
+
+function copyQrUrl() {
+    const urlInput = document.getElementById('qr-url-display');
+    urlInput.select();
+    navigator.clipboard.writeText(urlInput.value);
+    Swal.fire({toast:true, position:'top-end', icon:'success', title:'URLをコピーしました！<br>LINE等で送信できます', showConfirmButton:false, timer:3000});
+}
+</script>
 </body>
+
 </html>
