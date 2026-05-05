@@ -1,0 +1,10 @@
+node_modules/
+.env
+Googleapi.txt
+*.mp4
+広告ショート/
+R e t a i l M e d i a K e y . p e m
+*.key
+*.pem
+my-project-*.json
+gcp-*.json

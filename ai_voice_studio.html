@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ボイススタジオ | Retail Media</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Noto+Sans+JP:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg-base: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-sub: #64748b;
+            --glass: rgba(255,255,255,0.9);
+        }
+        body {
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            background: var(--bg-base);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+        }
+        h1 { font-size: 2.2rem; margin-bottom: 1rem; color: var(--primary); }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        label { display: block; margin-bottom: 6px; font-weight: 600; }
+        textarea, input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        .flex-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .flex-col { display: flex; flex-direction: column; }
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn:hover { opacity: 0.9; }
+        .preview {
+            background: #111;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 120px;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1>🎙️ AI ボイス スタジオ</h1>
+    <div class="card">
+        <h2>📊 Excelから放送原稿を作成 ℹ️ フォーマット詳細</h2>
+        <label for="campaign-text">Campaign Text (放送原稿)</label>
+        <textarea id="campaign-text" rows="3">本日の特売 トマト 98 円!</textarea>
+        <p style="font-size:0.85rem;color:var(--text-sub);margin-top:4px;">
+            ※音声はテキストスペースなど利用しで聞き取り易く、ボイス速度を調整してください
+        </p>
+    </div>
+    <div class="card">
+        <h2>🔊 音声ボイス</h2>
+        <div class="flex-row">
+            <div class="flex-col" style="flex:1;">
+                <label for="voice-model">Voice Model (Engine)</label>
+                <select id="voice-model">
+                    <option selected>🌟 Gemini 2.5 Flash (Kore)</option>
+                </select>
+            </div>
+            <div class="flex-col" style="flex:1;">
+                <label for="voice-speed">🔊 Voice Speed</label>
+                <input type="number" id="voice-speed" step="0.1" min="0.5" max="2" value="0.9"> x
+            </div>
+            <div class="flex-col" style="flex:1;">
+                <label for="voice-pitch">🎵 声の高さ (ピッチ)</label>
+                <input type="number" id="voice-pitch" step="0.1" min="-5" max="5" value="-2.0">
+            </div>
+        </div>
+        <label for="voice-style" style="margin-top:12px;">🗣️ 話し方のスタイル (AI Prompt)</label>
+        <input type="text" id="voice-style" value="cheerfully">
+    </div>
+    <div class="card">
+        <h2>💾 保存 (原稿 & MP3)</h2>
+        <button class="btn" id="save-btn">保存</button>
+    </div>
+    <div class="card">
+        <h2>⏰ 放送時間の予約設定 (オプション)</h2>
+        <div class="flex-row" style="align-items:center;">
+            <div class="flex-col" style="flex:1;">
+                <label for="schedule-date">年 /月/日 --:--</label>
+                <input type="datetime-local" id="schedule-date">
+            </div>
+            <div class="flex-col" style="flex:1;display:flex;align-items:center;">
+                <input type="checkbox" id="immediate" checked style="margin-right:8px;">
+                <label for="immediate">即時配信</label>
+            </div>
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-sub);margin-top:4px;">
+            タイムセールなどに合わせて、事前に配信スケジュールを設定できます。空欄の場合は「即時配信」となります。
+        </p>
+    </div>
+    <div class="card">
+        <h2>🚨 優先配信 (サイネージへ即時割り込み)</h2>
+        <button class="btn" id="priority-btn">優先配信実行</button>
+    </div>
+    <div class="card">
+        <h2>Mascot Character / Image</h2>
+        <button class="btn" id="select-mascot">(Click to Select Preset)</button>
+        <p id="mascot-status" style="margin-top:8px;color:var(--text-sub);">選択されていません</p>
+    </div>
+    <div class="card">
+        <h2>Preview Area</h2>
+        <div class="preview" id="preview-area">
+            「3.5mmステレオピンプラグ<->RCAピンプラグｘ２」のケーブル（写真）または「3.5mmステレオピンプラグ<->3.5mmステレオピンプラグ」のケーブルを使って、オーディオ機器のAUX IN端子に、パソコンのヘッドフォン端子（緑色）から接続すれば、パソコンの音をオーディオ機器から再生することができます。
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Real API calls for Scheduling and Priority
+async function sendToSignage(isPriority) {
+    const textNode = document.getElementById('ai-text-result') || document.getElementById('campaign-text');
+    const text = textNode ? textNode.value : '';
+    const audioPlayer = document.getElementById('ai-audio-player');
+    const audio_url = audioPlayer ? audioPlayer.src : ''; // Data URI or URL
+    
+    // AI Content Moderation
+    const bannedWords = ["必ず儲かる", "投資で稼ぐ", "続きはLINEで", "LINE登録はこちら"];
+    for (let word of bannedWords) {
+        if (text.includes(word)) {
+            Swal.fire({
+                title: '【警告】利用規約違反',
+                html: `不適切なコンテンツ（禁止ワード: <b>${word}</b>）が検出されました。<br>公序良俗に反する内容やスパム誘導は禁止されています。<br><br><span style="color:red; font-weight:bold;">システムによりアカウントが自動凍結されました。</span>`,
+                icon: 'error',
+                confirmButtonText: '閉じる'
+            }).then(() => {
+                localStorage.setItem('account_frozen', 'true');
+                window.location.href = 'index.html';
+            });
+            return;
+        }
+    }
+
+    if (!text && (!audio_url || !audio_url.startsWith('data:'))) {
+        Swal.fire('エラー', '先に音声を生成してください。', 'error');
+        return;
+    }
+
+    const isImmediate = document.getElementById('immediate').checked;
+    const scheduleDate = document.getElementById('schedule-date').value;
+    let schedule_time = null;
+    
+    if (!isPriority && !isImmediate && scheduleDate) {
+        schedule_time = new Date(scheduleDate).toISOString();
+    }
+
+    const payload = {
+        title: "館内放送 (" + new Date().toLocaleTimeString() + ")",
+        text: text,
+        audio_url: audio_url,
+        schedule_time: isPriority ? null : schedule_time
+    };
+
+    try {
+        const res = await fetch('/api/signage/schedule_voice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            Swal.fire('成功', data.message, 'success');
+        } else {
+            Swal.fire('エラー', data.error || '送信に失敗しました', 'error');
+        }
+    } catch(e) {
+        Swal.fire('エラー', 'サーバーに接続できません', 'error');
+    }
+}
+
+document.getElementById('save-btn').addEventListener('click', () => {
+    sendToSignage(false);
+});
+
+document.getElementById('priority-btn').addEventListener('click', () => {
+    sendToSignage(true);
+});
+        document.getElementById('select-mascot').addEventListener('click', () => {
+            Swal.fire({
+                title: 'マスコット選択',
+                html: '<p>ここにマスコット画像のプリセット選択 UI を実装してください。</p>',
+                icon: 'question'
+            }).then(() => {
+                document.getElementById('mascot-status').textContent = '選択済み (例: キャラクターA)';
+            });
+        });
+    </script>
+
+<!-- GENERIC PROFILE MODAL INJECTED -->
+<div id="generic-profile-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:10px; width:400px; max-width:90%; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:#333;">👤 プロフィール / アカウント設定</h3>
+        <span onclick="document.getElementById('generic-profile-modal').style.display='none'" style="position:absolute; top:20px; right:20px; font-size:20px; cursor:pointer; color:#999;">&times;</span>
+        
+        <form onsubmit="event.preventDefault(); saveGenericProfile();" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">組織名 (任意)</label>
+                <input type="text" id="g-prof-org" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">お名前</label>
+                <input type="text" id="g-prof-name" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" required>
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">メールアドレス</label>
+                <input type="email" id="g-prof-email" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" required autocomplete="email">
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">新しいパスワード (変更する場合)</label>
+                <input type="password" id="g-prof-pass" placeholder="(空白で変更なし)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" autocomplete="new-password">
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                <button type="submit" style="background:#2ecc71; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-weight:bold;">保存して同期する</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openGenericProfile() {
+        // Load data from localStorage assuming sync points
+        document.getElementById('g-prof-org').value = localStorage.getItem('demo_org') || "";
+        document.getElementById('g-prof-name').value = localStorage.getItem('demo_name') || "";
+        document.getElementById('g-prof-email').value = localStorage.getItem('demo_email') || "";
+        document.getElementById('g-prof-pass').value = ""; // clear password
+        document.getElementById('generic-profile-modal').style.display = 'flex';
+    }
+
+    async function saveGenericProfile() {
+        const org = document.getElementById('g-prof-org').value;
+        const name = document.getElementById('g-prof-name').value;
+        const email = document.getElementById('g-prof-email').value;
+        const pass = document.getElementById('g-prof-pass').value;
+
+        // Save locally to keep in sync across portals
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_name', name);
+        localStorage.setItem('demo_email', email);
+        
+        // Push sync to server (DB background)
+        try {
+            await fetch('/api/user/profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, name, org})
+            });
+        } catch(e) {}
+
+        document.getElementById('generic-profile-modal').style.display = 'none';
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
+        } else {
+            alert("プロフィールを保存しました。");
+        }
+        
+        // Optional refresh specific to page
+        try { if(typeof loadUserInfo === 'function') loadUserInfo(); }catch(e){}
+    }
+</script>
+
+</body>
+</html>

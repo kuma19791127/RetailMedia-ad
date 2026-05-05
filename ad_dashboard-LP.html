@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>広告主様向け - 次世代 Retail-Ad のご案内</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #ec4899;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --gradient: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: var(--dark);
+            color: white;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.8);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .btn-nav {
+            background: var(--primary);
+            padding: 10px 24px;
+            border-radius: 30px;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: 0.3s;
+        }
+
+        .btn-nav:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 20px 40px;
+            background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.2), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.2), transparent 40%);
+        }
+
+        .tagline {
+            color: #38bdf8;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 30px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: #94a3b8;
+            max-width: 100%;
+            margin: 0 auto 50px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        @media (max-width: 768px) {
+            .subtitle {
+                font-size: 1.2rem;
+                max-width: 100%;
+                padding: 0 10px;
+            }
+        }
+
+        /* Features/Comparisons */
+        .section {
+            padding: 80px 15px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        @media (max-width: 768px) {
+            .section {
+                padding: 60px 10px;
+            }
+        }
+
+        h2.section-title {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 60px;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--gradient);
+            opacity: 0; transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .card .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            font-size: 1.05rem;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+            background: #1e293b;
+            border-radius: 16px;
+            overflow-x: auto;
+            display: block;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        @media (max-width: 768px) {
+            .comparison-table th, .comparison-table td {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            white-space: nowrap;
+        }
+
+        .comparison-table th {
+            background: rgba(0,0,0,0.2);
+            font-weight: 800;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .comparison-table td {
+            font-size: 1.05rem;
+            color: #f1f5f9;
+        }
+
+        .comparison-table .highlight {
+            background: rgba(79, 70, 229, 0.1);
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        /* Call to Action */
+        .cta-section {
+            text-align: center;
+            padding: 100px 20px;
+            background: var(--gradient);
+            margin-top: 50px;
+        }
+
+        .btn-large {
+            display: inline-block;
+            background: white;
+            color: var(--primary);
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-decoration: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+
+        .btn-large:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Hide bottom nav on desktop */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                display: none; /* Hide top nav on mobile to use bottom nav */
+            }
+            body {
+                padding-bottom: 80px; /* Space for bottom nav */
+            }
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid rgba(255,255,255,0.1);
+                z-index: 2000;
+                justify-content: space-around;
+                padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            }
+            .mobile-bottom-nav a {
+                color: #94a3b8;
+                text-decoration: none;
+                font-size: 0.75rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                font-weight: 600;
+            }
+            .mobile-bottom-nav a i {
+                font-size: 1.2rem;
+                font-style: normal;
+            }
+            .mobile-bottom-nav a.btn-mobile {
+                color: #ec4899;
+            }
+            h1 { font-size: 2.8rem; }
+            .comparison-table { display: block; overflow-x: auto; }
+            .cta-section h2 {
+                font-size: 2rem !important; /* Adjusted for mobile view */
+                line-height: 1.4;
+            }
+            .btn-large {
+                padding: 16px 20px !important;
+                font-size: 1.1rem !important;
+                width: 90%;
+                max-width: 340px;
+                box-sizing: border-box;
+                display: block;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+    <!-- Global Mobile Typography Fix -->
+    <style>
+        body, h1, h2, h3, h4, h5, p, span, div {
+            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
+            word-break: keep-all; /* Fallback */
+            overflow-wrap: break-word;
+        }
+        .mobile-br { display: none; }
+        .desktop-br { display: block; }
+        /* 💡スマホ強制改行防止クラス（この span で囲んだ文字は絶対に途中で改行されません） */
+        .nw { display: inline-block; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+            .desktop-br { display: none; }
+            
+            /* Auto-reduce huge headings on mobile globally to prevent overflow */
+            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">retail-ad <span>for Advertisers</span></div>
+        <div class="nav-links">
+            <a href="#problem">Web広告の限界</a>
+            <a href="#solution">リテアドの強み</a>
+            <a href="#comparison">他媒体比較</a>
+            <a href="index.html" class="btn-nav">ダッシュボードへログイン</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <span class="tagline">購買の最前線をハックする</span>
+        <h1>「明日買おう」を<br>「いま買おう」へ。</h1>
+        <p class="subtitle">
+            <span class="nw">Web上の「インプレッション推測」に</span><span class="nw">依存する時代は終わりました。</span><br>
+            <span class="nw">最新のLEDフィルムで</span><br class="mobile-br"><span class="nw">店内のどこでもが広告面に。</span><br class="desktop-br">
+            <span class="nw">顧客が動画のおススメや</span><br class="mobile-br">
+            <span class="nw">広告を見た目の前で</span><br class="mobile-br">
+            <span class="nw">その商品を「いま買おう」を叶える</span><br class="mobile-br">
+            <strong class="nw">リテールメディア・ネットワーク。</strong>
+        </p>
+        <div>
+            <a href="index.html" class="btn-large">配信ダッシュボードを開く</a>
+        </div>
+    </header>
+
+    <section id="problem" class="section" style="padding-top: 40px;">
+        <h2 class="section-title">Web広告・従来型サイネージが<br class="mobile-br"><span class="nw">抱える「限界」</span></h2>
+        <div class="grid">
+            <div class="card" style="border-left: 4px solid #ef4444;">
+                <div class="icon">🚫</div>
+                <h3 style="color: #ef4444;"><span class="nw">Cookie規制による</span><br class="mobile-br"><span class="nw">トラッキング崩壊</span></h3>
+                <p>
+                    <span class="nw">YouTubeやSNSなどの</span><br class="mobile-br"><span class="nw">Web広告は、</span><span class="nw">プライバシー保護強化</span><span class="nw">（サードパーティCookie廃止）により、</span><br class="mobile-br">
+                    <span class="nw">「広告を見た人が</span><span class="nw">本当に商品を買ったか」という</span><br class="mobile-br">
+                    <span class="nw">正確な計測が</span><span class="nw">不可能になっています。</span><br class="desktop-br">
+                    <span class="nw">ターゲティング精度も</span><span class="nw">年々低下し、</span><span class="nw">広告費の無駄打ちが</span><br class="mobile-br">
+                    <span class="nw">増加しています。</span>
+                </p>
+            </div>
+            <div class="card" style="border-left: 4px solid #f59e0b; margin: 0 auto; text-align: center; max-width: 500px; width: 100%; box-sizing: border-box;">
+                <div class="icon">🏪</div>
+                <h3 style="color: #f59e0b;"><span class="nw">コンビニサイネージの</span><br class="mobile-br"><span class="nw">「押し売り感」</span></h3>
+                <p>
+                    <span class="nw">従来のコンビニ向けサイネージは、</span><span class="nw">全員に全く同じ映像を</span><span class="nw">垂れ流すだけで</span><span class="nw">ターゲティングができません。</span><br class="mobile-br">
+                    <span class="nw">「誰が見ているか」</span><br class="mobile-br">
+                    <span class="nw">「天気はどうか」を</span><span class="nw">無視した画一的な配信は、</span><br class="mobile-br">
+                    <span class="nw">顧客からノイズとして</span><span class="nw">扱われスルーされてしまいます。</span>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="solution" class="section">
+        <h2 class="section-title"><span class="nw">なぜ「リテアド」が</span><br class="mobile-br"><span class="nw">圧倒的に優れているのか</span></h2>
+        <div class="grid">
+            <div class="card" style="border-left: 4px solid #fcd34d;">
+                <div class="icon">💰</div>
+                <h3><span class="nw">同じ3円でも、</span><br class="mobile-br"><span class="nw">価値が圧倒的に違う</span></h3>
+                <p>
+                    <span class="nw">大手動画配信での1再生（3円）は、</span><br class="mobile-br">
+                    <span class="nw">視聴者がベッドで寝転がりながら</span><br class="mobile-br">
+                    <span class="nw">『早くスキップボタン出ないかな』</span><br class="mobile-br">
+                    <span class="nw">と待っている間の3円です。</span><br class="mobile-br">
+                    <span class="nw">スマホを置いてトイレに行っている</span><br class="mobile-br">
+                    <span class="nw">かもしれません。</span><br><br>
+                    <span class="nw">しかし、リテアドの1再生（3円）は</span><br class="mobile-br">
+                    <span class="nw">違います。</span><br class="mobile-br">
+                    <span class="nw">御社の商品が並んでいる</span><br class="mobile-br">
+                    <span class="nw">スーパーの棚の前で、</span><br class="mobile-br">
+                    <span class="nw">夕食の買い物をしている</span><br class="mobile-br">
+                    <span class="nw">お財布を持った瞬間の1再生です。</span><br><br>
+                    <strong class="nw" style="color:#fcd34d;">同じ3円でも、どちらが</strong><br class="mobile-br">
+                    <strong class="nw" style="color:#fcd34d;">『購入（クロスセル）』に</strong><br class="mobile-br">
+                    <strong class="nw" style="color:#fcd34d;">直結するかは一目瞭然です。</strong>
+                </p>
+            </div>
+            <div class="card">
+                <div class="icon">✨</div>
+                <h3><span class="nw">LEDフィルムで売り場を選ばない</span><br class="mobile-br"><span class="nw">究極のクロスセル</span></h3>
+                <p>
+                    <span class="nw">透過型LEDフィルム等の最新技術で、</span><br class="mobile-br">
+                    <span class="nw">鮮魚コーナーの対面ガラスや冷蔵庫のドア、</span><br class="mobile-br">
+                    <span class="nw">エンドコーナー（棚の端）など</span><br class="mobile-br"><span class="nw">「どこでも」広告を打つことが可能です。</span><br class="mobile-br">
+                    <span class="nw">広告から商品への距離がゼロになるため、</span><br class="mobile-br">
+                    <strong class="nw">「いま買おう」という強力なクロスセルを</strong><br class="mobile-br"><span class="nw">生み出します。</span>
+                </p>
+            </div>
+            <div class="card">
+                <div class="icon">🎯</div>
+                <h3><span class="nw">AIカメラと独自データによる</span><br class="mobile-br"><span class="nw">精密ターゲティング</span></h3>
+                <p>
+                    <span class="nw">「30代女性がサイネージの前に</span><span class="nw">立った瞬間」</span><br class="mobile-br">
+                    <span class="nw">「気温が30度を超えた瞬間」だけを</span><span class="nw">狙い撃ちした</span><br class="mobile-br">
+                    <span class="nw">『モーメント配信』が可能。</span><br class="mobile-br">
+                    <span class="nw">YouTube顔負けの高度なパーソナライズを、</span><br class="mobile-br">
+                    <span class="nw">リアルの店舗空間で実現し</span><span class="nw">購買行動をダイレクトに後押しします。</span>
+                </p>
+            </div>
+            <div class="card">
+                <div class="icon">🛒</div>
+                <h3><span class="nw">「視聴」から「購入」までの</span><br class="mobile-br"><span class="nw">距離がゼロ</span></h3>
+                <p>
+                    <span class="nw">スマホで家で広告を見ても、</span><br class="mobile-br">
+                    <span class="nw">スーパーに行くまでの間に</span><span class="nw">忘れられてしまいます。</span><br class="mobile-br">
+                    <span class="nw">「retail-ad」は、</span><span class="nw">顧客の財布が開く</span><span class="nw">「購買の最前線（商品棚・レジ横）」で</span><span class="nw">ダイレクトに訴求。</span><br class="mobile-br">
+                    <span class="nw">認知から購買までのロスを</span><span class="nw">極限までゼロに近づけます。</span>
+                </p>
+            </div>
+        </div>
+
+        <div style="margin-top: 50px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 16px; padding: 40px;">
+            <h3 style="color: #ec4899; font-size: 1.8rem; margin-bottom: 20px; text-align: center;">💡 クリエイターによる<br>「課題解決型」アプローチ</h3>
+            <p style="color: #cbd5e1; font-size: 1.1rem; line-height: 1.8; margin-bottom: 30px; text-align: center;">
+                <span class="nw">顧客には「今日の夕食」のような</span><br class="mobile-br"><span class="nw">日常的な悩み（不便・迷い）が</span><span class="nw">あります。</span><br>
+                そのフック・ティーザーとして、「実は、たった3分」「皿洗いなし」などをクリエイターが配信し、<br>
+                <strong>広告で直接「問題解決」を行うことで、圧倒的な視聴意欲と購買意欲を高めます。</strong>
+            </p>
+            
+            <h4 style="color: white; font-size: 1.2rem; margin-bottom: 15px;">▼ 提案に使える<br class="mobile-br"><span class="nw">「解決型フック」の構成案</span><br class="mobile-br"><span class="nw">（例：食品・調理器具など）</span></h4>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(0, 0, 0, 0.2); border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: rgba(236, 72, 153, 0.2); color: #f8fafc;">
+                            <th style="padding: 15px; border-bottom: 1px solid var(--border); width: 20%;">フェーズ</th>
+                            <th style="padding: 15px; border-bottom: 1px solid var(--border); width: 60%;">内容（クリエイターの動き）</th>
+                            <th style="padding: 15px; border-bottom: 1px solid var(--border); width: 20%;">心理的効果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; color: #38bdf8;">動画1 (フック)</td>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); color: #cbd5e1;">「あー、今日も夕食の献立決まらない…（冷蔵庫を開ける）」という日常の悩みを見せる。</td>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); color: #fcd34d;">共感・自分事化</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; color: #38bdf8;">ティーザー</td>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); color: #cbd5e1;">「でも、これ1本あれば3分で解決するって知ってました？」と調理器具と調理配信を見せる。</td>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); color: #fcd34d;">好奇心（ツァイガルニク効果）</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; color: #38bdf8;">動画2 (広告)</td>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); color: #cbd5e1;">製品の良さを顧客に配信。</td>
+                            <td style="padding: 15px; border-bottom: 1px solid var(--border); color: #fcd34d;">カタルシス・購買意欲</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    
+    
+    <section id="pricing" class="section">
+        <h2 class="section-title"><span class="nw">プラン別の単価と、</span><br class="mobile-br"><span class="nw">1,000円で買える「価値」</span></h2>
+        
+        <div class="grid">
+            <div class="card" style="border-left: 4px solid #9333ea; margin: 0 auto; text-align: center; max-width: 500px; width: 100%; box-sizing: border-box;">
+                <div class="icon">👁️</div>
+                <h3><span class="nw">1. インプレッション配信</span><br class="mobile-br"><span class="nw">（1再生： 1円〜）</span></h3>
+                <p>
+                    <strong style="color:white;">特徴：</strong><br>
+                    <span class="nw">不特定多数にとにかく</span><br class="mobile-br">
+                    <span class="nw">数を打って認知を拡大</span><br class="mobile-br">
+                    <span class="nw">したい場合の最安プランです。</span><br><br>
+                    <strong style="color:#fcd34d;">1,000円の消化イメージ：</strong><br>
+                    <span class="nw">約 1,000回 の動画再生</span><br class="mobile-br">
+                    <span class="nw">（インプレッション）を</span><br class="mobile-br">
+                    <span class="nw">獲得できます。</span>
+                </p>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+                <div class="icon">☔</div>
+                <h3><span class="nw">2. モーメント配信</span><br class="mobile-br"><span class="nw">（1再生： 3円〜）</span></h3>
+                <p>
+                    <strong style="color:white;">特徴：</strong><br>
+                    <span class="nw">通常のランダム再生では</span><br class="mobile-br">
+                    <span class="nw">なく、「気温・天気」や</span><br class="mobile-br">
+                    <span class="nw">「見る人の性別・年齢」の</span><br class="mobile-br">
+                    <span class="nw">条件にガッチリと一致した</span><br class="mobile-br">
+                    <span class="nw">瞬間にだけ流す、</span><br class="mobile-br">
+                    <span class="nw">少しリッチなプランです。</span><br><br>
+                    <strong style="color:#fcd34d;">1,000円の消化イメージ：</strong><br>
+                    <span class="nw">無駄打ちが減るため</span><br class="mobile-br">
+                    <span class="nw">単価は上がりますが、約</span><br class="mobile-br">
+                    <span class="nw">1,666回 の「ターゲット</span><br class="mobile-br">
+                    <span class="nw">ど真ん中の顧客」に</span><br class="mobile-br">
+                    <span class="nw">見せることができます。</span>
+                </p>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #16a34a; margin: 0 auto; text-align: center; max-width: 500px; width: 100%; box-sizing: border-box;">
+                <div class="icon">🛒</div>
+                <h3><span class="nw">3. POS連動・成果報酬</span><br class="mobile-br"><span class="nw">（1再生： 10円〜）</span></h3>
+                <p>
+                    <strong style="color:white;">特徴：</strong><br>
+                    <span class="nw">広告をただ流すだけで</span><br class="mobile-br">
+                    <span class="nw">なく、「ABテスト」結果や、</span><br class="mobile-br">
+                    <span class="nw">店舗のPOSデータと高度に</span><br class="mobile-br">
+                    <span class="nw">統計・連携した専用の</span><br class="mobile-br">
+                    <span class="nw">レポートが出力される</span><br class="mobile-br">
+                    <span class="nw">プレミアプランです。</span><br><br>
+                    <strong style="color:#fcd34d;">1,000円の消化イメージ：</strong><br>
+                    <span class="nw">単価は高いですが、分析や</span><br class="mobile-br">
+                    <span class="nw">売上のクロスセル効果を</span><br class="mobile-br">
+                    <span class="nw">追跡・証明できるため、</span><br class="mobile-br">
+                    <span class="nw">約 100回 分のプレミアムな</span><br class="mobile-br">
+                    <span class="nw">再生枠となります。</span>
+                </p>
+            </div>
+        </div>
+    </section>
+
+<section class="section" style="background: rgba(79, 70, 229, 0.05); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <h2 class="section-title" style="font-size: 2.2rem; color: #38bdf8;">圧倒的な<br class="mobile-br"><span class="nw">「POS連動・分析レポート」</span></h2>
+        <p style="text-align:center; color:#cbd5e1; margin-bottom: 40px; font-size: 1.1rem;">リテアドであれば、広告主に対して<br class="mobile-br"><span class="nw">以下の</span>ような<br class="mobile-br"><span class="nw">強力</span>なレポートを提示できます。</p>
+        
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div class="card" style="border-left: 4px solid #f43f5e;">
+                <h3 style="color: #f43f5e; font-size:1.3rem;">📊 A/Bテストによる<br class="mobile-br"><span class="nw">純粋な効果測定</span></h3>
+                <p>
+                    <span class="nw">「A店舗群（広告を配信した店舗）」と</span><span class="nw">「B店舗群（配信しなかった店舗）」の</span><br class="mobile-br"><span class="nw">POSデータを比較し、</span><span class="nw">広告を出した店舗の方が、</span><br class="mobile-br"><span class="nw">対象商品の売上が</span><span class="nw">統計的に有意に15%高かった」と</span><span class="nw">証明できます。</span>
+                </p>
+            </div>
+            
+            <div class="card" style="border-left: 4px solid #34d399;">
+                <h3 style="color: #34d399; font-size:1.3rem;">🛒 併売分析のリフトアップ効果</h3>
+                <p>
+                    <span class="nw">「カレールーの広告を</span><span class="nw">流した結果、</span><span class="nw">カレールーだけでなく</span><br class="mobile-br"><span class="nw">玉ねぎや牛肉の購入率</span><br class="mobile-br"><span class="nw">（バスケット内の併売率）が</span><span class="nw">普段より何%アップしたか」の</span><br class="mobile-br"><span class="nw">POSデータで統計分析</span><span class="nw">(クロスセル・バスケット分析)。</span>
+                </p>
+            </div>
+            
+            <div class="card" style="border-left: 4px solid #60a5fa;">
+                <h3 style="color: #60a5fa; font-size:1.3rem;">🥇 1st Party Dataの圧倒的強さ</h3>
+                <p>Web上のCookie(サードパーティデータ)に頼らず、「実店舗のPOSデータ（購買データ）」分析と連携できる機能は、従来の看板広告やWeb広告にはない強烈な差別化要因です。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="comparison" class="section">
+        <h2 class="section-title">広告媒体の比較</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>従来のWeb広告 (YouTube等)</th>
+                    <th>従来の店舗サイネージ (コンビニ等)</th>
+                    <th class="highlight">retail-ad (当システム)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>購買転換の証明</th>
+                    <td>❌ 不可能 (Cookie規制により推測のみ)</td>
+                    <td>❌ 不可能 (再生回数のレポートのみ)</td>
+                    <td class="highlight">✅ 証明可能 (AI属性分析とPOS統計によるリフトアップ効果)</td>
+                </tr>
+                <tr>
+                    <th>ターゲティング</th>
+                    <td>✅ 個人属性ベース (精度低下中)</td>
+                    <td>❌ できない (全員に同じ映像)</td>
+                    <td class="highlight">✅ 空間AIベース (年齢/性別/天候による動的変化)</td>
+                </tr>
+                <tr>
+                    <th>購買までの距離</th>
+                    <td>⚠️ 遠い (後日来店する必要あり)</td>
+                    <td>✅ 近い (店内にいる)</td>
+                    <td class="highlight">✅ 最短 (商品棚・決済端末の目の前)</td>
+                </tr>
+                <tr>
+                    <th>個人情報リスク</th>
+                    <td>⚠️ 高い (トラッキング拒否が増加)</td>
+                    <td>✅ ない</td>
+                    <td class="highlight">✅ ない (AIカメラは画像を保存せず属性のみ判定)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Enterprise Premium Plan -->
+    <section id="premium-plan" style="background: linear-gradient(135deg, #0f172a, #312e81); padding: 80px 20px; text-align: center; border-radius: 20px; max-width: 1000px; margin: 80px auto 40px; border: 1px solid #8b5cf6; box-shadow: 0 10px 40px rgba(139, 92, 246, 0.2);">
+        <h2 style="font-size: clamp(1.5rem, 5vw, 2.5rem); color: #f472b6; margin-bottom: 20px; text-align: center;">
+            <span style="font-size: clamp(2rem, 6vw, 3rem);">👑</span> 全店ジャック・<br class="mobile-br"><span class="nw">エンタープライズ</span>
+        </h2>
+        <p style="font-size: 1.2rem; color: #e2e8f0; line-height: 1.8; margin-bottom: 40px; max-width: 800px; margin-left: auto; margin-right: auto;">
+            <span class="nw">全国の全サイネージパネルを</span><br class="mobile-br"><span class="nw">フル活用して</span><br class="mobile-br"><span class="nw">ブランドを</span><span class="nw">独占的に訴求する</span><span class="nw">大型キャンペーン。</span><br class="desktop-br">
+            <span class="nw">ご予算 <strong style="color: #e879f9; font-size: 1.5rem;">1,000万円〜</strong> の</span><span class="nw">イベントキャンペーンは、</span><br class="desktop-br"><br class="mobile-br"><span class="nw">リテアド専属チームが</span><span class="nw">企画・枠確保から配信・詳細分析まで</span><br class="mobile-br"><span class="nw">全工程を</span><span class="nw">ワンストップで請け負います。</span>
+        </p>
+        <a href="mailto:info@retail-ad.awsapps.com?subject=大型キャンペーン(全店ジャックプラン)のご相談" class="btn-large" style="background: linear-gradient(45deg, #c084fc, #f472b6); color: white; border:none;">
+            専属チームにご相談（窓口）
+        </a>
+    </section>
+    <!-- /Enterprise Premium Plan -->
+
+    <section class="cta-section">
+        <h2 style="font-size: 3rem; margin-bottom: 20px;">確実な費用対効果を、その目で。</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 40px;">
+        <p style="font-size: 1.2rem; margin-bottom: 40px;">
+            <span class="nw">広告は「見せる」時代から、</span><br class="mobile-br"><span class="nw">「実店舗で売る」時代へ。</span><br>
+            <span class="nw">初期費用ゼロで、</span><br class="mobile-br"><span class="nw">今すぐ広告キャンペーンを作成できます。</span>
+        </p>
+        <a href="index.html" class="btn-large">広告主ダッシュボードで配信を開始</a>
+    </section>
+
+    <footer>
+        <p>© 2026 nonlogi .Inc(リテアド) All Rights Reserved.</p>
+    </footer>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-bottom-nav">
+        <a href="#problem"><i>⚠️</i>広告の限界</a>
+        <a href="#solution"><i>✨</i>リテアド強み</a>
+        <a href="#comparison"><i>📊</i>他媒体比較</a>
+        <a href="index.html" class="btn-mobile"><i>🔑</i>ログイン</a>
+    </div>
+
+</body>
+</html>

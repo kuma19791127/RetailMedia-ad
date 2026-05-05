@@ -1,0 +1,101 @@
+{
+  "sha": "48deda203cc7bc0de4342b0d0cd6ea5499a9072b",
+  "node_id": "C_kwDORpRYhtoAKDQ4ZGVkYTIwM2NjN2JjMGRlNDM0MmIwZDBjZDZlYTU0OTlhOTA3MmI",
+  "commit": {
+    "author": {
+      "name": "buzzkun",
+      "email": "buzzkun0807@gmail.com",
+      "date": "2026-03-27T14:36:54Z"
+    },
+    "committer": {
+      "name": "buzzkun",
+      "email": "buzzkun0807@gmail.com",
+      "date": "2026-03-27T14:36:54Z"
+    },
+    "message": "Fix syntax error and set root to index.html",
+    "tree": {
+      "sha": "239b1a61006f35f538eb77b29232dd2d5fb0d01b",
+      "url": "https://api.github.com/repos/kuma19791127/RetailMedia-ad/git/trees/239b1a61006f35f538eb77b29232dd2d5fb0d01b"
+    },
+    "url": "https://api.github.com/repos/kuma19791127/RetailMedia-ad/git/commits/48deda203cc7bc0de4342b0d0cd6ea5499a9072b",
+    "comment_count": 0,
+    "verification": {
+      "verified": false,
+      "reason": "unsigned",
+      "signature": null,
+      "payload": null,
+      "verified_at": null
+    }
+  },
+  "url": "https://api.github.com/repos/kuma19791127/RetailMedia-ad/commits/48deda203cc7bc0de4342b0d0cd6ea5499a9072b",
+  "html_url": "https://github.com/kuma19791127/RetailMedia-ad/commit/48deda203cc7bc0de4342b0d0cd6ea5499a9072b",
+  "comments_url": "https://api.github.com/repos/kuma19791127/RetailMedia-ad/commits/48deda203cc7bc0de4342b0d0cd6ea5499a9072b/comments",
+  "author": {
+    "login": "kuma19791127",
+    "id": 139128311,
+    "node_id": "U_kgDOCErt9w",
+    "avatar_url": "https://avatars.githubusercontent.com/u/139128311?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/kuma19791127",
+    "html_url": "https://github.com/kuma19791127",
+    "followers_url": "https://api.github.com/users/kuma19791127/followers",
+    "following_url": "https://api.github.com/users/kuma19791127/following{/other_user}",
+    "gists_url": "https://api.github.com/users/kuma19791127/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/kuma19791127/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/kuma19791127/subscriptions",
+    "organizations_url": "https://api.github.com/users/kuma19791127/orgs",
+    "repos_url": "https://api.github.com/users/kuma19791127/repos",
+    "events_url": "https://api.github.com/users/kuma19791127/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/kuma19791127/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "committer": {
+    "login": "kuma19791127",
+    "id": 139128311,
+    "node_id": "U_kgDOCErt9w",
+    "avatar_url": "https://avatars.githubusercontent.com/u/139128311?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/kuma19791127",
+    "html_url": "https://github.com/kuma19791127",
+    "followers_url": "https://api.github.com/users/kuma19791127/followers",
+    "following_url": "https://api.github.com/users/kuma19791127/following{/other_user}",
+    "gists_url": "https://api.github.com/users/kuma19791127/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/kuma19791127/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/kuma19791127/subscriptions",
+    "organizations_url": "https://api.github.com/users/kuma19791127/orgs",
+    "repos_url": "https://api.github.com/users/kuma19791127/repos",
+    "events_url": "https://api.github.com/users/kuma19791127/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/kuma19791127/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "parents": [
+    {
+      "sha": "0bf974b1d90651418b52d9f0cbde817fc95f38b7",
+      "url": "https://api.github.com/repos/kuma19791127/RetailMedia-ad/commits/0bf974b1d90651418b52d9f0cbde817fc95f38b7",
+      "html_url": "https://github.com/kuma19791127/RetailMedia-ad/commit/0bf974b1d90651418b52d9f0cbde817fc95f38b7"
+    }
+  ],
+  "stats": {
+    "total": 4,
+    "additions": 2,
+    "deletions": 2
+  },
+  "files": [
+    {
+      "sha": "e199b2f7cd6e174100d06665c9163fba267a7f06",
+      "filename": "server_retail_dist.js",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/kuma19791127/RetailMedia-ad/blob/48deda203cc7bc0de4342b0d0cd6ea5499a9072b/server_retail_dist.js",
+      "raw_url": "https://github.com/kuma19791127/RetailMedia-ad/raw/48deda203cc7bc0de4342b0d0cd6ea5499a9072b/server_retail_dist.js",
+      "contents_url": "https://api.github.com/repos/kuma19791127/RetailMedia-ad/contents/server_retail_dist.js?ref=48deda203cc7bc0de4342b0d0cd6ea5499a9072b",
+      "patch": "@@ -72,7 +72,7 @@ function broadcastEvent(data) {\n \n // --- ROUTES ---\n // 1. Unified Login (Entry Point)\n-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login_portal.html')));\n+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));\n \n // 2. Dashboards\n app.get('/advertiser', (req, res) => res.sendFile(path.join(__dirname, 'ad_dashboard.html')));\n@@ -185,7 +185,7 @@ app.post('/api/payment/square-charge', async (req, res) => {\n     console.log(`[Square API] Using Production Key for actual charge.`);\n     \n     try {\n-        const customFetch = globalThis.fetch || (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));\n+        const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));\n         const crypto = require('crypto');\n         \n         // Execute Actual Production Charge via Square API"
+    }
+  ]
+}

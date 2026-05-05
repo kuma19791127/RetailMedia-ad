@@ -1,0 +1,1074 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>どこでもレジ | Anywhere Register</title>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
+    <script src="square_integration.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent-color: #F59E0B;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #1F2937;
+            --text-sub: #6B7280;
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 共通ヘッダー */
+        .app-header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            z-index: 100;
+        }
+
+        .header-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2563EB;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-logo::before { content: '⚡'; }
+        .header-info { font-size: 11px; text-align: right; color: var(--text-sub); line-height: 1.3; }
+
+        .page {
+            display: none; flex: 1; padding: 20px; overflow-y: auto; animation: fadeIn 0.3s ease-out;
+        }
+        .page.active { display: flex; flex-direction: column; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Login Screen */
+        #page-login { justify-content: center; align-items: center; }
+        .login-card { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: var(--shadow-lg); width: 100%; max-width: 320px; text-align: center; }
+        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 30px; color: var(--text-main); }
+        .login-input { width: 100%; padding: 16px; font-size: 16px; border: 2px solid #E5E7EB; border-radius: 12px; box-sizing: border-box; text-align: left; margin-bottom: 15px; transition: border-color 0.2s; font-family: inherit; }
+        .login-input:focus { border-color: #2563EB; outline: none; }
+        .btn-primary { background: #2563EB; color: white; width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* Store Selector Bar */
+        .store-selector-bar { background: white; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        select { flex: 1; padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-family: inherit; color: var(--text-main); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-logout { background: #F3F4F6; color: var(--text-sub); }
+
+        /* Scanner Area */
+        #scanner-container { width: 100%; max-width: 400px; margin: 20px auto 0; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4/3; position: relative; box-shadow: var(--shadow-lg); flex-shrink: 0; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .scan-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 40%; border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 8px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.4); z-index: 10; }
+        .scan-guide::after { content: 'SCAN BARCODE'; position: absolute; bottom: -25px; width: 100%; text-align: center; color: white; font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+
+        /* Action Buttons */
+        .action-area { max-width: 400px; margin: 20px auto 0; width: 100%; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+        .btn-next { background: var(--bg-gradient); color: var(--text-main); border: 2px solid #2563EB; display: none; }
+        .btn-pay { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
+
+        /* Cart List */
+        .cart-container { background: white; border-radius: 16px 16px 0 0; margin-top: 20px; flex: 1; min-height: 200px; padding: 20px; box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; flex-shrink: 0; }
+        .total-display { font-size: 32px; font-weight: 800; color: var(--text-main); text-align: right; border-bottom: 2px solid #F3F4F6; padding-bottom: 15px; margin-bottom: 15px; }
+        .total-display span { font-size: 18px; color: var(--text-sub); margin-right: 5px; }
+        #items { overflow-y: auto; flex: 1; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; animation: slideIn 0.2s ease-out; }
+        
+        @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Payment SCreen */
+        #page-payment { align-items: center; justify-content: center; text-align: center; }
+        .payment-card { background: white; padding: 40px; border-radius: 24px; box-shadow: var(--shadow-lg); width: 100%; max-width: 340px; }
+        
+        #sq-payment-form { width: 100%; margin-top: 20px; }
+
+        /* Overlay Mask */
+        #mask { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); color: white; justify-content: center; align-items: center; flex-direction: column; z-index: 50; backdrop-filter: blur(5px); }
+        .mask-icon { font-size: 40px; margin-bottom: 15px; }
+
+        #modal-reset { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 200; }
+    </style>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/app-icon.png">
+    <script>
+    function updateProfileDisplay() { 
+        if(document.getElementById('header-user-info')) {
+            const org = localStorage.getItem('demo_org') || "Demo Store";
+            const email = localStorage.getItem('demo_email') || (currentSession ? currentSession.email : "store@demo.com");
+            document.getElementById('header-user-info').innerHTML = org + ' <br class="mobile-br">[' + email + '] <i class="fa-solid fa-pen" style="font-size:10px;"></i>';
+        }
+    }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); });
+      }
+    </script>
+
+    <!-- Global Mobile Typography Fix -->
+    <style>
+        body, h1, h2, h3, h4, h5, p, span, div {
+            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
+            word-break: keep-all; /* Fallback */
+            overflow-wrap: break-word;
+        }
+        .mobile-br { display: none; }
+        .desktop-br { display: block; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+            .desktop-br { display: none; }
+            
+            /* Auto-reduce huge headings on mobile globally to prevent overflow */
+            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+
+            .mobile-bottom-nav {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--glass-bg);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #e5e7eb;
+                padding-top: 8px;
+                padding-bottom: env(safe-area-inset-bottom, 12px);
+                justify-content: space-around;
+                z-index: 1000;
+            }
+            .mobile-bottom-nav button {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background: none;
+                border: none;
+                color: var(--text-sub);
+                font-family: inherit;
+                gap: 4px;
+                flex: 1;
+                cursor: pointer;
+            }
+            .mobile-bottom-nav button:active { color: var(--primary-color); }
+            .mobile-bottom-nav .icon { font-size: 22px; }
+            .mobile-bottom-nav .text { font-size: 10px; font-weight: 600; }
+            
+            .nav-btn-mobile { display: none !important; }
+            #page-pos { padding-bottom: 80px !important; }
+        }
+        @media (min-width: 769px) {
+            .mobile-bottom-nav { display: none !important; }
+        }
+    </style>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+
+    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
+    <script>
+        // Check if the user has a valid session token (cleared on restart or cache clear)
+        if (!sessionStorage.getItem('retailMediaAuth')) {
+            window.location.replace('index.html');
+        }
+    </script>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <!-- 1. Login Screen (Updated to Email/Password) -->
+    <div id="page-login" class="page active">
+        <div class="header-logo" style="margin-bottom: 30px; font-size:28px; justify-content: center; width: 100%;">どこでもレジ</div>
+        <div class="login-card">
+            <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+            <h2 class="login-title">anywhere Login</h2>
+            
+            <form onsubmit="event.preventDefault(); handleLogin();" style="width:100%; margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
+            <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
+            <input type="password" id="input-pass" class="login-input" placeholder="Password" autocomplete="current-password">
+            <button type="submit" class="btn-primary">ログインして開始</button>
+        </form>
+
+            <div style="margin-top:15px; font-size:12px;">
+                <a href="#" onclick="showResetModal()" style="color:#2563EB;">Forgot Password?</a><br><br>
+                <a href="anywhere_retail.html" style="color:#10B981; font-weight:bold; font-size:14px; text-decoration:underline;">👔 小売り向けはこちら</a>
+            </div>
+
+            <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
+                <b style="color:#1F2937; margin-bottom:5px; display:inline-block;">Demo Account (タップで自動入力＆コピー)</b><br>
+                Email: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; margin-bottom:5px; transition:0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'" onclick="document.getElementById('input-email').value='store@demo.com'; navigator.clipboard.writeText('store@demo.com'); Swal.fire({toast:true, position:'top-end', icon:'success', title:'Emailをコピー＆入力しました', showConfirmButton:false, timer:2000});">store@demo.com</span><br>
+                Pass: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; transition:0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'" onclick="document.getElementById('input-pass').value='DemoPass2026!'; navigator.clipboard.writeText('DemoPass2026!'); Swal.fire({toast:true, position:'top-end', icon:'success', title:'Passwordをコピー＆入力しました', showConfirmButton:false, timer:2000});">DemoPass2026!</span>
+            </div>
+            <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
+                <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div id="modal-reset">
+        <div style="background:white; padding:30px; border-radius:10px; width:300px; text-align:center;">
+            <h3>請求先メール登録</h3>
+            <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">管理者へ直接請求先アドレスを送信します。</p>
+            <input type="email" id="reset-email" placeholder="email@example.com" style="width:100%; padding:10px; margin-bottom:15px; box-sizing:border-box; border:1px solid #bdc3c7;">
+            <button onclick="doReset()" style="width:100%; padding:10px; background:#2563EB; color:white; border:none; border-radius:4px; cursor:pointer;">送信する</button>
+            <div style="margin-top:15px; cursor:pointer; color:#95a5a6; font-size:12px;" onclick="closeResetModal()">Cancel</div>
+        </div>
+    </div>
+
+    <!-- 2. POS Screen -->
+    <div id="page-pos" class="page">
+        <!-- New POS Header / Excel Import -->
+        <div class="store-selector-bar" style="justify-content: space-between; border-radius:12px; margin-bottom:15px; background:var(--glass-bg);">
+            <div style="font-weight:bold; color:#2563EB; display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.2rem;">📱</span>
+                <span id="header-chain-name">どこでもレジ</span>
+                <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px; cursor:pointer;" onclick="openProfileModal(false)" title="プロフィール編集"></span>
+            </div>
+            <div class="header-buttons" style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btn-sm btn-logout nav-btn-mobile" onclick="logout()" style="padding:8px 8px;">ログアウト</button>
+            </div>
+        </div>
+
+        <select id="store-select" onchange="changeStore()" style="display:none;"></select>
+
+        <div id="scanner-container">
+            <video id="video"></video>
+            <div class="scan-guide"></div>
+            <div id="mask">
+                <div class="mask-icon">📷</div>
+                <div id="mask-msg">Tap to Start Camera</div>
+            </div>
+        </div>
+
+        <div class="action-area">
+            <button id="btn-next" class="btn-primary btn-next" onclick="resumeScan()">次を読み取る</button>
+            <button id="btn-go-pay" class="btn-primary btn-pay" onclick="goToPayment()">合計金額で決済へ</button>
+        </div>
+
+        <div class="cart-container">
+            <div class="total-display"><span>Total:</span>¥<span id="total-display">0</span></div>
+            <div id="items"></div>
+        </div>
+    </div>
+
+    <!-- 3. Payment Screen -->
+    <div id="page-payment" class="page">
+        <div class="payment-card">
+            <h2 style="margin:0; font-size:18px; color:var(--text-sub);">お支払い金額</h2>
+            <div style="font-size: 42px; font-weight:800; color:var(--text-main); margin:10px 0;">
+                ¥<span id="final-total">0</span>
+            </div>
+
+            <!-- Tab UI -->
+            <div style="display:flex; border-bottom:2px solid #e2e8f0; margin-bottom:15px;">
+                <div id="tab-self" style="flex:1; text-align:center; padding:10px; font-weight:bold; color:#2563EB; border-bottom:3px solid #2563EB; cursor:pointer;" onclick="switchPaymentTab('self')">
+                    📱<br><span style="font-size:10px;">お客様がカード入力</span>
+                </div>
+                <div id="tab-staff" style="flex:1; text-align:center; padding:10px; font-weight:bold; color:#64748B; cursor:pointer;" onclick="switchPaymentTab('staff')">
+                    👩‍💼<br><span style="font-size:10px;">店員がQR提示</span>
+                </div>
+            </div>
+
+            <!-- Method 1: Customer Self Checkout (Credit Card SDK) -->
+            <div id="payment-self-content" style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+                <p style="font-size:11px; color:#64748B; margin:0 0 5px 0; font-weight:bold;">お客様自身のデバイスでクレジットカード等の情報を入力・登録して決済します</p>
+                <div id="apple-pay-button" style="width:100%;"></div>
+                <div id="google-pay-button" style="width:100%;"></div>
+                <div id="sq-card-container"></div>
+                <button id="sq-creditcard" class="btn-primary" style="background:#0f172a; margin-top:10px;">クレジットカードで決済</button>
+                <div id="sq-status" style="color:#ef4444; font-weight:bold; font-size:12px; margin-top:5px; text-align:center;"></div>
+            </div>
+
+            <!-- Method 2: Staff Mobile QR presentation -->
+            <div id="payment-staff-content" style="display:none; flex-direction:column; align-items:center;">
+                <p style="font-size:11px; color:#64748B; margin:0 0 10px 0; font-weight:bold; text-align:center;">お客様のスマホのカメラでこのQRをスキャンして<br>Squareで決済を完了させてください。</p>
+                <img id="staff-qr-code" src="" style="width:200px; height:200px; border:3px solid #10b981; border-radius:10px; padding:10px; background:white; margin-bottom:15px; box-shadow:0 4px 6px rgba(16,185,129,0.3);">
+                <button class="btn-primary" style="background:#10b981; width:100%; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;" onclick="checkStaffQRPayment()">
+                    <span style="font-size:18px;">🔄</span> 決済完了を確認する
+                </button>
+            </div>
+
+            <button style="background:none; border:none; color:var(--text-sub); margin-top:25px; cursor:pointer;"
+                onclick="backToScan()">キャンセル・戻る</button>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation (Visible only on mobile) -->
+    <div class="mobile-bottom-nav" style="display:none;">
+        <button onclick="document.getElementById('excel-master-upload').click()">
+            <span class="icon">📥</span>
+            <span class="text">取込(Excel)</span>
+        </button>
+        <button onclick="toggleDebugLog()">
+            <span class="icon">🛠</span>
+            <span class="text">スキャン履歴</span>
+        </button>
+        <button onclick="logout()">
+            <span class="icon">🚪</span>
+            <span class="text">ログアウト</span>
+        </button>
+    </div>
+
+    <!-- Debug Log Panel -->
+    <div id="debug-log-panel" style="display:none; position:fixed; bottom:0; left:0; width:100%; height:35%; background:rgba(0,0,0,0.85); color:#0fa; font-family:monospace; font-size:12px; z-index:9999; padding:15px; overflow-y:auto; box-sizing:border-box; border-top:3px solid #2563EB;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px dashed #0fa; padding-bottom:5px;">
+            <span style="font-weight:bold;">🛠 スキャン履歴 / レジデバッグログ</span>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('debug-log-content').innerHTML=''" style="background:#555; color:white; border:none; padding:4px 8px; border-radius:3px;">Clear</button>
+                <button onclick="toggleDebugLog()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:3px;">閉じる</button>
+            </div>
+        </div>
+        <div id="debug-log-content" style="white-space:pre-wrap;"></div>
+    </div>
+
+    <script src="products.js"></script>
+<script>
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (new URLSearchParams(window.location.search).has('mockpay')) {
+        const amt = new URLSearchParams(window.location.search).get('mockpay');
+        const loginPage = document.getElementById('page-login');
+        if(loginPage) loginPage.innerHTML = '<div style="padding:40px; text-align:center;"><h2>Square Checkout</h2><p style="font-size:24px; font-weight:bold;">¥' + amt + '</p><button style="background:#10b981; color:white; padding:15px; border-radius:8px; border:none; width:100%; font-size:18px; margin-top:20px;" onclick="alert(\'' + amt + '円の決済が完了しました。店舗側端末に完了通知が届きます。\'); window.close();">Apple Pay / Google Pay で支払う</button></div>';
+        if(loginPage) loginPage.classList.add('active');
+        const posPage = document.getElementById('page-pos');
+        if(posPage) posPage.classList.remove('active');
+        return;
+    }
+
+    if (new URLSearchParams(window.location.search).get('skipAuth') === '1') {
+        const loginPage = document.getElementById('page-login');
+        if(loginPage) loginPage.classList.remove('active');
+        const posPage = document.getElementById('page-pos');
+        if(posPage) posPage.classList.add('active');
+        if(typeof initApp === 'function') initApp();
+    }
+});</script>
+    <script>
+        // --- Debug Log System ---
+        function toggleDebugLog() {
+            const p = document.getElementById('debug-log-panel');
+            p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function logDebug(msg) {
+            console.log(msg);
+            const content = document.getElementById('debug-log-content');
+            if(content) {
+                const timeStr = new Date().toLocaleTimeString();
+                content.innerHTML += `<div style="margin-bottom:4px; border-bottom:1px solid rgba(0,255,170,0.2);">[${timeStr}] ${msg}</div>`;
+                content.scrollTop = content.scrollHeight;
+            }
+        }
+        // --- Global State ---
+        let currentSession = null;
+        let currentStoreConfig = null;
+
+        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+        // --- IndexedDB Product Master DB (Dexie.js) ---
+        var db = new Dexie("AnywhereRegiDB");
+        db.version(1).stores({
+            products: 'janCode, name, price, category'
+        });
+
+        // --- EXCEL/JS BULK IMPORT (50,000+ items inside IndexedDB) & Drag And Drop ---
+        async function importProductMaster(event) {
+            handleProductFile(event.target.files[0]);
+            event.target.value = '';
+        }
+
+        async function handleProductFile(file) {
+            if (!file) return;
+
+            Swal.fire({
+                title: '商品マスター読込中...',
+                text: file.name + ' を解析しデータベースに同期しています',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const isJS = file.name.endsWith('.js') || file.name.endsWith('.json');
+            const reader = new FileReader();
+
+            if (isJS) {
+                reader.onload = async function (e) {
+                    try {
+                        let text = e.target.result;
+                        let jsonStr = text;
+                        if(file.name.endsWith('.js')) {
+                            jsonStr = text.replace(/.*productMaster\s*=\s*/, '').replace(/;*$/, '');
+                            if(!jsonStr.trim().startsWith('{') && !jsonStr.trim().startsWith('[')) {
+                                throw new Error("Invalid JS format");
+                            }
+                        }
+                        
+                        let parsedObj;
+                        try { parsedObj = JSON.parse(jsonStr); } 
+                        catch(err) { parsedObj = new Function("return " + jsonStr)(); }
+
+                        let productsToInsert = [];
+                        if (Array.isArray(parsedObj)) {
+                            productsToInsert = parsedObj.map(row => ({
+                                janCode: String(row.janCode || row.JAN || Math.floor(Math.random()*1000000000000)),
+                                name: row.name || row['商品名'] || "不明",
+                                price: parseInt(row.price || row['価格'] || "0", 10),
+                                category: row.category || row['カテゴリ'] || "一般"
+                            }));
+                        } else {
+                            for (const [code, info] of Object.entries(parsedObj)) {
+                                productsToInsert.push({
+                                    janCode: code,
+                                    name: info.name || "不明",
+                                    price: parseInt(info.price || 0, 10),
+                                    category: info.category || "一般"
+                                });
+                            }
+                        }
+
+                        await db.products.bulkPut(productsToInsert);
+                        const count = await db.products.count();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '同期完了',
+                            html: `<b>${productsToInsert.length}件</b> のJavaScriptデータを端末DBに登録しました。<br>現在の総商品登録数: <b>${count}件</b>`
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        Swal.fire('エラー', 'JS/JSONの解析に失敗しました。', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                reader.onload = async function (e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(sheet);
+                        
+                        if(json.length === 0) throw new Error("データが空です");
+
+                        const productsToInsert = json.map(row => ({
+                            janCode: String(row['JAN'] || row['janCode'] || row['JANコード'] || row['バーコード'] || Math.floor(Math.random()*1000000000000)),
+                            name: row['商品名'] || row['name'] || "不明な商品",
+                            price: parseInt(row['価格'] || row['price'] || row['売価'] || row['単価'] ||"0", 10),
+                            category: row['カテゴリ'] || row['category'] || "一般"
+                        }));
+
+                        await db.products.bulkPut(productsToInsert);
+                        const count = await db.products.count();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '取込完了！',
+                            html: `<b>${productsToInsert.length}件</b> の商品マスターを端末データベースに高速登録しました。<br>現在の総商品登録数: <b>${count}件</b><br><br><span style="font-size:12px;color:#666;">これより市販のHIDスキャナで一瞬で商品が呼び出せます。数万点でも遅延なしで決済操作が可能です。</span>`
+                        });
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('エラー', '読み込みに失敗しました。正しいエクセル形式か確認してください。', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // Global Drag and Drop feature for anywhere_regi
+        window.addEventListener('dragover', e => { e.preventDefault(); document.body.style.opacity = '0.8'; });
+        window.addEventListener('dragleave', e => { e.preventDefault(); document.body.style.opacity = '1'; });
+        window.addEventListener('drop', e => {
+            e.preventDefault();
+            document.body.style.opacity = '1';
+            if(e.dataTransfer.files.length > 0) handleProductFile(e.dataTransfer.files[0]);
+        });
+
+        // Webhooks integration modal
+        function showIntegrationSettings() {
+            Swal.fire({
+                title: '📡 外部連携・Webhooks設定',
+                html: `
+                    <div style="text-align:left; font-size:13px; margin-bottom:15px; color:#555;">
+                        売上や在庫変動発生時に外部サーバー（本部DBや独自POS等）へ即時通知します。
+                    </div>
+                    <label style="display:block; text-align:left; font-size:12px; font-weight:bold; margin-bottom:5px;">Webhook 宛先 URL</label>
+                    <input id="swal-wh-url" class="swal2-input" placeholder="https://your-server.com/api/webhooks" style="width:80%; font-size:14px; margin-top:0;">
+                    <label style="display:block; text-align:left; font-size:12px; font-weight:bold; margin-top:15px; margin-bottom:5px;">Webhook Secret</label>
+                    <input id="swal-wh-sec" type="password" class="swal2-input" placeholder="Secure token" style="width:80%; font-size:14px; margin-top:0;">
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '保存する',
+                preConfirm: () => {
+                    const url = document.getElementById('swal-wh-url').value;
+                    localStorage.setItem('pos_webhook_url', url);
+                    return url;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('保存しました', 'POS売上/在庫のWebhook連携が有効になりました。', 'success');
+                }
+            });
+        }
+
+        // Cross-tab Synchronization from store_portal
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sync_inventory_time' && e.newValue) {
+                Swal.fire({
+                    title: 'ストアからのデータ同期要求',
+                    text: 'システム (store_portal) で新しい在庫・商品マスターがアップロードされました。このPOS端末(どこでもレジ)にも同期・引き渡しますか？',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '許可して同期',
+                    cancelButtonText: '拒否',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if(result.isConfirmed) {
+                        Swal.fire('同期完了', '端末データベースに最新の商品データを安全に反映しました。(デモ)', 'success');
+                        logDebug("🔔 [CrossTab Sync] ユーザーが store_portal からの在庫データ引き渡しを許可し、同期完了しました。");
+                    } else {
+                        logDebug("🔔 [CrossTab Sync] ユーザーが store_portal からの同期を拒否しました。");
+                    }
+                });
+            }
+        });
+
+        // --- Mock Product API (now queries ultra-fast IndexedDB) ---
+        async function mockProductApi(janCode) {
+            return new Promise(async (resolve) => {
+                let codeStr = String(janCode);
+                try {
+                    // --- ① インストアコード (NON-PLU) 判定ロジック ---
+                    // 日本の規約: 「02」または「20〜29」から始まる13桁はインストアコード（生鮮・惣菜など）
+                    if (codeStr.length === 13 && (codeStr.startsWith('02') || codeStr.startsWith('2'))) {
+                        // フォーマット: [prefix2桁] + [商品コード5桁] + [値段5桁] + [チェックディジット1桁]
+                        const prefix = codeStr.substring(0, 2);
+                        const itemCode = codeStr.substring(2, 7);
+                        const priceBlock = codeStr.substring(7, 12);
+                        
+                        let calculatedPrice = parseInt(priceBlock, 10);
+                        let checkDigit = codeStr[12];
+                        
+                        // NON-PLU standard: the 5 price digits consist of a 1-digit price-check digit and 4-digit actual price value.
+                        if (calculatedPrice >= 10000 && (prefix === '02' || prefix.startsWith('2'))) {
+                            const actualPriceStr = codeStr.substring(8, 12);
+                            calculatedPrice = parseInt(actualPriceStr, 10);
+                            logDebug(`[Instore parsing] Price block ${priceBlock} treated as ${actualPriceStr}. Tax excluded calculated: ${calculatedPrice}`);
+                        } else {
+                            logDebug(`[Instore parsing] Price block parsed directly as ${calculatedPrice}`);
+                        }
+                        
+                        return resolve({
+                            janCode: codeStr,
+                            name: `インストア生鮮食品 (${itemCode})`,
+                            price: calculatedPrice,
+                            category: "インストア"
+                        });
+                    }
+
+                    // --- ② Check ultra-fast local IndexedDB ---
+                    const productInfo = await db.products.get(codeStr);
+                    if (productInfo) {
+                        return resolve(productInfo);
+                    }
+                    
+                    // --- ③ Fallback to productMaster (products.js) if exists ---
+                    if (typeof productMaster !== 'undefined' && productMaster[codeStr]) {
+                        return resolve({ janCode: codeStr, ...productMaster[codeStr] });
+                    } 
+                    
+                    // --- ④ Not Found ---
+                    resolve({ janCode: codeStr, name: "未登録商品", price: 100, category: "不明" });
+                } catch (e) {
+                    resolve({ janCode: codeStr, name: "エラー", price: 0, category: "ｴﾗｰ" });
+                }
+            });
+        }
+
+
+        // --- Auth Logic ---
+        async function handleLogin() {
+            const orgName = "Demo Store";
+            const email = document.getElementById('input-email').value;
+            const password = document.getElementById('input-pass').value;
+
+            if (!email || !password) return alert("Email and Password are required.");
+
+            try {
+                const res = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
+                    initPosScreen(currentSession);
+                } else { alert(data.error || "Login Failed"); }
+            } catch (e) { 
+                console.error(e); 
+                // ローカル環境(file://)やサーバー未起動時のデモ用フォールバック
+                if (true) {
+                    currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
+                    initPosScreen(currentSession);
+                    
+                } else {
+                    alert("通信エラー：サーバーが起動していません。(Network Error)");
+                }
+            }
+        }
+
+        // --- Password Reset ---
+        function showResetModal() { document.getElementById('modal-reset').style.display = 'flex'; }
+        function closeResetModal() { document.getElementById('modal-reset').style.display = 'none'; }
+        async function doReset() {
+            const email = document.getElementById('reset-email').value;
+            if (!email) return alert("Email required");
+            try {
+                const res = await fetch(`${API_URL}/api/admin/settings/billing-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                alert("管理画面に請求先メールアドレスが登録されました。");
+                closeResetModal();
+            } catch (e) { alert("Error"); }
+        }
+
+        function initPosScreen(session) {
+            document.getElementById('page-login').classList.remove('active');
+            document.getElementById('page-pos').classList.add('active');
+            document.getElementById('header-user-info').innerText = session.email;
+
+            const select = document.getElementById('store-select');
+            select.innerHTML = "";
+            const opt = document.createElement('option');
+            opt.value = "store1"; opt.innerText = "Demo Store 001";
+            select.appendChild(opt);
+            changeStore();
+            initApp();
+        }
+
+        function changeStore() { console.log(`Store changed`); }
+
+        function logout() {
+            currentSession = null;
+            document.getElementById('page-pos').classList.remove('active');
+            document.getElementById('page-login').classList.add('active');
+            document.getElementById('input-pass').value = '';
+        }
+
+        function resetPos() {
+            total = 0; cartItems = [];
+            document.getElementById('items').innerHTML = "";
+            document.getElementById('total-display').innerText = "0";
+            document.getElementById('page-payment').classList.remove('active');
+            document.getElementById('page-pos').classList.add('active');
+        }
+
+        function getCompanyByProduct(product) {
+            if (product.company) return product.company;
+            if (product.category === "インストア") return "自社（スーパー本体）";
+            if (product.name.includes("水") || product.name.includes("茶") || product.category === "飲料") return "飲料メーカーA社";
+            if (product.name.includes("チョコ") || product.name.includes("スナック") || product.category === "菓子") return "お菓子カンパニー株式会社";
+            
+            const hash = String(product.janCode || "0").charCodeAt(0) % 3;
+            if (hash === 0) return "C食品株式会社";
+            if (hash === 1) return "D日用品メーカー";
+            return "E商事";
+        }
+
+        function showSalesByCompany() {
+            const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
+            let html = '<div style="text-align: left; margin-top: 10px;">';
+            let grandTotal = 0;
+            const keys = Object.keys(companySales);
+            if (keys.length === 0) {
+                html += '<p style="text-align:center; color:#666;">まだ売上データがありません。</p>';
+            } else {
+                html += '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
+                html += '<tr style="background: #f1f5f9;"><th style="padding: 8px; border-bottom: 2px solid #cbd5e1;">組織・利用店舗</th><th style="padding: 8px; border-bottom: 2px solid #cbd5e1; text-align: right;">売上金額</th></tr>';
+                keys.sort((a,b) => companySales[b] - companySales[a]).forEach(comp => {
+                    html += `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color:#333; word-break:break-all;">${comp}</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color:#1e293b;">¥${companySales[comp].toLocaleString()}</td></tr>`;
+                    grandTotal += companySales[comp];
+                });
+                html += `<tr><td style="padding: 12px 8px; font-weight: bold; color:#1e293b;">総合計</td><td style="padding: 12px 8px; text-align: right; font-weight: 800; color: #2563EB; font-size: 18px;">¥${grandTotal.toLocaleString()}</td></tr>`;
+                html += '</table>';
+                html += `<div style="margin-top:20px; text-align:center;"><button onclick="if(confirm('売上データをリセットしますか？')) { localStorage.removeItem('pos_company_sales'); Swal.close(); }" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; text-decoration:underline;">売上データをリセット</button></div>`;
+            }
+            html += '</div>';
+
+            Swal.fire({
+                title: '📊 会社別 売上確認',
+                html: html,
+                confirmButtonText: '閉じる',
+                confirmButtonColor: '#2563EB'
+            });
+        }
+
+        
+// --- Sound Effect Logic ---
+function playBeep() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(2500, audioCtx.currentTime); // 2500Hz high pitch
+        
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        
+        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.15);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch(e) {
+        console.log("Web Audio API not supported", e);
+    }
+}
+
+// --- POS & Scanner Logic ---
+
+        const hints = new Map();
+        const formats = [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8];
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+        const codeReader = new ZXing.BrowserMultiFormatReader(hints);
+
+        let total = 0;
+        let isPaused = false;
+        let cartItems = [];
+
+        async function goToPayment() {
+            if (total === 0) return alert("商品がありません");
+            document.getElementById('page-pos').classList.remove('active');
+            document.getElementById('page-payment').classList.add('active');
+            document.getElementById('final-total').innerText = total.toLocaleString();
+
+            const checkoutUrl = 'https://retail-ad.com/anywhere_regi.html?mockpay=' + total;
+            const sqPayload = encodeURIComponent(checkoutUrl);
+            const qrElement = document.getElementById('staff-qr-code');
+            if(qrElement) {
+                qrElement.src = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + sqPayload;
+            }
+
+
+            const status = document.getElementById('sq-status');
+            if(status) status.innerText = "";
+            
+            document.getElementById('sq-card-container').innerHTML = '';
+            document.getElementById('google-pay-button').innerHTML = '';
+            document.getElementById('apple-pay-button').innerHTML = '';
+
+            initializeSquarePayment(total, 'sq-card-container', async () => {
+                try {
+                    const txData = {
+                        storeId: currentSession ? currentSession.storeName : "Demo Store",
+                        transactionId: "TX" + Date.now(),
+                        amount: total,
+                        items: cartItems.map(i => ({ janCode: i.janCode, name: i.name, price: i.price })),
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // Send exact POS transaction data to Admin Server (Fake API)
+                    try {
+                        const syncRes = await fetch(API_URL + '/api/admin/sales', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(txData)
+                        });
+                        addDebugLog("✅ [SERVER-SYNC] 決済データ送信成功: " + total + "円");
+                    } catch(e) { 
+                        console.log('Admin sync mock fallback', e); 
+                        addDebugLog("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
+                    }
+
+                    // --- Organization Breakdown ---
+                    const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
+                    const orgName = (currentSession && currentSession.storeName) ? currentSession.storeName : "未設定の組織";
+                    companySales[orgName] = (companySales[orgName] || 0) + total;
+                    localStorage.setItem('pos_company_sales', JSON.stringify(companySales));
+
+                    // --- Cross-Tab Sync for Local Demo ---
+                    const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
+                    localLog.unshift({ type: 'LIVE_SALE', source: 'どこでもレジ端末', amount: total, time: new Date().toLocaleTimeString(), items: txData.items.map(i=>i.name).join(', ') });
+                    if(localLog.length > 50) localLog.pop();
+                    localStorage.setItem('admin_pos_log', JSON.stringify(localLog));
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '決済完了',
+                        text: '決済が完了し、本部に売上データが送信されました。'
+                    }).then(() => { resetPos(); });
+                } catch (e) {
+                    Swal.fire('エラー', '本部の通信に失敗しました (オフライン仮保存)', 'warning').then(() => { resetPos(); });
+                }
+            });
+        }
+
+        function backToScan() {
+            document.getElementById('page-payment').classList.remove('active');
+            document.getElementById('page-pos').classList.add('active');
+        }
+
+        async function startScanner() {
+            try {
+                const videoInputDevices = await codeReader.listVideoInputDevices();
+                const backCamera = videoInputDevices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear'));
+                const deviceId = backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId;
+                codeReader.decodeFromVideoDevice(deviceId, 'video', (result, err) => {
+                    if (result && !isPaused) onScanSuccess(result.text);
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        async function onScanSuccess(code) {
+    if (typeof playBeep === 'function') playBeep();
+            logDebug(`[SCAN EVENT] Raw Barcode Read: ${code}`);
+            if (isPaused) return;
+            isPaused = true;
+            const mask = document.getElementById('mask');
+            document.getElementById('mask-msg').innerText = "Searching db...";
+            mask.style.display = 'flex';
+
+            try {
+                const product = await mockProductApi(code);
+                logDebug(`[DB MATCH] Success: ${product.name} (¥${product.price})`);
+
+                document.getElementById('mask-msg').innerText = "Scan OK!";
+                setTimeout(() => mask.style.display = 'none', 200);
+                document.getElementById('btn-next').style.display = 'block';
+
+                total += product.price;
+                cartItems.push(product);
+
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                        <span style="font-weight:600;">${product.name}</span>
+                        <span style="font-size:12px; color:#aaa;">${code}</span>
+                    </div>
+                    <span style="font-weight:700;">¥${product.price}</span>`;
+                document.getElementById('items').prepend(row);
+                document.getElementById('total-display').innerText = total.toLocaleString();
+                if (navigator.vibrate) navigator.vibrate(100);
+
+            } catch (error) { resumeScan(); }
+        }
+
+        function resumeScan() {
+            isPaused = false;
+            document.getElementById('mask').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'none';
+        }
+
+        function initApp() {
+            const mask = document.getElementById('mask');
+            mask.style.display = 'flex';
+            mask.onclick = () => {
+                mask.style.display = 'none';
+                mask.onclick = null;
+                startScanner();
+            };
+            
+            // --- HID Barcode Scanner Integration ---
+            // Physical Scanners send keypress events ending with Enter incredibly fast
+            let hidBarcodeStr = "";
+            let hidTimeout = null;
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && hidBarcodeStr.length >= 8) {
+                    e.preventDefault();
+                    onScanSuccess(hidBarcodeStr); 
+                    hidBarcodeStr = "";
+                    return;
+                }
+                
+                if (/^[0-9]$/.test(e.key) || /^[a-zA-Z]$/.test(e.key)) {
+                    hidBarcodeStr += e.key;
+                    if(hidTimeout) clearTimeout(hidTimeout);
+                    hidTimeout = setTimeout(() => { hidBarcodeStr = ""; }, 50); // reset if it was human typing manually
+                }
+            });
+        }
+    </script>
+
+<!-- Context-Agnostic Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        
+        <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇" autocomplete="organization">
+            
+            <div id="prof-name-container" style="display:block;">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+                <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎" autocomplete="name">
+            </div>
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+            <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" autocomplete="username">
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード" autocomplete="new-password">
+            
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+        </form>
+    </div>
+</div>
+<script>
+    function openProfileModal(showName = false) {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            // Name is always shown now
+            document.getElementById('prof-name-container').style.display = 'block';
+            document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
+        
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
+        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+        if(document.getElementById('prof-name-container').style.display !== 'none') {
+            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+        }
+        document.getElementById('modal-profile').style.display = 'none';
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+        // Try triggering local update if exists
+        try{ updateProfileDisplay(); }catch(e){}
+    }
+</script>
+
+
+        <script>
+function switchPaymentTab(tab) {
+            const tabSelf = document.getElementById('tab-self');
+            const tabStaff = document.getElementById('tab-staff');
+            const contSelf = document.getElementById('payment-self-content');
+            const contStaff = document.getElementById('payment-staff-content');
+            
+            if(tab === 'self') {
+                tabSelf.style.color = '#2563EB'; tabSelf.style.borderBottom = '3px solid #2563EB';
+                tabStaff.style.color = '#64748B'; tabStaff.style.borderBottom = 'none';
+                contSelf.style.display = 'flex';
+                contStaff.style.display = 'none';
+            } else {
+                tabStaff.style.color = '#10B981'; tabStaff.style.borderBottom = '3px solid #10B981';
+                tabSelf.style.color = '#64748B'; tabSelf.style.borderBottom = 'none';
+                contSelf.style.display = 'none';
+                contStaff.style.display = 'flex';
+            }
+        }
+        
+        async function checkStaffQRPayment() {
+            Swal.fire({
+                title: '決済確認中...',
+                text: 'Squareと通信し、お客様の端末での決済完了を待機しています',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            // Mock waiting API process
+            setTimeout(() => {
+                Swal.fire({
+                    title: '決済完了！',
+                    text: 'Square決済が正常に完了しました',
+                    icon: 'success'
+                }).then(() => {
+                    cart = []; total = 0;
+                    renderCart();
+                    backToScan();
+                });
+            }, 2000);
+        }
+</script>
+</body>
+</html>

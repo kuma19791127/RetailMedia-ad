@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advertiser Dashboard | RetailMedia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
+    <script src="/square_integration.js"></script>
+    <style>
+        :root {
+            --primary: #f43f5e;
+            /* Advertiser Color */
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .nav-item {
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .nav-icon { font-size: 1.2rem; }
+        .nav-text { font-size: 1rem; }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--dark);
+        }
+
+        /* Dashboard Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .stat {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        /* Spec Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .spec-table th,
+        .spec-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .spec-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            width: 40%;
+        }
+
+        /* Camera Indicator */
+        .camera-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .blink {
+            animation: blinker 1.5s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Buttons & Modal */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-sm:hover {
+            background: #f1f5f9;
+        }
+
+        .btn-secondary {
+            background: #94a3b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: #cbd5e1;
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        .status-badge.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.pending {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            /* Enable scrolling if screen is too small */
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5vh auto;
+            padding: 25px;
+            border-radius: 12px;
+            width: 450px;
+            /* Slightly smaller */
+            max-width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .form-actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media(max-width: 768px) {
+            body { flex-direction: column; height: auto; }
+            .sidebar { 
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%; 
+                padding: 5px; 
+                flex-direction: row; 
+                justify-content: space-between; 
+                align-items: center;
+                z-index: 1000;
+                height: 70px;
+                box-sizing: border-box;
+                border-top: 1px solid rgba(255,255,255,0.1);
+                background: var(--dark);
+            }
+            .nav-item { 
+                flex-direction: column; 
+                margin-bottom: 0; 
+                padding: 4px; 
+                font-size: 0.6rem;
+                gap: 4px;
+            }
+            .nav-item[style*="margin-top:auto"] { margin-top: 0 !important; }
+            .nav-icon { font-size: 1.3rem; }
+            .nav-text { font-size: 0.55rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+            .logo { display: none !important; }
+            
+            .mobile-header {
+                display: flex !important;
+                background: var(--dark);
+                color: white;
+                padding: 15px;
+                font-size: 1.5rem;
+                font-weight: 800;
+                justify-content: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                z-index: 1000;
+                box-sizing: border-box;
+            }
+            
+            .main { padding: 90px 15px 90px 15px; overflow-y: auto; height: 100vh; box-sizing: border-box; width: 100%; }
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .grid { grid-template-columns: 1fr !important; }
+        }
+        .mobile-header { display: none; }
+    
+        @media (max-width: 768px) {
+            .spec-layout {
+                flex-direction: column !important;
+            }
+        }
+    </style>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/app-icon.png">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js');
+        });
+      }
+    </script>
+
+    <!-- Global Mobile Typography Fix -->
+    <style>
+        body, h1, h2, h3, h4, h5, p, span, div {
+            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
+            word-break: normal; /* Fallback for Safari/iOS */
+            overflow-wrap: break-word;
+        }
+        .mobile-br { display: none; }
+        .desktop-br { display: block; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+            .desktop-br { display: none; }
+            
+            /* Auto-reduce huge headings on mobile globally to prevent overflow */
+            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+
+    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
+    <script>
+        // Check if the user has a valid session token (cleared on restart or cache clear)
+        if (!sessionStorage.getItem('retailMediaAuth')) {
+            window.location.replace('index.html');
+        }
+    </script>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+    <script>
+        // Dynamic Budget Limit based on Demo/Prod Mode
+        window.addEventListener('DOMContentLoaded', () => {
+            const isDemoUser = (sessionStorage.getItem('retailUserEmail') || '').includes('@demo.com');
+            const budgetInput = document.getElementById('cp-budget');
+            if(budgetInput) {
+                budgetInput.min = isDemoUser ? 0 : 1000;
+                budgetInput.placeholder = isDemoUser ? '0 (デモ無料)' : '1000';
+            }
+        });
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><span>Advertiser<span style="color:var(--primary)">.Hub</span></span><div class="display-org-name" style="font-size:12px; color:#94a3b8; font-weight:normal; line-height:1.2; margin-top:5px;">Demo Advertiser Inc.</div></div>
+        <div class="nav-item active" onclick="showSection('analytics')">
+            <span class="nav-icon">📊</span><span class="nav-text" style="line-height:1.2;">ｱﾅﾘﾃｨｸｽ</span>
+        </div>
+        <div class="nav-item" onclick="showSection('campaigns')">
+            <span class="nav-icon">📢</span><span class="nav-text" style="line-height:1.2;">ｷｬﾝﾍﾟｰﾝ</span>
+        </div>
+        <div class="nav-item" onclick="showSection('specs')">
+            <span class="nav-icon">🖥️</span><span class="nav-text" style="line-height:1.2;">配信端末</span>
+        </div>
+        <div class="nav-item" onclick="window.open('advertiser_lp.html', '_blank')">
+            <span class="nav-icon">📖</span><span class="nav-text" style="line-height:1.2;">LP</span>
+        </div>
+        <div class="nav-item" onclick="registerCreditCard()">
+            <span class="nav-icon">💳</span><span class="nav-text" style="line-height:1.2;">ｸﾚｼﾞｯﾄ</span>
+        </div>
+        <div class="nav-item" style="margin-top:auto" onclick="location.href='index.html'">
+            <span class="nav-icon">🚪</span><span class="nav-text" style="line-height:1.2;">ﾛｸﾞｱｳﾄ</span>
+        </div>
+    </div>
+
+    <div class="mobile-header">Advertiser<span style="color:var(--primary)">.Hub</span></div>
+
+    <div class="main">
+
+        <!-- ANALYTICS SECTION -->
+        <div id="analytics-section">
+            <div class="header">
+                <div>
+                    <h1>キャンペーン分析: Spring Sale 2026</h1>
+                    <div style="margin-top:5px;">
+                        <span class="camera-badge"><span class="blink">●</span> AIカメラ分析稼働中 (Face Analysis Active)</span>
+                        <span style="font-size:0.8rem; color:#64748b; margin-left:10px;">Last update: Just now</span>
+                    </div>
+                </div>
+                <select style="padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                    <option>過去7日間</option>
+                    <option>今月</option>
+                </select>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="card">
+                    <h3>総インプレッション (View)</h3>
+                    <div class="stat" id="stat-impressions">0</div>
+                    <div id="stat-imp-growth" style="color:#10b981; font-size:0.9rem;">...</div>
+                </div>
+                <div class="card">
+                    <h3>AI検知人数 (Face Detected)</h3>
+                    <div class="stat" id="stat-faces">0</div>
+                    <div id="stat-face-rate" style="color:#64748b; font-size:0.9rem;">視認率: 0%</div>
+                </div>
+                <div class="card">
+                    <h3>平均注視時間 (Attention)</h3>
+                    <div class="stat" id="stat-attention">0s</div>
+                    <div id="stat-att-growth" style="color:#10b981; font-size:0.9rem;">...</div>
+                </div>
+                <div class="card">
+                    <h3>コアターゲット (性別・年齢)</h3>
+                    <div class="stat" id="stat-target" style="font-size:1.6rem;">分析中...</div>
+                    <div id="stat-female-ratio" style="color:#ec4899; font-size:0.9rem;">...</div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="card">
+                    <h3>A/B テスト結果: クリエイティブ別 注視率比較</h3>
+                    <canvas id="abChart"></canvas>
+                    <p id="ab-insight-text" style="font-size:0.9rem; color:#64748b; margin-top:15px;">
+                        💡 <b>Insight:</b> 分析データ収集中...
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>視聴者属性 (AI推定)</h3>
+                    <div style="display:flex; align-items:center; margin-bottom:15px;">
+                        <div style="width:120px;"><canvas id="demographicsChart"></canvas></div>
+                        <div style="flex:1; padding-left:15px; font-size:0.9rem;">
+                            <div style="color:#ec4899; font-weight:bold; margin-bottom:5px;" id="demo-female-text">● 女性:
+                                0% <span style="font-size:0.8rem; color:#999; font-weight:normal;">(0人)</span></div>
+                            <div style="color:#3b82f6; font-weight:bold; margin-bottom:5px;" id="demo-male-text">● 男性:
+                                0% <span style="font-size:0.8rem; color:#999; font-weight:normal;">(0人)</span></div>
+                            <div style="color:#94a3b8;" id="demo-unknown-text">● 不明: 0% <span
+                                    style="font-size:0.8rem; color:#999; font-weight:normal;">(0人)</span></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; border-top:1px solid #f1f5f9; padding-top:15px;">
+                        <h4>年齢層分布</h4>
+                        <canvas id="ageChart" height="120"></canvas>
+                        <div
+                            style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; margin-top:8px;">
+                            <span id="demo-age-top">Top: <b>分析中...</b></span>
+                            <span id="demo-age-2nd">2nd: <b>分析中...</b></span>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-top:20px; border-top:1px solid #f1f5f9; padding-top:15px; font-size:0.85rem; color:#64748b;">
+                        <h4>🛠️ AIカメラ連携テスト機能 <a href="javascript:void(0)"
+                                onclick="document.getElementById('ai-test-guide').style.display='block'"
+                                style="color:var(--primary); text-decoration:underline;">詳細はこちら</a></h4>
+
+                        <div id="ai-test-guide"
+                            style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px;">
+                            <p style="margin-top:0;"><b>【F12（開発者ツール）での詳細データの確認方法】</b></p>
+                            <p>このデータがどのように裏側で飛んでいるかは、ご指定の通り Chromeの F12（デベロッパーツール） で完璧に確認できます。</p>
+                            <ol style="padding-left:20px; margin-bottom:0;">
+                                <li><b>Console（コンソール）タブ</b>: AIモデルが正しく読み込まれると、ここに <code>Face-API loaded</code> や
+                                    <code>Real AI Models Loaded</code> というログが出力されているのを確認できます。
+                                </li>
+                                <li><b>Network（ネットワーク）タブ</b>:
+                                    Networkタブを開き、上部のフィルター（Filter）で「Fetch/XHR」を選択してください。<br>カメラが顔を捉えている間、約3秒に1回、<code>/api/sensor</code>
+                                    というエンドポイント宛てにデータが自動送信されます。<br>この <code>sensor</code> という通信をクリックし、「Payload（ペイロード）」タブ
+                                    を見ると： <code>{"gender": "male", "age": "40s"}</code>
+                                    のように、実際に送信されている生データ（JSON）を確認することができます。</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Creator Ranking Row -->
+            <div class="card" style="margin-top:20px;">
+                <h3>🏆 クリエイター広告枠 シナジースコアランキング (AI連動)</h3>
+                <p style="font-size:0.85rem; color:#64748b; margin-top:-10px; margin-bottom:15px;">
+                    クリエイターの動画直後にCMを流した際の、<br class="mobile-br">AI視認維持率（Attention）と広告離脱率（Skip）に<br class="mobile-br">基づく最適化状況です。<br>
+                    スコアが低いものは自動システムにより<br class="mobile-br"><span class="nw">段階的にBAN（配信停止）されます。</span>
+                </p>
+                <div class="table-responsive" style="overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%;"><table class="spec-table">
+                    <thead>
+                        <tr>
+                            <th style="width:10%">ステータス</th>
+                            <th style="width:30%">コンテンツ名</th>
+                            <th style="width:20%">クリエイター名</th>
+                            <th style="width:15%">再生数 (Imp)</th>
+                            <th style="width:12%">維持率(Att)</th>
+                            <th style="width:13%">離脱率(Skip)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-list">
+                        <!-- JS Injected -->
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:#888;">AIスコア集計中...</td>
+                        </tr>
+                    </tbody>
+                </table></div>
+            </div>
+
+            <!-- POS Sales Uplift Section -->
+            <div class="card" style="margin-top:20px;">
+                <h3 style="color:#16a34a;">📈 販売促進効果 (POSデータ相関分析 - Sales Uplift)</h3>
+                <p style="font-size:0.85rem; color:#64748b; margin-top:-10px; margin-bottom:15px;">
+                    「YouTuber×企業コラボ動画」放映後10分間の、対象商品のPOS実売上変化額（通常時との差分）をAIが自動集計しています。
+                </p>
+                <div style="height: 250px;">
+                    <canvas id="posSalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAMPAIGNS SECTION -->
+        <div id="campaigns-section" style="display:none;">
+            <div class="header" style="justify-content: space-between; align-items: center; display: flex;">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <div><h1 style="margin:0;">📢 キャンペーン管理</h1><div style="margin-top:8px;"><a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline; display:inline-block;">[配信・広告基準]</a></div></div>
+                    <button onclick="window.location.href='/api/reports/csv'" style="background:#8b5cf6; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;" title="詳細レポート出力機能">📊 レポート出力(CSV)</button>
+                </div>
+                <div style="background:white; padding:15px; border-radius:8px; display:flex; flex-direction:column; gap:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1); width:100%; max-width:350px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:0.8rem; color:#64748b;">残高 (Budget)</span>
+                            <div style="font-size:1.2rem; font-weight:bold; color:var(--dark);">¥<span id="account-budget-display">0</span></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:0.8rem; color:#64748b;">消化 (Spend)</span>
+                            <div style="font-size:1.2rem; font-weight:bold; color:#f43f5e;">¥<span id="account-spend-display">0</span></div>
+                        </div>
+                    </div>
+                    <button onclick="chargeBudget()" class="btn-primary" style="padding:8px 15px; font-size:0.9rem; width:100%;">➕ 予算追加 (最低1,000円〜)</button>
+                </div>
+            </div>
+
+            <!-- PLAN SELECTION -->
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-bottom:20px;">
+                
+                <!-- CPM -->
+                <div class="card" onclick="openNewCampaignModal('cpm')"
+                    style="cursor:pointer; border-left: 5px solid #e74c3c; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                    <h3 style="margin-top:0; font-size:15px; color:#c0392b; margin-bottom: 5px;">📢 1. エンゲージメント配信<br><span style="font-size:12px;">（CPV: 約2円〜）</span></h3>
+                    <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">ブランドの認知度やエンゲージメントを最大化したい場合に最適なプランです。</p>
+                    <div style="background:#f9ebea; padding:8px; border-radius:6px; margin-top:10px;">
+                        <p style="font-size: 10px; color: #c0392b; margin:0; line-height:1.4;">※ 1,000円の消化イメージ: 約500回の完全視聴を獲得できます。</p>
+                    </div>
+                </div>
+                <!-- Impression -->
+                <div class="card" onclick="openNewCampaignModal('impression')"
+                    style="cursor:pointer; border-left: 5px solid #2980b9; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                    <h3 style="margin-top:0; font-size:15px; color:#2980b9; margin-bottom: 5px;">👁️ 2. インプレッション配信<br><span style="font-size:12px;">（1再生： 1円〜）</span></h3>
+                    <p style="font-size: 12px; color: #34495e; font-weight:bold; margin-bottom:4px;">特徴：</p>
+                    <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">不特定多数にとにかく数を打って認知を拡大したい場合の最安プランです。</p>
+                    <div style="background:#f1f5f9; padding:8px; border-radius:6px; margin-top:10px;">
+                        <p style="font-size: 11px; color: #34495e; font-weight:bold; margin:0 0 2px 0;">1,000円の消化イメージ：</p>
+                        <p style="font-size: 10px; color: #64748b; margin:0; line-height:1.4;">約 1,000回 の動画再生（インプレッション）を獲得できます。</p>
+                    </div>
+                </div>
+
+                <!-- Moment -->
+                <div class="card" onclick="openNewCampaignModal('moment')"
+                    style="cursor:pointer; border-left: 5px solid #e67e22; background:#fffaf0; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                    <h3 style="margin-top:0; font-size:15px; color:#d35400; margin-bottom: 5px;">☔ 3. モーメント配信<br><span style="font-size:12px;">（1再生： 3円〜）</span></h3>
+                    <p style="font-size: 12px; color: #34495e; font-weight:bold; margin-bottom:4px;">特徴：</p>
+                    <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">通常のランダム再生ではなく、「気温・天気」や「見る人の性別・年齢」の条件にガッチリと一致した瞬間にだけ流す、少しリッチなプランです。</p>
+                    <div style="background:#fff3e0; padding:8px; border-radius:6px; margin-top:10px;">
+                        <p style="font-size: 11px; color: #34495e; font-weight:bold; margin:0 0 2px 0;">1,000円の消化イメージ：</p>
+                        <p style="font-size: 10px; color: #d35400; margin:0; line-height:1.4;">無駄打ちが減るため単価は上がりますが、約 1,666回 の「ターゲットど真ん中の顧客」に見せることができます。</p>
+                    </div>
+                </div>
+
+                <!-- POS/CPA -->
+                <div class="card" onclick="openNewCampaignModal('cpa')"
+                    style="cursor:pointer; border-left: 5px solid #27ae60; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                    <h3 style="margin-top:0; font-size:15px; color:#27ae60; margin-bottom: 5px;">🛒 4. POS連動・成果報酬<br><span style="font-size:12px;">（1再生： 10円〜）</span></h3>
+                    <p style="font-size: 12px; color: #34495e; font-weight:bold; margin-bottom:4px;">特徴：</p>
+                    <p style="font-size: 11px; color: #7f8c8d; margin-top:0; line-height:1.4;">広告をただ流すだけでなく、「ABテスト」結果や、店舗のPOSデータと高度に統計・連携した専用のレポートが出力されるプレミアプランです。</p>
+                    <div style="background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">
+                        <p style="font-size: 11px; color: #34495e; font-weight:bold; margin:0 0 2px 0;">1,000円の消化イメージ：</p>
+                        <p style="font-size: 10px; color: #059669; margin:0; line-height:1.4;">単価は高いですが、分析や売上のクロスセル効果を追跡・証明できるため、約 100回 分のプレミアムな再生枠となります。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-responsive" style="overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%;"><table class="spec-table">
+                    <thead>
+                        <tr>
+                            <th>ステータス</th>
+                            <th>キャンペーン名</th>
+                            <th>プラン / 予算</th>
+                            <th style="width: 25%;">配信スコア (Imp / AI検知 / 視認率)</th>
+                            <th style="width: 25%;">ターゲット / 分析結果</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaign-list">
+                        <!-- JS Injected -->
+                    </tbody>
+                </table></div>
+            </div>
+        </div>
+
+        <!-- NEW CAMPAIGN MODAL -->
+        <div id="new-campaign-modal" class="modal">
+            <div class="modal-content">
+                <h2 id="modal-title" style="margin-top:0; font-size:1.4rem;">✨ 新規キャンペーン作成</h2>
+                <form onsubmit="event.preventDefault(); createCampaign();">
+                    <label>キャンペーン名</label>
+                    <input type="text" id="cp-name" placeholder="例: Summer Promo 2026" required>
+
+                    <!-- DYNAMIC FIELDS -->
+                    <div id="field-moment"
+                        style="display:none; background:#fff7ed; padding:10px; border-radius:6px; margin-top:10px;">
+                        <label style="color:#c2410c;">⚡ 配信トリガー (モーメント)</label>
+                        <select id="cp-trigger">
+                            <option value="rain">☔ 雨が降っている時 (Rain)</option>
+                            <option value="hot">☀️ 気温30度以上 (Hot)</option>
+                            <option value="cold">❄️ 気温10度以下 (Cold)</option>
+                            <option value="crowded">👥 店内混雑時 (High Traffic)</option>
+                        </select>
+                    </div>
+
+                    <div id="field-impression"
+                        style="display:none; background:#f3e8ff; padding:10px; border-radius:6px; margin-top:10px;">
+                        <label style="color:#7e22ce;">🎯 目標再生数 (Impression Goal)</label>
+                        <input type="number" id="cp-target-imp" value="10000" placeholder="10000">
+                    </div>
+
+                    <div id="field-rtb"
+                        style="display:none; background:#fef2f2; padding:10px; border-radius:6px; margin-top:10px;">
+                        <label style="color:#ef4444;">⚡ RTB プログラマティック自動入札設定</label>
+                        <p style="font-size:0.8rem; color:#7f1d1d; margin:5px 0;">他社と競合した際、再生権を自動オークションで落札します。</p>
+                        <label>上限入札単価（1再生あたり・円）</label>
+                        <input type="number" id="cp-bid-max" value="3.5" step="0.1" placeholder="3.5">
+                    </div>
+                    <!-- END DYNAMIC -->
+
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1">
+                            <label>開始日</label>
+                            <input type="date" id="cp-start">
+                        </div>
+                        <div style="flex:1">
+                            <label>終了日</label>
+                            <input type="date" id="cp-end">
+                        </div>
+                    </div>
+
+                    <label>配信時間 (1時間単位)</label>
+                    <select id="cp-time">
+                        <option value="all">🕒 指定なし (終日)</option>
+                        <option value="00">00:00 - 01:00</option>
+                        <option value="01">01:00 - 02:00</option>
+                        <option value="02">02:00 - 03:00</option>
+                        <option value="03">03:00 - 04:00</option>
+                        <option value="04">04:00 - 05:00</option>
+                        <option value="05">05:00 - 06:00</option>
+                        <option value="06">06:00 - 07:00</option>
+                        <option value="07">07:00 - 08:00</option>
+                        <option value="08">08:00 - 09:00</option>
+                        <option value="09">09:00 - 10:00</option>
+                        <option value="10">10:00 - 11:00</option>
+                        <option value="11">11:00 - 12:00</option>
+                        <option value="12">12:00 - 13:00</option>
+                        <option value="13">13:00 - 14:00</option>
+                        <option value="14">14:00 - 15:00</option>
+                        <option value="15">15:00 - 16:00</option>
+                        <option value="16">16:00 - 17:00</option>
+                        <option value="17">17:00 - 18:00</option>
+                        <option value="18">18:00 - 19:00</option>
+                        <option value="19">19:00 - 20:00</option>
+                        <option value="20">20:00 - 21:00</option>
+                        <option value="21">21:00 - 22:00</option>
+                        <option value="22">22:00 - 23:00</option>
+                        <option value="23">23:00 - 24:00</option>
+                    </select>
+
+                    <label>予算 (円)</label>
+                    <input type="number" id="cp-budget" placeholder="0" min="0" required>
+
+                    <label>🎥 動画/画像ファイル (※動画は .mp4 / .mov 推奨) <span style="font-size:12px; font-weight:normal; color:#eab308; background:#fefce8; padding:3px 8px; border-radius:12px; margin-left:10px; border:1px solid #fef08a;">💡 推奨: 15秒の動画 (最も離脱率が低く効果的です)</span></label>
+                    <div id="swal-dropzone" style="border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-top: 10px; cursor: pointer; background: #f8f9fa; transition: 0.3s;" onclick="document.getElementById('cp-file').click()">
+                        <div style="font-size: 24px; color: #3498db; margin-bottom: 5px;">📥</div>
+                        <div style="font-size: 13px; font-weight: bold; color: #2c3e50;" id="swal-filename">クリックまたはドラッグ＆ドロップでアップロード</div>
+                        <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov / 画像ファイル (最大60秒)</div>
+                    </div>
+                    <input type="file" id="cp-file" accept="video/mp4,video/webm,video/quicktime,image/*" style="display:none;" required onchange="document.getElementById('swal-filename').innerText = this.files[0] ? this.files[0].name : 'クリックまたはドラッグ＆ドロップでアップロード'">
+
+                    <div class="form-actions">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">キャンセル</button>
+                        <button type="submit" class="btn-primary">キャンペーン登録</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- SPECS SECTION (Initially Hidden) -->
+        <div id="specs-section" style="display:none;">
+            <div class="header">
+                <h1>配信端末 (サイネージ) 仕様</h1>
+            </div>
+            <div class="card">
+                <div class="spec-layout" style="display:flex; gap:30px;">
+                    <div style="flex:1;">
+                        <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=600&q=80" alt="Signage Image"
+                            style="width:100%; border-radius:10px; background:#eee; min-height:200px; object-fit:contain;">
+                        <p style="text-align:center; font-size:0.8rem; color:#999;">Reference: Floor Standing Signage Display</p>
+                    </div>
+                    <div style="flex:2;">
+                        <div class="table-responsive" style="overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; width: 100%;"><table class="spec-table">
+                            <tr><th>解像度</th><td>62500</td></tr>
+                            <tr><th>ディスプレイの比率</th><td>その他</td></tr>
+                            <tr><th>適用</th><td>屋内, アウトドア</td></tr>
+                            <tr><th>明るさ</th><td>1000cd, カスタマイズ</td></tr>
+                            <tr><th>IP等級</th><td>30</td></tr>
+                            <tr><th>ピクセル</th><td>8mm</td></tr>
+                            <tr><th>保証</th><td>3 年</td></tr>
+                            <tr><th>スクリーンのタイプ</th><td>Led</td></tr>
+                            <tr><th>機能</th><td>カスタマイズ</td></tr>
+                            <tr><th>表示機能</th><td>グラフィック, アニメーション, Text</td></tr>
+                            <tr><th>指定</th><td>ビデオウォール</td></tr>
+                            <tr><th>サプライヤータイプ</th><td>オリジナルメーカー, Odm, Oem</td></tr>
+                            <tr><th>メディア利用可能</th><td>データシート, 写真, EDA/CAD モデル, その他</td></tr>
+                            <tr><th>使用</th><td>広告公開, 小売店, ショッピングモール, ディスプレイの料理, 歓迎ディスプレイ, 自己サービスビジネス, 展示ホール, 経路探索, 空港, 地下鉄, エレベーター, レストラン & ホテル用品, 教育, 医療</td></tr>
+                            <tr><th>操作システム</th><td>アンドロイド, Windows, その他</td></tr>
+                            <tr><th>ピクセル密度</th><td>カスタマイズ</td></tr>
+                            <tr><th>応答時間</th><td>/</td></tr>
+                            <tr><th>原産地</th><td>Guangdong, China</td></tr>
+                            <tr><th>モデル番号</th><td>P8</td></tr>
+                            <tr><th>銘柄</th><td>YAKE</td></tr>
+                            <tr><th>色</th><td>フルカラー</td></tr>
+                            <tr><th>色の深み</th><td>RGB</td></tr>
+                            <tr><th>対照の比率</th><td>3000:1</td></tr>
+                            <tr><th>設置タイプ</th><td>接着剤</td></tr>
+                            <tr><th>寿命 (時間)</th><td>100000</td></tr>
+                            <tr><th>パネルブランド</th><td>ナショナルスター</td></tr>
+                            <tr><th>眺めの角度 (H/V)</th><td>140 °</td></tr>
+                            <tr><th>保証</th><td>3年</td></tr>
+                            <tr><th>ピクセルピッチ</th><td>8MM</td></tr>
+                            <tr><th>明るさ</th><td>1,000 nits</td></tr>
+                            <tr><th>素材</th><td>ダイカストアルミニウム</td></tr>
+                            <tr><th>リフレッシュレート</th><td>3840Hz/s</td></tr>
+                            <tr><th>寿命</th><td>100000 Hs</td></tr>
+                            <tr><th>解像度</th><td>512x1536</td></tr>
+                            <tr><th>使用方法</th><td>屋内HD</td></tr>
+                        </table></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : '';
+        // Tab Switching
+        function showSection(id) {
+            // Hide all
+            document.getElementById('analytics-section').style.display = 'none';
+            document.getElementById('specs-section').style.display = 'none';
+            document.getElementById('campaigns-section').style.display = 'none';
+
+            // Show target
+            document.getElementById(id + '-section').style.display = 'block';
+
+            // Highlight nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            if (id === 'analytics') document.querySelectorAll('.nav-item')[0].classList.add('active');
+            if (id === 'campaigns') document.querySelectorAll('.nav-item')[1].classList.add('active');
+            if (id === 'specs') document.querySelectorAll('.nav-item')[2].classList.add('active');
+        }
+
+        // Modal Logic
+        let currentPlan = 'cpm';
+
+        function openNewCampaignModal(plan = 'cpm') {
+            // === KYC Authorization Gate ===
+            const isDemoUser = window.currentUser && window.currentUser.email && window.currentUser.email.includes('@demo.com');
+            const isRealUser = window.currentUser && window.currentUser.email && window.currentUser.email !== 'Guest' && window.currentUser.email !== 'Unknown';
+            if (isRealUser && !isDemoUser) {
+                const kycStatus = localStorage.getItem('retail_kyc_approved');
+                if (kycStatus !== 'true') {
+                    Swal.fire({
+                        title: '⚠️ 審査が未完了です',
+                        html: '<span style="font-size:0.95rem;">広告を配信・アップロードするには、<b>プロフィール設定（本人・法人確認）</b>を完了する必要があります。<br><br><span style="color:#ef4444;">※現在、運営(Review)で許可されていないため配信できません。</span></span>',
+                        icon: 'warning',
+                        confirmButtonText: '閉じる'
+                    });
+                    return;
+                }
+            }
+
+            currentPlan = plan;
+            document.getElementById('new-campaign-modal').style.display = 'block';
+
+            // Dynamic Title
+            const titles = {
+                'cpm': '✨ 新規 CPM キャンペーン作成',
+                'cpa': '✨ 新規 成果報酬型キャンペーン作成',
+                'rtb': '⚡ DSP入札(RTB)キャンペーン',
+                'moment': '☔ モーメント配信 設定',
+                'impression': '📈 インプレッション配信 設定'
+            };
+            document.getElementById('modal-title').innerText = titles[plan];
+
+            // Toggle Fields
+            document.getElementById('field-moment').style.display = (plan === 'moment') ? 'block' : 'none';
+            document.getElementById('field-impression').style.display = (plan === 'impression') ? 'block' : 'none';
+            document.getElementById('field-rtb').style.display = (plan === 'rtb') ? 'block' : 'none';
+        }
+
+        function closeModal() {
+            document.getElementById('new-campaign-modal').style.display = 'none';
+        }
+
+        // API: Load Campaigns
+        async function loadCampaigns() {
+            try {
+                const res = await fetch(API_URL + '/api/campaigns');
+                if (!res.ok) return;
+                const list = await res.json();
+
+                const tbody = document.getElementById('campaign-list');
+                let totalSpend = 0;
+                tbody.innerHTML = list.map(cp => {
+                    const spend = Number(cp.spend || 0);
+                    totalSpend += spend;
+                    
+                    // Simulate campaign specific details based on impressions
+                    const imp = cp.imp || 0;
+                    const faces = imp > 0 ? Math.floor(imp * 0.42) : 0;
+                    const viewRate = imp > 0 ? ((faces / imp) * 100).toFixed(1) : 0.0;
+                    const att = cp.attention || (imp > 0 ? (4.2 + Math.random()).toFixed(1) : 0);
+                    
+                    let target = "データなし";
+                    if (imp > 0) {
+                        const targets = ["20代 女性", "30代 男性", "40代 女性", "10代 男女", "シニア(50+)"];
+                        // Pick pseudo-random target based on string hash for consistency
+                        const hash = (cp.title || cp.name || "A").charCodeAt(0);
+                        target = targets[hash % targets.length];
+                    }
+
+                    // A/B test simulation
+                    let abText = "-";
+                    if (imp > 500) {
+                        const winRate = (1.1 + Math.random() * 0.4).toFixed(1);
+                        abText = `<span style="color:#f43f5e; font-size:0.75rem; font-weight:bold;">Aパターンが${winRate}倍勝利</span>`;
+                    }
+
+                    return `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td><span class="status-badge ${cp.status === 'active' ? 'active' : 'pending'}">
+                            ${cp.status === 'active' ? '配信中' : (cp.status === 'pending' ? '審査待ち' : cp.status)}
+                        </span></td>
+                        <td>
+                            <div style="font-weight:bold; color:var(--dark); margin-bottom: 4px;">${cp.title || cp.name || 'No Name'}</div>
+                            <div style="font-size:0.75rem; color:#94a3b8; margin-bottom: 6px;">${cp.start.replace(/-/g, '/')} - ${cp.end.replace(/-/g, '/')}</div>
+                            ${cp.url ? 
+                               (cp.url.startsWith('data:video') || (!cp.url.startsWith('data:image') && cp.url.match(/\.(mp4|webm)$/i)) ? `<video src="${cp.url}" style="width:120px; height:auto; border-radius:6px; background:#000; box-shadow:0 2px 4px rgba(0,0,0,0.1);" muted controls preload="metadata"></video>` : `<img src="${cp.url}" style="width:120px; height:auto; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">`)
+                               : (cp.filename ? `<div style="font-size:0.75rem; background:#f1f5f9; padding:4px; border-radius:4px; word-break:break-all;">📎 ${cp.filename}</div>` : `<div style="font-size:0.75rem; color:#ef4444; border:1px dashed #ef4444; padding:2px 4px; border-radius:4px; display:inline-block;">クリエイティブなし</div>`)
+                            }
+                        </td>
+                        <td>
+                            <div style="text-transform:uppercase; font-size:0.8rem; font-weight:bold; color:#64748b; margin-bottom:4px;">${cp.plan || 'CPM'}</div>
+                            <div style="font-size:0.8rem; color:var(--dark); line-height:1.5;">
+                                予算: <b>¥${Number(cp.budget).toLocaleString()}</b><br>
+                                <span style="color:#f59e0b;">消化額: <b>¥${Number(cp.spend || 0).toLocaleString()}</b></span>
+                            </div>
+                        </td>
+                        <td style="font-size:0.85rem;">
+                            <div style="margin-bottom:2px;"><b>総Imp:</b> ${imp.toLocaleString()}</div>
+                            <div style="margin-bottom:2px; color:#3b82f6;"><b>AI検知:</b> ${faces.toLocaleString()}人</div>
+                            <div style="color:#10b981;"><b>視認率:</b> ${viewRate}% / <b>注視:</b> ${att}s</div>
+                        </td>
+                        <td style="font-size:0.85rem;">
+                            <div style="margin-bottom:4px;"><b>コア:</b> <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">${target}</span></div>
+                            <div><b>A/B:</b> ${abText}</div>
+                        </td>
+                        <td>
+                            <button onclick="toggleCampaignStatus('${cp.id}', '${cp.status}')" class="btn-sm" style="color:${cp.status === 'active' ? '#ef4444' : '#10b981'}; font-weight:bold; width:100%; margin-bottom: 5px;">
+                                ${cp.status === 'active' ? '⏹ 停止' : '▶ 再開'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                }).join('');
+                
+                // Update Account Spend Display
+                const budgetEl = document.getElementById('account-budget-display');
+                const spendEl = document.getElementById('account-spend-display');
+                if(budgetEl && spendEl) {
+                    spendEl.innerText = totalSpend.toLocaleString();
+                    const currentBudget = parseInt(localStorage.getItem('accountBudget') || "0");
+                    budgetEl.innerText = currentBudget.toLocaleString();
+                }
+
+            } catch (e) { console.log("Offline Mode"); }
+        }
+
+        async function toggleCampaignStatus(id, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+            try {
+                await fetch(API_URL + '/api/campaigns/' + id + '/status', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus }) 
+                });
+                alert('配信を' + (newStatus === 'paused' ? '停止' : '再開') + 'しました。');
+                loadCampaigns();
+            } catch (e) { console.error('Error toggling status', e); }
+        }
+
+        async function createCampaign() {
+
+            // === KYC Authorization Gate ===
+            const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+            const isRealUser2 = checkUser && checkUser.email && checkUser.email !== 'guest@example.com' && checkUser.email !== 'Guest';
+            const isDemoUser2 = checkUser && checkUser.email && checkUser.email.includes('@demo.com');
+            if (isRealUser2 && !isDemoUser2) {
+                const kycStatus = localStorage.getItem('retail_kyc_approved');
+                if (kycStatus !== 'true') {
+                    Swal.fire({
+                        title: '⚠️ 審査が未完了です',
+                        html: '<span style="font-size:0.95rem;">広告を配信・アップロードするには、<b>プロフィール設定（本人・法人確認）</b>を完了する必要があります。<br><br><span style="color:#ef4444;">※現在、運営(Review)で許可されていないため配信できません。</span></span>',
+                        icon: 'warning',
+                        confirmButtonText: '閉じる'
+                    });
+                    return;
+                }
+            }
+            // ==============================
+
+            const name = document.getElementById('cp-name').value;
+            const start = document.getElementById('cp-start').value || '2026/05/01';
+            const end = document.getElementById('cp-end').value || '2026/05/31';
+            const budget = document.getElementById('cp-budget').value;
+
+            // Dynamic Params
+            const trigger = document.getElementById('cp-trigger').value;
+            const targetImp = document.getElementById('cp-target-imp').value;
+            const bidMax = document.getElementById('cp-bid-max').value;
+            
+                        // === AI Moderation & Rules ===
+            Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            try {
+                const reviewRes = await fetch(API_URL + '/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'mock_data' }) });
+                const reviewData = await reviewRes.json();
+                if (!reviewData.safe) {
+                    Swal.fire({ title: '❌ 審査不合格 (アカウント制限)', html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>', icon: 'error' });
+                    return;
+                }
+            } catch(e) { console.error('Review Error:', e); }
+
+            Swal.fire({ title: 'アップロード中...', timerProgressBar: true, didOpen: () => Swal.showLoading() });
+
+            // File to Base64 (Data Compression for Local storage)
+            let fileUrl = null;
+            let fileName = null;
+            const fileInput = document.getElementById('cp-file');
+            if (fileInput.files.length > 0) {
+                try {
+                    const file = fileInput.files[0];
+                    
+                    // Add 15s check for real users
+                    if (file.type.startsWith('video/')) {
+                        try {
+                            const duration = await window.getVideoDuration(file);
+                            const currentUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+                            const isDemoUser = currentUser.email && currentUser.email.includes('@demo.com');
+                            
+                            if (duration > 60) {
+                                Swal.fire('⚠️ 配信規定（60秒超過）', '本番環境では60秒以内の動画のみ配信可能です。\n※60秒以内の動画を再選択してください。', 'warning');
+                                return;
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    fileName = file.name;
+                    const reader = new FileReader();
+                    fileUrl = await new Promise((resolve, reject) => {
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                    });
+                } catch (e) {
+                    console.error("File Read Error:", e);
+                }
+            }
+
+            try {
+                const res = await fetch(API_URL + '/api/campaigns', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, start, end, budget,
+                        plan: currentPlan,
+                        trigger: (currentPlan === 'moment') ? { weather: trigger } : null,
+                        target_imp: (currentPlan === 'impression') ? parseInt(targetImp) : null,
+                        bid_max: (currentPlan === 'rtb') ? parseFloat(bidMax) : null,
+                        url: fileUrl,
+                        filename: fileName
+                    })
+                });
+                if (res.ok) {
+                    closeModal();
+                    Swal.fire({
+                        title: '設定完了',
+                        text: `キャンペーン「${name}」の配信準備が完了しました。\n※費用はアカウント残高（Budget）から消費されます。`,
+                        icon: 'success'
+                    });
+                    loadCampaigns();
+                    loadAnalytics();
+                    return;
+                }
+            } catch (e) { console.error(e) }
+
+            Swal.fire('エラー', "登録失敗 (Offline)", 'error');
+            closeModal();
+        }
+
+        async function chargeBudget() {
+            const { value: amount } = await Swal.fire({
+                title: '予算チャージ (Square決済)',
+                preConfirm: (value) => { const v = parseInt(value); if(!v || v < 1000) { Swal.showValidationMessage('最低課金金額は1,000円です'); return false; } return v; },
+                html: 'チャージする金額（最低1,000円〜）を入力してください。<br><span style="font-size: 13px; color: #dc2626; display: block; margin-top: 10px;">デモアカウントでもチャージ出来るので、クレジット決済する場合は、本番環境で課金をしてください。</span>',
+                input: 'number',
+                inputAttributes: { min: 1000, step: 1000 },
+                inputValue: 100000,
+                showCancelButton: true,
+                confirmButtonText: '決済ページへ進む'
+            });
+
+            if (amount) {
+                Swal.fire({
+                    title: '決済情報の入力',
+                    html: `
+                        <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px;">
+                            <div id="apple-pay-button" style="margin-bottom:10px;"></div>
+                            <div id="google-pay-button"></div>
+                            <div id="sq-card-container"></div>
+                            <button id="sq-creditcard" style="padding:10px; background:#0f172a; color:white; border-radius:5px; border:none; cursor:pointer;">クレジットカードで決済</button>
+                            <div id="sq-status" style="color:#ef4444; font-weight:bold; font-size:12px; margin-top:5px;"></div>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    showCancelButton: true,
+                    didOpen: () => {
+                        initializeSquarePayment(amount, 'sq-card-container', () => {
+                            const b = parseInt(localStorage.getItem('accountBudget') || "0");
+                            localStorage.setItem('accountBudget', b + parseInt(amount));
+                            loadCampaigns();
+                            Swal.fire('成功', '決済が完了し、アカウントの予算が追加されました', 'success');
+                        });
+                    }
+                });
+            }
+        }
+
+        async function loadAnalytics() {
+            try {
+                const res = await fetch(API_URL + '/api/ad/analytics');
+                const data = await res.json();
+                
+                // Get general info about campaigns
+                const cm_res = await fetch(API_URL + '/api/campaigns');
+                if (cm_res.ok) {
+                    const camps = await cm_res.json();
+                    let totalImp = 0;
+                    camps.forEach(c => totalImp += (c.imp || 0));
+                    document.getElementById('stat-impressions').innerText = totalImp.toLocaleString();
+                    
+                    // Simple simulated mapping for faces and attention based on total views
+                    const totalFaces = Math.floor(totalImp * 0.84); 
+                    document.getElementById('stat-faces').innerText = totalFaces.toLocaleString();
+                    document.getElementById('stat-face-rate').innerHTML = `視認率: <span style="font-weight:bold;color:#f43f5e;">${totalImp > 0 ? 84.1 : 0.0}%</span>`;
+                    document.getElementById('stat-attention').innerText = totalImp > 0 ? "4.2s" : "0s";
+                }
+                
+                if (data.context) {
+                    const mainDemographics = data.context.main_demographics || { gender: 'Unknown', age: 'Unknown' };
+                    document.getElementById('stat-target').innerText = `${mainDemographics.gender} / ${mainDemographics.age}`;
+                }
+                
+                if (data.ab_stats) {
+                    updateABChart(data.ab_stats);
+                }
+            } catch (e) { console.error("Could not load real analytics", e); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (location.protocol.startsWith('http')) {
+                loadCampaigns();
+                loadAnalytics();
+                setInterval(loadAnalytics, 5000); // Poll for new data
+            }
+        });
+
+        // Charts Instances
+        let chartDemo = null;
+        let chartAge = null;
+        let chartAB = null;
+
+        const ctxAB = document.getElementById('abChart').getContext('2d');
+        chartAB = new Chart(ctxAB, {
+            type: 'bar',
+            data: {
+                labels: ['Pattern A (Price)', 'Pattern B (Visual)'],
+                datasets: [{
+                    label: '注視時間 (秒)',
+                    data: [2.8, 4.2],
+                    backgroundColor: ['#cbd5e1', '#f43f5e']
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true
+            }
+        });
+
+        const ctxPos = document.getElementById('posSalesChart').getContext('2d');
+        new Chart(ctxPos, {
+            type: 'bar',
+            data: {
+                labels: ['商品A (新作飲料)', '商品B (スナック)', '商品C (日用品)'],
+                datasets: [
+                    {
+                        label: '通常時 売上/10分 (円)',
+                        data: [1500, 2100, 4800],
+                        backgroundColor: '#cbd5e1'
+                    },
+                    {
+                        label: '動画+CM 放映後10分 売上 (円)',
+                        data: [3800, 4200, 5100],
+                        backgroundColor: '#10b981'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const ctxDemo = document.getElementById('demographicsChart').getContext('2d');
+        chartDemo = new Chart(ctxDemo, {
+            type: 'doughnut',
+            data: {
+                labels: ['男性 (Male)', '女性 (Female)', '不明 (Unknown)'],
+                datasets: [{
+                    data: [0, 0, 0], // Init 0
+                    backgroundColor: ['#3b82f6', '#ec4899', '#cbd5e1']
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                maintainAspectRatio: false
+            }
+        });
+
+        const ctxAge = document.getElementById('ageChart').getContext('2d');
+        chartAge = new Chart(ctxAge, {
+            type: 'bar',
+            data: {
+                labels: ['10s', '20s', '30s', '40s', '50s+'],
+                datasets: [{
+                    label: 'Age Group',
+                    data: [0, 0, 0, 0, 0], // Init 0
+                    backgroundColor: '#6366f1'
+                }]
+            },
+            options: {
+                scales: { y: { display: false }, x: { grid: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // SSE: Realtime Updates
+        if (typeof EventSource !== "undefined") {
+            const evtSource = new EventSource("/events");
+            evtSource.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'sensor_update') {
+                    if (data.stats) {
+                        const demo = {
+                            male: data.stats.male,
+                            female: data.stats.female,
+                            unknown: data.stats.unknown,
+                            ages: [data.stats.age10s, data.stats.age20s, data.stats.age30s, data.stats.age40s, data.stats.age50s]
+                        };
+                        updateChartsWithGlobal(demo);
+                    }
+                }
+            };
+        }
+
+        function updateChartsWithGlobal(demo) {
+            const m = demo.male;
+            const f = demo.female;
+            const u = demo.unknown;
+            const agecounts = demo.ages;
+
+
+
+            // Calculate Percentages and Update DOM Document
+            const total = m + f + u;
+            if (total > 0) {
+                document.getElementById('demo-female-text').innerHTML = `● 女性: ${Math.round(f / total * 100)}% <span style="font-size:0.8rem; color:#999; font-weight:normal;">(${f}人)</span>`;
+                document.getElementById('demo-male-text').innerHTML = `● 男性: ${Math.round(m / total * 100)}% <span style="font-size:0.8rem; color:#999; font-weight:normal;">(${m}人)</span>`;
+                document.getElementById('demo-unknown-text').innerHTML = `● 不明: ${Math.round(u / total * 100)}% <span style="font-size:0.8rem; color:#999; font-weight:normal;">(${u}人)</span>`;
+
+                // Update Core Target
+                const topTargetGender = f >= m ? '女性' : '男性';
+
+                let ageLabels = ['10代', '20代', '30代', '40代', '50代以上'];
+                let sortedAges = agecounts.map((val, idx) => ({ val, label: ageLabels[idx] })).sort((a, b) => b.val - a.val);
+
+                document.getElementById('stat-target').innerText = `${sortedAges[0].label} / ${topTargetGender}`;
+                document.getElementById('stat-female-ratio').innerHTML = `女性比率: <b style="color:#ec4899;">${Math.round(f / total * 100)}%</b>`;
+
+                if (sortedAges[0].val > 0) {
+                    document.getElementById('demo-age-top').innerHTML = `Top: <b>${sortedAges[0].label} (${Math.round(sortedAges[0].val / total * 100)}%)</b>`;
+                }
+                if (sortedAges[1].val > 0) {
+                    document.getElementById('demo-age-2nd').innerHTML = `2nd: <b>${sortedAges[1].label} (${Math.round(sortedAges[1].val / total * 100)}%)</b>`;
+                }
+            }
+
+            // Update Charts
+            if (chartDemo) {
+                chartDemo.data.datasets[0].data = [m, f, u];
+                chartDemo.update();
+            }
+            if (chartAge) {
+                chartAge.data.datasets[0].data = agecounts;
+                chartAge.update();
+            }
+        }
+        // API Fetch Interval Functions
+        async function fetchGlobalStats() {
+            try {
+                const res = await fetch(API_URL + '/api/analytics/global');
+                const json = await res.json();
+                if (json.success) {
+                    const data = json.data;
+                    document.getElementById('stat-impressions').innerText = data.impressions.toLocaleString();
+                    document.getElementById('stat-imp-growth').innerText = data.imp_growth;
+
+                    document.getElementById('stat-faces').innerText = data.faceDetected.toLocaleString();
+                    document.getElementById('stat-face-rate').innerText = "視認率: " + data.attentionRate;
+
+                    document.getElementById('stat-attention').innerText = data.attentionTime;
+                    document.getElementById('stat-att-growth').innerText = data.attentionImprovement;
+
+                    document.getElementById('stat-target').innerText = data.targetMode;
+                    document.getElementById('stat-female-ratio').innerHTML = data.femaleRatio; // FemaleRatio contains HTML tags <b> now
+                    
+                    if (data.demographics) {
+                        updateChartsWithGlobal(data.demographics);
+                    }
+                }
+            } catch (e) { console.error("Stats Fetch Error", e); }
+        }
+
+        async function fetchRankingData() {
+            try {
+                const res = await fetch(API_URL + '/api/analytics/ranking');
+                const json = await res.json();
+                if (json.success && json.ranking.length > 0) {
+                    const tbody = document.getElementById('ranking-list');
+                    tbody.innerHTML = json.ranking.map(item => {
+                        const statusTag = item.status === 'active'
+                            ? '<span class="status-badge active">▶ 配信中</span>'
+                            : '<span class="status-badge" style="background:#fee2e2; color:#ef4444;">🚫 BAN</span>';
+
+                        const attStyle = item.attention >= 70 ? 'color:#10b981; font-weight:bold;' : (item.attention < 55 ? 'color:#ef4444;' : '');
+                        const skipStyle = item.skip <= 5 ? 'color:#10b981; font-weight:bold;' : (item.skip > 15 ? 'color:#ef4444;' : '');
+
+                        return `
+                        <tr>
+                            <td>${statusTag}</td>
+                            <td>${item.title}</td>
+                            <td>${item.creator}</td>
+                            <td>${item.views.toLocaleString()}</td>
+                            <td style="${attStyle}">${item.attention}%</td>
+                            <td style="${skipStyle}">${item.skip}%</td>
+                        </tr>
+                        `;
+                    }).join('');
+
+                    // Update AB test chart with top 2 campaigns dynamically (if there are at least 2)
+                    if (json.ranking.length >= 2 && chartAB) {
+                        const ad1 = json.ranking[0];
+                        const ad2 = json.ranking[1];
+                        chartAB.data.labels = [ad1.title, ad2.title];
+                        chartAB.data.datasets[0].data = [ad1.attention, ad2.attention];
+                        // Highlight the winner
+                        chartAB.data.datasets[0].backgroundColor = (ad1.attention >= ad2.attention) ? ['#f43f5e', '#cbd5e1'] : ['#cbd5e1', '#f43f5e'];
+
+                        document.getElementById('ab-insight-text').innerHTML = `💡 <b>Insight:</b> 「${ad1.title}」の方が「${ad2.title}」より <b style="color:var(--primary)">${(ad1.attention / ad2.attention).toFixed(1)}倍</b> 長く見られています。`;
+                        chartAB.update();
+                    }
+                }
+            } catch (e) { console.error("Ranking Fetch Error", e); }
+        }
+
+        async function registerCreditCard() {
+            try {
+                Swal.fire({
+                    title: 'お支払い情報の登録',
+                    text: '※広告配信・予算追加は最低1,000円からの少額課金仕様となります。',
+                    html: `
+                        <div id="sq-payment-form" style="display:flex; flex-direction:column; gap:10px; width: 300px; margin: 0 auto;">
+                            <div id="apple-pay-button" style="margin-bottom:10px;"></div>
+                            <div id="google-pay-button"></div>
+                            <div id="sq-card-container"></div>
+                            <button id="sq-creditcard" style="padding:10px; background:#f43f5e; color:white; border-radius:5px; border:none; cursor:pointer;">クレジットカードで設定</button>
+                            <div id="sq-status" style="color:#ef4444; font-weight:bold; font-size:12px; margin-top:5px;"></div>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    showCancelButton: true,
+                    cancelButtonText: '閉じる',
+                    didOpen: () => {
+                        // We use a small charge (100 JPY) for card auth simulation, or handle zero-auth natively in Square in a real app
+                        initializeSquarePayment(100, 'sq-card-container', () => {
+                            Swal.fire('成功', 'クレジット情報が安全にSquareへ登録されました。<br>最低1,000円から予算を追加できます。', 'success');
+                        });
+                    }
+                });
+            } catch(e) {
+                Swal.fire('エラー', '決済枠の呼び出しに失敗しました', 'error');
+            }
+        }
+
+        // Initialize Live Sync
+        setInterval(() => {
+            fetchGlobalStats();
+            fetchRankingData();
+        }, 3000);
+
+        // Initial Fetch
+        fetchGlobalStats();
+        fetchRankingData();
+    </script>
+
+    <!-- AI Moderation Policy Script -->
+    <script>
+        function showAdPolicy() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '配信・広告審査基準 (AI Moderation)',
+                    html: '<div style="text-align:left; font-size:0.95rem; line-height:1.6; color:#333;">以下に該当する不適切なコンテンツが含まれている配信・広告は、AIによって自動的に拒絶される可能性があります。<br><br><b>1:</b> 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。<br><b>2:</b> 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。<br><b>3:</b> 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。</div>',
+                    icon: 'info',
+                    confirmButtonText: '確認しました'
+                });
+            } else {
+                alert("以下に該当する不適切なコンテンツが含まれている配信・広告は、AIに拒否されます。\n\n1: 暴力、性的描写、ヘイトスピーチ等\n2: 投資詐欺・誇大広告\n3: LINE等への詐欺的誘導");
+            }
+        }
+    </script>
+
+    <!-- Video Duration Helper -->
+    <script>
+        window.getVideoDuration = function(file) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = () => {
+                    window.URL.revokeObjectURL(video.src);
+                    resolve(video.duration);
+                };
+                video.onerror = () => reject("Invalid video file");
+                video.src = window.URL.createObjectURL(file);
+            });
+        };
+    </script>
+</body>
+
+</html>

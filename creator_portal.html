@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Portal - retail-ad</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+        function requestUnlock() {
+            Swal.fire({
+                title: 'アカウントロック解除申請',
+                text: 'AI審査により不適切と判定された動画を削除/修正しましたか？運営(Review)へ解除申請を送信します。',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: 'はい、申請します'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(API_BASE + '/api/review/unlock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ creatorId: 'クリエイター' })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            Swal.fire('申請完了', '運営チーム(Review)へアカウントロック解除申請が送信されました。確認まで1〜2営業日お待ちください。', 'success');
+                        } else {
+                            Swal.fire('エラー', '申請の送信に失敗しました', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+:root {
+    --primary: #2563eb;
+    --accent: #f43f5e;
+    --bg-base: #f8fafc; /* White/Light background */
+    --panel-bg: #ffffff;
+    --panel-border: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-gradient: linear-gradient(to right, #8b5cf6, #ec4899);
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    background: var(--bg-base);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Bottom Navigation */
+header {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 15px 10px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
+    border-top: 1px solid var(--panel-border);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+    padding-bottom: env(safe-area-inset-bottom, 15px);
+}
+
+.logo { display: none; }
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-around;
+}
+
+.nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: 0.3s;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--primary);
+    background: #eff6ff;
+}
+
+.nav-links a.btn-nav {
+    background: none;
+    color: var(--text-muted) !important;
+}
+
+.nav-links a.btn-nav:hover {
+    background: #f1f5f9;
+}
+
+/* Main Content */
+.main-content {
+    padding: 50px 20px 120px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Logo at Top */
+.page-logo {
+    font-weight: 800;
+    font-size: 2.5rem;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+    text-align: center;
+    background: var(--text-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+h2 {
+    font-size: 2.2rem;
+    margin-top: 0;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+    background: var(--text-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+/* Stats Grid */
+.grid-top {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.stat-card {
+    background: var(--panel-bg);
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.stat-title {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.stat-sub {
+    font-size: 0.95rem;
+    color: #059669;
+    margin-top: 10px;
+}
+
+/* Upload Area */
+.upload-area {
+    background: #ffffff;
+    border: 2px dashed #94a3b8;
+    border-radius: 20px;
+    padding: 50px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-bottom: 50px;
+}
+
+.upload-area:hover {
+    border-color: var(--primary);
+    background: #eff6ff;
+}
+
+/* Videos List */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+}
+
+.video-card {
+    background: var(--panel-bg);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    position: relative;
+    transition: 0.3s;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+    border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.video-thumb {
+    width: 100%;
+    height: 180px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+}
+
+.video-title { font-weight: 800; font-size: 1.25rem; margin-bottom: 10px; color: #1e293b; }
+
+.status-badge {
+    position: absolute; top: 35px; right: 35px; padding: 5px 12px;
+    border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+}
+
+.status-active { background: #d1fae5; color: #059669; border: 1px solid #10b981; }
+.status-ban { background: #fee2e2; color: #dc2626; border: 1px solid #ef4444; }
+
+/* Buttons & SweetAlert */
+.btn {
+    background: var(--text-gradient);
+    color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s;
+}
+.btn:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4); }
+
+.swal2-popup { background: #ffffff !important; color: #1e293b !important; border-radius: 20px !important; border: 1px solid var(--panel-border); }
+.swal2-title, .swal2-html-container { color: #1e293b !important; }
+
+@media (max-width: 768px) {
+    .page-logo { font-size: 2rem; }
+    h2 { font-size: 1.8rem; }
+}
+</style>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/app-icon.png">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js');
+        });
+      }
+    </script>
+
+    <!-- Global Mobile Typography Fix -->
+    <style>
+        body, h1, h2, h3, h4, h5, p, span, div {
+            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
+            word-break: normal; /* Fallback for Safari/iOS */
+            overflow-wrap: break-word;
+        }
+        .mobile-br { display: none; }
+        .desktop-br { display: block; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+            .desktop-br { display: none; }
+            
+            /* Auto-reduce huge headings on mobile globally to prevent overflow */
+            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+<script>if(window.customElements.get('budoux-ja')) { console.log('Already defined'); } else { /* loaded */ }</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+
+    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
+    <script>
+        // Check if the user has a valid session token (cleared on restart or cache clear)
+        if (!sessionStorage.getItem('retailMediaAuth')) {
+            window.location.replace('index.html');
+        }
+    </script>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="nav-links">
+            <a href="#" class="active"><span style="font-size:1.5rem;">📊</span>ダッシュボード</a>
+            <a href="#" onclick="showBankSettings()"><span style="font-size:1.5rem;">💳</span>収益設定</a>
+            <a href="creator_lp.html" target="_blank"><span style="font-size:1.5rem;">📖</span>LP解説</a>
+            <a href="signage_player.html" target="_blank"><span style="font-size:1.5rem;">📺</span>テスト</a>
+            <a href="#" onclick="logout(); return false;" class="btn-nav"><span style="font-size:1.5rem;">🚪</span>ログアウト</a>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="page-logo">retail-ad Creator</div>
+        <h2>クリエイター実績 (全国スーパーサイネージ) <a href="javascript:void(0)" onclick="openGenericProfile()" style="margin-left:15px; color:var(--primary); text-decoration:none; font-size:14px; font-weight:bold;">[ プロフィール設定 ]</a></h2>
+
+        <div class="grid-top">
+            <div class="stat-card">
+                <div class="stat-title">累計インプレッション (視認数)</div>
+                <div class="stat-value" id="total-views">0</div>
+                <div class="stat-sub">↑ リアルタイム計測中</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">推定収益</div>
+                <div class="stat-value" id="total-revenue" style="color:var(--danger);">¥0</div>
+                <div class="stat-sub" style="font-size: 0.85rem; text-align: left; margin-top: 5px; line-height: 1.4;">
+                    ・<br class="mobile-br"><span class="nw">メーカー広告</span>: 1再生 約0.5円<br>
+                    ・Google AdSense連携: 広告収益の10%<br>
+                    <span style="color:#e1b12c; margin-top:3px; display:inline-block; display:none;">+ 今月のCM誘導ボーナス ¥10,000</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">平均シナジースコア</div>
+                <div class="stat-value" style="color:var(--warning);" id="avg-score">-- ランク</div>
+                <div class="stat-sub">POS売上貢献度が非常に高いです！</div>
+            </div>
+        </div>
+
+        <div class="stat-card"
+            style="margin-bottom: 30px; background: #f8fafc; border-left: 5px solid var(--primary); text-align: left;">
+            <h3 style="margin-top: 0; color: var(--primary);">✨ サイネージ配信で広がる新しい可能性</h3>
+            <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
+                全国の小売り店舗で<br class="mobile-br"><span class="nw">自身のコンテンツ</span>が配信され、<br class="mobile-br"><span class="nw">メーカー広告</span>との親和性によって<br class="mobile-br"><span class="nw">コンテンツの新</span>しい可能性が開けます！<br>
+                <a href="creator_lp.html" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:underline; display:inline-block; margin-top:5px;">👉 おすすめのコンテンツ例や詳細解説はこちら</a>
+            </p>
+        </div>
+
+        <h2>📤 新規ショート動画アップロード <a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline;">[配信・広告基準]</a></h2>
+        <div class="upload-area" onclick="uploadVideo()"
+            ondragover="event.preventDefault(); this.style.borderColor='#2ecc71'; this.style.background='#e8f8f5';"
+            ondragleave="event.preventDefault(); this.style.borderColor='#3498db'; this.style.background='white';"
+            ondrop="event.preventDefault(); this.style.borderColor='#3498db'; this.style.background='white'; uploadVideo();">
+            <div style="font-size: 2rem; margin-bottom: 10px;">☁️</div>
+            <div style="font-weight:bold; margin-bottom:5px;">動画ファイルをドラッグ＆ドロップ</div>
+            <div style="font-size:0.8rem; color:#888;">推奨フォーマット: MP4, 縦型(9:16),
+                15秒〜60秒<br>※アップロード後、AIが自動でテスト配信を行いスコアを測定します。</div>
+        </div>
+
+        <h2>🎬 コンテンツ最適化状況 (AI判定) <a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline; margin-left:15px; display:inline-block;">[配信・広告基準]</a></h2>
+        <div class="video-grid" id="video-list">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+        let mockVideos = [];
+
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/creator/stats`);
+                if (res.ok) {
+                    const data = await res.json();
+                    mockVideos = data.videos || [];
+                    renderVideos(data.total_views, data.total_revenue);
+                }
+            } catch (err) {
+                console.error('Fetch Stats Error:', err);
+            }
+        }
+
+        function renderVideos(fallbackTotalV, fallbackTotalR) {
+            const list = document.getElementById('video-list');
+            list.innerHTML = '';
+
+            mockVideos.forEach(v => {
+                const badge = v.status === 'active' ? '<div class="status-badge status-active">▶ 配信中 (最適化済)</div>' : '<div class="status-badge status-ban">🌱 配信制限 (要改善)</div>';
+
+                let scoreHtml = '';
+                if (v.status === 'active') {
+                    scoreHtml = `
+                        <div class="synergy-score">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span title="クリエイター動画自体の視認維持率">👀 動画の視聴維持率 (Attention Rate)</span><span>${v.attention}%</span>
+                            </div>
+                            <div class="score-bar"><div class="score-fill" style="width:${v.attention}%; background:${v.color};"></div></div>
+                            
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; margin-top:8px;">
+                                <span title="この動画の直後に配信された<br class="mobile-br"><span class="nw">メーカー広告</span>から顧客が目を離した割合">⏭️ 直後のCM離脱率 (Next-Ad Drop-off)</span><span>${v.skip}%</span>
+                            </div>
+                            <div class="score-bar"><div class="score-fill" style="width:${v.skip}%; background:#e74c3c;"></div></div>
+
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px; margin-top:8px;">
+                                <span style="color:#2ecc71;" title="関連するメーカー商品の売上向上効果">📈 POS売上貢献度 (Sales Uplift)</span><span style="color:#2ecc71;">+${v.uplift}%</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    scoreHtml = `
+                        <div class="synergy-score" style="color:var(--danger);">
+                            ⚠️ 店舗顧客層・CMとの親和性が基準を満たさないため、現在は配信が制限されています。新しいアプローチを試してファン層を拡大しましょう！
+                        </div>
+                    `;
+                }
+
+                const card = `
+                    <div class="video-card">
+                        ${badge}
+                        <div class="video-thumb">🍳</div>
+                        <div class="video-title">${v.title}</div>
+                        <div style="font-size:0.8rem; color:#888;">${v.format} | ランク: <strong style="color:${v.color}">${v.rank}</strong></div>
+                        <div style="margin-top:10px; font-weight:bold;">
+                            ${v.views.toLocaleString()} 再生 / 推定 ¥${v.revenue.toLocaleString()}
+                        </div>
+                        ${scoreHtml}
+                    </div>
+                `;
+                list.innerHTML += card;
+            });
+
+            // Direct from backend
+    document.getElementById('total-views').innerText = fallbackTotalV.toLocaleString();
+    document.getElementById('total-revenue').innerText = '¥' + (fallbackTotalR ? fallbackTotalR.toLocaleString() : '0');
+
+    if (mockVideos && mockVideos.length > 0) {
+                let ts = 0;
+                let validCount = 0;
+                mockVideos.forEach(v => {
+                    if (v.rank === 'S') { ts += 4; validCount++; }
+                    else if (v.rank === 'A') { ts += 3; validCount++; }
+                    else if (v.rank === 'B') { ts += 2; validCount++; }
+                    else if (v.rank === 'C') { ts += 1; validCount++; }
+                });
+                
+                if (validCount === 0) {
+                    document.getElementById('avg-score').innerText = '-- ランク';
+                } else {
+                    const avgNum = ts / validCount;
+                    let finalRank = 'C';
+                    if (avgNum >= 3.5) finalRank = 'S';
+                    else if (avgNum >= 2.5) finalRank = 'A';
+                    else if (avgNum >= 1.5) finalRank = 'B';
+                    document.getElementById('avg-score').innerText = finalRank + ' ランク';
+                }
+            } else {
+                document.getElementById('avg-score').innerText = '-- ランク';
+            }
+        }
+
+        // Helper: Convert File to Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function uploadVideo() {
+            Swal.fire({
+                title: '動画のアップロード(Pre-YouTube枠)',
+                html: `
+                    <div style="text-align:left; font-size:0.9rem;">
+                        <p style="color:#888; font-size:0.8rem; line-height:1.4;">
+                            <strong>【サイネージ独自配信モデル】</strong><br>
+                            <span style="color:var(--danger); font-size:1.1rem; font-weight:bold;">YouTubeに公開する前のショート動画か、YouTubeリンクをアップロードしてください。</span><br>
+                            アップロード後、AIによる自動コンテンツ審査を経て、全国の店舗サイネージでテスト配信されます。
+                        </p>
+                    </div>
+                    <div style="margin-top:15px; text-align:left; border-top:1px solid #eee; padding-top:10px;">
+                        <label style="font-weight:bold; font-size:12px;">🎥 動画ファイル (※ .mp4 / .mov 推奨)</label>
+                        <div id="creator-dropzone" style="border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-top: 10px; cursor: pointer; background: #f8f9fa; transition: 0.3s;">
+                            <div style="font-size: 24px; color: #3498db; margin-bottom: 5px;">📥</div>
+                            <div style="font-size: 13px; font-weight: bold; color: #2c3e50;" id="creator-filename">クリックまたはドラッグ＆ドロップでアップロード</div>
+                            <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov ファイル</div>
+                        </div>
+                        <input type="file" id="creator-file" accept="video/mp4,video/webm,video/quicktime" style="display:none;">
+
+                    </div>
+                    <div style="margin-top:10px; text-align:left;">
+                        <label style="font-size:12px; font-weight:bold; color:#555;">🔗 YouTubeリンク (任意)</label>
+                        <input id="creator-yt-url" class="swal2-input" placeholder="https://youtu.be/... (ショート動画も可)" style="margin-top:5px; font-size:14px;">
+                        <div style="font-size:10px; color:#999;">※ファイルアップロードの代わりに使用</div>
+                    </div>
+                    
+                    <div style="margin-top:15px; text-align:left; background:#fff3cd; padding:10px; border-radius:5px; border-left:4px solid #ffc107;">
+                        <label style="font-size:13px; font-weight:bold; color:#856404; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="creator-is-ad" style="width:16px; height:16px;">
+                            <span>これは「企業案件・広告動画（PR）」ですか？</span>
+                        </label>
+                        <div style="font-size:11px; color:#666; margin-top:5px; padding-left:24px;">※チェックを入れると、サイネージ再生時に「PR」と明記されます。</div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'アップロード',
+                cancelButtonText: 'キャンセル',
+                didOpen: () => {
+                    const dropzone = document.getElementById('creator-dropzone');
+                    const fileInput = document.getElementById('creator-file');
+                    const filenameDisplay = document.getElementById('creator-filename');
+                    const ytInput = document.getElementById('creator-yt-url');
+
+                    window._bgReviewPromise = null;
+                    const startBgReview = async (file, title) => {
+                        let base64 = "mock_data";
+                        if(file) base64 = await fileToBase64(file);
+                        window._bgReviewPromise = fetch(API_BASE + '/api/creator/review-content', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ video_base64: base64, title: title })
+                        }).then(r => r.json());
+                    };
+
+                    ytInput.addEventListener('input', () => {
+                        if(ytInput.value.length > 10) startBgReview(null, "YouTube Video");
+                    });
+
+                    // Click to open dialog
+                    dropzone.addEventListener('click', () => fileInput.click());
+
+                    // Drag over styling
+                    dropzone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#2ecc71';
+                        dropzone.style.background = '#eafaf1';
+                    });
+                    dropzone.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#3498db';
+                        dropzone.style.background = '#f8f9fa';
+                    });
+
+                    // Handle drop
+                    dropzone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#3498db';
+                        dropzone.style.background = '#f8f9fa';
+
+                        if (e.dataTransfer.files.length > 0) {
+                            fileInput.files = e.dataTransfer.files; // Assign to hidden input
+                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${e.dataTransfer.files[0].name}<br><small style="font-size:0.8rem;color:#888;">(裏でAI審査を開始しました...)</small></span>`;
+                            startBgReview(e.dataTransfer.files[0], e.dataTransfer.files[0].name);
+                        }
+                    });
+
+                    // Handle classic selection
+                    fileInput.addEventListener('change', () => {
+                        if (fileInput.files.length > 0) {
+                            filenameDisplay.innerHTML = `<span style="color:#2ecc71;">✅ ${fileInput.files[0].name}<br><small style="font-size:0.8rem;color:#888;">(裏でAI審査を開始しました...)</small></span>`;
+                            startBgReview(fileInput.files[0], fileInput.files[0].name);
+                        }
+                    });
+                },
+                preConfirm: async () => {
+                    const fileInput = document.getElementById('creator-file');
+                    const ytUrl = document.getElementById('creator-yt-url').value;
+                    let fileUrl = null;
+                    let title = "クリエイター動画 (YouTube)";
+
+                    if (fileInput.files.length > 0) {
+                        try {
+                            const file = fileInput.files[0];
+                            if (file.type.startsWith('video/')) {
+                                const duration = await new Promise((resolve) => {
+                                    const video = document.createElement('video');
+                                    video.preload = 'metadata';
+                                    video.onloadedmetadata = function() {
+                                        window.URL.revokeObjectURL(video.src);
+                                        resolve(video.duration);
+                                    }
+                                    video.src = URL.createObjectURL(file);
+                                });
+                                if (duration > 60) {
+                                    Swal.showValidationMessage(`エラー: 動画の長さが60秒を超えています (現在: ${Math.round(duration)}秒)。`);
+                                    return false;
+                                }
+                            }
+                            fileUrl = await fileToBase64(file);
+                            title = file.name;
+                        } catch (e) {
+                            Swal.showValidationMessage('ファイルの読み込みに失敗しました');
+                            return false;
+                        }
+                    } else if (!ytUrl) {
+                        Swal.showValidationMessage('動画ファイルかYouTubeリンクのどちらかを入力してください');
+                        return false;
+                    }
+
+                    const isAd = document.getElementById('creator-is-ad').checked;
+                    return { fileUrl, ytUrl, title, isAd };
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: '🤖 Google AI 審査中...',
+                        html: '動画の安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                    
+                    try {
+                        const { fileUrl, ytUrl, title, isAd } = result.value;
+                        
+                        // Backend API Call for Moderation
+                        let reviewData;
+                        if (window._bgReviewPromise) {
+                            reviewData = await window._bgReviewPromise;
+                        } else {
+                            const reviewRes = await fetch(API_BASE + '/api/creator/review-content', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ video_base64: fileUrl || "mock_data", title: title })
+                            });
+                            reviewData = await reviewRes.json();
+                        }
+                        
+                        if (!reviewData.safe) {
+                            Swal.fire({
+                                title: '❌ 審査不合格',
+                                html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '</div>',
+                                icon: 'error'
+                            });
+                            return;
+                        }
+
+                        Swal.fire({
+                            title: '✅ 審査通過',
+                            html: 'ガイドラインをクリアしました。<br><span style="font-size:0.8rem;color:#888;">AI判定: ' + reviewData.message.substring(0,40) + '...</span>',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(async () => {
+                            try {
+                                const res = await fetch(`${API_BASE}/api/creator/upload`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        title: title,
+                                        format: "縦型 (Shorts)",
+                                        src: ytUrl || fileUrl
+                                    })
+                                });
+                                if (res.ok) {
+                                    fetchStats();
+                                    Swal.fire({
+                                        title: '🎥 配信スタート',
+                                        text: 'サイネージプレーヤーへ割り込み配信が開始されました！',
+                                        icon: 'success',
+                                        timer: 4000
+                                    });
+                                }
+                            } catch (e) {
+                                console.error('Upload Error:', e);
+                            }
+                        });
+                    } catch (err) {
+                        Swal.fire('エラー', 'AIサーバーに接続できませんでした。', 'error');
+                    }
+                }
+            });       }
+
+        function showBankSettings() {
+            Swal.fire({
+                title: '収益の受け取り設定',
+                html: `
+                    <div style="text-align:left; font-size:0.9rem; margin-top:10px;">
+                        <label style="display:block; margin-bottom:5px; color:#555;">銀行名</label>
+                        <input type="text" id="bank-name" class="swal2-input" placeholder="例: みずほ銀行" style="width:80%; margin:0 0 15px 0;">
+                        
+                        <label style="display:block; margin-bottom:5px; color:#555;">支店名</label>
+                        <input type="text" id="bank-branch" class="swal2-input" placeholder="例: 渋谷支店" style="width:80%; margin:0 0 15px 0;">
+                        
+                        <label style="display:block; margin-bottom:5px; color:#555;">口座番号</label>
+                        <input type="text" id="bank-account" class="swal2-input" placeholder="例: 普通 1234567" style="width:80%; margin:0 0 15px 0;">
+                        
+                        <label style="display:block; margin-bottom:5px; color:#555;">連絡先メールアドレス</label>
+                        <input type="email" id="bank-email" class="swal2-input" placeholder="例: creator@example.com" value="creator@demo.com" style="width:80%; margin:0 0 15px 0;">
+
+                        <label style="display:block; margin-bottom:5px; color:#555;">口座名義 (カタカナ)</label>
+                        <input type="text" id="bank-holder" class="swal2-input" placeholder="例: ヤマダ タロウ" style="width:80%; margin:0 0 15px 0;">
+                        
+                        <p style="font-size:0.8rem; color:#888;">※登録した口座に、月末締めの翌月末払いで広告収益が自動で振り込まれます。</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '保存する',
+                cancelButtonText: 'キャンセル',
+                preConfirm: () => {
+                    return {
+                        bankName: document.getElementById('bank-name').value,
+                        branchName: document.getElementById('bank-branch').value,
+                        accountNum: document.getElementById('bank-account').value,
+                        holderName: document.getElementById('bank-holder').value,
+                        email: document.getElementById('bank-email').value
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const data = result.value;
+                    fetch(`${API_BASE}/api/creator/bank`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    }).then(() => {
+                        Swal.fire('保存しました', '口座情報が更新されました。', 'success');
+                    }).catch(e => {
+                        console.error(e);
+                        Swal.fire('エラー', '保存に失敗しました。', 'error');
+                    });
+                }
+            });
+        }
+
+        // Live Sync with Backend
+        setInterval(fetchStats, 3000);
+        fetchStats();
+
+        function logout() {
+            sessionStorage.removeItem('retailMediaAuth');
+            window.location.replace('index.html');
+        }
+    </script>
+
+<!-- GENERIC PROFILE MODAL INJECTED -->
+<div id="generic-profile-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:10px; width:400px; max-width:90%; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:#333;">👤 プロフィール / アカウント設定</h3>
+        <span onclick="document.getElementById('generic-profile-modal').style.display='none'" style="position:absolute; top:20px; right:20px; font-size:20px; cursor:pointer; color:#999;">&times;</span>
+        
+        <form onsubmit="event.preventDefault(); saveGenericProfile();" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">組織名 (任意)</label>
+                <input type="text" id="g-prof-org" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">お名前</label>
+                <input type="text" id="g-prof-name" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" required>
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">メールアドレス</label>
+                <input type="email" id="g-prof-email" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" required autocomplete="email">
+            </div>
+            <div>
+                <label style="font-size:12px; font-weight:bold; color:#666;">新しいパスワード (変更する場合)</label>
+                <input type="password" id="g-prof-pass" placeholder="(空白で変更なし)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;" autocomplete="new-password">
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                <button type="submit" style="background:#2ecc71; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-weight:bold;">保存して同期する</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openGenericProfile() {
+        // Load data from localStorage assuming sync points
+        document.getElementById('g-prof-org').value = localStorage.getItem('demo_org') || "";
+        document.getElementById('g-prof-name').value = localStorage.getItem('demo_name') || "";
+        document.getElementById('g-prof-email').value = localStorage.getItem('demo_email') || "";
+        document.getElementById('g-prof-pass').value = ""; // clear password
+        document.getElementById('generic-profile-modal').style.display = 'flex';
+    }
+
+    async function saveGenericProfile() {
+        const org = document.getElementById('g-prof-org').value;
+        const name = document.getElementById('g-prof-name').value;
+        const email = document.getElementById('g-prof-email').value;
+        const pass = document.getElementById('g-prof-pass').value;
+
+        // Save locally to keep in sync across portals
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_name', name);
+        localStorage.setItem('demo_email', email);
+        
+        // Push sync to server (DB background)
+        try {
+            await fetch('/api/user/profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, name, org})
+            });
+        } catch(e) {}
+
+        document.getElementById('generic-profile-modal').style.display = 'none';
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
+        } else {
+            alert("プロフィールを保存しました。");
+        }
+        
+        // Optional refresh specific to page
+        try { if(typeof loadUserInfo === 'function') loadUserInfo(); }catch(e){}
+    }
+</script>
+
+
+    <!-- AI Moderation Policy Script -->
+    <script>
+        function showAdPolicy() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '配信・広告審査基準 (AI Moderation)',
+                    html: '<div style="text-align:left; font-size:0.95rem; line-height:1.6; color:#333;">以下に該当する不適切なコンテンツが含まれている配信・広告は、AIによって自動的に拒絶される可能性があります。<br><br><b>1:</b> 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。<br><b>2:</b> 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。<br><b>3:</b> 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。</div>',
+                    icon: 'info',
+                    confirmButtonText: '確認しました'
+                });
+            } else {
+                alert("以下に該当する不適切なコンテンツが含まれている配信・広告は、AIに拒否されます。\n\n1: 暴力、性的描写、ヘイトスピーチ等\n2: 投資詐欺・誇大広告\n3: LINE等への詐欺的誘導");
+            }
+        }
+    </script>
+
+    <script>
+        window.getVideoDuration = function(file) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = () => {
+                    window.URL.revokeObjectURL(video.src);
+                    resolve(video.duration);
+                };
+                video.onerror = () => reject('Invalid video file');
+                video.src = window.URL.createObjectURL(file);
+            });
+        };
+    </script>
+
+    <!-- Native 2FA Setup/Manage Overlays -->
+    <div id="native-2fa-setup-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; font-family:'Noto Sans JP', sans-serif;">
+        <div style="background:#fff; padding:30px; border-radius:12px; text-align:center; max-width:420px; width:90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h2 style="margin-top:0; color:#2563eb; font-size:1.5rem;">二段階認証の設定</h2>
+            <p style="color:#64748b; font-size:14px; margin-top:10px;">アプリでQRコードを読み取り、表示された6桁のコードを入力してください。</p>
+            <img id="native-2fa-qr" src="" style="margin:20px auto; max-width:200px; display:block; border: 1px solid #cbd5e1; border-radius:8px; padding:10px;">
+            <input type="text" id="native-2fa-code" placeholder="6桁のコード" style="width:100%; padding:14px; margin-bottom:15px; border:2px solid #cbd5e1; border-radius:8px; font-size:1.2rem; text-align:center;" autocomplete="off">
+            <button onclick="submit2FASetup()" style="background:#2563eb; color:white; border:none; padding:14px 20px; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; width:100%;">有効化する</button>
+            <button onclick="document.getElementById('native-2fa-setup-overlay').style.display='none'" style="background:transparent; color:#94a3b8; border:none; padding:10px; margin-top:10px; cursor:pointer; width:100%;">キャンセル</button>
+            <p id="native-2fa-error" style="color:#e74c3c; font-size:14px; margin-top:15px; display:none;">コードが間違っています</p>
+        </div>
+    </div>
+\n<script>
+let current2FASecret = "";
+async function open2FASetup() {
+    const email = sessionStorage.getItem("retailUserEmail");
+    const qrRes = await fetch("/api/auth/2fa/setup", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email})});
+    const qrData = await qrRes.json();
+    current2FASecret = qrData.secret;
+    document.getElementById("native-2fa-qr").src = qrData.qrcode;
+    document.getElementById("native-2fa-error").style.display = "none";
+    document.getElementById("native-2fa-code").value = "";
+    document.getElementById("native-2fa-setup-overlay").style.display = "flex";
+}
+
+async function submit2FASetup() {
+    const email = sessionStorage.getItem("retailUserEmail");
+    const code = document.getElementById("native-2fa-code").value.trim();
+    if(!code) return;
+    const vRes = await fetch("/api/auth/2fa/enable", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, token: code, secret: current2FASecret})});
+    const vData = await vRes.json();
+    if(vData.success) {
+        Swal.fire("成功", "二段階認証を有効化しました。", "success");
+        document.getElementById("native-2fa-setup-overlay").style.display = "none";
+    } else {
+        document.getElementById("native-2fa-error").style.display = "block";
+    }
+}
+</script>
+</body>
+
+</html>

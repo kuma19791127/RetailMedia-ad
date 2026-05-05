@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailMedia Business - 店舗のDXを始めよう</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --accent: #f43f5e;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            position: fixed;
+            bottom: 0;
+            top: auto;
+            width: 100%;
+            z-index: 10000;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+            position: absolute;
+            left: 40px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .logo { display: none; } /* Hide logo to save space on bottom nav */
+
+
+        .nav-links a {
+            color: #1e293b;
+            text-decoration: none;
+            margin: 0 20px;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #1e293b;
+        }
+
+        .btn-nav {
+            background: var(--primary);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white !important;
+            font-weight: 600;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+            overflow: hidden;
+        }
+
+        .hero-bg-anim {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: url('download111.png') no-repeat center center;
+            background-size: cover;
+            opacity: 0.2;
+            animation: slowZoom 30s infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes slowZoom {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.2);
+            }
+        }
+
+        .hero-content {
+            z-index: 10;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #60a5fa, #f43f5e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* Cards / Features */
+        .features {
+            padding: 100px 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: #f8fafc;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .card p {
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        /* Demo Video Area */
+        .video-section {
+            padding: 100px 0;
+            text-align: center;
+            background: #f1f5f9;
+        }
+
+        .video-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* CTA */
+        .cta-section {
+            padding: 120px 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: #1e293b;
+            padding: 20px 50px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(244, 63, 94, 0.5);
+        }
+
+        /* API Integration Code Block */
+        .code-block {
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            text-align: left;
+            margin-top: 20px;
+            color: #a5f3fc;
+            overflow-x: auto;
+        }
+
+        /* Mobile specific stylings */
+        .sp-br { display: none; }
+        
+        @media (max-width: 768px) {
+            .sp-br { display: block; }
+            h2 { font-size: 1.6rem !important; }
+            nav {
+                flex-direction: row;
+                justify-content: center;
+                padding: 15px;
+            }
+            .logo {
+                margin-bottom: 0;
+            }
+            .nav-links {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                padding: 12px 0;
+                padding-bottom: env(safe-area-inset-bottom, 15px); /* iPhone safe area */
+                margin: 0;
+                border-top: 1px solid var(--glass);
+                z-index: 9999;
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            }
+            .nav-links a {
+                margin: 0;
+                font-size: 0.75rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                color: #1e293b;
+                flex: 1;
+                text-decoration: none;
+            }
+            /* Add pseudo icons for bottom nav */
+            .nav-links a[href="#features"]::before { content: '⚙️'; font-size: 1.2rem; margin-bottom: 4px; }
+            .nav-links a[href*="dashboard"]::before { content: '📊'; font-size: 1.2rem; margin-bottom: 4px; }
+            .nav-links a[href="#api"]::before { content: '🔗'; font-size: 1.2rem; margin-bottom: 4px; }
+            .nav-links a.btn-nav::before { content: '🔑'; font-size: 1.2rem; margin-bottom: 4px; }
+
+            .nav-links a.btn-nav {
+                background: none;
+                color: var(--primary) !important;
+                padding: 0;
+                border-radius: 0;
+                font-weight: bold;
+            }
+            /* Adjust hero for the navbars */
+            .hero {
+                padding-top: 15vh; /* Reduced top space (half of center) */
+                align-items: flex-start; /* Disable standard centering */
+                height: auto;
+                min-height: 100vh;
+                padding-bottom: 15vh;
+            }
+            .hero-content h1 {
+                font-size: 2.2rem !important;
+                line-height: 1.3 !important;
+                margin-bottom: 15px;
+            }
+            p.subtitle {
+                font-size: 1.1rem;
+                margin-bottom: 30px;
+            }
+            .btn-primary {
+                font-size: 1.2rem;
+                padding: 15px 30px;
+            }
+        }
+    
+    
+</style>
+
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/app-icon.png">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js');
+        });
+      }
+    </script>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply BudouX to all headings and paragraphs to ensure beautiful line breaks on iPhone/Safari
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    // Apply to text content to insert invisible <wbr> tags without breaking HTML layout
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+
+    <!-- Global Mobile Typography Fix -->
+    <style>
+        body, h1, h2, h3, h4, h5, p, span, div {
+            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
+            word-break: keep-all; /* Fallback */
+            overflow-wrap: break-word;
+        }
+        .mobile-br { display: none; }
+        .desktop-br { display: block; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+            .desktop-br { display: none; }
+            
+            /* Auto-reduce huge headings on mobile globally to prevent overflow */
+            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+        }
+    
+    
+</style>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">retail-ad<span>.com</span></div>
+        <div class="nav-links">
+            <a href="#features">機能</a>
+            <a href="ad_dashboard.html">分析</a>
+            <a href="#api">API連携</a>
+            <a href="ad_dashboard.html" class="btn-nav">ログイン</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-bg-anim"></div>
+        <div class="hero-content">
+            <h1 style="font-size: 3rem; line-height: 1.2;">広告主様の<br class="sp-br">広告を<br>店舗サイネージに<br class="sp-br">YouTubeのように<br>自由に<br class="sp-br">配信サービス<br class="mobile-br"><span class="nw">(リテアド)。</span></h1>
+            <p class="subtitle">
+                面倒な契約も、複雑な入稿も不要。<br>
+                1再生1円〜の明瞭会計で、あなたの広告を<br class="mobile-br"><span class="nw">店舗の「一等地」へ。</span>
+            </p>
+            <a href="#cta" class="btn-primary">今すぐ始める (無料)</a>
+        </div>
+    </div>
+
+    <section id="features" class="features">
+        
+        <div class="card">
+            <div class="icon">🛒</div>
+            <h3>成果報酬型広告 (CPA/POS連携)</h3>
+            <p>POSデータと連携し、広告視聴後の商品購入や来店といった<br>「成果」が発生した場合のみ<br>課金されます。</p>
+        </div>
+        <div class="card" style="border: 1px solid #f43f5e;">
+            <div class="icon">☔</div>
+            <h3 style="color:#f43f5e;">モーメント配信（状況連動）</h3>
+            <p>「雨が降ったら傘の広告」<br>「気温30度超えで<br>アイスの広告」など、<br>特定の状況に合わせて<br>自動配信します。</p>
+        </div>
+        <div class="card" style="border: 1px solid #3b82f6;">
+            <div class="icon">📈</div>
+            <h3 style="color:#3b82f6;">インプレッション配信</h3>
+            <p>純粋な再生回数ベースでの課金プラン。低コストで大量の露出を確保したい場合に最適です。</p>
+        </div>
+        <div class="card" style="border: 1px solid #10b981;">
+            <div class="icon">✅</div>
+            <h3 style="color:#10b981;">安心の広告審査制度</h3>
+            <p>ブランドセーフティを担保。<br class="mobile-br">店舗側でアップロードされた<br class="mobile-br">事前審査を行い、<br class="mobile-br">承認された安全で<br class="mobile-br">高品質な<br class="mobile-br"><span class="nw">広告のみが配信されます。</span></p>
+        </div>
+        <div class="card" style="border: 1px solid #8b5cf6;">
+            <div class="icon">📊</div>
+            <h3 style="color:#8b5cf6;">詳細CSVレポート出力機能</h3>
+            <p>配信日時、店舗、再生回数、<br class="mobile-br">AI視認率などの詳細な放映証明<br class="mobile-br">ログをCSV出力。<br class="mobile-br">次の一手に活かせる確実な<br class="mobile-br">データを提供します。</p>
+        </div>
+    </section>
+
+    <!-- Privacy Section (New) -->
+    <section id="privacy" style="padding: 80px 20px; background: #ffffff; text-align: center;">
+        <div style="max-width: 900px; margin: 0 auto;">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🛡️</div>
+            <h2 style="font-size: 2.5rem; color: #0f172a; margin-bottom: 20px;">強力な個人情報保護</h2>
+            <p style="font-size: 1.1rem; color: #1e293b; line-height: 1.8; margin-bottom: 40px;">
+                リテアドは<br>「Privacy by Design」に基づき<br>個人データを保持しない<br>安全な仕組みを構築しています。
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; text-align: left;">
+                <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🚀 エッジAIによる即時破棄</h3>
+                    <p style="color: #1e293b; line-height: 1.6;">
+                        サイネージ端末（エッジAIチップ）内で、「20代女性」「笑顔」「視線あり」といった属性データ（数値）に<br>即座に変換します。<br>
+                        変換・分析が終わった瞬間（数ミリ秒後）、<strong>元の映像データは即座に破棄（上書き削除）</strong>され、メモリにも残りません。
+                    </p>
+                </div>
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: #60a5fa; margin-top: 0; font-size: 1.3rem;">🔒 個人データの完全非保持</h3>
+                    <p style="color: #1e293b; line-height: 1.6;">
+                        万が一サーバーがハッキングされても、そこに<strong>個人画像データは一切存在しない</strong>ため、漏洩のリスク自体を<br>根本から断ちます。<br>
+                        統計データのみを<br class="mobile-br">マーケティングに活用する<br class="mobile-br">安心・安全なプラットフォームです。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="video-section">
+        <h2 style="font-size: 2.5rem; margin-bottom: 40px;">イメージ・デモ</h2>
+        <div class="video-container">
+            <!-- Embedding the demo video created earlier -->
+            <iframe src="demo_movie.html" width="100%" height="650px" frameborder="0"
+                style="background: black;"></iframe>
+        </div>
+    </section>
+
+    <section id="analytics" class="features"
+        style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: center; background: rgba(15, 23, 42, 0.5);">
+        <div style="text-align: center;">
+            <h2 style="font-size: 2.5rem;">🔗 自社システムと連携</h2>
+            <p style="font-size: 1.2rem; color: #1e293b; margin-bottom: 20px;">
+                開発者向けの強力な<br class="mobile-br">API / SDK を提供。<br>
+                取得した<br class="sp-br">
+<span class="nw">AI分析データやPOSデータを</span><br class="sp-br">他のツールへ引き渡し、<br class="sp-br">御社のマーケティングシステムと<br class="sp-br">シームレスに統合できます。
+            </p>
+            <div class="code-block">
+                // Initialize RetailMedia SDK
+                const rm = new RetailMediaSDK({ apiKey: 'YOUR_KEY' });
+
+                // Push Ad based on Inventory
+                rm.campaign.create({
+                target: 'store_shibuya',
+                trigger: { stockLevel: 'high', weather: 'rainy' },
+                creative: 'ad_umbrella_sale.mp4'
+                });
+            </div>
+        </div>
+        <div style="text-align:center;">
+            <div
+                style="background:linear-gradient(45deg, #2563eb, #f43f5e); width:200px; height:200px; margin:0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 50px rgba(37,99,235,0.5);">
+                <span style="font-size:5rem;">API</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Enterprise Premium Plan -->
+    <section id="premium-plan" style="background: linear-gradient(135deg, #0f172a, #312e81); padding: 80px 20px; text-align: center; border-radius: 20px; max-width: 1000px; margin: 80px auto; border: 1px solid #8b5cf6; box-shadow: 0 10px 40px rgba(139, 92, 246, 0.2);">
+        <h2 style="font-size: 2.5rem; color: #f472b6; margin-bottom: 20px; text-align: center;">
+            <span style="font-size: 3rem;">👑</span> 全店ジャック・エンタープライズ
+        </h2>
+        <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.8; margin-bottom: 30px; padding: 0 20px;">
+            全国の全サイネージパネルを<br class="mobile-br">
+フル活用してブランドを<br class="mobile-br">
+独占的に訴求する大型キャンペーン<br>
+            ご予算 <strong style="color:#e879f9; font-size:1.1rem;">1,000万円〜</strong> のイベントキャンペーンは、<br class="mobile-br">リテアド専属チームが<br class="mobile-br">企画・枠の確保から配信・詳細分析まで<br class="mobile-br">
+全工程をワンストップで請け負います。
+        </p>
+        <a href="mailto:info@retail-ad.awsapps.com?subject=大型キャンペーン(全店ジャックプラン)のご相談" style="background: linear-gradient(45deg, #c084fc, #f472b6); color: #ffffff; padding: 18px 45px; border-radius: 50px; font-size: 1.3rem; text-decoration: none; font-weight: bold; display: inline-block; box-shadow: 0 5px 20px rgba(232, 121, 249, 0.4); transition: transform 0.3s;">
+            専属チームにご相談（窓口）
+        </a>
+    </section>
+
+    <section id="cta" class="cta-section">
+        <h2 style="font-size: 2.5rem; margin-bottom: 20px;">さあ、サイネージパネル広告を<br class="sp-br">始めましょう</h2>
+        <p style="margin-bottom: 40px; color: #1e293b;">初期費用は無料。まずはアカウントを作成して、<br class="sp-br">配信をお試しください。</p>
+        <a href="index.html" class="btn-primary">アカウント登録 (無料)</a>
+    </section>
+
+    <!-- Company Profile Section -->
+    <section id="company"
+        style="padding: 80px 20px; background: var(--dark); border-top: 1px solid rgba(255,255,255,0.05);">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h2 style="font-size: 2rem; margin-bottom: 30px; text-align: center; color: #1e293b;">運営会社</h2>
+            <div
+                style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid var(--glass);">
+                <table class="company-table" style="width: 100%; border-collapse: collapse; color: #1e293b; font-size: 0.95rem; word-break: break-word; overflow-wrap: break-word;">
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <th style="padding: 15px; text-align: left; width: 30%; color: #1e293b;">会社名</th>
+                            <td style="padding: 15px;">non-logi株式会社</td>
+                        </tr>
+
+
+                        <tr>
+                            <th style="padding: 15px; text-align: left; color: #1e293b;">事業内容</th>
+                            <td style="padding: 15px;">リテールメディアシステムの開発・運営、広告代理業</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer with Policies -->
+</body>
+
+</html>
+
+<style>
+  /* Refined, stylish textual colors */
+  body { color: #1e293b; }
+  p.subtitle { color: #475569 !important; }
+  .card p { color: #475569 !important; }
+  
+  /* Restore the beautiful Hero H1 Gradient */
+  .hero-content h1 {
+    background: linear-gradient(135deg, #2563eb 0%, #f43f5e 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important;
+    text-shadow: 0px 4px 20px rgba(244, 63, 94, 0.15);
+  }
+
+  .nav-links a { color: #334155 !important; }
+  .nav-links a:hover { color: #0f172a !important; }
+  
+  .btn-primary { 
+      color: #ffffff !important; 
+      -webkit-text-fill-color: #ffffff !important; 
+  }
+</style>

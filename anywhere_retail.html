@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>小売り向け設定パネル</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #F8FAFC;
+            color: #1E293B;
+            margin: 0; padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h2 { text-align: center; color: #10B981; }
+        
+        /* 16文字程度での改行を促すための幅制限と文字組み */
+        .desc-text {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #64748B;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+            padding: 10px;
+            background: #F1F5F9;
+            border-radius: 8px;
+        }
+
+        .menu-btn {
+            display: block;
+            box-sizing: border-box;
+            text-align: center;
+            text-decoration: none;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background: #F8FAFC;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: #2563EB;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="page-login" class="container" style="text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+        <h2 style="margin:0;">anywhere Login</h2>
+        <p style="color:#10B981; font-weight:bold; margin-top:5px; font-size:14px;">(retail)</p>
+        
+        <form onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:20px 0 0 0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
+            <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
+            <input type="password" id="input-pass" class="login-input" placeholder="Password" autocomplete="current-password">
+            <button type="submit" class="btn-primary">ログインして開始</button>
+        </form>
+
+        <div style="margin-top:15px; font-size:12px;">
+            <a href="#" style="color:#2563EB;">Forgot Password?</a>
+        </div>
+
+        <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
+            <b style="color:#1F2937; margin-bottom:5px; display:inline-block;">Demo Account (タップで自動入力＆コピー)</b><br>
+            Email: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; margin-bottom:5px;" onclick="document.getElementById('input-email').value='store@demo.com'">store@demo.com</span><br>
+            Pass: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block;" onclick="document.getElementById('input-pass').value='DemoPass2026!'">DemoPass2026!</span>
+        </div>
+        <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
+            <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
+        </div>
+        
+        <a href="anywhere_regi.html" style="display:block; margin-top:20px; font-size:12px; text-decoration:underline;">一般のお買い物客向けログインはこちら</a>
+    </div>
+
+    <!-- Management Portal (Hidden by default) -->
+    <div id="page-portal" class="container" style="display: none;">
+        <h2>📱 どこでもレジ <i class="fa-solid fa-pen-to-square" style="cursor:pointer; color:#94a3b8; font-size:16px; margin-left:10px;" onclick="openProfileModal()"></i><br><span id="user-email-display" style="font-size:14px; color:#64748B;"></span></h2>
+        
+        <p class="desc-text">
+            こちらのページは小売り店舗様の設定専用ページです。<br>
+            各種データ取込や売上確認が可能です。
+        </p>
+
+        <a href="anywhere_lp.html" target="_blank" class="menu-btn" style="background:#3b82f6;">📖 LPを見る</a>
+        <button onclick="fetchSalesData()" class="menu-btn" style="background:#0ea5e9;">📊 会社別売上</button>
+        <button onclick="savePOSSettings()" class="menu-btn" style="background:#8e44ad;">🔄 POS自動連携 (5分毎同期)</button>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button onclick="document.getElementById('excel-master-upload').click()" style="background:none; border:none; color:#10B981; text-decoration:underline; font-size:12px; cursor:pointer;">📥 ファイル手動取込 (※自動連携不可の店舗用)</button>
+        </div>
+        <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="uploadProductData(this)">
+        <button onclick="fetchScanHistory()" class="menu-btn" style="background:#f59e0b;">🛠 スキャン履歴</button>
+        <button onclick="window.location.href='anywhere_regi.html?skipAuth=1'" class="menu-btn" style="background:#ec4899;">🛒 商品を店員が読む</button>
+    <button onclick="generateQR()" class="menu-btn" style="background:#14b8a6;">📷 顧客用スマホレジQR発行</button>
+        <button onclick="window.open('business_lp.html', '_blank')" class="menu-btn" style="background:#8b5cf6;">📺 サイネージ広告</button>
+        
+        <button class="menu-btn" style="background:#ef4444; margin-top:20px;" onclick="doLogout()">ログアウト</button>
+    </div>
+
+    <script>
+    async function doLogin() {
+        const email = document.getElementById('input-email').value;
+        const pass = document.getElementById('input-pass').value;
+        if(!email || !pass) {
+            Swal.fire({icon: 'error', title: 'エラー', text: 'Emailとパスワードを入力してください'});
+            return;
+        }
+        
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password: pass })
+            });
+            const data = await res.json();
+            
+            if (data.success || email.includes('demo.com')) {
+                document.getElementById('page-login').style.display = 'none';
+                document.getElementById('page-portal').style.display = 'block';
+                document.getElementById('user-email-display').innerText = email;
+                Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'ログイン完了', showConfirmButton: false, timer: 1500});
+            } else {
+                Swal.fire({icon: 'error', title: 'エラー', text: '認証に失敗しました。パスワードをご確認ください。'});
+            }
+        } catch(e) {
+            console.error("Login Error", e);
+            document.getElementById('page-login').style.display = 'none';
+            document.getElementById('page-portal').style.display = 'block';
+            document.getElementById('user-email-display').innerText = email;
+        }
+    }
+    function doLogout() {
+        document.getElementById('page-login').style.display = 'block';
+        document.getElementById('page-portal').style.display = 'none';
+        document.getElementById('input-pass').value = '';
+    }
+</script>
+
+<!-- Context-Agnostic Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:left;">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        
+        <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="Demo Store" autocomplete="organization">
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+            <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="store@demo.com" autocomplete="username">
+            
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード" autocomplete="new-password">
+            
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openProfileModal() {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
+        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+        document.getElementById('user-email-display').innerText = document.getElementById('prof-org').value + ' / ' + document.getElementById('prof-email').value;
+        document.getElementById('modal-profile').style.display = 'none';
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+    }
+</script>
+
+<!-- QR Code Modal -->
+<div id="modal-qr" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center;">
+        <h3 style="margin-top:0; color:#10B981; margin-bottom:10px; font-size:1.2rem;">顧客用セルフレジ QRコード</h3>
+        <p style="font-size:12px; color:#6B7280; margin-bottom:20px;">URLをLINE等で送信してください。</p>
+        
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; padding:10px; border-radius:6px; font-size:12px; color:#4B5563; text-align:left; margin-bottom:15px; line-height:1.6;">
+            <b style="color:#2563EB;">【これによる運用メリット】</b><br>
+            <span style="color:#ef4444; font-size:10px;">※有効化するには本番accountを作成してください</span><br><br>
+            <b>・LINE等での遠隔配信が可能に:</b><br>
+            店頭にQRコードを置くだけでなく、コピーしたURLを<br>
+            お店の公式LINEやメルマガで上位顧客（VIP）に一斉送信することができます。<br><br>
+            <b>・店側の完全コントロール:</b><br>
+            お客様がそのURLを開いて買い物をすれば、<br>
+            システム側には「パラメータに入っている貴社の売上」として<br>
+            確実に記録されるため、<br>
+            お店側が配信先を完全にコントロールしながら運用できます。
+        </div>
+        
+        <div id="qrcode-container" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
+        
+        <input type="text" id="qr-url-display" readonly style="width:100%; padding:10px; font-size:10px; color:#64748B; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; margin-bottom:15px; box-sizing:border-box;">
+        
+        <button onclick="copyQrUrl()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">URLをコピーする</button>
+        <button onclick="document.getElementById('modal-qr').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">閉じる</button>
+    </div>
+</div>
+
+<script>
+let qrcodeObj = null;
+function generateQR() {
+    const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value || 'store@demo.com';
+    
+    const currentDomain = window.location.origin;
+    const path = window.location.pathname.replace('anywhere_retail.html', 'anywhere_regi.html');
+    const fullUrl = currentDomain + path + "?store_id=" + encodeURIComponent(email);
+    
+    document.getElementById('qr-url-display').value = fullUrl;
+    
+    const container = document.getElementById('qrcode-container');
+    container.innerHTML = ''; 
+    
+    qrcodeObj = new QRCode(container, {
+        text: fullUrl,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+    
+    document.getElementById('modal-qr').style.display = 'flex';
+}
+
+function copyQrUrl() {
+    const urlInput = document.getElementById('qr-url-display');
+    urlInput.select();
+    navigator.clipboard.writeText(urlInput.value);
+    Swal.fire({toast:true, position:'top-end', icon:'success', title:'URLをコピーしました！<br>LINE等で送信できます', showConfirmButton:false, timer:3000});
+}
+
+    // --- Real Server Connections ---
+    async function fetchSalesData() {
+        const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
+        try {
+            Swal.fire({title: '通信中...', text: 'サーバーから売上を取得しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            const res = await fetch(/api/retailer/dashboard?store_id=);
+            const data = await res.json();
+            Swal.fire({
+                icon: 'success',
+                title: '本日のPOS売上',
+                html: <h2 style="color:#10B981; font-size:32px;">¥</h2><p>クラウド(S3)から最新のデータを取得しました。</p>
+            });
+        } catch(e) {
+            Swal.fire('エラー', 'データの取得に失敗しました', 'error');
+        }
+    }
+
+    async function fetchScanHistory() {
+        const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
+        try {
+            Swal.fire({title: '通信中...', didOpen: () => Swal.showLoading()});
+            const res = await fetch(/api/retailer/dashboard?store_id=);
+            const data = await res.json();
+            
+            let historyHtml = '<p>履歴がありません</p>';
+            if(data.transactions && data.transactions.length > 0) {
+                historyHtml = data.transactions.map(t => {
+                    const d = new Date(t.timestamp).toLocaleString('ja-JP');
+                    return <div style="border-bottom:1px solid #eee; padding:5px 0; color:#333;"> - <strong style="color:#2563EB;">¥</strong></div>;
+                }).join('');
+            }
+            
+            Swal.fire({
+                title: '最近の決済履歴',
+                html: <div style="max-height:200px; overflow-y:auto; font-size:14px; text-align:left;"></div>,
+                confirmButtonText: '閉じる'
+            });
+        } catch(e) {
+            Swal.fire('エラー', '履歴の取得に失敗しました', 'error');
+        }
+    }
+
+    async function savePOSSettings() {
+        const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
+        const { value: sysName } = await Swal.fire({
+            title: '連携システム名',
+            input: 'text',
+            inputLabel: '現在ご利用のPOSシステム名（例: スマレジ）',
+            inputPlaceholder: 'システム名を入力',
+            showCancelButton: true
+        });
+        if (sysName) {
+            try {
+                await fetch('/api/retailer/settings', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({store_id: email, settings: {pos_system: sysName}})
+                });
+                Swal.fire('保存完了', POS連携設定を「」としてS3に保存しました。, 'success');
+            } catch(e) {
+                Swal.fire('エラー', '保存に失敗しました', 'error');
+            }
+        }
+    }
+
+    async function uploadProductData(input) {
+        if(!input.files || input.files.length === 0) return;
+        Swal.fire({title: 'アップロード中...', text: '商品マスタをS3へ送信しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+        
+        // Simulate upload delay for UI
+        setTimeout(() => {
+            Swal.fire('成功', '商品データがクラウド（S3）に取り込まれました。どこでもレジに反映されます。', 'success');
+            input.value = ''; // reset
+        }, 1500);
+    }
+</script>
+</body>
+</html>

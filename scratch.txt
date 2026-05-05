@@ -1,0 +1,48 @@
+﻿        function generateBatFile() {
+            const suffix = document.getElementById('store-suffix').value.trim();
+            if(!suffix) {
+                Swal.fire("繧ｨ繝ｩ繝ｼ", "蠎苓・逡ｪ蜿ｷ・医∪縺溘・蠎苓・蜷搾ｼ峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・, "error");
+                return;
+            }
+            
+            const storeId = ${currentPrefix}_;
+            const targetUrl = https://retail-ad.com/signage_player.html?storeId=;
+            
+            const batContent = @echo off
+echo =========================================================
+echo Retail Media 繧ｵ繧､繝阪・繧ｸ閾ｪ蜍戊ｵｷ蜍輔そ繝・ヨ繧｢繝・・ ()
+echo =========================================================
+set "TARGET_URL="
+set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
+set "SHORTCUT_NAME=RetailAd_Signage_.lnk"
+set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if not exist "%CHROME_PATH%" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+
+set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
+echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"
+echo sLinkFile = "%STARTUP_FOLDER%\%SHORTCUT_NAME%" >> "%VBS_SCRIPT%"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
+echo oLink.TargetPath = "%CHROME_PATH%" >> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk """ ^& "%TARGET_URL%" ^& """ --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" >> "%VBS_SCRIPT%"
+echo oLink.Save >> "%VBS_SCRIPT%"
+
+cscript /nologo "%VBS_SCRIPT%"
+del "%VBS_SCRIPT%"
+
+echo 繧ｻ繝・ヨ繧｢繝・・縺悟ｮ御ｺ・＠縺ｾ縺励◆・・
+echo 谺｡蝗櫁ｵｷ蜍墓凾縺九ｉ閾ｪ蜍慕噪縺ｫ繧ｫ繝｡繝ｩ縺瑚ｨｱ蜿ｯ縺輔ｌ縲∝虚逕ｻ縺後Ν繝ｼ繝怜・逕溘＆繧後∪縺吶・
+timeout /t 3 >nul
+start "" "%CHROME_PATH%" --kiosk "%TARGET_URL%" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run
+exit /b
+;
+            
+            const blob = new Blob([batContent], { type: 'application/x-bat' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = setup_.bat;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            Swal.fire("逋ｺ陦悟ｮ御ｺ・, 蠎苓・繧ｹ繧ｿ繝・ヵ縺ｫ縲茎etup_.bat縲阪ｒ驟榊ｸ・＠縺ｦ縺上□縺輔＞縲・ "success");
+        }

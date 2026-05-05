@@ -1,0 +1,17 @@
+AWS本番環境（Production）への移行時に必要な手順メモ
+
+1. HTTPS（SSL）化
+   - AWSのロードバランサー（ALB）やCloudFrontを使用して、必ず `https://` でアクセスできるようにしてください。
+   - これにより、ブラウザの「安全でない接続」警告が消え、クレジットカードの自動入力やGoogle Payが正常に動作するようになります。
+
+2. Google Payの本番化 (ad_dashboard.html)
+   - 現在のコードは「デモ用（Mock）」になっています。
+   - 本番環境では `createMockGPayButton()` の呼び出しを削除し、無効化していた `onGooglePayLoaded()` を有効にしてください。
+   - Google Pay API Consoleで取得した正式な `merchantId` を設定する必要があります。
+
+3. データベースの永続化
+   - 現在のサーバー（server_retail_dist.js）は、メモリ上（変数）にデータを保存しているため、再起動するとデータが消えます。
+   - AWSでは、RDS（MySQL/PostgreSQL）やDynamoDBなどを導入し、データをデータベースに保存するようにコードを変更することを推奨します。
+
+4. ログ・監視
+   - 本番環境では `console.log` はCloudWatch Logsなどで確認できるように設定してください。
