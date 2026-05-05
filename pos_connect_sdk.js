@@ -3,11 +3,11 @@
  * リテールメディア「リテアド」成果報酬型連動用SDK
  * 
  * Usage:
- * const liteAd = new retail-adPOS('API_KEY_XXXX');
+ * const liteAd = new RetailAdPOS('API_KEY_XXXX');
  * liteAd.trackSale({ transactionId: 'TX123', amount: 1500, items: ['driscoll_berry'] });
  */
 
-class retail-adPOS {
+class RetailAdPOS {
     constructor(apiKey, endpoint = 'http://localhost:3000') {
         this.apiKey = apiKey;
         this.endpoint = endpoint;
@@ -73,7 +73,7 @@ class retail-adPOS {
 
 // Browser / Node.js Compatibility
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = retail-adPOS;
+    module.exports = RetailAdPOS;
 } else {
-    window.retail-adPOS = retail-adPOS;
+    window.RetailAdPOS = RetailAdPOS;
 }
