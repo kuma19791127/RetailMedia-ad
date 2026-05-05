@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS連携SDK 組み込みガイド - RetailMedia Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #333;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #fff;
+            padding: 20px 40px;
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        header a {
+            font-size: 24px;
+            font-weight: 900;
+            color: #2563eb;
+            text-decoration: none;
+            font-family: 'Outfit', sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            font-size: 1.8rem;
+            color: #0f172a;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+        }
+        h2 {
+            font-size: 1.3rem;
+            color: #2563eb;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2563eb;
+            padding-left: 10px;
+        }
+        h3 {
+            font-size: 1.1rem;
+            color: #334155;
+            margin-top: 25px;
+        }
+        p {
+            color: #475569;
+            margin-bottom: 15px;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+        .code-comment {
+            color: #10b981;
+        }
+        .code-keyword {
+            color: #38bdf8;
+        }
+        .code-string {
+            color: #fca5a5;
+        }
+        .warning-box {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin: 25px 0;
+        }
+        .warning-box h4 {
+            margin: 0 0 10px 0;
+            color: #b45309;
+        }
+        .btn {
+            display: inline-block;
+            background: #2563eb;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        @media (max-width: 768px) {
+            .container { margin: 20px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html">retail-ad</a>
+    </header>
+    <div class="container">
+        <h1>【小売業者様向け】POS連携SDK 組み込みガイド</h1>
+        
+        <p>本SDK（<code>pos_connect_sdk.js</code>）は、貴社のPOSシステムやECサイトの<strong>「決済・購入が完全に成立したタイミング」</strong>にのみ実行されるよう、以下のガイドに従って組み込んでください。</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="/pos_connect_sdk.js" target="_blank" class="btn"><i class="fa-solid fa-download"></i> SDK本体のソースコードを確認する</a>
+        </div>
+
+        <h2><i class="fa-solid fa-location-dot"></i> 組み込み場所の具体例</h2>
+
+        <h3>パターンA：WebベースのPOSレジ（店舗タブレット等）の場合</h3>
+        <p>レジ画面のプログラム内で、クレジットカード決済や現金決済が「完了」し、完了画面へ切り替わる処理（関数）の中に貼り付けてください。</p>
+
+        <div class="code-block">
+<span class="code-comment">// 貴社POSの決済完了処理の例</span>
+<span class="code-keyword">function</span> onPaymentSuccess(transactionInfo) {
+    <span class="code-comment">// 既存の自社POS処理（レシート印字や自社DBへの保存など）</span>
+    printReceipt();
+    saveToDatabase();
+
+    <span class="code-comment">// ⬇⬇ ここにリテアドのSDKを読み込んで実行！ ⬇⬇</span>
+    <span class="code-keyword">const</span> retailAd = <span class="code-keyword">new</span> RetailAdPOS(<span class="code-string">'発行された専用APIキー'</span>);
+    retailAd.trackSale({
+        transactionId: transactionInfo.id,
+        amount: transactionInfo.totalPrice,
+        items: transactionInfo.itemNames
+    });
+}
+        </div>
+
+        <h3>パターンB：ECサイト（オンラインショップ）の場合</h3>
+        <p>ユーザーがクレジットカード決済等を終え、最後に表示される<strong>「ご購入ありがとうございました（サンクスページ/完了画面）」のHTMLの <code>&lt;body&gt;</code> タグの下部</strong>に以下のスクリプトを貼り付けてください。</p>
+
+        <div class="code-block">
+<span class="code-comment">&lt;!-- 1. SDKを読み込む --&gt;</span>
+&lt;script src="https://貴社のAppRunnerドメイン/pos_connect_sdk.js"&gt;&lt;/script&gt;
+
+<span class="code-comment">&lt;!-- 2. 売上データを送信する --&gt;</span>
+&lt;script&gt;
+    <span class="code-keyword">const</span> retailAd = <span class="code-keyword">new</span> RetailAdPOS(<span class="code-string">'発行された専用APIキー'</span>);
+    retailAd.trackSale({
+        transactionId: <span class="code-string">'TX-98765'</span>,
+        amount: 2980,
+        items: [<span class="code-string">'商品A'</span>, <span class="code-string">'商品B'</span>]
+    });
+&lt;/script&gt;
+        </div>
+
+        <div class="warning-box">
+            <h4><i class="fa-solid fa-triangle-exclamation"></i> 実装時の重要な注意点</h4>
+            <ol>
+                <li><strong>二重送信の防止:</strong> ユーザーが完了画面（サンクスページ）を「再読み込み（リロード）」した際に、売上が2回カウントされないよう、システム側で制御するか、セッションを使って1度の購入につき1回だけ発火するように設計してください。</li>
+                <li><strong>発火ページの限定:</strong> 商品一覧ページやカート画面など、購入が確定していないページには絶対に貼らないでください（架空の売上が計測されてしまいます）。</li>
+                <li><strong>アイテム名の指定:</strong> <code>items</code> に渡す商品名は、リテアドの広告主が設定している「キャンペーン対象商品名」と一致するか、商品コード（JANコード等）を送る運用をお勧めします。</li>
+            </ol>
+        </div>
+
+    </div>
+</body>
+</html>
