@@ -58,8 +58,8 @@ app.post('/api/signage/schedule_voice', (req, res) => {
         const bannedWords = ["必ず儲かる", "投資で稼ぐ", "続きはLINEで", "LINE登録はこちら"];
         for (let word of bannedWords) {
             if (req.body.text.includes(word)) {
-                console.log([AI-Voice] 規約違反を検出 (). 拒絶します。);
-                return res.status(400).json({ success: false, error: 不適切なコンテンツ（禁止ワード: ）が含まれているため、配信を自動拒絶しました。アカウントを一時凍結します。 });
+                console.log(`[AI-Voice] 規約違反を検出 (${word}). 拒絶します。`);
+                return res.status(400).json({ success: false, error: `不適切なコンテンツ（禁止ワード: ${word}）が含まれているため、配信を自動拒絶しました。アカウントを一時凍結します。` });
             }
         }
     }
@@ -1241,10 +1241,38 @@ app.get('/api/reports/csv', (req, res) => {
 // Real Upload Endpoint (Production Mode)
 
 // --- Retailer Video Upload (S3 Direct) ---
-app.post('/api/retailer/upload', (req, res) => {
+app.post('/api/retailer/upload', async (req, res) => {
     try {
         const { fileData, filename, prefix, targetStore } = req.body;
         if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
+
+        // --- AI Moderation for Retailer Videos (Gemini 1.5 Pro) ---
+        console.log("[Retailer Video Upload] AI 審査開始...");
+        if (typeof generativeModel !== 'undefined' && fileData.includes('base64,')) {
+            const base64Data = fileData.split('base64,')[1];
+            try {
+                const request = {
+                    contents: [{
+                        role: 'user',
+                        parts: [
+                            { inlineData: { mimeType: 'video/mp4', data: base64Data } },
+                            { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。\n1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。\n2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。\n3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。\n少しでも該当する場合は「FAIL: 理由」を、安全であれば「PASS」を出力してください。' }
+                        ]
+                    }]
+                };
+                const result = await generativeModel.generateContent(request);
+                const responseText = await result.response.text();
+                console.log("[Retailer AI Moderation] 結果:", responseText);
+                
+                if (responseText.includes('FAIL')) {
+                    return res.status(403).json({ success: false, error: 'AI審査で拒絶されました。不適切なコンテンツまたは詐欺的誘導が含まれています。\n' + responseText });
+                }
+            } catch (aiErr) {
+                console.error("[Retailer AI Moderation Error]", aiErr);
+                // Continue upload if AI fails due to size limits, etc.
+            }
+        }
+        // --------------------------------------------------------
 
         const ext = require('path').extname(filename).toLowerCase();
         const newFilename = `retail_${prefix}_${Date.now()}${ext}`;
@@ -2351,7 +2379,7 @@ app.post('/api/manualhelp/pdf-to-steps', express.json({limit: '50mb'}), async (r
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
 
-        const FIXED_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const promptText = "あなたはプロの資料管理者です。添付されたPDF文書の「目次（または見出しの構造）」を解析し、マニュアルとしてシステムに登録するための分類データを作成してください。\n" +
             "以下のJSONフォーマットを厳守して出力してください:\n" +
