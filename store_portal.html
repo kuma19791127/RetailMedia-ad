@@ -490,6 +490,20 @@
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="/app-icon.png">
     <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js');
@@ -536,6 +550,20 @@
         }
     </style>
     <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
@@ -587,6 +615,20 @@
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">📊 売上センター (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 組織/メール設定</button></div>
 
             <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
                 async function loadPosData() {
                     try {
                         const response = await fetch('/api/admin/sales-history');
@@ -905,6 +947,20 @@
             </div>
 
             <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
                 // MCM connection script
 
                 async function connectAdManagerMCM() {
@@ -992,7 +1048,15 @@
                                     bytes[i] = binaryString.charCodeAt(i);
                                 }
 
-                                const audioCtx = window.globalAudioCtx;
+                                
+                    if(!window.globalAudioCtx) {
+                        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if(window.globalAudioCtx.state === 'suspended') {
+                        window.globalAudioCtx.resume();
+                    }
+                    const audioCtx = window.globalAudioCtx;
+
                                 const playAudioBuffer = (buffer) => {
                                     const source = audioCtx.createBufferSource();
                                     source.buffer = buffer;
@@ -1278,6 +1342,20 @@
             <!-- Detailed Revenue Model moved to top -->
 
             <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
                 // API URL Helper for local file execution
                 const API_URL_SETTINGS = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
                     ? 'http://localhost:3000'
@@ -1538,6 +1616,20 @@
             </div>
 
             <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
                 // --- Drag and Drop Logic ---
                 const dropZone = document.getElementById('drop-zone');
                 const fileInput = document.getElementById('inventory-file');
@@ -1638,6 +1730,20 @@
             </div>
 
             <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
                 async function loadPendingCampaigns() {
                     try {
                         const res = await fetch(`${API_URL}/api/campaigns`);
@@ -1749,6 +1855,20 @@
     </div>
 
     <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
         // --- API Configuration ---
         const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
             ? 'http://localhost:3000'
@@ -2177,6 +2297,20 @@
         </div>
     </nav>
     <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
         function showStoreMenu() {
             Swal.fire({
                 title: 'その他メニュー',
@@ -2243,6 +2377,20 @@
     </div>
 </div>
 <script>
+
+// Global AudioContext for Mobile Autoplay Support
+window.globalAudioCtx = null;
+function initGlobalAudio() {
+    if (!window.globalAudioCtx) {
+        window.globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', initGlobalAudio, { once: false });
+document.addEventListener('touchstart', initGlobalAudio, { once: false });
+
     function openProfileModal(showName = false) {
         if(typeof Swal !== 'undefined') {
             document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
