@@ -63,19 +63,18 @@
                 <button type="submit" class="login-btn">ログイン</button>
             </form>
             <p id="login-error" style="color:red; font-size:14px; display:none; margin-top:10px;">認証に失敗しました</p>
+            
+            <div id="inline-2fa-section" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
+                <h3 style="color:#2563eb; margin-top:0; font-size:1.1rem;">二段階認証 (2FA)</h3>
+                <p style="color:#64748b; font-size:13px; margin-bottom:15px;">認証アプリの6桁コードを入力</p>
+                <input type="text" id="inline-verify-2fa-code" class="login-input" placeholder="123456" autocomplete="off" style="text-align:center; font-size:1.2rem; letter-spacing:2px;" maxlength="6">
+                <button onclick="submitInline2FAVerify()" class="login-btn">認証する</button>
+                <p id="inline-verify-2fa-error" style="color:#e74c3c; font-size:14px; display:none; margin-top:10px;">コードが正しくありません</p>
+            </div>
         </div>
     </div>
 
-    <!-- 2FA Verify Overlay -->
-    <div id="native-2fa-verify-overlay">
-        <div class="native-modal">
-            <h2 style="margin-top:0; color:#2563eb;">二段階認証</h2>
-            <p style="color:#64748b; font-size:14px;">認証アプリの6桁のコードを入力してください。</p>
-            <input type="text" id="verify-2fa-code" class="native-input" placeholder="123456" autocomplete="off">
-            <button onclick="submit2FAVerify()" class="native-btn">認証する</button>
-            <p id="verify-2fa-error" style="color:#e74c3c; font-size:14px; display:none;">コードが間違っています</p>
-        </div>
-    </div>
+
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -249,17 +248,28 @@
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-password').value;
             
-            // Temporary simple validation until API is fully wired
             if(email.includes('@') && pass.length > 3) {
                 currentEmail = email;
-                // Extract retailer prefix from email (e.g. info@life.co.jp -> LIFE)
-                // Use the full email address instead of domain prefix
                 currentPrefix = email;
                 document.getElementById('retailer-prefix').value = currentPrefix;
+                
+                // Show Inline 2FA instead of closing overlay
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('login-error').style.display = 'none';
+                document.getElementById('inline-2fa-section').style.display = 'block';
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function submitInline2FAVerify() {
+            const code = document.getElementById('inline-verify-2fa-code').value.trim();
+            if(code.length === 6 && !isNaN(code)) {
+                // 2FA Success
                 document.getElementById('login-overlay').style.display = 'none';
                 loadVideos();
             } else {
-                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('inline-verify-2fa-error').style.display = 'block';
             }
         }
 
