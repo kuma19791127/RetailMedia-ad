@@ -992,7 +992,7 @@
                                     bytes[i] = binaryString.charCodeAt(i);
                                 }
 
-                                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                                const audioCtx = window.globalAudioCtx;
                                 const playAudioBuffer = (buffer) => {
                                     const source = audioCtx.createBufferSource();
                                     source.buffer = buffer;
@@ -1056,7 +1056,7 @@
                             }
                             const data = await response.json();
                             if (data.audioContent) {
-                                const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+                                const audio = window.globalAudioElem; audio.src = "data:audio/mp3;base64," + data.audioContent;
                                 audio.onplay = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'bounce 0.3s infinite alternate'; };
                                 audio.onended = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'none'; };
                                 audio.play();
@@ -1071,7 +1071,7 @@
                                 }
                                 const data2 = await response2.json();
                                 if (data2.audioContent) {
-                                    const audio = new Audio("data:audio/mp3;base64," + data2.audioContent);
+                                    const audio = window.globalAudioElem; audio.src = "data:audio/mp3;base64," + data2.audioContent;
                                     audio.onplay = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'bounce 0.3s infinite alternate'; };
                                     audio.onended = () => { const m = document.querySelector('.mascot-anim'); if (m) m.style.animation = 'none'; };
                                     audio.play();
