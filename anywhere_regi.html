@@ -946,7 +946,22 @@ function playBeep() {
                 document.getElementById('total-display').innerText = total.toLocaleString();
                 if (navigator.vibrate) navigator.vibrate(100);
 
-            } catch (error) { resumeScan(); }
+            } catch (error) {
+        console.error(error);
+        try {
+            const errUtterance = new SpeechSynthesisUtterance("未登録商品です");
+            errUtterance.lang = 'ja-JP';
+            errUtterance.rate = 1.2;
+            window.speechSynthesis.speak(errUtterance);
+        } catch(e) { console.error("Speech Synthesis Error:", e); }
+        
+        document.getElementById('mask-msg').innerText = "未登録商品";
+        document.getElementById('mask-msg').style.color = "#ef4444";
+        setTimeout(() => {
+            document.getElementById('mask-msg').style.color = "#333";
+            resumeScan();
+        }, 1500);
+    }
         }
 
         function resumeScan() {
