@@ -179,11 +179,17 @@
                 安全なクラウドストレージ（AWS S3）にダイレクト保存され、全国のサイネージパネルが5秒以内に検知してループ再生を開始します。
             </div>
             
-            <div style="margin-bottom:20px;">
+            <div style="margin-bottom:20px; text-align:center;">
                 <button onclick="generateCompressBat()" style="background:#8b5cf6; color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer; font-size:16px;">
                     📥 動画一括圧縮_常時監視モード (.bat) をダウンロード
                 </button>
-                <p style="font-size:12px; color:#64748b; margin-top:5px;">※ダウンロードしたbatファイルをダブルクリックすると「input」フォルダが作られます。そこに動画を入れると自動圧縮されます。</p>
+                <div style="font-size:13px; color:#475569; margin-top:10px; line-height:1.6; text-align:left; background:#f8fafc; padding:10px; border-radius:5px; border:1px solid #e2e8f0;">
+                    <strong>【圧縮ツールの使い方（エラー防止のお願い）】</strong><br>
+                    ① ダウンロードしたbatファイルをダブルクリックして黒い画面を起動します。<br>
+                    ② 自動で作成される<strong>「input」</strong>フォルダに、撮影した重い動画を入れます。<br>
+                    ③ 全自動で軽く圧縮され、<strong>「output」</strong>フォルダに出現します（元の重い動画は自動削除されます）。<br>
+                    ④ その<strong>「output」</strong>に入っている軽い動画を、この画面下部からアップロードしてください。
+                </div>
             </div>
                 
                 <div style="margin-bottom:20px;">
