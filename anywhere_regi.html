@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -919,6 +919,13 @@ function playBeep() {
             try {
                 const product = await mockProductApi(code);
                 logDebug(`[DB MATCH] Success: ${product.name} (¥${product.price})`);
+
+        try {
+            const utterance = new SpeechSynthesisUtterance(product.name);
+            utterance.lang = 'ja-JP';
+            utterance.rate = 1.2;
+            window.speechSynthesis.speak(utterance);
+        } catch(e) { console.error("Speech Synthesis Error:", e); }
 
                 document.getElementById('mask-msg').innerText = "Scan OK!";
                 setTimeout(() => mask.style.display = 'none', 200);
