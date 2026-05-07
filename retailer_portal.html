@@ -172,13 +172,19 @@
             </div>
             <div class="card">
                 <h3>お店の雰囲気を作る独自動画のアップロード</h3>
-                <div class="guide-text">
-            ここに動画を入れると<br>
-            サーバー側で自動的に最適な形式（H.264/MP4）に圧縮処理が行われ<br>
-            安全なクラウドストレージ（AWS S3）にダイレクト保存されます。<br>
-            全国のサイネージパネルが5秒以内に検知し<br>
-            広告動画の合間に自動でループ再生を開始します。
-        </div>
+                <div class="guide-text" style="background:#fef3c7; border-left:4px solid #f59e0b; padding:10px;">
+                <strong>【重要】動画は事前に圧縮ツールで軽くしてからアップロードしてください</strong><br>
+                重い動画（数十MB～GB単位）をそのままアップロードすると、回線を圧迫しエラーの原因となります。<br>
+                下のボタンから「動画一括圧縮ツール」をダウンロードし、動画を圧縮後にここへアップロードしてください。<br>
+                安全なクラウドストレージ（AWS S3）にダイレクト保存され、全国のサイネージパネルが5秒以内に検知してループ再生を開始します。
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <button onclick="generateCompressBat()" style="background:#8b5cf6; color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer; font-size:16px;">
+                    📥 動画一括圧縮_常時監視モード (.bat) をダウンロード
+                </button>
+                <p style="font-size:12px; color:#64748b; margin-top:5px;">※ダウンロードしたbatファイルをダブルクリックすると「input」フォルダが作られます。そこに動画を入れると自動圧縮されます。</p>
+            </div>
                 
                 <div style="margin-bottom:20px;">
                     <label style="font-weight:bold;">配信ターゲット:</label><br>
@@ -414,6 +420,51 @@ async function loadVideos() {
     } catch(e) {
         console.error(e);
     }
+}
+
+function generateCompressBat() {
+    const batContent = `@echo off
+chcp 65001 >nul
+cd /d "%~dp0"
+title 動画一括圧縮_常時監視モード (RetailMedia)
+
+echo ========================================================
+echo   動画一括圧縮 常時監視モード (Retail Media System)
+echo ========================================================
+echo.
+echo 【使い方】
+echo この画面を開いたまま、作成された「input」フォルダに
+echo 撮影した重い動画ファイルを放り込んでください。
+echo 自動的に軽く（H.264/MP4）なり、「output」フォルダに保存されます。
+echo --------------------------------------------------------
+
+if not exist "input" mkdir input
+if not exist "output" mkdir output
+
+:monitor
+for %%f in (input\\*.*) do (
+    echo.
+    echo [処理開始] %%~nxf を圧縮しています...
+    ffmpeg -i "%%f" -vcodec libx264 -crf 28 -preset fast -acodec aac "output\\%%~nxf" -y
+    if not errorlevel 1 (
+        del "%%f"
+        echo [完了] output\\%%~nxf に圧縮保存しました！
+    ) else (
+        echo [エラー] %%~nxf の圧縮に失敗しました。ffmpegがインストールされていない可能性があります。
+    )
+)
+timeout /t 3 /nobreak >nul
+goto monitor`;
+
+    const blob = new Blob([batContent], { type: 'application/x-bat' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '動画一括圧縮_常時監視モード.bat';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 async function deleteVideo(id) {
