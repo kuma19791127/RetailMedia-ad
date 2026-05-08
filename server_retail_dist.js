@@ -1,6 +1,9 @@
 const pool = require('./db_connector');
 const express = require('express');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+
 const cors = require('cors');
 const path = require('path');
 const os = require('os');
@@ -700,6 +703,38 @@ app.get('/api/retailer/dashboard', (req, res) => {
         sales: storeData[storeId].total_pos_sales || 0,
         transactions: storeTransactions
     });
+});
+
+
+// --- DynamoDB POS Transaction API ---
+app.post('/api/pos/transaction', async (req, res) => {
+    try {
+        const { store_id, total_amount, items } = req.body;
+        if (!store_id) return res.status(400).json({ success: false, error: "store_id is required" });
+        
+        const timestamp = Date.now().toString();
+        const transaction_id = `tx_${timestamp}_${Math.floor(Math.random()*1000)}`;
+        
+        const params = {
+            TableName: 'RetailMediaTransactions',
+            Item: {
+                store_id: store_id,
+                timestamp: timestamp,
+                transaction_id: transaction_id,
+                total_amount: total_amount || 0,
+                items: items || [],
+                created_at: new Date().toISOString()
+            }
+        };
+
+        await docClient.send(new PutCommand(params));
+        console.log(`[DynamoDB] Saved transaction ${transaction_id} for store ${store_id}`);
+
+        res.json({ success: true, transaction_id });
+    } catch (err) {
+        console.error("[DynamoDB Error]:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
 });
 
 app.post('/api/retailer/settings', (req, res) => {
