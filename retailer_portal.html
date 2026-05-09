@@ -60,6 +60,12 @@
             <form id="login-form" onsubmit="handleLogin(event)">
                 <input type="email" id="login-email" class="login-input" placeholder="メールアドレス (法人ID)" required autocomplete="username">
                 <input type="password" id="login-password" class="login-input" placeholder="パスワード" required autocomplete="current-password">
+                <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
+                    <label style="cursor: pointer; color: #475569;">
+                        <input type="checkbox" id="save-password-chk" style="margin-right: 5px;">
+                        次回から自動入力する
+                    </label>
+                </div>
                 <button type="submit" class="login-btn">ログイン</button>
             </form>
             <p id="login-error" style="color:red; font-size:14px; display:none; margin-top:10px;">認証に失敗しました</p>
