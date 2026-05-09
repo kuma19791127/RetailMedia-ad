@@ -158,6 +158,14 @@
 
         <h3>パターンB：ECサイト（オンラインショップ）の場合</h3>
         <p>ユーザーがクレジットカード決済等を終え、最後に表示される<strong>「ご購入ありがとうございました（サンクスページ/完了画面）」のHTMLの <code>&lt;body&gt;</code> タグの下部</strong>に以下のスクリプトを貼り付けてください。</p>
+        
+        <div class="note" style="margin-top:20px; background-color:#f0f9ff; border-left:4px solid #0ea5e9; padding:15px;">
+            <strong style="color:#0369a1;">💡 GMO・SBI等の決済代行サービスをご利用の場合（サーバー間連携）</strong>
+            <p style="margin-top:5px; font-size:14px; color:#334155;">
+                GMOペイメントゲートウェイやSBIルミエスなどのAPI決済をご利用の場合、フロントエンドの画面遷移に依存せず、決済完了のWebhook（サーバー通知）を受け取ったタイミングで、直接弊社のサーバーへREST API経由でデータをPOST送信することも可能です。<br>
+                <strong>送信先エンドポイント:</strong> <code>https://貴社のAppRunnerドメイン/api/pos/transaction</code>
+            </p>
+        </div>
 
         <div class="code-block">
 <span class="code-comment">&lt;!-- 1. SDKを読み込む --&gt;</span>
