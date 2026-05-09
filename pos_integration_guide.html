@@ -117,12 +117,11 @@
     <div class="container">
         <h1>【小売業者様向け】POS連携SDK 組み込みガイド</h1>
         
-        <p style="line-height: 1.8;">
-            本SDK（<code>pos_connect_sdk.js</code>）は<br>
-            貴社のPOSシステム<br>
-            <strong>「決済・購入が完全に成立したタイミング」</strong>にのみ<br>
-            以下のガイドに従って<br>
-            組み込んでください。
+        <p style="line-height: 1.8; font-size:16px;">
+            本SDK（<code>pos_connect_sdk.js</code>）は、<strong>既存のPOSシステムに「どこでもレジ」を瞬時に連携・導入する</strong>ための魔法のスクリプトです。<br>
+            貴社のPOSプログラミングにこのSDKを1行コピーして組み込むだけで、<br>
+            <strong>既存レジの削減、レジ待ち行列の解消、そして商品マスターの自動クラウド同期</strong>が即座に実現し、<br>
+            お客様は自分のスマホで並ばずに決済（モバイルチェックアウト）ができるようになります。
         </p>
 
         <div style="text-align: center; margin: 30px 0;">
@@ -133,10 +132,10 @@
 
         <h3>パターンA：WebベースのPOSレジ（店舗タブレット等）の場合</h3>
         <p style="line-height: 1.8;">
-                    レジ画面のプログラム内で<br>
-                    クレジットカード決済や現金決済が「完了」し<br>
-                    完了画面へ切り替わる処理（関数）の中に<br>
-                    貼り付けてください。
+                    貴社の既存POSレジのプログラム内で<br>
+                    本SDKを読み込ませるだけで、<br>
+                    店舗の商品データとクラウドが自動同期され<br>
+                    顧客用スマホレジ（どこでもレジ）が稼働開始します。
                 </p>
 
         <div class="code-block">
@@ -156,13 +155,13 @@
 }
         </div>
 
-        <h3>パターンB：ECサイト（オンラインショップ）の場合</h3>
-        <p>ユーザーがクレジットカード決済等を終え、最後に表示される<strong>「ご購入ありがとうございました（サンクスページ/完了画面）」のHTMLの <code>&lt;body&gt;</code> タグの下部</strong>に以下のスクリプトを貼り付けてください。</p>
+        <h3>パターンB：ECサイトや外部決済システム（GMO・SBI等）をご利用の場合</h3>
+        <p>ECサイトや自社アプリに「どこでもレジ」の決済同期を組み込む場合、ユーザーが決済を終えて最後に表示される<strong>「完了画面（サンクスページ）」</strong>にスクリプトを貼り付けるか、またはバックエンドから以下のAPIへ直接送信してください。</p>
         
         <div class="note" style="margin-top:20px; background-color:#f0f9ff; border-left:4px solid #0ea5e9; padding:15px;">
-            <strong style="color:#0369a1;">💡 GMO・SBI等の決済代行サービスをご利用の場合（サーバー間連携）</strong>
+            <strong style="color:#0369a1;">💡 サーバー間API連携（Webhook対応）</strong>
             <p style="margin-top:5px; font-size:14px; color:#334155;">
-                GMOペイメントゲートウェイやSBIルミエスなどのAPI決済をご利用の場合、フロントエンドの画面遷移に依存せず、決済完了のWebhook（サーバー通知）を受け取ったタイミングで、直接弊社のサーバーへREST API経由でデータをPOST送信することも可能です。<br>
+                GMOペイメントゲートウェイやSBIルミエスなどの決済APIをご利用の場合、決済完了のWebhookを受け取ったタイミングで、REST API経由で直接弊社のサーバーへデータをPOST送信するだけで「どこでもレジ」システムと完全に同期されます。<br>
                 <strong>送信先エンドポイント:</strong> <code>https://貴社のAppRunnerドメイン/api/pos/transaction</code>
             </p>
         </div>
