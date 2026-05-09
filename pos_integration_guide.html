@@ -155,18 +155,16 @@
 <span class="code-comment">&lt;!-- 1. どこでもレジ連携SDKを読み込む --&gt;</span>
 &lt;script src="https://貴社のAppRunnerドメイン/pos_connect_sdk.js"&gt;&lt;/script&gt;
 
-<span class="code-comment">&lt;!-- 2. POSの起動時に「どこでもレジ」を有効化する --&gt;</span>
+<span class="code-comment">&lt;!-- 2. POSの起動時・更新時に商品マスターを同期する --&gt;</span>
 &lt;script&gt;
     <span class="code-comment">// 専用APIキーを使ってどこでもレジ・システムと接続</span>
     <span class="code-keyword">const</span> anywhereRegi = <span class="code-keyword">new</span> AnywhereRegiConnect(<span class="code-string">'発行された専用APIキー'</span>);
 
-    <span class="code-comment">// 既存POSの商品マスターをクラウドと全自動同期</span>
+    <span class="code-comment">// 既存POSの商品マスター（価格・在庫）をクラウドと全自動同期</span>
     anywhereRegi.syncProducts();
-
-    <span class="code-comment">// POS画面（お客様側ディスプレイやレシート）に「スマホで決済する」専用QRコードを表示</span>
-    anywhereRegi.enableMobileCheckout({
-        displayElementId: <span class="code-string">'customer-display-area'</span>
-    });
+    
+    <span class="code-comment">// これで完了です！あとは店舗の入り口やカートにあるQRコードから、</span>
+    <span class="code-comment">// お客様が自身のスマホで自由に決済（どこでもレジ）できるようになります。</span>
 &lt;/script&gt;
         </div>
 
@@ -175,7 +173,7 @@
             <ol>
                 <li style="margin-bottom:10px;"><strong>レジハードウェアの削減:</strong> お客様自身のスマートフォンがレジの代わりとなるため、高額なPOSレジ端末の増設が一切不要になります。</li>
                 <li style="margin-bottom:10px;"><strong>レジ待ち行列の解消:</strong> 混雑時でも、お客様が自分でバーコードをスキャンして決済（モバイルチェックアウト）できるため、店舗の回転率と顧客満足度が劇的に向上します。</li>
-                <li><strong>シームレスな体験:</strong> お客様は専用アプリをインストールすることなく、既存POSに表示されたQRコードを読み取るだけで、ブラウザから直接決済（Apple Pay / Google Pay対応）が可能です。</li>
+                <li><strong>シームレスな体験:</strong> お客様は専用アプリをインストールすることなく、店舗の入り口やカートにあるQRコードを読み取るだけで、ブラウザから直接決済（Apple Pay / Google Pay等）が可能です。</li>
             </ol>
         </div>
 
