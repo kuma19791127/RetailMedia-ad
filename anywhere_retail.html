@@ -134,7 +134,7 @@
         </div>
         <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="uploadProductData(this)">
         <button onclick="fetchScanHistory()" class="menu-btn" style="background:#f59e0b;">🛠 スキャン履歴</button>
-        <a href="anywhere_regi.html?skipAuth=1" target="_blank" class="menu-btn" style="background:#ec4899; display:block; text-align:center; text-decoration:none; color:white; line-height:2.5;">🛒 商品を店員が読む</a>
+        <button onclick="openStaffScanner()" class="menu-btn" style="background:#ec4899;">🛒 商品を店員が読む</button>
     <button onclick="generateQR()" class="menu-btn" style="background:#14b8a6;">📷 顧客用スマホレジQR発行</button>
         <button onclick="window.open('business_lp.html', '_blank')" class="menu-btn" style="background:#8b5cf6;">📺 サイネージ広告</button>
         
@@ -248,6 +248,11 @@
 
 <script>
 let qrcodeObj = null;
+function openStaffScanner() {
+    const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
+    window.open(nywhere_regi.html?skipAuth=1&store_id=, '_blank');
+}
+
 function generateQR() {
     const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value || 'store@demo.com';
     
@@ -306,8 +311,11 @@ function copyQrUrl() {
             let historyHtml = '<p>履歴がありません</p>';
             if(data.transactions && data.transactions.length > 0) {
                 historyHtml = data.transactions.map(t => {
-                    const d = new Date(t.timestamp).toLocaleString('ja-JP');
-                    return <div style="border-bottom:1px solid #eee; padding:5px 0; color:#333;"> - <strong style="color:#2563EB;">¥</strong></div>;
+                    const d = new Date(parseInt(t.timestamp)).toLocaleString('ja-JP');
+                    return <div style="border-bottom:1px solid #eee; padding:5px 0; color:#333; text-align:left;">
+                        <span style="font-size:12px; color:#888;"></span><br>
+                        金額: <strong style="color:#2563EB;">¥</strong>
+                    </div>;
                 }).join('');
             }
             
