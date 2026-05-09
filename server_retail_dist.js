@@ -687,22 +687,40 @@ app.post('/api/payment/square-charge', async (req, res) => {
 
 
 // --- RETAILER DASHBOARD APIs ---
-app.get('/api/retailer/dashboard', (req, res) => {
+app.get('/api/retailer/dashboard', async (req, res) => {
     const storeId = req.query.store_id || "default_store";
-    // Initialize if empty
-    if(!storeData[storeId]) {
-        storeData[storeId] = { total_pos_sales: 0, bank_info: "", billing_email: storeId };
+    
+    try {
+        const params = {
+            TableName: 'RetailMediaTransactions',
+            KeyConditionExpression: 'store_id = :sid',
+            ExpressionAttributeValues: {
+                ':sid': storeId
+            },
+            ScanIndexForward: false,
+            Limit: 50
+        };
+        const command = new QueryCommand(params);
+        const data = await docClient.send(command);
+        
+        const txs = data.Items || [];
+        const totalAmount = txs.reduce((sum, tx) => sum + (Number(tx.total_amount) || 0), 0);
+        
+        res.json({
+            success: true,
+            store_id: storeId,
+            sales: totalAmount,
+            transactions: txs
+        });
+    } catch (err) {
+        console.error("[DynamoDB Query Error]:", err);
+        res.json({
+            success: true,
+            store_id: storeId,
+            sales: 0,
+            transactions: []
+        });
     }
-    
-    // Filter transactions for this store (mock filter using random recent data if empty)
-    let storeTransactions = typeof posTransactions !== 'undefined' ? posTransactions.filter(t => t.store_id === storeId || t.store_id === 'default_store').slice(-10) : [];
-    
-    res.json({
-        success: true,
-        store_id: storeId,
-        sales: storeData[storeId].total_pos_sales || 0,
-        transactions: storeTransactions
-    });
 });
 
 
