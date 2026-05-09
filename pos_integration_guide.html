@@ -143,63 +143,39 @@
 
         <h2><i class="fa-solid fa-location-dot"></i> 組み込み場所の具体例</h2>
 
-        <h3>パターンA：WebベースのPOSレジ（店舗タブレット等）の場合</h3>
+        <h3>既存のPOSレジへの組み込み例</h3>
         <p style="line-height: 1.8;">
-                    貴社の既存POSレジのプログラム内で<br>
-                    本SDKを読み込ませるだけで、<br>
-                    店舗の商品データとクラウドが自動同期され<br>
-                    顧客用スマホレジ（どこでもレジ）が稼働開始します。
-                </p>
+            貴社の既存POSレジのプログラム内で<br>
+            本SDKを読み込ませるだけで、<br>
+            店舗の商品データとクラウドが自動同期され<br>
+            顧客用スマホレジ（どこでもレジ）が稼働開始します。
+        </p>
 
         <div class="code-block">
-<span class="code-comment">// 貴社POSの決済完了処理の例</span>
-<span class="code-keyword">function</span> onPaymentSuccess(transactionInfo) {
-    <span class="code-comment">// 既存の自社POS処理（レシート印字や自社DBへの保存など）</span>
-    printReceipt();
-    saveToDatabase();
-
-    <span class="code-comment">// ⬇⬇ ここにリテアドのSDKを読み込んで実行！ ⬇⬇</span>
-    <span class="code-keyword">const</span> retailAd = <span class="code-keyword">new</span> RetailAdPOS(<span class="code-string">'発行された専用APIキー'</span>);
-    retailAd.trackSale({
-        transactionId: transactionInfo.id,
-        amount: transactionInfo.totalPrice,
-        items: transactionInfo.itemNames
-    });
-}
-        </div>
-
-        <h3>パターンB：ECサイトや外部決済システム（GMO・SBI等）をご利用の場合</h3>
-        <p>ECサイトや自社アプリに「どこでもレジ」の決済同期を組み込む場合、ユーザーが決済を終えて最後に表示される<strong>「完了画面（サンクスページ）」</strong>にスクリプトを貼り付けるか、またはバックエンドから以下のAPIへ直接送信してください。</p>
-        
-        <div class="note" style="margin-top:20px; background-color:#f0f9ff; border-left:4px solid #0ea5e9; padding:15px;">
-            <strong style="color:#0369a1;">💡 サーバー間API連携（Webhook対応）</strong>
-            <p style="margin-top:5px; font-size:14px; color:#334155;">
-                GMOペイメントゲートウェイやSBIルミエスなどの決済APIをご利用の場合、決済完了のWebhookを受け取ったタイミングで、REST API経由で直接弊社のサーバーへデータをPOST送信するだけで「どこでもレジ」システムと完全に同期されます。<br>
-                <strong>送信先エンドポイント:</strong> <code>https://貴社のAppRunnerドメイン/api/pos/transaction</code>
-            </p>
-        </div>
-
-        <div class="code-block">
-<span class="code-comment">&lt;!-- 1. SDKを読み込む --&gt;</span>
+<span class="code-comment">&lt;!-- 1. どこでもレジ連携SDKを読み込む --&gt;</span>
 &lt;script src="https://貴社のAppRunnerドメイン/pos_connect_sdk.js"&gt;&lt;/script&gt;
 
-<span class="code-comment">&lt;!-- 2. 売上データを送信する --&gt;</span>
+<span class="code-comment">&lt;!-- 2. POSの起動時に「どこでもレジ」を有効化する --&gt;</span>
 &lt;script&gt;
-    <span class="code-keyword">const</span> retailAd = <span class="code-keyword">new</span> RetailAdPOS(<span class="code-string">'発行された専用APIキー'</span>);
-    retailAd.trackSale({
-        transactionId: <span class="code-string">'TX-98765'</span>,
-        amount: 2980,
-        items: [<span class="code-string">'商品A'</span>, <span class="code-string">'商品B'</span>]
+    <span class="code-comment">// 専用APIキーを使ってどこでもレジ・システムと接続</span>
+    <span class="code-keyword">const</span> anywhereRegi = <span class="code-keyword">new</span> AnywhereRegiConnect(<span class="code-string">'発行された専用APIキー'</span>);
+
+    <span class="code-comment">// 既存POSの商品マスターをクラウドと全自動同期</span>
+    anywhereRegi.syncProducts();
+
+    <span class="code-comment">// POS画面（お客様側ディスプレイやレシート）に「スマホで決済する」専用QRコードを表示</span>
+    anywhereRegi.enableMobileCheckout({
+        displayElementId: <span class="code-string">'customer-display-area'</span>
     });
 &lt;/script&gt;
         </div>
 
         <div class="warning-box">
-            <h4><i class="fa-solid fa-triangle-exclamation"></i> 実装時の重要な注意点</h4>
+            <h4><i class="fa-solid fa-lightbulb"></i> 導入による3つのメリット</h4>
             <ol>
-                <li><strong>二重送信の防止:</strong> ユーザーが完了画面（サンクスページ）を「再読み込み（リロード）」した際に、売上が2回カウントされないよう、システム側で制御するか、セッションを使って1度の購入につき1回だけデータが送信されるように設計してください。</li>
-                <li><strong>設置ページの限定:</strong> 商品一覧ページやカート画面など、購入が確定していないページには絶対に貼らないでください（架空の売上が計測されてしまいます）。</li>
-                <li><strong>アイテム名の指定:</strong> <code>items</code> に渡す商品名は、リテアドの広告主が設定している「キャンペーン対象商品名」と一致するか、商品コード（JANコード等）を送る運用をお勧めします。</li>
+                <li style="margin-bottom:10px;"><strong>レジハードウェアの削減:</strong> お客様自身のスマートフォンがレジの代わりとなるため、高額なPOSレジ端末の増設が一切不要になります。</li>
+                <li style="margin-bottom:10px;"><strong>レジ待ち行列の解消:</strong> 混雑時でも、お客様が自分でバーコードをスキャンして決済（モバイルチェックアウト）できるため、店舗の回転率と顧客満足度が劇的に向上します。</li>
+                <li><strong>シームレスな体験:</strong> お客様は専用アプリをインストールすることなく、既存POSに表示されたQRコードを読み取るだけで、ブラウザから直接決済（Apple Pay / Google Pay対応）が可能です。</li>
             </ol>
         </div>
 
