@@ -862,10 +862,27 @@ function playBeep() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(txData)
                         });
-                        addDebugLog("✅ [SERVER-SYNC] 決済データ送信成功: " + total + "円");
+                        logDebug("✅ [SERVER-SYNC] 決済データ送信成功: " + total + "円");
                     } catch(e) { 
                         console.log('Admin sync mock fallback', e); 
-                        addDebugLog("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
+                        logDebug("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
+                    }
+
+                    // --- DynamoDB への実データ送信 ---
+                    try {
+                        await fetch('/api/pos/transaction', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                store_id: txData.storeId,
+                                total_amount: txData.amount,
+                                items: txData.items
+                            })
+                        });
+                        logDebug("✅ [DynamoDB] 決済データの保存に成功しました！");
+                    } catch(dynamoErr) { 
+                        console.error("DynamoDB sync failed", dynamoErr);
+                        logDebug("❌ [DynamoDB] 保存エラー: " + dynamoErr.message);
                     }
 
                     // --- Organization Breakdown ---
