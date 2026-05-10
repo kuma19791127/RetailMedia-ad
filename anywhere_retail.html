@@ -241,7 +241,8 @@
         
         <input type="text" id="qr-url-display" readonly style="width:100%; padding:10px; font-size:10px; color:#64748B; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; margin-bottom:15px; box-sizing:border-box;">
         
-        <button onclick="copyQrUrl()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">URLをコピーする</button>
+        <button onclick="copyQrUrl()" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">🔗 URLをコピーする</button>
+<button onclick="downloadQR()" style="width:100%; padding:12px; background:#10b981; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">📥 QR画像を保存 (レター印刷用)</button>
         <button onclick="document.getElementById('modal-qr').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">閉じる</button>
     </div>
 </div>
@@ -250,7 +251,7 @@
 let qrcodeObj = null;
 function openStaffScanner() {
     const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
-    window.open(nywhere_regi.html?skipAuth=1&store_id=, '_blank');
+    window.open(`anywhere_regi.html?skipAuth=1&store_id=${email}`, '_blank');
 }
 
 function generateQR() {
@@ -277,6 +278,19 @@ function generateQR() {
     document.getElementById('modal-qr').style.display = 'flex';
 }
 
+function downloadQR() {
+    const container = document.getElementById('qrcode-container');
+    const img = container.querySelector('img');
+    if(img) {
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = 'VIP_AnywhereRegi_QR.png';
+        a.click();
+    } else {
+        Swal.fire('エラー', 'QRコードの生成を待ってから保存してください', 'error');
+    }
+}
+
 function copyQrUrl() {
     const urlInput = document.getElementById('qr-url-display');
     urlInput.select();
@@ -289,12 +303,12 @@ function copyQrUrl() {
         const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
         try {
             Swal.fire({title: '通信中...', text: 'サーバーから売上を取得しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            const res = await fetch(/api/retailer/dashboard?store_id=);
+            const res = await fetch(`/api/retailer/dashboard?store_id=${email}`);
             const data = await res.json();
             Swal.fire({
                 icon: 'success',
                 title: '本日のPOS売上',
-                html: <h2 style="color:#10B981; font-size:32px;">¥</h2><p>クラウド(S3)から最新のデータを取得しました。</p>
+                html: `<h2 style="color:#10B981; font-size:32px;">¥${data.sales || 0}</h2><p>クラウド(S3)から最新のデータを取得しました。</p>`
             });
         } catch(e) {
             Swal.fire('エラー', 'データの取得に失敗しました', 'error');
