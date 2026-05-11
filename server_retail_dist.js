@@ -2781,3 +2781,14 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Mobile] Player:      http://localhost:${PORT}/player`);
     console.log(`[Hint]  Agency Login: Use 070-xxxx-xxxx\n`);
 });
+
+// --- [NEW] Admin API: Register Device to Store ---
+app.post('/api/admin/devices', express.json(), (req, res) => {
+    const { deviceId, storeId } = req.body;
+    if (!deviceId || !storeId) return res.status(400).json({ error: "Missing parameters" });
+    
+    global.deviceStoreMapping = global.deviceStoreMapping || {};
+    global.deviceStoreMapping[deviceId] = storeId;
+    console.log([Admin] 🛠️ Device  permanently paired to Store );
+    res.json({ success: true, message: Device paired to  });
+});
