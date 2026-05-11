@@ -868,6 +868,29 @@
     <script>
         const API_BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
 
+        async function registerDevice() {
+            const deviceId = document.getElementById('zero-device-id').value;
+            const storeId = document.getElementById('zero-store-id').value;
+            if (!deviceId || !storeId) return alert('両方のIDを入力してください');
+            
+            try {
+                const res = await fetch('/api/admin/devices', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ deviceId, storeId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('登録完了', デバイス  を店舗  に紐付けました！<br>サイネージ画面が自動で切り替わります。, 'success');
+                    document.getElementById('zero-device-id').value = '';
+                } else {
+                    Swal.fire('エラー', '登録に失敗しました', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
         function switchTab(tabId) {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             const target = document.getElementById('panel-' + tabId);
