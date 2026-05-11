@@ -879,9 +879,9 @@
     });
 
     for(const cat in grouped) {
-        list.innerHTML += <div style="font-weight:bold; color:#38bdf8; margin: 15px 0 5px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">📁 </div>;
+        list.innerHTML += `<div style="font-weight:bold; color:#38bdf8; margin: 15px 0 5px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">📁 ${cat}</div>`;
         grouped[cat].forEach(item => {
-            list.innerHTML += <div class="manual-card" onclick="openEditManual()" style="margin-bottom:8px; padding:10px;"><div><h3 style="color:var(--primary); font-size:1.1rem; margin:0;"></h3><p style="font-size:0.85rem; color:#cbd5e1; margin-top:5px;"></p></div><i class="fa-solid fa-chevron-right"></i></div>;
+            list.innerHTML += `<div class="manual-card" onclick="openEditManual(${item.idx})" style="margin-bottom:8px; padding:10px;"><div><h3 style="color:var(--primary); font-size:1.1rem; margin:0;">${item.m.name}</h3><p style="font-size:0.85rem; color:#cbd5e1; margin-top:5px;">${item.m.desc}</p></div><i class="fa-solid fa-chevron-right"></i></div>`;
         });
     }
 }
@@ -988,7 +988,8 @@
             // Save snapshot of OLD state
             const snapshot = JSON.parse(JSON.stringify(m));
 
-            m.name = newName;\n    if(document.getElementById('edit-manual-category')) m.category = document.getElementById('edit-manual-category').value;
+            m.name = newName;
+    if(document.getElementById('edit-manual-category')) m.category = document.getElementById('edit-manual-category').value;
             m.desc = newDesc;
             m.steps = tempSteps;
             m.version += 1;
