@@ -538,12 +538,18 @@
         let currentIndex = 0;
         const POLL_INTERVAL = 3000;
 
-        document.body.addEventListener('click', () => {
-            waiting.style.display = 'none';
-            video.muted = false;
-            fetchPlaylist();
-            if (!cameraStream) toggleCamera();
-        });
+        // Autoplay logic (No click required for muted signage)
+window.addEventListener('DOMContentLoaded', () => {
+    waiting.style.display = 'none';
+    video.muted = true; // Must be muted for Chrome autoplay
+    fetchPlaylist();
+    if (!cameraStream) toggleCamera();
+});
+
+// Allow unmuting by clicking anywhere later if needed
+document.body.addEventListener('click', () => {
+    video.muted = false;
+});
 
         let fetchTimer = null;
         async function fetchPlaylist() {
@@ -712,10 +718,11 @@
             video.style.display = 'block';
             imgScreen.style.display = 'none';
             document.getElementById('yt-player-container').style.display = 'none';
-            if (window.ytPlayer && typeof window.ytPlayer.stopVideo === 'function') {
-                document.getElementById('yt-player-container').style.display = 'none';
-                window.ytPlayer.stopVideo();
-            }
+            if (window.ytPlayer && typeof window.ytPlayer.stopVideo === 'function' && window.ytVideoLoaded) {
+        document.getElementById('yt-player-container').style.display = 'none';
+        try { window.ytPlayer.stopVideo(); } catch(e){}
+        window.ytVideoLoaded = false;
+    }
 
             // Validate URL to prevent NotSupportedError and Infinite Loop
             // Strictly allow only MP4/WEBM/MOV for video element OR Base64 Video
