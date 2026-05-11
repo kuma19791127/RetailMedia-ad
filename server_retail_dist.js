@@ -307,6 +307,9 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // --- SSE Stream (Real-time Interruptions) ---
 const sseClients = [];
+setInterval(() => {
+    sseClients.forEach(client => client.write(':\n\n'));
+}, 30000); // 30s keep-alive heartbeat
 app.get('/events', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -2343,6 +2346,9 @@ let campaigns = [
 
 // --- Server-Sent Events (SSE) ---
 let clients = [];
+setInterval(() => {
+    clients.forEach(c => c.write(':\n\n'));
+}, 30000); // 30s keep-alive heartbeat
 
 app.get('/events', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
