@@ -479,13 +479,27 @@
 
             function onPlayerError(event) {
                 document.getElementById('yt-player-container').style.display = 'none';
+                try { window.ytPlayer.stopVideo(); } catch(e){}
+                
                 const currentItem = currentPlaylist[currentIndex];
                 let title = currentItem ? currentItem.title : "不明なコンテンツ";
                 console.error(`[配信エラー] 広告/クリエイター配信に失敗しました: ${title} (YouTube Player Error: ${event.data})`);
                 
-                if (currentItem && (currentItem.is_youtube || (currentItem.url && currentItem.url.includes('youtu')))) {
-                    playNext(); // Skip on error only if playing a YouTube video
+                // エラーのまま固まらないように、エラー画面を数秒出して次のループ動画に強制移行させる
+                let errDiv = document.getElementById('debug-video-error');
+                if (!errDiv) {
+                    errDiv = document.createElement('div');
+                    errDiv.id = 'debug-video-error';
+                    errDiv.style.cssText = "position:absolute; top:30%; left:10%; right:10%; background:rgba(231,76,60,0.95); color:white; padding:30px; border-radius:12px; font-weight:bold; font-size:1.5rem; text-align:center; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.5);";
+                    document.getElementById('player-container').appendChild(errDiv);
                 }
+                errDiv.innerHTML = '⚠️ YouTubeの再生に失敗しました<br><span style="font-size:1rem;font-weight:normal;display:block;margin-top:10px;">無効なURL、または削除された動画です。<br><br>(3秒後に次の動画へ自動スキップします)</span>';
+                errDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    errDiv.style.display = 'none';
+                    playNext();
+                }, 3000);
             }
 
             function onPlayerStateChange(event) {
