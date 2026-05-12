@@ -470,7 +470,8 @@
                     height: '100%',
                     width: '100%',
                     playerVars: {
-                        'autoplay': 0, 
+                        'autoplay': 1, 
+                        'mute': 1, // ミュート必須（ブラウザの自動再生ブロックを回避するため）
                         'controls': 0,
                         'rel': 0,
                         'enablejsapi': 1,
@@ -579,6 +580,9 @@ window.addEventListener('DOMContentLoaded', () => {
 // Allow unmuting by clicking anywhere later if needed
 document.body.addEventListener('click', () => {
     video.muted = false;
+    if (window.ytPlayer && typeof window.ytPlayer.unMute === 'function') {
+        window.ytPlayer.unMute();
+    }
 });
 
         let fetchTimer = null;
