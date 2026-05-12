@@ -2685,6 +2685,9 @@ async function pullFromS3() {
             globalSensorLogs.length = 0;
             parsed.globalSensorLogs.forEach(l => globalSensorLogs.push(l));
         }
+        if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
+            global.retailer_videos = parsed.retailer_videos;
+        }
 
         const crypto = require('crypto');
         fs.writeFileSync(require('path').join(__dirname, 'database.json'), str, 'utf8');
