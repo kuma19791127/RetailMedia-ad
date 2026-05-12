@@ -2745,7 +2745,7 @@ setInterval(() => {
                         for (const email in users) {
                             const u = users[email];
                             pool.query(
-                                'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (, , , , , ) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
+                                'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
                                 [email, u.password, u.role, u.name, u.org, u.twoFactorSecret]
                             ).catch(e => console.error("[DB] Users Sync Error:", e.message));
                         }
@@ -2753,7 +2753,7 @@ setInterval(() => {
                         // Sync transactions
                         for (const t of transactions) {
                             pool.query(
-                                'INSERT INTO transactions (transaction_id, amount, store_id, items, timestamp) VALUES (, , , , ) ON CONFLICT (transaction_id) DO NOTHING',
+                                'INSERT INTO transactions (transaction_id, amount, store_id, items, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (transaction_id) DO NOTHING',
                                 [t.id, t.total, t.storeId, JSON.stringify(t.items), new Date(t.timestamp)]
                             ).catch(e => console.error("[DB] Transactions Sync Error:", e.message));
                         }
@@ -2761,7 +2761,7 @@ setInterval(() => {
                         // Sync campaigns
                         for (const c of campaigns) {
                             pool.query(
-                                'INSERT INTO campaigns (id, url, advertiser, budget, daily_limit, spent, status) VALUES (, , , , , , ) ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, budget = EXCLUDED.budget, daily_limit = EXCLUDED.daily_limit, spent = EXCLUDED.spent, status = EXCLUDED.status',
+                                'INSERT INTO campaigns (id, url, advertiser, budget, daily_limit, spent, status) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, budget = EXCLUDED.budget, daily_limit = EXCLUDED.daily_limit, spent = EXCLUDED.spent, status = EXCLUDED.status',
                                 [c.id, c.url, c.advertiser, c.budget, c.daily_limit, c.spent, c.status]
                             ).catch(e => console.error("[DB] Campaigns Sync Error:", e.message));
                         }
@@ -2789,6 +2789,6 @@ app.post('/api/admin/devices', express.json(), (req, res) => {
     
     global.deviceStoreMapping = global.deviceStoreMapping || {};
     global.deviceStoreMapping[deviceId] = storeId;
-    console.log([Admin] 🛠️ Device  permanently paired to Store );
-    res.json({ success: true, message: Device paired to  });
+    console.log(`[Admin] 🛠️ Device ${deviceId} permanently paired to Store ${storeId}`);
+    res.json({ success: true, message: `Device paired to ${storeId}` });
 });
