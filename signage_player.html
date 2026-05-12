@@ -607,6 +607,7 @@ document.body.addEventListener('click', () => {
                     currentPlaylist = newPlaylist;
                     
                     if (currentPlaylist.length > 0) {
+                        waiting.style.display = 'none'; // 新しいプレイリストが来たら待機メッセージを消す
                         if (oldPlaylist.length === 0) {
                             currentIndex = 0;
                             playContent(currentPlaylist[0]);
@@ -625,11 +626,19 @@ document.body.addEventListener('click', () => {
                             }
                         }
                     }
-                } else if (currentPlaylist && currentPlaylist.length > 0) {
+                } 
+                
+                // プレイリストが空の場合の安全なフォールバック処理（フリーズ防止）
+                if (currentPlaylist.length === 0) {
+                    document.getElementById('image-screen').style.display = 'none';
+                    document.getElementById('yt-player-container').style.display = 'none';
+                    video.style.display = 'none';
+                    waiting.style.display = 'flex';
+                } else {
                     // Fallback if nothing is playing
                     const imgScreen = document.getElementById('image-screen');
                     const ytContainer = document.getElementById('yt-player-container');
-                    const videoElem = document.getElementById('main-video');
+                    const videoElem = document.getElementById('main-video') || video;
                     if (videoElem.paused && ytContainer.style.display !== 'block' && imgScreen.style.display !== 'block') {
                         playContent(currentPlaylist[currentIndex]);
                     }
