@@ -103,7 +103,18 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         
         // 4. Inject Retailer S3 Videos (Dynamic specific or ALL)
         if (global.retailer_videos) {
-            for (const rv of global.retailer_videos) {
+            // Shuffle and cache for 60 seconds to support random delivery without breaking frontend polling
+            if (!global.cachedRetailerVideos || Date.now() - (global.lastRetailerVideoShuffle || 0) > 60000 || global.retailer_videos.length !== global.cachedRetailerVideos.length) {
+                let shuffledRV = [...global.retailer_videos];
+                for (let i = shuffledRV.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledRV[i], shuffledRV[j]] = [shuffledRV[j], shuffledRV[i]];
+                }
+                global.cachedRetailerVideos = shuffledRV;
+                global.lastRetailerVideoShuffle = Date.now();
+            }
+
+            for (const rv of global.cachedRetailerVideos) {
                 if (rv.status !== 'active') continue;
                 
                 // Match Logic: Check if the video is meant for ALL stores, or just this specific chain, or this specific store
