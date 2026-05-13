@@ -2179,14 +2179,28 @@
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
-    function saveProfile() {
-        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
-        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
+        const email = document.getElementById('prof-email').value;
+        const name = document.getElementById('prof-name').value;
+
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_email', email);
         if(document.getElementById('prof-name-container').style.display !== 'none') {
-            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+            localStorage.setItem('demo_name', name);
         }
+        
+        try {
+            await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, org, name, type: 'store' })
+            });
+        } catch(e) { console.error(e); }
+
         document.getElementById('modal-profile').style.display = 'none';
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールをS3に保存しました', showConfirmButton:false, timer:2000});
+        
         // Try triggering local update if exists
         try{ updateProfileDisplay(); }catch(e){}
     }
