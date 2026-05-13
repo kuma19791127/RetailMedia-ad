@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -54,28 +54,28 @@
     <!-- Login Overlay -->
     <div id="login-overlay">
         <h1 style="color:white; margin-bottom:10px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">Retailer Portal</h1>
-        <p style="color:#bfdbfe; margin-bottom:30px;">小売企業 マーケティング部専用画面</p>
+        <p style="color:#bfdbfe; margin-bottom:30px;">蟆丞｣ｲ莨∵･ｭ 繝槭・繧ｱ繝・ぅ繝ｳ繧ｰ驛ｨ蟆ら畑逕ｻ髱｢</p>
         <div class="login-box">
-            <h2 style="margin-top:0; color:#1e293b;">ログイン</h2>
+            <h2 style="margin-top:0; color:#1e293b;">繝ｭ繧ｰ繧､繝ｳ</h2>
             <form id="login-form" onsubmit="handleLogin(event)">
-                <input type="email" id="login-email" class="login-input" placeholder="メールアドレス (法人ID)" required autocomplete="username">
-                <input type="password" id="login-password" class="login-input" placeholder="パスワード" required autocomplete="current-password">
+                <input type="email" id="login-email" class="login-input" placeholder="繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ (豕穂ｺｺID)" required autocomplete="username">
+                <input type="password" id="login-password" class="login-input" placeholder="繝代せ繝ｯ繝ｼ繝・ required autocomplete="current-password">
                 <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
                     <label style="cursor: pointer; color: #475569;">
                         <input type="checkbox" id="save-password-chk" style="margin-right: 5px;">
-                        次回から自動入力する
+                        谺｡蝗槭°繧芽・蜍募・蜉帙☆繧・
                     </label>
                 </div>
-                <button type="submit" class="login-btn">ログイン</button>
+                <button type="submit" class="login-btn">繝ｭ繧ｰ繧､繝ｳ</button>
             </form>
-            <p id="login-error" style="color:red; font-size:14px; display:none; margin-top:10px;">認証に失敗しました</p>
+            <p id="login-error" style="color:red; font-size:14px; display:none; margin-top:10px;">隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆</p>
             
             <div id="inline-2fa-section" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
-                <h3 style="color:#2563eb; margin-top:0; font-size:1.1rem;">二段階認証 (2FA)</h3>
-                <p style="color:#64748b; font-size:13px; margin-bottom:15px;">認証アプリの6桁コードを入力</p>
+                <h3 style="color:#2563eb; margin-top:0; font-size:1.1rem;">莠梧ｮｵ髫手ｪ崎ｨｼ (2FA)</h3>
+                <p style="color:#64748b; font-size:13px; margin-bottom:15px;">隱崎ｨｼ繧｢繝励Μ縺ｮ6譯√さ繝ｼ繝峨ｒ蜈･蜉・/p>
                 <input type="text" id="inline-verify-2fa-code" class="login-input" placeholder="123456" autocomplete="off" style="text-align:center; font-size:1.2rem; letter-spacing:2px;" maxlength="6">
-                <button onclick="submitInline2FAVerify()" class="login-btn">認証する</button>
-                <p id="inline-verify-2fa-error" style="color:#e74c3c; font-size:14px; display:none; margin-top:10px;">コードが正しくありません</p>
+                <button onclick="submitInline2FAVerify()" class="login-btn">隱崎ｨｼ縺吶ｋ</button>
+                <p id="inline-verify-2fa-error" style="color:#e74c3c; font-size:14px; display:none; margin-top:10px;">繧ｳ繝ｼ繝峨′豁｣縺励￥縺ゅｊ縺ｾ縺帙ｓ</p>
             </div>
         </div>
     </div>
@@ -85,11 +85,11 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <h2>Retail Media<br><span style="font-size:0.9rem; color:#94a3b8;">Retailer Portal</span></h2>
-        <div class="nav-item active" onclick="switchTab('dashboard')">🏠 ダッシュボード</div>
-        <div class="nav-item" onclick="switchTab('store-setup')">🏬 店舗サイネージ設定</div>
-        <div class="nav-item" onclick="switchTab('video-upload')">📤 ベース動画の配信</div>
+        <div class="nav-item active" onclick="switchTab('dashboard')">匠 繝繝・す繝･繝懊・繝・/div>
+        <div class="nav-item" onclick="switchTab('store-setup')">小 蠎苓・繧ｵ繧､繝阪・繧ｸ險ｭ螳・/div>
+        <div class="nav-item" onclick="switchTab('video-upload')">豆 繝吶・繧ｹ蜍慕判縺ｮ驟堺ｿ｡</div>
         <div style="margin-top:auto; padding:20px;">
-            <button onclick="logout()" style="width:100%; padding:10px; background:#475569; color:white; border:none; border-radius:5px; cursor:pointer;">ログアウト</button>
+            <button onclick="logout()" style="width:100%; padding:10px; background:#475569; color:white; border:none; border-radius:5px; cursor:pointer;">繝ｭ繧ｰ繧｢繧ｦ繝・/button>
         </div>
     </div>
 
@@ -98,41 +98,44 @@
         
         <!-- Dashboard Tab -->
         <div id="tab-dashboard">
-            <h1>法人専用ポータルへようこそ</h1>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
+                <h1 style="border:none; padding:0; margin:0;">豕穂ｺｺ蟆ら畑繝昴・繧ｿ繝ｫ縺ｸ繧医≧縺薙◎</h1>
+                <button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;">笞呻ｸ・邨・ｹ・繝｡繝ｼ繝ｫ險ｭ螳・/button>
+            </div>
             <div class="card">
-                <h3 style="color:#1e40af; border-left:4px solid #3b82f6; padding-left:10px;">このポータルでできること</h3>
+                <h3 style="color:#1e40af; border-left:4px solid #3b82f6; padding-left:10px;">縺薙・繝昴・繧ｿ繝ｫ縺ｧ縺ｧ縺阪ｋ縺薙→</h3>
                 <p style="line-height:1.8; color:#334155;">
-                    本ポータルは、小売企業の本部（マーケティング部等）が、<br>
-                    自社店舗のサイネージパネルを<b>一括管理</b>し、<br>
-                    店舗の雰囲気作りに貢献する<b>独自動画</b><br>
-                    （社長挨拶、PB商品の宣伝など）を配信するための専用システムです。
+                    譛ｬ繝昴・繧ｿ繝ｫ縺ｯ縲∝ｰ丞｣ｲ莨∵･ｭ縺ｮ譛ｬ驛ｨ・医・繝ｼ繧ｱ繝・ぅ繝ｳ繧ｰ驛ｨ遲会ｼ峨′縲・br>
+                    閾ｪ遉ｾ蠎苓・縺ｮ繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ繧・b>荳諡ｬ邂｡逅・/b>縺励・br>
+                    蠎苓・縺ｮ髮ｰ蝗ｲ豌嶺ｽ懊ｊ縺ｫ雋｢迪ｮ縺吶ｋ<b>迢ｬ閾ｪ蜍慕判</b><br>
+                    ・育､ｾ髟ｷ謖ｨ諡ｶ縲￣B蝠・刀縺ｮ螳｣莨昴↑縺ｩ・峨ｒ驟堺ｿ｡縺吶ｋ縺溘ａ縺ｮ蟆ら畑繧ｷ繧ｹ繝・Β縺ｧ縺吶・
                 </p>
                 
                 <div class="guide-text" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:20px; margin-top:20px; border-left:none;">
-                    <h4 style="margin-top:0; color:#0f172a; text-align:center; font-size:1.2rem; border-bottom:2px dashed #cbd5e1; padding-bottom:10px;">【運用フローのご案内】</h4>
+                    <h4 style="margin-top:0; color:#0f172a; text-align:center; font-size:1.2rem; border-bottom:2px dashed #cbd5e1; padding-bottom:10px;">縲宣°逕ｨ繝輔Ο繝ｼ縺ｮ縺疲｡亥・縲・/h4>
                     
                     <div style="display:flex; align-items:flex-start; background:white; padding:15px; border-radius:8px; border-left:5px solid #2563eb; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-bottom:15px; margin-top:15px;">
-                        <div style="font-size:2.5rem; margin-right:20px;">🏬</div>
+                        <div style="font-size:2.5rem; margin-right:20px;">小</div>
                         <div>
-                            <strong style="color:#2563eb; font-size:1.1rem;">ステップ1：「店舗サイネージ設定」</strong><br>
+                            <strong style="color:#2563eb; font-size:1.1rem;">繧ｹ繝・ャ繝・・壹悟ｺ苓・縺ｸ縺ｮ險ｭ螳壽｡亥・縲・/strong><br>
                             <span style="color:#475569; line-height:1.6; display:block; margin-top:5px;">
-                                左メニューの「店舗サイネージ設定」から、各店舗のパネルに設定するための<br>
-                                <b>「専用セットアップファイル（.bat）」</b>を発行します。<br><br>
-                                このファイルを店舗スタッフに配布し、<br>
-                                <span style="background:#fef3c7; padding:2px 5px; border-radius:4px; font-weight:bold; color:#b45309;">サイネージパネルのコントローラーでbatをクリックしてもらうだけで、</span><br>
-                                その端末が自動的にサイネージとして登録されます。
+                                蟾ｦ繝｡繝九Η繝ｼ縺ｮ縲悟ｺ苓・繧ｵ繧､繝阪・繧ｸ險ｭ螳壹阪°繧峨∝推蠎苓・縺ｮ繝代ロ繝ｫ縺ｫ險ｭ螳壹☆繧九◆繧√・<br>
+                                <b>縲御ｼ∵･ｭID縲阪→縲悟ｺ苓・ID縲阪・譯亥・譁・/b>繧堤匱陦後＠縺ｾ縺吶・br><br>
+                                縺薙・諠・ｱ繧貞ｺ苓・繧ｹ繧ｿ繝・ヵ縺ｫ蜈ｱ譛峨＠縲・br>
+                                <span style="background:#fef3c7; padding:2px 5px; border-radius:4px; font-weight:bold; color:#b45309;">Android繧｢繝励Μ縺ｮ蛻晏屓襍ｷ蜍墓凾縺ｫ蜈･蜉帙＠縺ｦ繧ゅｉ縺・□縺代〒縲・/span><br>
+                                縺昴・遶ｯ譛ｫ縺悟ｾ｡遉ｾ縺ｮ繧ｵ繧､繝阪・繧ｸ縺ｨ縺励※閾ｪ蜍暮｣謳ｺ縺輔ｌ縺ｾ縺吶・
                             </span>
                         </div>
                     </div>
 
                     <div style="display:flex; align-items:flex-start; background:white; padding:15px; border-radius:8px; border-left:5px solid #10b981; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="font-size:2.5rem; margin-right:20px;">☁️</div>
+                        <div style="font-size:2.5rem; margin-right:20px;">笘・ｸ・/div>
                         <div>
-                            <strong style="color:#10b981; font-size:1.1rem;">ステップ2：「ベース動画の配信」</strong><br>
+                            <strong style="color:#10b981; font-size:1.1rem;">繧ｹ繝・ャ繝・・壹後・繝ｼ繧ｹ蜍慕判縺ｮ驟堺ｿ｡縲・/strong><br>
                             <span style="color:#475569; line-height:1.6; display:block; margin-top:5px;">
-                                左メニューの「ベース動画の配信」から、お店でループ再生させたいCM動画をアップロードします。<br><br>
-                                アップロードされた動画は、高画質のまま<b>自動でクラウド（S3）へ保存</b>され、<br>
-                                <span style="background:#ecfdf5; padding:2px 5px; border-radius:4px; font-weight:bold; color:#047857;">全国の指定した店舗のサイネージで数秒以内に自動配信がスタート</span>します。
+                                蟾ｦ繝｡繝九Η繝ｼ縺ｮ縲後・繝ｼ繧ｹ蜍慕判縺ｮ驟堺ｿ｡縲阪°繧峨√♀蠎励〒繝ｫ繝ｼ繝怜・逕溘＆縺帙◆縺ГM蜍慕判繧偵い繝・・繝ｭ繝ｼ繝峨＠縺ｾ縺吶・br><br>
+                                繧｢繝・・繝ｭ繝ｼ繝峨＆繧後◆蜍慕判縺ｯ縲・ｫ倡判雉ｪ縺ｮ縺ｾ縺ｾ<b>閾ｪ蜍輔〒繧ｯ繝ｩ繧ｦ繝会ｼ・3・峨∈菫晏ｭ・/b>縺輔ｌ縲・br>
+                                <span style="background:#ecfdf5; padding:2px 5px; border-radius:4px; font-weight:bold; color:#047857;">蜈ｨ蝗ｽ縺ｮ謖・ｮ壹＠縺溷ｺ苓・縺ｮ繧ｵ繧､繝阪・繧ｸ縺ｧ謨ｰ遘剃ｻ･蜀・↓閾ｪ蜍暮・菫｡縺後せ繧ｿ繝ｼ繝・/span>縺励∪縺吶・
                             </span>
                         </div>
                     </div>
@@ -143,33 +146,30 @@
         <!-- Store Setup Tab -->
         <div id="tab-store-setup" style="display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
-                <h1 style="border:none; padding:0; margin:0;">店舗サイネージのセットアップ発行</h1>
-                <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+                <h1 style="border:none; padding:0; margin:0;">蠎苓・繧ｵ繧､繝阪・繧ｸ縺ｮ險ｭ螳壽｡亥・</h1>
+                <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">謌ｻ繧・/button>
             </div>
             <div class="card">
-                <h3>店舗専用のセットアップファイル生成</h3>
-                <div class="guide-text">
-            店舗IDが埋め込まれた専用の<br>
-            「自動セットアップファイル（.bat）」をここで作成します。<br>
-            このファイルを店舗スタッフに配布し<br>
-            サイネージパネルのコントローラーでbatを<br>
-            クリックしてもらうだけで<br>
-            その端末が自動的にサイネージとして登録されます。
-        </div>        
+                <h3>蠎苓・繧ｹ繧ｿ繝・ヵ縺ｸ縺ｮ譯亥・譁・ｽ懈・</h3>
+                <div class="guide-text" style="background:#ecfdf5; border-left-color:#10b981;">
+                    蠎苓・縺ｮAndroid繧ｵ繧､繝阪・繧ｸ遶ｯ譛ｫ縺ｧ險ｭ螳壹☆繧九◆繧√・譯亥・譁・ｒ菴懈・縺励∪縺吶・br>
+                    莉･荳九・縲御ｼ∵･ｭID縲阪→縲悟ｺ苓・逡ｪ蜿ｷ縲阪ｒ蠎苓・繧ｹ繧ｿ繝・ヵ縺ｫ繝｡繝ｼ繝ｫ繧ЛINE縺ｧ蜈ｱ譛峨＠縲・br>
+                    <strong>縲窟nywhere Retail縲阪い繝励Μ</strong>縺ｮ蛻晏屓襍ｷ蜍墓凾縺ｫ蜈･蜉帙☆繧九ｈ縺・欠遉ｺ縺励※縺上□縺輔＞縲・
+                </div>        
                 
                 <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）</label>
-                    <input type="text" id="retailer-prefix" placeholder="例: LIFE" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;" readonly>
+                    <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 雋ｴ遉ｾ縺ｮ莨∵･ｭID・郁恭謨ｰ蟄暦ｼ・<span style="font-size:0.8rem; font-weight:normal; color:#64748b;">窶ｻ繝励Ο繝輔ぅ繝ｼ繝ｫ險ｭ螳壹・繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ</span></label>
+                    <input type="text" id="retailer-prefix" placeholder="萓・ LIFE" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;" readonly>
                 </div>
                 
                 <div style="margin-bottom:20px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗番号または店舗名（英数字）</label>
-                    <input type="text" id="store-suffix" placeholder="例: 001 または SHINJUKU" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 蠎苓・逡ｪ蜿ｷ縺ｾ縺溘・蠎苓・蜷搾ｼ郁恭謨ｰ蟄暦ｼ・/label>
+                    <input type="text" id="store-suffix" placeholder="萓・ 001 縺ｾ縺溘・ SHINJUKU" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;">
                 </div>
                 
                 <div style="display:flex; gap:10px;">
-                    <button onclick="generateBatFile()" style="background:#10b981; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer; flex:1;">⏬ この店舗専用のセットアップ(.bat)を発行する</button>
-                    <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+                    <button onclick="generateSetupInstructions()" style="background:#10b981; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer; flex:1;">搭 蠎苓・縺ｸ縺ｮ譯亥・譁・ｼ域欠遉ｺ譖ｸ・峨ｒ繧ｳ繝斐・縺吶ｋ</button>
+                    <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">謌ｻ繧・/button>
                 </div>
             </div>
         </div>
@@ -177,44 +177,44 @@
         <!-- Video Upload Tab -->
         <div id="tab-video-upload" style="display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
-                <div><h1 style="border:none; padding:0; margin:0;">ベース動画の配信（クラウド保存）</h1><div style="margin-top:8px;"><a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline; display:inline-block;">[配信・広告基準]</a></div></div>
-                <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+                <div><h1 style="border:none; padding:0; margin:0;">繝吶・繧ｹ蜍慕判縺ｮ驟堺ｿ｡・医け繝ｩ繧ｦ繝我ｿ晏ｭ假ｼ・/h1><div style="margin-top:8px;"><a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline; display:inline-block;">[驟堺ｿ｡繝ｻ蠎・相蝓ｺ貅望</a></div></div>
+                <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">謌ｻ繧・/button>
             </div>
             <div class="card">
-                <h3>お店の雰囲気を作る独自動画のアップロード</h3>
+                <h3>縺雁ｺ励・髮ｰ蝗ｲ豌励ｒ菴懊ｋ迢ｬ閾ｪ蜍慕判縺ｮ繧｢繝・・繝ｭ繝ｼ繝・/h3>
                 <div class="guide-text" style="background:#fef3c7; border-left:4px solid #f59e0b; padding:10px;">
-                重い動画（数十MB～GB単位）をそのままアップロードすると 回線を圧迫しエラーの原因となります<br>
-                下のボタンから「動画一括圧縮ツール」をダウンロードし<br>
-                動画を圧縮後にここへアップロードしてください。<br>
-                安全なクラウドストレージ（AWS S3）にダイレクト保存され<br>
-                全国のサイネージパネルが5秒以内に検知してループ再生を開始します。
+                驥阪＞蜍慕判・域焚蜊｀B・曩B蜊倅ｽ搾ｼ峨ｒ縺昴・縺ｾ縺ｾ繧｢繝・・繝ｭ繝ｼ繝峨☆繧九→ 蝗樒ｷ壹ｒ蝨ｧ霑ｫ縺励お繝ｩ繝ｼ縺ｮ蜴溷屏縺ｨ縺ｪ繧翫∪縺・br>
+                荳九・繝懊ち繝ｳ縺九ｉ縲悟虚逕ｻ荳諡ｬ蝨ｧ邵ｮ繝・・繝ｫ縲阪ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠<br>
+                蜍慕判繧貞悸邵ｮ蠕後↓縺薙％縺ｸ繧｢繝・・繝ｭ繝ｼ繝峨＠縺ｦ縺上□縺輔＞縲・br>
+                螳牙・縺ｪ繧ｯ繝ｩ繧ｦ繝峨せ繝医Ξ繝ｼ繧ｸ・・WS S3・峨↓繝繧､繝ｬ繧ｯ繝井ｿ晏ｭ倥＆繧・br>
+                蜈ｨ蝗ｽ縺ｮ繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縺・遘剃ｻ･蜀・↓讀懃衍縺励※繝ｫ繝ｼ繝怜・逕溘ｒ髢句ｧ九＠縺ｾ縺吶・
             </div>
             
             <div style="margin-bottom:20px; text-align:center;">
                 <div style="font-size:13px; color:#475569; margin-top:10px; line-height:1.6; text-align:left; background:#eff6ff; padding:15px; border-radius:5px; border:1px solid #bfdbfe;">
-                    <strong>【自動クラウド圧縮機能について】</strong><br>
-                    動画ファイルを選択してアップロードすると、クラウドサーバー上で自動的に軽量化（圧縮）されてから配信されます。<br>
-                    <span style="color:#2563eb; font-weight:bold;">※PCやスマホに専用ソフト（.batファイル等）をダウンロードする必要は一切ありません。そのままアップロードしてください。</span><br>
-                    <span style="color:#10b981; font-weight:bold; margin-top:5px; display:inline-block;">✓ Androidアプリからの起動確認も可能です。専用の「Anywhere Retail」アプリでサイネージパネルの起動状況をリアルタイムで確認できます。</span>
+                    <strong>縲占・蜍輔け繝ｩ繧ｦ繝牙悸邵ｮ讖溯・縺ｫ縺､縺・※縲・/strong><br>
+                    蜍慕判繝輔ぃ繧､繝ｫ繧帝∈謚槭＠縺ｦ繧｢繝・・繝ｭ繝ｼ繝峨☆繧九→縲√け繝ｩ繧ｦ繝峨し繝ｼ繝舌・荳翫〒閾ｪ蜍慕噪縺ｫ霆ｽ驥丞喧・亥悸邵ｮ・峨＆繧後※縺九ｉ驟堺ｿ｡縺輔ｌ縺ｾ縺吶・br>
+                    <span style="color:#2563eb; font-weight:bold;">窶ｻPC繧・せ繝槭・縺ｫ蟆ら畑繧ｽ繝輔ヨ・・bat繝輔ぃ繧､繝ｫ遲会ｼ峨ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨☆繧句ｿ・ｦ√・荳蛻・≠繧翫∪縺帙ｓ縲ゅ◎縺ｮ縺ｾ縺ｾ繧｢繝・・繝ｭ繝ｼ繝峨＠縺ｦ縺上□縺輔＞縲・/span><br>
+                    <span style="color:#10b981; font-weight:bold; margin-top:5px; display:inline-block;">笨・Android繧｢繝励Μ縺九ｉ縺ｮ襍ｷ蜍慕｢ｺ隱阪ｂ蜿ｯ閭ｽ縺ｧ縺吶ょｰら畑縺ｮ縲窟nywhere Retail縲阪い繝励Μ縺ｧ繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縺ｮ襍ｷ蜍慕憾豕√ｒ繝ｪ繧｢繝ｫ繧ｿ繧､繝縺ｧ遒ｺ隱阪〒縺阪∪縺吶・/span>
                 </div>
             </div>
                 
                 <div style="margin-bottom:20px;">
-                    <label style="font-weight:bold;">配信ターゲット:</label><br>
-                    <label style="margin-right:15px;"><input type="radio" name="targetStore" value="ALL" checked> 全店舗に配信する</label>
-                    <label><input type="radio" name="targetStore" value="SPECIFIC"> 特定の店舗のみに配信する</label>
+                    <label style="font-weight:bold;">驟堺ｿ｡繧ｿ繝ｼ繧ｲ繝・ヨ:</label><br>
+                    <label style="margin-right:15px;"><input type="radio" name="targetStore" value="ALL" checked> 蜈ｨ蠎苓・縺ｫ驟堺ｿ｡縺吶ｋ</label>
+                    <label><input type="radio" name="targetStore" value="SPECIFIC"> 迚ｹ螳壹・蠎苓・縺ｮ縺ｿ縺ｫ驟堺ｿ｡縺吶ｋ</label>
                     <div id="specific-store-container" style="display:none; margin-top:10px;">
                         <div class="store-input-row" style="display:flex; gap:5px; margin-bottom:5px;">
-                            <input type="text" class="specific-store-id" placeholder="例: LIFE_001" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                            <button onclick="addStoreInput()" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">➕ 追加</button>
+                            <input type="text" class="specific-store-id" placeholder="萓・ LIFE_001" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                            <button onclick="addStoreInput()" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">筐・霑ｽ蜉</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                    <span style="font-size:2rem;">📁</span><br>
-                    <strong>動画ファイルをここにドラッグ＆ドロップ</strong><br>
-                    <span style="color:#64748b; font-size:0.9rem;">またはクリックしてファイルを選択 (MP4, MOV 最大500MB)</span>
+                    <span style="font-size:2rem;">刀</span><br>
+                    <strong>蜍慕判繝輔ぃ繧､繝ｫ繧偵％縺薙↓繝峨Λ繝・げ・・ラ繝ｭ繝・・</strong><br>
+                    <span style="color:#64748b; font-size:0.9rem;">縺ｾ縺溘・繧ｯ繝ｪ繝・け縺励※繝輔ぃ繧､繝ｫ繧帝∈謚・(MP4, MOV 譛螟ｧ500MB)</span>
                     <input type="file" id="file-input" style="display:none" accept="video/mp4,video/quicktime">
                 </div>
                 
@@ -222,13 +222,13 @@
                     <div style="background:#e2e8f0; border-radius:10px; height:20px; width:100%; overflow:hidden;">
                         <div id="upload-progress" style="background:#3b82f6; height:100%; width:0%; transition:0.3s;"></div>
                     </div>
-                    <p id="upload-text" style="text-align:center; font-weight:bold; color:#3b82f6;">アップロード中... (自動圧縮・S3へ送信中)</p>
+                    <p id="upload-text" style="text-align:center; font-weight:bold; color:#3b82f6;">繧｢繝・・繝ｭ繝ｼ繝我ｸｭ... (閾ｪ蜍募悸邵ｮ繝ｻS3縺ｸ騾∽ｿ｡荳ｭ)</p>
                 </div>
             </div>
             
             <div class="card">
-                <h3>現在配信中のベース動画</h3>
-                <p style="color:#64748b; font-size:0.9rem;">※アップロードした動画は自動的にシャッフルされて配信されます。</p>
+                <h3>迴ｾ蝨ｨ驟堺ｿ｡荳ｭ縺ｮ繝吶・繧ｹ蜍慕判</h3>
+                <p style="color:#64748b; font-size:0.9rem;">窶ｻ繧｢繝・・繝ｭ繝ｼ繝峨＠縺溷虚逕ｻ縺ｯ閾ｪ蜍慕噪縺ｫ繧ｷ繝｣繝・ヵ繝ｫ縺輔ｌ縺ｦ驟堺ｿ｡縺輔ｌ縺ｾ縺吶・/p>
                 <div id="video-list">
                     <!-- Loaded via JS -->
                 </div>
@@ -253,8 +253,8 @@
             const row = document.createElement('div');
             row.className = 'store-input-row';
             row.style.cssText = 'display:flex; gap:5px; margin-bottom:5px;';
-            row.innerHTML = `<input type="text" class="specific-store-id" placeholder="例: LIFE_002" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
-                             <button onclick="this.parentElement.remove()" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">❌ 削除</button>`;
+            row.innerHTML = `<input type="text" class="specific-store-id" placeholder="萓・ LIFE_002" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                             <button onclick="this.parentElement.remove()" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">笶・蜑企勁</button>`;
             container.appendChild(row);
         }
 
@@ -299,19 +299,14 @@
             location.reload();
         }
 
-function generateBatFile() {
-    const suffix = document.getElementById('store-suffix').value.trim();
-    if(!suffix) {
-        Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error");
-        return;
-    }
+function generateSetupInstructions() { const suffix = document.getElementById('store-suffix').value.trim(); if(!suffix) { Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error"); return; } const storeId = `${currentPrefix}_${suffix}`; const text = `【サイネージ初期設定のお願い】\n\n店舗のAndroidサイネージ端末（またはタブレット）にて、以下の設定をお願いします。\n\n1. Google Playストアより「Anywhere Retail (Signage)」アプリをインストールしてください。\n2. アプリの初回起動時に、以下のIDを入力してログインしてください。\n\n■ 企業ID: ${currentPrefix}\n■ 店舗ID: ${suffix}\n\n※設定完了後、数秒で自動的に広告・CMの放映がスタートします。電源を入れるだけで次回からは自動再生されます。`; if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(() => { Swal.fire("コピー完了", "クリップボードに案内文をコピーしました。店舗スタッフにメール等で送信してください。", "success"); }).catch(err => { Swal.fire("エラー", "コピーに失敗しました。手動でコピーしてください。", "error"); }); } else { prompt("以下のテキストをコピーして共有してください:", text); } }
 
     const storeId = `${currentPrefix}_${suffix}`;
     const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
 
     const batContent = `@echo off
 echo =========================================================
-echo Retail Media サイネージ自動起動セットアップ (${storeId})
+echo Retail Media 繧ｵ繧､繝阪・繧ｸ閾ｪ蜍戊ｵｷ蜍輔そ繝・ヨ繧｢繝・・ (${storeId})
 echo =========================================================
 set "TARGET_URL=${targetUrl}"
 set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
@@ -330,8 +325,8 @@ echo oLink.Save ^>^> "%VBS_SCRIPT%"
 cscript /nologo "%VBS_SCRIPT%"
 del "%VBS_SCRIPT%"
 
-echo セットアップが完了しました！
-echo 次回起動時から自動的にカメラが許可され、動画がループ再生されます。
+echo 繧ｻ繝・ヨ繧｢繝・・縺悟ｮ御ｺ・＠縺ｾ縺励◆・・
+echo 谺｡蝗櫁ｵｷ蜍墓凾縺九ｉ閾ｪ蜍慕噪縺ｫ繧ｫ繝｡繝ｩ縺瑚ｨｱ蜿ｯ縺輔ｌ縲∝虚逕ｻ縺後Ν繝ｼ繝怜・逕溘＆繧後∪縺吶・
 timeout /t 3 ^>nul
 start "" "%CHROME_PATH%" --kiosk "%TARGET_URL%" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run
 exit /b
@@ -345,7 +340,7 @@ exit /b
     a.click();
     URL.revokeObjectURL(url);
 
-    Swal.fire("発行完了", `店舗スタッフに「setup_${storeId}.bat」を配布してください。`, "success");
+    Swal.fire("逋ｺ陦悟ｮ御ｺ・, `蠎苓・繧ｹ繧ｿ繝・ヵ縺ｫ縲茎etup_${storeId}.bat縲阪ｒ驟榊ｸ・＠縺ｦ縺上□縺輔＞縲Ａ, "success");
 }
             
 
@@ -369,13 +364,13 @@ async function handleUpload(file) {
     const progress = document.getElementById('upload-progress');
     const text = document.getElementById('upload-text');
     progress.style.width = '30%';
-    text.innerText = "圧縮・送信準備中...";
+    text.innerText = "蝨ｧ邵ｮ繝ｻ騾∽ｿ｡貅門ｙ荳ｭ...";
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async () => {
         progress.style.width = '60%';
-        text.innerText = "AWS S3へ送信中...";
+        text.innerText = "AWS S3縺ｸ騾∽ｿ｡荳ｭ...";
 
         const targetStore = document.querySelector('input[name="targetStore"]:checked').value === 'ALL' ? 'ALL' : Array.from(document.querySelectorAll('.specific-store-id')).map(input => input.value.trim()).filter(val => val !== '').join(',');
 
@@ -393,18 +388,18 @@ async function handleUpload(file) {
             const data = await res.json();
             if(data.success) {
                 progress.style.width = '100%';
-                text.innerText = "AWS S3への保存完了！配信がスタートしました。";
+                text.innerText = "AWS S3縺ｸ縺ｮ菫晏ｭ伜ｮ御ｺ・ｼ・・菫｡縺後せ繧ｿ繝ｼ繝医＠縺ｾ縺励◆縲・;
                 text.style.color = "#10b981";
                 setTimeout(() => {
                     document.getElementById('upload-status').style.display = 'none';
                     loadVideos();
-                    Swal.fire("配信開始", "動画がS3に保存され、5秒以内に全国の指定サイネージと同期されます。", "success");
+                    Swal.fire("驟堺ｿ｡髢句ｧ・, "蜍慕判縺郡3縺ｫ菫晏ｭ倥＆繧後・遘剃ｻ･蜀・↓蜈ｨ蝗ｽ縺ｮ謖・ｮ壹し繧､繝阪・繧ｸ縺ｨ蜷梧悄縺輔ｌ縺ｾ縺吶・, "success");
                 }, 2000);
             } else {
                 throw new Error(data.error || "Unknown error");
             }
         } catch(e) {
-            Swal.fire("エラー", "アップロードに失敗しました: " + e.message, "error");
+            Swal.fire("繧ｨ繝ｩ繝ｼ", "繧｢繝・・繝ｭ繝ｼ繝峨↓螟ｱ謨励＠縺ｾ縺励◆: " + e.message, "error");
             document.getElementById('upload-status').style.display = 'none';
         }
     };
@@ -416,16 +411,16 @@ async function loadVideos() {
         const videos = await res.json();
         let html = '';
         if(videos.length === 0) {
-            html = '<p style="padding:15px; color:#94a3b8;">現在配信中の独自動画はありません。</p>';
+            html = '<p style="padding:15px; color:#94a3b8;">迴ｾ蝨ｨ驟堺ｿ｡荳ｭ縺ｮ迢ｬ閾ｪ蜍慕判縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/p>';
         } else {
             videos.forEach(v => {
                 html += `
                 <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <strong style="color:#1e293b;">${v.title}</strong><br>
-                        <span style="font-size:0.85rem; color:#64748b;">配信先: ${v.target_store === 'ALL' ? '全店舗' : v.target_store}</span>
+                        <span style="font-size:0.85rem; color:#64748b;">驟堺ｿ｡蜈・ ${v.target_store === 'ALL' ? '蜈ｨ蠎苓・' : v.target_store}</span>
                     </div>
-                    <button onclick="deleteVideo('${v.id}')" style="color:red; background:none; border:1px solid red; border-radius:5px; padding:5px 10px; cursor:pointer;">配信停止</button>
+                    <button onclick="deleteVideo('${v.id}')" style="color:red; background:none; border:1px solid red; border-radius:5px; padding:5px 10px; cursor:pointer;">驟堺ｿ｡蛛懈ｭ｢</button>
                 </div>`;
             });
         }
@@ -437,7 +432,7 @@ async function loadVideos() {
 
 
 async function deleteVideo(id) {
-    if(confirm("この動画の配信を停止し、削除しますか？")) {
+    if(confirm("縺薙・蜍慕判縺ｮ驟堺ｿ｡繧貞●豁｢縺励∝炎髯､縺励∪縺吶°・・)) {
         await fetch('/api/retailer/videos/' + id, { method: 'DELETE' });
         loadVideos();
     }
@@ -445,20 +440,91 @@ async function deleteVideo(id) {
 
 function showAdPolicy() {
     Swal.fire({
-        title: '配信・広告審査基準 (AI Moderation)',
+        title: '驟堺ｿ｡繝ｻ蠎・相蟇ｩ譟ｻ蝓ｺ貅・(AI Moderation)',
         html: `<div style="text-align:left; font-size:0.95rem; line-height:1.6; color:#475569;">
-            以下のコンテンツが含まれている場合、AIによって自動的に拒絶・アカウント停止となる可能性があります。
+            莉･荳九・繧ｳ繝ｳ繝・Φ繝・′蜷ｫ縺ｾ繧後※縺・ｋ蝣ｴ蜷医、I縺ｫ繧医▲縺ｦ閾ｪ蜍慕噪縺ｫ諡堤ｵｶ繝ｻ繧｢繧ｫ繧ｦ繝ｳ繝亥●豁｢縺ｨ縺ｪ繧句庄閭ｽ諤ｧ縺後≠繧翫∪縺吶・
             <ul style="margin-top:10px; padding-left:20px;">
-                <li style="margin-bottom:8px;"><b>公序良俗違反:</b> 過度な暴力、性的描写、ヘイトスピーチ等に反する内容。</li>
-                <li style="margin-bottom:8px;"><b>誇大広告・詐欺:</b> 「必ず儲かる」「投資で稼ぐ」といった投資詐欺や、科学的根拠のない効果効能の標榜（薬機法違反）。</li>
-                <li style="margin-bottom:8px;"><b>スパム・悪質誘導:</b> 「続きはLINEで」「LINE登録はこちら」など、外部SNSへ誘導して情報商材を売るようなスパム・詐欺的誘導。</li>
+                <li style="margin-bottom:8px;"><b>蜈ｬ蠎剰憶菫鈴＆蜿・</b> 驕主ｺｦ縺ｪ證ｴ蜉帙∵ｧ逧・緒蜀吶√・繧､繝医せ繝斐・繝∫ｭ峨↓蜿阪☆繧句・螳ｹ縲・/li>
+                <li style="margin-bottom:8px;"><b>隱・､ｧ蠎・相繝ｻ隧先ｬｺ:</b> 縲悟ｿ・★蜆ｲ縺九ｋ縲阪梧兜雉・〒遞ｼ縺舌阪→縺・▲縺滓兜雉・ｩ先ｬｺ繧・∫ｧ大ｭｦ逧・ｹ諡縺ｮ縺ｪ縺・柑譫懷柑閭ｽ縺ｮ讓呎ｦ懶ｼ郁脈讖滓ｳ暮＆蜿搾ｼ峨・/li>
+                <li style="margin-bottom:8px;"><b>繧ｹ繝代Β繝ｻ謔ｪ雉ｪ隱伜ｰ・</b> 縲檎ｶ壹″縺ｯLINE縺ｧ縲阪鍬INE逋ｻ骭ｲ縺ｯ縺薙■繧峨阪↑縺ｩ縲∝､夜ΚSNS縺ｸ隱伜ｰ弱＠縺ｦ諠・ｱ蝠・攝繧貞｣ｲ繧九ｈ縺・↑繧ｹ繝代Β繝ｻ隧先ｬｺ逧・ｪ伜ｰ弱・/li>
             </ul>
         </div>`,
         icon: 'info',
-        confirmButtonText: '確認しました',
+        confirmButtonText: '遒ｺ隱阪＠縺ｾ縺励◆',
         confirmButtonColor: '#3b82f6'
     });
 }
 </script>
+<!-- Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">繝励Ο繝輔ぅ繝ｼ繝ｫ邱ｨ髮・/h3>
+
+        <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">邨・ｹ泌錐</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="譬ｪ蠑丈ｼ夂､ｾ縲・・ autocomplete="organization">
+
+            <div id="prof-name-container" style="display:none;">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">蜷榊燕陦ｨ遉ｺ</div>
+                <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="驤ｴ譛ｨ 荳驛・ autocomplete="name">
+            </div>
+
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ (蜈ｼ 莨∵･ｭID)</div>
+            <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" autocomplete="username">
+
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">繝代せ繝ｯ繝ｼ繝・(繝ｪ繧ｻ繝・ヨ)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="譁ｰ縺励＞繝代せ繝ｯ繝ｼ繝・ autocomplete="new-password">
+
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">菫晏ｭ倥＠縺ｦ髢峨§繧・/button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+        </form>
+    </div>
+</div>
+<script>
+    function openProfileModal(showName = false) {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('retailer_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('retailer_email') || (typeof currentPrefix !== 'undefined' ? currentPrefix : '');
+            if(showName) {
+                document.getElementById('prof-name-container').style.display = 'block';
+                document.getElementById('prof-name').value = localStorage.getItem('retailer_name') || "驤ｴ譛ｨ (諡・ｽ楢・";
+            } else {
+                document.getElementById('prof-name-container').style.display = 'none';
+            }
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    function saveProfile() {
+        localStorage.setItem('retailer_org', document.getElementById('prof-org').value);
+        const newEmail = document.getElementById('prof-email').value;
+        localStorage.setItem('retailer_email', newEmail);
+        
+        if(document.getElementById('prof-name-container').style.display !== 'none') {
+            localStorage.setItem('retailer_name', document.getElementById('prof-name').value);
+        }
+        document.getElementById('modal-profile').style.display = 'none';
+        
+        // Update prefix everywhere
+        if (typeof currentPrefix !== 'undefined') currentPrefix = newEmail;
+        if (typeof currentEmail !== 'undefined') currentEmail = newEmail;
+        const prefixInput = document.getElementById('retailer-prefix');
+        if (prefixInput) prefixInput.value = currentPrefix;
+        
+        const loginInput = document.getElementById('login-email');
+        if (loginInput) loginInput.value = currentPrefix;
+
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'繝励Ο繝輔ぅ繝ｼ繝ｫ繧呈峩譁ｰ縺励∪縺励◆', text: '莨∵･ｭID縺ｫ繧ょ､画峩縺悟渚譏縺輔ｌ縺ｾ縺励◆縲・, showConfirmButton:false, timer:3000});
+    }
+
+    // Auto-fill login screen if saved
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedEmail = localStorage.getItem('retailer_email');
+        if (savedEmail) {
+            const loginInput = document.getElementById('login-email');
+            if (loginInput) loginInput.value = savedEmail;
+        }
+    });
+</script>
 </body>
 </html>
+
