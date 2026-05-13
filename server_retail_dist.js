@@ -39,6 +39,48 @@ const PORT = 3000;
 
 app.use(cors());
 
+// --- Profile Management ---
+app.post('/api/profile', async (req, res) => {
+    const { email, org, name, type } = req.body;
+    if(!email) return res.json({success: false, error: "Email is required"});
+    try {
+        const key = `profiles/${email}.json`;
+        await s3Client.send(new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME || S3_BUCKET_NAME,
+            Key: key,
+            Body: JSON.stringify({ email, org, name, type, updatedAt: new Date() }),
+            ContentType: 'application/json'
+        }));
+        res.json({ success: true });
+    } catch(e) {
+        console.error("[Profile API] Save Error:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.get('/api/profile', async (req, res) => {
+    const { email } = req.query;
+    if(!email) return res.json({success: false, error: "Email is required"});
+    try {
+        const key = `profiles/${email}.json`;
+        const data = await s3Client.send(new GetObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME || S3_BUCKET_NAME,
+            Key: key
+        }));
+        const streamToString = (stream) => new Promise((resolve, reject) => {
+            const chunks = [];
+            stream.on('data', (chunk) => chunks.push(chunk));
+            stream.on('error', reject);
+            stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        });
+        const body = await streamToString(data.Body);
+        res.json({ success: true, profile: JSON.parse(body) });
+    } catch(e) {
+        // Not found is fine
+        res.json({ success: false, error: "Profile not found" });
+    }
+});
+
 // --- Scheduled Broadcast System ---
 let scheduledBroadcasts = [];
 setInterval(() => {

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -487,21 +487,32 @@ function showAdPolicy() {
             document.getElementById('prof-email').value = localStorage.getItem('retailer_email') || (typeof currentPrefix !== 'undefined' ? currentPrefix : '');
             if(showName) {
                 document.getElementById('prof-name-container').style.display = 'block';
-                document.getElementById('prof-name').value = localStorage.getItem('retailer_name') || "驤ｴ譛ｨ (諡・ｽ楢・";
+                document.getElementById('prof-name').value = localStorage.getItem('retailer_name') || "鈴木 (担当者)";
             } else {
                 document.getElementById('prof-name-container').style.display = 'none';
             }
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
-    function saveProfile() {
-        localStorage.setItem('retailer_org', document.getElementById('prof-org').value);
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
         const newEmail = document.getElementById('prof-email').value;
-        localStorage.setItem('retailer_email', newEmail);
+        const name = document.getElementById('prof-name').value;
         
+        localStorage.setItem('retailer_org', org);
+        localStorage.setItem('retailer_email', newEmail);
         if(document.getElementById('prof-name-container').style.display !== 'none') {
-            localStorage.setItem('retailer_name', document.getElementById('prof-name').value);
+            localStorage.setItem('retailer_name', name);
         }
+        
+        try {
+            await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: newEmail, org, name, type: 'retailer' })
+            });
+        } catch(e) { console.error(e); }
+
         document.getElementById('modal-profile').style.display = 'none';
         
         // Update prefix everywhere
@@ -513,7 +524,7 @@ function showAdPolicy() {
         const loginInput = document.getElementById('login-email');
         if (loginInput) loginInput.value = currentPrefix;
 
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'繝励Ο繝輔ぅ繝ｼ繝ｫ繧呈峩譁ｰ縺励∪縺励◆', text: '莨∵･ｭID縺ｫ繧ょ､画峩縺悟渚譏縺輔ｌ縺ｾ縺励◆縲・, showConfirmButton:false, timer:3000});
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールをS3に保存しました', text: '企業IDにも変更が反映されました。', showConfirmButton:false, timer:3000});
     }
 
     // Auto-fill login screen if saved
