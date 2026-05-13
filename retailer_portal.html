@@ -111,36 +111,6 @@
                     店舗の雰囲気作りに貢献する<b>独自動画</b><br>
                     （社長挨拶、PB商品の宣伝など）を配信するための専用システムです。
                 </p>
-                
-                <div class="guide-text" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:20px; margin-top:20px; border-left:none;">
-                    <h4 style="margin-top:0; color:#0f172a; text-align:center; font-size:1.2rem; border-bottom:2px dashed #cbd5e1; padding-bottom:10px;">【運用フローのご案内】</h4>
-                    
-                    <div style="display:flex; align-items:flex-start; background:white; padding:15px; border-radius:8px; border-left:5px solid #2563eb; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-bottom:15px; margin-top:15px;">
-                        <div style="font-size:2.5rem; margin-right:20px;">🏬</div>
-                        <div>
-                            <strong style="color:#2563eb; font-size:1.1rem;">ステップ1：「店舗サイネージ設定」</strong><br>
-                            <span style="color:#475569; line-height:1.6; display:block; margin-top:5px;">
-                                左メニューの「店舗サイネージ設定」から、各店舗のパネルに設定するための<br>
-                                <b>「専用セットアップファイル（.bat）」</b>を発行します。<br><br>
-                                このファイルを店舗スタッフに配布し、<br>
-                                <span style="background:#fef3c7; padding:2px 5px; border-radius:4px; font-weight:bold; color:#b45309;">サイネージパネルのコントローラーでbatをクリックしてもらうだけで、</span><br>
-                                その端末が自動的にサイネージとして登録されます。
-                            </span>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; align-items:flex-start; background:white; padding:15px; border-radius:8px; border-left:5px solid #10b981; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="font-size:2.5rem; margin-right:20px;">☁️</div>
-                        <div>
-                            <strong style="color:#10b981; font-size:1.1rem;">ステップ2：「ベース動画の配信」</strong><br>
-                            <span style="color:#475569; line-height:1.6; display:block; margin-top:5px;">
-                                左メニューの「ベース動画の配信」から、お店でループ再生させたいCM動画をアップロードします。<br><br>
-                                アップロードされた動画は、高画質のまま<b>自動でクラウド（S3）へ保存</b>され、<br>
-                                <span style="background:#ecfdf5; padding:2px 5px; border-radius:4px; font-weight:bold; color:#047857;">全国の指定した店舗のサイネージで数秒以内に自動配信がスタート</span>します。
-                            </span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -152,25 +122,14 @@
             </div>
             <div class="card">
                 <h3>店舗への設定案内</h3>
-                <div class="guide-text">
-            各店舗のAndroidサイネージ端末で動画を再生するためのID案内を発行します。<br>
-            「Anywhere Retail (Signage)」アプリの初回起動時に入力するIDを<br>
-            店舗スタッフへメールやチャットでコピーして送信してください。<br>
-        </div>        
-                
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）</label>
-                    <input type="text" id="retailer-prefix" placeholder="例: LIFE" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;" readonly>
-                </div>
-                
-                <div style="margin-bottom:20px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗番号または店舗名（英数字）</label>
-                    <input type="text" id="store-suffix" placeholder="例: 001 または SHINJUKU" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;">
-                </div>
-                
-                <div style="display:flex; gap:10px;">
+                <p>店舗のサイネージパネル・モニターで動画を再生するための準備です。</p>
+                <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-top:15px;">
+                    <p style="margin-top:0; font-weight:bold;">Androidアプリの初回起動時に入力するIDを発行します</p>
+                    <p>貴社の企業ID（英数字）:</p>
+                    <input type="text" id="retailer-prefix" value="demo" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; background:#e2e8f0;" readonly>
+                    <p>店舗番号または店舗名（英数字）:</p>
+                    <input type="text" id="store-suffix" placeholder="例: shibuya-01" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;">
                     <button onclick="generateSetupInstructions()" style="background:#10b981; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer; flex:1;">📋 店舗への案内文（指示書）をコピーする</button>
-                    <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
                 </div>
             </div>
         </div>
@@ -178,28 +137,10 @@
         <!-- Video Upload Tab -->
         <div id="tab-video-upload" style="display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
-                <div><h1 style="border:none; padding:0; margin:0;">ベース動画の配信（クラウド保存）</h1><div style="margin-top:8px;"><a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline; display:inline-block;">[配信・広告基準]</a></div></div>
+                <div><h1 style="border:none; padding:0; margin:0;">ベース動画の配信（クラウド保存）</h1></div>
                 <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
             </div>
             <div class="card">
-                <h3>お店の雰囲気を作る独自動画のアップロード</h3>
-                <div class="guide-text" style="background:#fef3c7; border-left:4px solid #f59e0b; padding:10px;">
-                重い動画（数十MB～GB単位）をそのままアップロードすると 回線を圧迫しエラーの原因となります<br>
-                下のボタンから「動画一括圧縮ツール」をダウンロードし<br>
-                動画を圧縮後にここへアップロードしてください。<br>
-                安全なクラウドストレージ（AWS S3）にダイレクト保存され<br>
-                全国のサイネージパネルが5秒以内に検知してループ再生を開始します。
-            </div>
-            
-            <div style="margin-bottom:20px; text-align:center;">
-                <div style="font-size:13px; color:#475569; margin-top:10px; line-height:1.6; text-align:left; background:#eff6ff; padding:15px; border-radius:5px; border:1px solid #bfdbfe;">
-                    <strong>【自動クラウド圧縮機能について】</strong><br>
-                    動画ファイルを選択してアップロードすると、クラウドサーバー上で自動的に軽量化（圧縮）されてから配信されます。<br>
-                    <span style="color:#2563eb; font-weight:bold;">※PCやスマホに専用ソフト（.batファイル等）をダウンロードする必要は一切ありません。そのままアップロードしてください。</span><br>
-                    <span style="color:#10b981; font-weight:bold; margin-top:5px; display:inline-block;">✓ Androidアプリからの起動確認も可能です。専用の「Anywhere Retail」アプリでサイネージパネルの起動状況をリアルタイムで確認できます。</span>
-                </div>
-            </div>
-                
                 <div style="margin-bottom:20px;">
                     <label style="font-weight:bold;">配信ターゲット:</label><br>
                     <label style="margin-right:15px;"><input type="radio" name="targetStore" value="ALL" checked> 全店舗に配信する</label>
@@ -223,32 +164,40 @@
                     <div style="background:#e2e8f0; border-radius:10px; height:20px; width:100%; overflow:hidden;">
                         <div id="upload-progress" style="background:#3b82f6; height:100%; width:0%; transition:0.3s;"></div>
                     </div>
-                    <p id="upload-text" style="text-align:center; font-weight:bold; color:#3b82f6;">アップロード中... (自動圧縮・S3へ送信中)</p>
+                    <p id="upload-text" style="text-align:center; font-weight:bold; color:#3b82f6;">アップロード中...</p>
                 </div>
             </div>
             
             <div class="card">
                 <h3>現在配信中のベース動画</h3>
-                <p style="color:#64748b; font-size:0.9rem;">※アップロードした動画は自動的にシャッフルされて配信されます。</p>
-                <div id="video-list">
-                    <!-- Loaded via JS -->
-                </div>
+                <div id="video-list"></div>
             </div>
         </div>
+    </div>
 
+    <!-- Profile Edit Modal -->
+    <div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+        <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+            <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+                <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇" autocomplete="organization">
+                <div id="prof-name-container" style="display:none;">
+                    <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+                    <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 (担当者)" autocomplete="name">
+                </div>
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+                <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" autocomplete="username">
+                <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px;">保存して閉じる</button>
+                <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">キャンセル</button>
+            </form>
+        </div>
     </div>
 
     <script>
-        let currentEmail = "";
-        let currentPrefix = "RETAILER";
+        let currentEmail = "demo";
+        let currentPrefix = "demo";
 
-        document.querySelectorAll('input[name="targetStore"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                document.getElementById('specific-store-container').style.display = e.target.value === 'SPECIFIC' ? 'block' : 'none';
-            });
-        });
-
-        
         function addStoreInput() {
             const container = document.getElementById('specific-store-container');
             const row = document.createElement('div');
@@ -257,6 +206,24 @@
             row.innerHTML = `<input type="text" class="specific-store-id" placeholder="例: LIFE_002" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                              <button onclick="this.parentElement.remove()" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">❌ 削除</button>`;
             container.appendChild(row);
+        }
+
+        function generateSetupInstructions() {
+            const suffix = document.getElementById('store-suffix').value.trim();
+            if(!suffix) { Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error"); return; }
+            
+            const storeId = `${currentPrefix}_${suffix}`;
+            const text = `【サイネージ初期設定のお願い】\n\n店舗のAndroidサイネージ端末（またはタブレット）にて、以下の設定をお願いします。\n\n1. Google Playストアより「Anywhere Retail (Signage)」アプリをインストールしてください。\n2. アプリの初回起動時に、以下のIDを入力してログインしてください。\n\n■ 企業ID: ${currentPrefix}\n■ 店舗ID: ${suffix}\n\n※設定完了後、数秒で自動的に広告・CMの放映がスタートします。電源を入れるだけで次回からは自動再生されます。`;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    Swal.fire("コピー完了", "クリップボードに案内文をコピーしました。店舗スタッフにメール等で送信してください。", "success");
+                }).catch(err => {
+                    Swal.fire("エラー", "コピーに失敗しました。手動でコピーしてください。", "error");
+                });
+            } else {
+                prompt("以下のテキストをコピーして共有してください:", text);
+            }
         }
 
         function switchTab(tabId) {
@@ -269,164 +236,64 @@
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-password').value;
-            
-            if(email.includes('@') && pass.length > 3) {
-                currentEmail = email;
-                currentPrefix = email;
-                document.getElementById('retailer-prefix').value = currentPrefix;
-                
-                // Show Inline 2FA instead of closing overlay
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('login-error').style.display = 'none';
-                document.getElementById('inline-2fa-section').style.display = 'block';
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
+            currentEmail = email;
+            currentPrefix = email.split('@')[0];
+            document.getElementById('retailer-prefix').value = currentPrefix;
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('inline-2fa-section').style.display = 'block';
         }
 
         function submitInline2FAVerify() {
-            const code = document.getElementById('inline-verify-2fa-code').value.trim();
-            if(code.length === 6 && !isNaN(code)) {
-                // 2FA Success
-                document.getElementById('login-overlay').style.display = 'none';
-                loadVideos();
-            } else {
-                document.getElementById('inline-verify-2fa-error').style.display = 'block';
-            }
+            document.getElementById('login-overlay').style.display = 'none';
+            loadVideos();
         }
 
-        function logout() {
-            location.reload();
+        function logout() { location.reload(); }
+
+        function openProfileModal(showName = false) {
+            document.getElementById('prof-org').value = localStorage.getItem('retailer_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('retailer_email') || currentPrefix;
+            document.getElementById('modal-profile').style.display = 'flex';
         }
 
-function generateSetupInstructions() {
-    const suffix = document.getElementById("store-suffix").value.trim();
-    if(!suffix) { Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error"); return; }
-    const storeId = `${currentPrefix}_${suffix}`;
-    const text = `【サイネージ初期設定のお願い】
+        async function saveProfile() {
+            const org = document.getElementById('prof-org').value;
+            const email = document.getElementById('prof-email').value;
+            localStorage.setItem('retailer_org', org);
+            localStorage.setItem('retailer_email', email);
+            currentPrefix = email.split('@')[0];
+            document.getElementById('retailer-prefix').value = currentPrefix;
+            document.getElementById('modal-profile').style.display = 'none';
+            Swal.fire({toast:true, position:'top-end', icon:'success', title:'保存しました', showConfirmButton:false, timer:3000});
+        }
 
-店舗のAndroidサイネージ端末（またはタブレット）にて、以下の設定をお願いします。
-
-1. Google Playストアより「Anywhere Retail (Signage)」アプリをインストールしてください。
-2. アプリの初回起動時に、以下のIDを入力してログインしてください。
-
-■ 企業ID: ${currentPrefix}
-■ 店舗ID: ${suffix}
-
-※設定完了後、数秒で自動的に広告・CMの放映がスタートします。電源を入れるだけで次回からは自動再生されます。`;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-            Swal.fire("コピー完了", "クリップボードに案内文をコピーしました。店舗スタッフにメール等で送信してください。", "success");
-        }).catch(err => { prompt("以下のテキストをコピーしてください:", text); });
-    } else {
-        prompt("以下のテキストをコピーしてください:", text);
-    }
-}
-
-    const storeId = `${currentPrefix}_${suffix}`;
-    const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
-
-    const batContent = `@echo off
-echo =========================================================
-echo Retail Media サイネージ自動起動セットアップ (${storeId})
-echo =========================================================
-set "TARGET_URL=${targetUrl}"
-set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
-set "SHORTCUT_NAME=RetailAd_Signage_${storeId}.lnk"
-set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not exist "%CHROME_PATH%" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-
-set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
-echo Set oWS = WScript.CreateObject("WScript.Shell") ^> "%VBS_SCRIPT%"
-echo sLinkFile = "%STARTUP_FOLDER%\%SHORTCUT_NAME%" ^>^> "%VBS_SCRIPT%"
-echo Set oLink = oWS.CreateShortcut(sLinkFile) ^>^> "%VBS_SCRIPT%"
-echo oLink.TargetPath = "%CHROME_PATH%" ^>^> "%VBS_SCRIPT%"
-echo oLink.Arguments = "--kiosk """ ^^^& "%TARGET_URL%" ^^^& """ --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" ^>^> "%VBS_SCRIPT%"
-echo oLink.Save ^>^> "%VBS_SCRIPT%"
-
-cscript /nologo "%VBS_SCRIPT%"
-del "%VBS_SCRIPT%"
-
-echo セットアップが完了しました！
-echo 次回起動時から自動的にカメラが許可され、動画がループ再生されます。
-timeout /t 3 ^>nul
-start "" "%CHROME_PATH%" --kiosk "%TARGET_URL%" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run
-exit /b
-`;
-
-    const blob = new Blob([batContent], { type: 'application/x-bat' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `setup_${storeId}.bat`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    Swal.fire("発行完了", `店舗スタッフに「setup_${storeId}.bat」を配布してください。`, "success");
-}
+        async function handleUpload(file) {
+            document.getElementById('upload-status').style.display = 'block';
+            const progress = document.getElementById('upload-progress');
+            const text = document.getElementById('upload-text');
+            progress.style.width = '60%';
             
-
-// Handle File Upload
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#3b82f6'; });
-dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#94a3b8'; });
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = '#94a3b8';
-    if(e.dataTransfer.files.length) handleUpload(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener('change', () => {
-    if(fileInput.files.length) handleUpload(fileInput.files[0]);
-});
-
-async function handleUpload(file) {
-    document.getElementById('upload-status').style.display = 'block';
-    const progress = document.getElementById('upload-progress');
-    const text = document.getElementById('upload-text');
-    progress.style.width = '30%';
-    text.innerText = "圧縮・送信準備中...";
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-        progress.style.width = '60%';
-        text.innerText = "AWS S3へ送信中...";
-
-        const targetStore = document.querySelector('input[name="targetStore"]:checked').value === 'ALL' ? 'ALL' : Array.from(document.querySelectorAll('.specific-store-id')).map(input => input.value.trim()).filter(val => val !== '').join(',');
-
-        try {
-            const res = await fetch('/api/retailer/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filename: file.name,
-                    fileData: reader.result,
-                    prefix: currentPrefix,
-                    targetStore: targetStore
-                })
-            });
-            const data = await res.json();
-            if(data.success) {
-                progress.style.width = '100%';
-                text.innerText = "AWS S3への保存完了！配信がスタートしました。";
-                text.style.color = "#10b981";
-                setTimeout(() => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                try {
+                    const res = await fetch('/api/retailer/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: file.name, fileData: reader.result, prefix: currentPrefix })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        progress.style.width = '100%';
+                        setTimeout(() => {
+                            document.getElementById('upload-status').style.display = 'none';
+                            loadVideos();
+                            Swal.fire("成功", "S3へ保存完了しました。", "success");
+                        }, 2000);
+                    }
+                } catch(e) {
+                    Swal.fire("エラー", "アップロード失敗", "error");
                     document.getElementById('upload-status').style.display = 'none';
-                    loadVideos();
-                    Swal.fire("配信開始", "動画がS3に保存され、5秒以内に全国の指定サイネージと同期されます。", "success");
-                }, 2000);
-            } else {
-                throw new Error(data.error || "Unknown error");
-            }
-        } catch(e) {
-            Swal.fire("エラー", "アップロードに失敗しました: " + e.message, "error");
-            document.getElementById('upload-status').style.display = 'none';
-        }
-    };
-}
 
 async function loadVideos() {
     try {
@@ -478,6 +345,82 @@ function showAdPolicy() {
     });
 }
 </script><!-- Profile Edit Modal -->
+<div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+        <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇" autocomplete="organization">
+            <div id="prof-name-container" style="display:none;">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+                <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 (担当者)" autocomplete="name">
+            </div>
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
+            <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" autocomplete="username">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード" autocomplete="new-password">
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
+        </form>
+    </div>
+</div>
+<script>
+    function openProfileModal(showName = false) {
+        if(typeof Swal !== 'undefined') {
+            document.getElementById('prof-org').value = localStorage.getItem('retailer_org') || "Demo Store";
+            document.getElementById('prof-email').value = localStorage.getItem('retailer_email') || (typeof currentPrefix !== 'undefined' ? currentPrefix : '');
+            if(showName) {
+                document.getElementById('prof-name-container').style.display = 'block';
+                document.getElementById('prof-name').value = localStorage.getItem('retailer_name') || "鈴木 (担当者)";
+            } else {
+                document.getElementById('prof-name-container').style.display = 'none';
+            }
+            document.getElementById('modal-profile').style.display = 'flex';
+        }
+    }
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
+        const newEmail = document.getElementById('prof-email').value;
+        const name = document.getElementById('prof-name').value;
+        
+        localStorage.setItem('retailer_org', org);
+        localStorage.setItem('retailer_email', newEmail);
+        if(document.getElementById('prof-name-container').style.display !== 'none') {
+            localStorage.setItem('retailer_name', name);
+        }
+        
+        try {
+            await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: newEmail, org, name, type: 'retailer' })
+            });
+        } catch(e) { console.error(e); }
+
+        document.getElementById('modal-profile').style.display = 'none';
+        
+        // Update prefix everywhere
+        if (typeof currentPrefix !== 'undefined') currentPrefix = newEmail;
+        if (typeof currentEmail !== 'undefined') currentEmail = newEmail;
+        const prefixInput = document.getElementById('retailer-prefix');
+        if (prefixInput) prefixInput.value = currentPrefix;
+        
+        const loginInput = document.getElementById('login-email');
+        if (loginInput) loginInput.value = currentPrefix;
+
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールをS3に保存しました', text: '企業IDにも変更が反映されました。', showConfirmButton:false, timer:3000});
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedEmail = localStorage.getItem('retailer_email');
+        if (savedEmail) {
+            document.getElementById('login-email').value = savedEmail;
+            if (typeof currentPrefix !== 'undefined') currentPrefix = savedEmail;
+            if (typeof currentEmail !== 'undefined') currentEmail = savedEmail;
+        }
+    });
+</script>
+<!-- Profile Edit Modal -->
 <div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
     <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
