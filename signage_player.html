@@ -579,6 +579,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Allow unmuting by clicking anywhere later if needed
 document.body.addEventListener('click', () => {
+    window.isUserUnmuted = true;
     video.muted = false;
     if (window.ytPlayer && typeof window.ytPlayer.unMute === 'function') {
         window.ytPlayer.unMute();
@@ -831,14 +832,24 @@ document.body.addEventListener('click', () => {
                 speedBadge.style.display = 'none';
             }
 
+            if (window.isUserUnmuted) {
+                video.muted = false;
+            }
+
             video.play().catch(e => {
                 const currentItem = currentPlaylist[currentIndex];
                 let title = currentItem ? currentItem.title : "不明なコンテンツ";
-                console.log(`[配信エラー] 広告/クリエイター動画の再生に失敗しました: ${title} (Error: ${e.message})`);
                 
-                console.log("Autoplay blocked or Playback failed:", e);
-                video.muted = true;
-                video.play().catch(e2 => {
+                if (e.name === 'AbortError') {
+                    console.log(`[Player] Playback aborted for ${title}`);
+                    return;
+                }
+                
+                console.log(`[配信エラー] 広告/クリエイター動画の再生に失敗しました: ${title} (Error: ${e.name} - ${e.message})`);
+                
+                if (e.name === 'NotAllowedError') {
+                    video.muted = true;
+                    video.play().catch(e2 => {
                     console.error("Final Playback Error:", e2);
                     if (e2.name === 'NotSupportedError') {
                         let errDiv = document.getElementById('debug-video-error');
@@ -860,6 +871,7 @@ document.body.addEventListener('click', () => {
                         }, 3000);
                     }
                 });
+                }
             });
         }
 
