@@ -191,15 +191,11 @@
             </div>
             
             <div style="margin-bottom:20px; text-align:center;">
-                <button onclick="generateCompressBat()" style="background:#8b5cf6; color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer; font-size:16px;">
-                    📥 動画一括圧縮_常時監視モード (.bat) をダウンロード
-                </button>
-                <div style="font-size:13px; color:#475569; margin-top:10px; line-height:1.6; text-align:left; background:#f8fafc; padding:10px; border-radius:5px; border:1px solid #e2e8f0;">
-                    <strong>【圧縮ツールの使い方（エラー防止のお願い）】</strong><br>
-                    ① ダウンロードしたbatファイルをダブルクリックして黒い画面を起動します。<br>
-                    ② 自動で作成される<strong>「input」</strong>フォルダに、撮影した重い動画を入れます。<br>
-                    ③ 全自動で軽く圧縮され、<strong>「output」</strong>フォルダに出現します（元の重い動画は自動削除されます）。<br>
-                    ④ その<strong>「output」</strong>に入っている軽い動画を、この画面下部からアップロードしてください。
+                <div style="font-size:13px; color:#475569; margin-top:10px; line-height:1.6; text-align:left; background:#eff6ff; padding:15px; border-radius:5px; border:1px solid #bfdbfe;">
+                    <strong>【自動クラウド圧縮機能について】</strong><br>
+                    動画ファイルを選択してアップロードすると、クラウドサーバー上で自動的に軽量化（圧縮）されてから配信されます。<br>
+                    <span style="color:#2563eb; font-weight:bold;">※PCやスマホに専用ソフト（.batファイル等）をダウンロードする必要は一切ありません。そのままアップロードしてください。</span><br>
+                    <span style="color:#10b981; font-weight:bold; margin-top:5px; display:inline-block;">✓ Androidアプリからの起動確認も可能です。専用の「Anywhere Retail」アプリでサイネージパネルの起動状況をリアルタイムで確認できます。</span>
                 </div>
             </div>
                 
@@ -439,50 +435,6 @@ async function loadVideos() {
     }
 }
 
-function generateCompressBat() {
-    const batContent = `@echo off
-chcp 65001 >nul
-cd /d "%~dp0"
-title 動画一括圧縮_常時監視モード (RetailMedia)
-
-echo ========================================================
-echo   動画一括圧縮 常時監視モード (Retail Media System)
-echo ========================================================
-echo.
-echo 【使い方】
-echo この画面を開いたまま、作成された「input」フォルダに
-echo 撮影した重い動画ファイルを放り込んでください。
-echo 自動的に軽く（H.264/MP4）なり、「output」フォルダに保存されます。
-echo --------------------------------------------------------
-
-if not exist "input" mkdir input
-if not exist "output" mkdir output
-
-:monitor
-for %%f in (input\\*.*) do (
-    echo.
-    echo [処理開始] %%~nxf を圧縮しています...
-    ffmpeg -i "%%f" -vcodec libx264 -crf 28 -preset fast -acodec aac "output\\%%~nxf" -y
-    if not errorlevel 1 (
-        del "%%f"
-        echo [完了] output\\%%~nxf に圧縮保存しました！
-    ) else (
-        echo [エラー] %%~nxf の圧縮に失敗しました。ffmpegがインストールされていない可能性があります。
-    )
-)
-timeout /t 3 /nobreak >nul
-goto monitor`;
-
-    const blob = new Blob([batContent], { type: 'application/x-bat' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '動画一括圧縮_常時監視モード.bat';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
 
 async function deleteVideo(id) {
     if(confirm("この動画の配信を停止し、削除しますか？")) {

@@ -1337,32 +1337,77 @@ app.post('/api/retailer/upload', async (req, res) => {
         // Ensure global is initialized
         if (!global.retailer_videos) global.retailer_videos = [];
 
-        // Save to S3 using AWS SDK
+        // Save to S3 using AWS SDK (With Cloud Compression)
         const { PutObjectCommand } = require('@aws-sdk/client-s3');
-        const buffer = Buffer.from(fileData.split(',')[1], 'base64');
-        
-        s3Client.send(new PutObjectCommand({
-            Bucket: S3_BUCKET_NAME || process.env.AWS_S3_BUCKET_NAME,
-            Key: s3Key,
-            Body: buffer,
-            ContentType: ext === '.mp4' ? 'video/mp4' : 'video/quicktime'
-        })).then(() => {
-            console.log(`[Retailer] Successfully uploaded ${newFilename} to S3.`);
-            const newVideo = {
-                id: `retailer_${Date.now()}`,
-                title: filename,
-                url: `/uploads/${newFilename}`,
-                aspect_ratio: '16:9',
-                status: 'active',
-                retailer_prefix: prefix,
-                target_store: targetStore || 'ALL'
-            };
-            global.retailer_videos.push(newVideo);
-            res.json({ success: true, video: newVideo });
-        }).catch(err => {
-            console.error("[Retailer] S3 Upload Error:", err);
-            res.status(500).json({ success: false, error: err.message });
-        });
+        let buffer = Buffer.from(fileData.split(',')[1], 'base64');
+        const ffmpeg = require('fluent-ffmpeg');
+        const ffmpegPath = require('ffmpeg-static');
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+        ffmpeg.setFfmpegPath(ffmpegPath);
+
+        const uploadToS3 = (finalBuffer) => {
+            s3Client.send(new PutObjectCommand({
+                Bucket: S3_BUCKET_NAME || process.env.AWS_S3_BUCKET_NAME,
+                Key: s3Key,
+                Body: finalBuffer,
+                ContentType: 'video/mp4'
+            })).then(() => {
+                console.log(`[Retailer] Successfully uploaded ${newFilename} to S3.`);
+                const newVideo = {
+                    id: `retailer_${Date.now()}`,
+                    title: filename,
+                    url: `/uploads/${newFilename}`,
+                    aspect_ratio: '16:9',
+                    status: 'active',
+                    retailer_prefix: prefix,
+                    target_store: targetStore || 'ALL'
+                };
+                global.retailer_videos.push(newVideo);
+                res.json({ success: true, video: newVideo });
+            }).catch(err => {
+                console.error("[Retailer] S3 Upload Error:", err);
+                res.status(500).json({ success: false, error: err.message });
+            });
+        };
+
+        // If file is > 10MB or is MOV, compress it on the server
+        if (buffer.length > 10 * 1024 * 1024 || ext === '.mov') {
+            console.log(`[Retailer Video Upload] File is large or MOV (${(buffer.length / 1024 / 1024).toFixed(2)}MB). Starting cloud compression...`);
+            const tempInput = path.join(os.tmpdir(), `input_${Date.now()}${ext}`);
+            const tempOutput = path.join(os.tmpdir(), `output_${Date.now()}.mp4`);
+            
+            fs.writeFileSync(tempInput, buffer);
+            
+            ffmpeg(tempInput)
+                .outputOptions([
+                    '-vcodec libx264',
+                    '-crf 28',
+                    '-preset veryfast', // veryfast to avoid taking too much time on server
+                    '-acodec aac',
+                    '-y'
+                ])
+                .save(tempOutput)
+                .on('end', () => {
+                    console.log(`[Retailer Video Upload] Cloud compression completed.`);
+                    const compressedBuffer = fs.readFileSync(tempOutput);
+                    
+                    // Cleanup temp files
+                    try { fs.unlinkSync(tempInput); fs.unlinkSync(tempOutput); } catch(e){}
+                    
+                    uploadToS3(compressedBuffer);
+                })
+                .on('error', (err) => {
+                    console.error('[Retailer Video Upload] Cloud compression failed:', err);
+                    // Fallback to original buffer
+                    try { fs.unlinkSync(tempInput); fs.unlinkSync(tempOutput); } catch(e){}
+                    uploadToS3(buffer);
+                });
+        } else {
+            // Small MP4 file, skip compression
+            uploadToS3(buffer);
+        }
     } catch (e) {
         console.error(e);
         res.status(500).json({ success: false, error: e.message });
