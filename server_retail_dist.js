@@ -333,7 +333,7 @@ app.use('/desktop_shorts', express.static(path.join(__dirname, 'base_loop_videos
 
 // State
 let demoBoostMultiplier = 1.0;
-let isProductionMode = false;
+let isProductionMode = true;
 let totalRevenue = 0;
 let transactions = [];
 
@@ -414,13 +414,44 @@ app.post('/api/review/unlock', async (req, res) => {
     let aiRiskScore = 15; // default low risk
     let aiReason = "Google reCAPTCHA Enterprise: 不審なアクティビティ(同一IP・デバイスからの連続BAN履歴)は検出されませんでした。";
 
-    // Simulate real Google Cloud reCAPTCHA Enterprise / Account Defender API Call
-    // 実際の実装ではここで `https://recaptchaenterprise.googleapis.com/v1/projects/YOUR_PROJECT/assessments` にリクエストし、
-    // IPアドレスやブラウザフィンガープリントから「過去の違反ユーザーと同一人物か」のスコア(0.0 - 1.0)を取得します。
+    // Real Google Cloud reCAPTCHA Enterprise API Call
     try {
-        if (creatorId.includes('demo') || creatorId.includes('test')) {
-            aiRiskScore = 92;
-            aiReason = "⚠️ Google Cloud Risk Assessment: 過去にBANされたアカウントと【IPアドレス・デバイス指紋】が高度に一致しています (Score: 0.92)";
+        const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
+        const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+        
+        if (apiKey && projectId) {
+            const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${apiKey}`;
+            // NOTE: In a real app, the client would send a token, but here we do backend assessment or mock the token validation if missing.
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event: {
+                        token: req.body.recaptchaToken || "dummy_token",
+                        siteKey: process.env.RECAPTCHA_SITE_KEY || "dummy_site_key",
+                        expectedAction: "kyc_unlock",
+                        userIpAddress: clientIp
+                    }
+                })
+            });
+            const data = await response.json();
+            if (data.riskAnalysis) {
+                const score = data.riskAnalysis.score; // 0.0 to 1.0
+                aiRiskScore = Math.floor((1.0 - score) * 100); // Inverse to match 0-100 risk scale
+                aiReason = `Google Cloud Risk Assessment: (Score: ${score})`;
+                if (score < 0.3) {
+                    aiReason = "⚠️ Google Cloud Risk Assessment: スコアが極端に低く、ボットまたは過去の違反ユーザーと類似している可能性が高いです。";
+                }
+            } else if (data.error) {
+                console.error("[reCAPTCHA] API Error:", data.error.message);
+                aiReason = "Google reCAPTCHA Enterprise APIエラー（フォールバック）: " + data.error.message;
+            }
+        } else {
+            console.log("[reCAPTCHA] API Key not configured. Running fallback logic.");
+            if (creatorId.includes('demo') || creatorId.includes('test')) {
+                aiRiskScore = 92;
+                aiReason = "⚠️ [Fallback] 過去にBANされたアカウントと一致しています (Demo)";
+            }
         }
     } catch (e) {
         console.error("reCAPTCHA Enterprise API Error:", e);
@@ -2775,6 +2806,12 @@ async function pullFromS3() {
         if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
             global.retailer_videos = parsed.retailer_videos;
         }
+        if (parsed.scheduledBroadcasts && Array.isArray(parsed.scheduledBroadcasts)) {
+            scheduledBroadcasts = parsed.scheduledBroadcasts;
+        }
+        if (parsed.CREATOR_STATE && typeof parsed.CREATOR_STATE === 'object') {
+            CREATOR_STATE = parsed.CREATOR_STATE;
+        }
 
         const crypto = require('crypto');
         fs.writeFileSync(require('path').join(__dirname, 'database.json'), str, 'utf8');
@@ -2823,7 +2860,8 @@ setInterval(() => {
                 posTransactions: typeof posTransactions !== 'undefined' ? posTransactions : [],
                 shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
                 manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
-                manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] }
+                manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
+                scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
             }, null, 2);
             fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
             if (dataStr !== lastDBString && lastDBString !== "") {
