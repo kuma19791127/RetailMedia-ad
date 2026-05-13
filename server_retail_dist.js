@@ -1071,102 +1071,6 @@ function getRedirectUrl(role) {
 
 
 
-});
-
-    try {
-        // Log Debug
-        console.log(`[Boost] Request:`, req.query);
-
-        // Parse params
-        const aspectRatio = req.query.ratio || "16:9";
-        const brand = req.query.brand || "Unknown Brand";
-        const scope = req.query.scope || "national";
-        const slot = req.query.slot || "prime";
-
-        // New Params
-        const planType = req.query.planType || "engagement";
-        const format = req.query.format || "standard";
-
-        
-
-        // Pricing Logic (Mirroring Frontend)
-        let basePrice = 10000;
-        let duration = 30;
-
-        if (format === 'image') { basePrice = 3000; duration = 10; }
-        if (format === 'short') { basePrice = 5000; duration = 15; }
-        if (format === 'youtube') { basePrice = 10000; duration = 30; }
-        if (format === 'shorts') { basePrice = 5000; duration = 15; }
-        if (format === 'standard') { basePrice = 10000; duration = 30; }
-        if (format === 'enterprise') { basePrice = 500000; duration = 30; }
-
-        // Slot Multiplier
-        let multiplier = 1.0;
-        if (slot === 'spot') multiplier = 0.2;
-        if (slot === 'morning') multiplier = 0.6;
-        if (slot === 'lunch') multiplier = 0.8;
-
-        let price = basePrice * multiplier;
-        if (format === 'enterprise') price = 500000; // Fixed
-
-        // Record Transaction
-        totalRevenue += price;
-        transactions.push({
-            brand, scope, slot, amount: price, timestamp: new Date().toISOString(), format, planType
-        });
-
-        // Log
-        console.log(`[Campaign Purchase] ${brand} | ${format.toUpperCase()} (${duration}s) | ${planType} | ¥${price.toLocaleString()}`);
-
-        // Inject campaign (PAID Priority)
-        const metadata = {
-            brand, scope, slot,
-            duration: duration,
-            is_image: (format === 'image'),
-            title: `${brand} Campaign`
-        };
-
-        // Special Demo Logic: If user requests 'cooking' content
-        if (req.query.contentType === 'cooking') {
-            metadata.title = "Spaghetti Bolognese (Uploaded)";
-
-            if (req.query.format === 'image') {
-                metadata.is_image = true;
-                metadata.url = "https://images.unsplash.com/photo-1551183053-bf91a1d81141?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"; // Demo Image
-                console.log(`[Demo] 📸 Injecting Cooking IMAGE!`);
-            } else {
-                metadata.url = "/local-media/mixkit-serving-parmesan-cheese-in-spaghetti-bolognese-close-up-engraving-12171-hd-ready.mp4";
-            }
-            console.log(`[Demo] 🍝 Injecting Local Cooking Video (No System QR)`);
-        }
-
-        // Special Demo Logic: YouTube Link Input
-        if (req.query.youtube) {
-            // [MODIFICATION] If 'cooking' demo is active, IGNORE YouTube link to enforce Spaghetti Demo
-            if (req.query.contentType === 'cooking') {
-                console.log(`[Demo] ⚠️ YouTube Link Ignored due to Cooking Demo Enforcement.`);
-            } else {
-                console.log(`[Demo] 📺 YouTube Import Requested: ${req.query.youtube}`);
-                metadata.title = `YouTube Ad`;
-                metadata.url = req.query.youtube; // Pass Real URL
-                metadata.is_youtube = true;       // Flag for Player
-                metadata.is_image = false;
-            }
-        }
-
-        // Inject the campaign
-        if (typeof signageServer !== 'undefined' && signageServer.injectCampaign) {
-            signageServer.injectCampaign(aspectRatio, metadata, 'PAID');
-        } else {
-            console.warn("[System] SignageServer not found, skipping injection.");
-        }
-
-        res.json({ success: true, multiplier: demoBoostMultiplier });
-    } catch (e) {
-        console.error("[Boost Error]", e);
-        res.status(500).json({ error: e.message });
-    }
-});
 
 // Official Campaign Creation Endpoint (Dashboard)
 app.post('/api/campaigns', (req, res) => {
@@ -1687,8 +1591,6 @@ app.get('/api/ad/analytics', async (req, res) => {
     });
 });
 
-// Mode Switcher API
-});
 
 app.get('/api/signage/playlist', (req, res) => {
     console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
