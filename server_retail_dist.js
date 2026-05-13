@@ -414,47 +414,51 @@ app.post('/api/review/unlock', async (req, res) => {
     let aiRiskScore = 15; // default low risk
     let aiReason = "Google reCAPTCHA Enterprise: 不審なアクティビティ(同一IP・デバイスからの連続BAN履歴)は検出されませんでした。";
 
-    // Real Google Cloud reCAPTCHA Enterprise API Call
+    // Gemini AI Fraud Detection (KYC Risk Assessment)
     try {
-        const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
-        const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         
-        if (apiKey && projectId) {
-            const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${apiKey}`;
-            // NOTE: In a real app, the client would send a token, but here we do backend assessment or mock the token validation if missing.
-            const response = await fetch(url, {
+        if (GEMINI_API_KEY) {
+            const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const promptText = `あなたはリテールメディアプラットフォームの不正検知（KYC）AIアシスタントです。
+以下の申請情報から、このユーザーがスパム、過去のBAN回避、または悪意のあるボットである可能性（リスクスコア）を0〜100の数値で判定し、その理由を簡潔に回答してください。
+（0=極めて安全、100=極めて危険なスパム/違反者）
+
+【ユーザー情報】
+・アカウントID: ${creatorId}
+・接続IP情報: ${clientIp}
+・ユーザーの弁明テキスト: ${appealText || "テキストなし"}
+
+以下のJSONフォーマットのみを出力してください:
+{
+  "score": リスクスコア(0-100の数値),
+  "reason": "判定理由の簡潔な説明"
+}`;
+
+            const response = await fetch(FIXED_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    event: {
-                        token: req.body.recaptchaToken || "dummy_token",
-                        siteKey: process.env.RECAPTCHA_SITE_KEY || "dummy_site_key",
-                        expectedAction: "kyc_unlock",
-                        userIpAddress: clientIp
-                    }
+                    contents: [{ role: "user", parts: [{ text: promptText }] }],
+                    generationConfig: { response_mime_type: "application/json" }
                 })
             });
             const data = await response.json();
-            if (data.riskAnalysis) {
-                const score = data.riskAnalysis.score; // 0.0 to 1.0
-                aiRiskScore = Math.floor((1.0 - score) * 100); // Inverse to match 0-100 risk scale
-                aiReason = `Google Cloud Risk Assessment: (Score: ${score})`;
-                if (score < 0.3) {
-                    aiReason = "⚠️ Google Cloud Risk Assessment: スコアが極端に低く、ボットまたは過去の違反ユーザーと類似している可能性が高いです。";
-                }
-            } else if (data.error) {
-                console.error("[reCAPTCHA] API Error:", data.error.message);
-                aiReason = "Google reCAPTCHA Enterprise APIエラー（フォールバック）: " + data.error.message;
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                const aiResponse = JSON.parse(data.candidates[0].content.parts[0].text);
+                aiRiskScore = aiResponse.score || 15;
+                aiReason = `Gemini不正検知AI: ${aiResponse.reason} (Score: ${aiRiskScore})`;
             }
         } else {
-            console.log("[reCAPTCHA] API Key not configured. Running fallback logic.");
+            console.log("[Gemini] API Key not configured. Running fallback logic.");
             if (creatorId.includes('demo') || creatorId.includes('test')) {
                 aiRiskScore = 92;
                 aiReason = "⚠️ [Fallback] 過去にBANされたアカウントと一致しています (Demo)";
             }
         }
     } catch (e) {
-        console.error("reCAPTCHA Enterprise API Error:", e);
+        console.error("Gemini Fraud Detection API Error:", e);
     }
 
     let proofUrl = null;
