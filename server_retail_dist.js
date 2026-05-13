@@ -332,8 +332,6 @@ app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
 app.use('/desktop_shorts', express.static(path.join(__dirname, 'base_loop_videos')));
 
 // State
-let demoBoostMultiplier = 1.0;
-let isProductionMode = true;
 let totalRevenue = 0;
 let transactions = [];
 
@@ -1073,15 +1071,7 @@ function getRedirectUrl(role) {
 
 
 
-app.get('/api/ad/mode', (req, res) => {
-    isProductionMode = (req.query.prod === 'true');
-    console.log(`[System] Switched to ${isProductionMode ? 'PRODUCTION' : 'DEMO'} mode.`);
-    if (!isProductionMode) demoBoostMultiplier = 1.0;
-    res.json({ success: true, mode: isProductionMode ? 'production' : 'demo' });
 });
-
-app.get('/api/ad/demo/boost', (req, res) => {
-    // if (isProductionMode) return res.status(400).json({ error: "Cannot use demo boost in Production mode." });
 
     try {
         // Log Debug
@@ -1692,32 +1682,12 @@ app.get('/api/ad/analytics', async (req, res) => {
 
     res.json({
         attribution, analysis, context, traffic,
-        scan_count: isProductionMode ? global.productionStats.scans : Math.floor(1240 * demoBoostMultiplier),
-        ab_stats: isProductionMode ? global.productionStats.ab : null // Send A/B data
+        scan_count: global.productionStats.scans,
+        ab_stats: global.productionStats.ab // Send A/B data
     });
 });
 
 // Mode Switcher API
-app.get('/api/ad/mode', (req, res) => {
-    isProductionMode = (req.query.prod === 'true');
-    console.log(`[Mode Logic] Switched to ${isProductionMode ? 'PRODUCTION' : 'DEMO'} Mode`);
-
-    if (!isProductionMode) {
-        signageServer.clearCampaigns();
-        demoBoostMultiplier = 1.0;
-    } else {
-        // Reset Production Stats on Switch to Prod (Optional, or keep history?)
-        // Let's keep history for now, or reset if requested.
-        // User implied "Upload -> Result". Clean start is better for demoing.
-        if (global.productionStats) {
-            global.productionStats = {
-                revenue: 0, sales: 0, scans: 0,
-                ab: { A: { views: 0, scans: 0, sales: 0 }, B: { views: 0, scans: 0, sales: 0 } }
-            };
-        }
-    }
-
-    res.json({ success: true, mode: isProductionMode ? 'production' : 'demo' });
 });
 
 app.get('/api/signage/playlist', (req, res) => {
@@ -1733,7 +1703,7 @@ app.get('/api/signage/playlist', (req, res) => {
     // [Production Mode Logic]
     // If in Production, do NOT show the default "Spaghetti" demo.
     // Show a "Waiting for Content" placeholder instead if no paid/store content exists.
-    if (isProductionMode && playlist.length > 0 && playlist[0].id === 'ad_default') {
+    if (playlist.length > 0 && playlist[0].id === 'ad_default') {
         playlist = [{
             id: 'placeholder_prod',
             title: 'Waiting for Content',
@@ -1941,7 +1911,7 @@ app.get('/api/analytics/track', (req, res) => {
     // Call Signage Server Logic
     const recorded = signageServer.recordImpression(adId);
 
-    if (global.productionStats && isProductionMode) {
+    if (global.productionStats) {
         global.productionStats.scans++;
     }
 
