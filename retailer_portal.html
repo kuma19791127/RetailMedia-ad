@@ -248,13 +248,13 @@
                 cancelButtonText: 'キャンセル'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire('送信完了', result.value + ' 宛にアプリのダウンロードリンクを送信しました。', 'success');
+                    Swal.fire('送信完了', result.value + ' 宛に以下のダウンロードリンクを送信しました。<br><br><a href="https://retail-ad.com/download/RetailMediaSignage.apk" target="_blank" style="word-break:break-all;">https://retail-ad.com/download/RetailMediaSignage.apk</a>', 'success');
                 }
             });
         }
 
         function generateSetupInstructions() {
-            const text = `【サイネージ初期設定のお願い】\n\n店舗のサイネージパネル（Android端末）にて、以下の設定をお願いします。\n※必ずWi-Fi等のインターネットに接続してください。USBやSDカードのみでのオフライン運用はできません。\n\n1. 配布された専用リンクから「RetailMedia Signage」アプリ（APKファイル）をインストールしてください。\n2. アプリを起動するだけで初期設定は完了です。\n（※自動で店舗と紐付くため、IDの入力等は不要です）\n\n※数秒で自動的に広告・CMの放映がスタートします。電源を入れるだけで次回からは自動再生され、停電時も自動復旧します。`;
+            const text = `【サイネージ初期設定のお願い】\n\n店舗のサイネージパネル（Android端末）にて、以下の設定をお願いします。\n※必ずWi-Fi等のインターネットに接続してください。USBやSDカードのみでのオフライン運用はできません。\n\n1. 以下の専用リンクから「RetailMedia Signage」アプリ（APKファイル）をインストールしてください。\n▼ ダウンロードURL\nhttps://retail-ad.com/download/RetailMediaSignage.apk\n\n2. アプリを起動するだけで初期設定は完了です。\n（※自動で店舗と紐付くため、IDの入力等は不要です）\n\n※数秒で自動的に広告・CMの放映がスタートします。電源を入れるだけで次回からは自動再生され、停電時も自動復旧します。`;
             
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
