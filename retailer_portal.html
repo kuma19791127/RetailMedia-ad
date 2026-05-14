@@ -343,16 +343,16 @@
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 try {
+                    const enableTimeLimit = document.getElementById('enable-time-limit') ? document.getElementById('enable-time-limit').checked : false;
+                    const reqBody = { 
+                        filename: file.name, 
+                        fileData: reader.result, 
+                        prefix: currentPrefix,
+                        time_limit: enableTimeLimit
+                    };
                     const res = await fetch('/api/retailer/upload', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        const enableTimeLimit = document.getElementById('enable-time-limit') ? document.getElementById('enable-time-limit').checked : false;
-                        const reqBody = { 
-                            filename: file.name, 
-                            fileData: reader.result, 
-                            prefix: currentPrefix,
-                            time_limit: enableTimeLimit
-                        };
                         body: JSON.stringify(reqBody)
                     });
                     const data = await res.json();
