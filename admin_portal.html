@@ -439,12 +439,13 @@
             </div>
 
             <!-- Login Form -->
-            <form id="form-login" onsubmit="event.preventDefault(); handleLogin();" autocomplete="on">
+            <iframe name="dummyframe_admin" id="dummyframe_admin" style="display:none;"></iframe>
+            <form id="form-login" target="dummyframe_admin" action="about:blank" method="POST" onsubmit="setTimeout(handleLogin, 10); return true;" autocomplete="on">
                 <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID"
                     autocomplete="username">
                 <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password"
                     autocomplete="current-password">
-                <button type="button" class="login-btn" onclick="handleLogin()">Login</button>
+                <button type="submit" class="login-btn">Login</button>
             </form>
 
             <!-- Sign Up Form -->
