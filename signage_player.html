@@ -652,6 +652,7 @@ document.body.addEventListener('click', () => {
         }
 
         function playContent(item) {
+        if (window.videoTimeoutId) { clearTimeout(window.videoTimeoutId); window.videoTimeoutId = null; }
         console.log(`[Signage Player] Starting playback for item: ${item.title} (ID: ${item.id}, Type: ${item.youtube_url ? 'YouTube' : 'Local File'})`);
             console.log("Playing:", item.title);
 
@@ -836,7 +837,17 @@ document.body.addEventListener('click', () => {
                 video.muted = false;
             }
 
-            video.play().catch(e => {
+            video.play().then(() => {
+                if (item.time_limit) {
+                    console.log(`[Player] Time limit is ENABLED for this local video. Setting 120s timeout.`);
+                    window.videoTimeoutId = setTimeout(() => {
+                        if (currentPlaylist[currentIndex] === item) {
+                            console.log(`[Player] Local video reached max duration of 120s. Force skipping.`);
+                            playNext();
+                        }
+                    }, 120000);
+                }
+            }).catch(e => {
                 const currentItem = currentPlaylist[currentIndex];
                 let title = currentItem ? currentItem.title : "不明なコンテンツ";
                 

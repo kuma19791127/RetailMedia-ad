@@ -1333,7 +1333,8 @@ app.post('/api/retailer/upload', async (req, res) => {
                     aspect_ratio: '16:9',
                     status: 'active',
                     retailer_prefix: prefix,
-                    target_store: targetStore || 'ALL'
+                    target_store: targetStore || 'ALL',
+                    time_limit: req.body.time_limit !== undefined ? req.body.time_limit : false
                 };
                 global.retailer_videos.push(newVideo);
                 res.json({ success: true, video: newVideo });
