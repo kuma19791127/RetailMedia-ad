@@ -137,10 +137,10 @@
             <div class="card">
                 <h3>店舗への設定案内</h3>
                 <p>
-                    Android搭載のサイネージパネルや<br>
-                    タブレットに専用アプリをインストールするだけで<br>
-                    自動的にサイネージとして登録され<br>
-                    広告事業が開始されます。
+                    Android搭載のサイネージパネルに<br>
+                    専用アプリをインストールするだけで<br>
+                    自動的にサイネージと登録され<br>
+                    広告配信事業が開始されます。
                 </p>
 
                 <p style="font-size:0.85rem; color:#34495e; line-height:1.6; background: #ecfdf5; padding: 15px; border-radius: 6px; margin-top: 10px;">
@@ -309,7 +309,7 @@
             const email = document.getElementById('login-email').value;
             currentEmail = email;
             currentPrefix = email.split('@')[0];
-            document.getElementById('retailer-prefix').value = currentPrefix;
+            
             document.getElementById('login-form').style.display = 'none';
             document.getElementById('inline-2fa-section').style.display = 'block';
         }
@@ -333,7 +333,7 @@
             localStorage.setItem('retailer_org', org);
             localStorage.setItem('retailer_email', email);
             currentPrefix = email.split('@')[0];
-            document.getElementById('retailer-prefix').value = currentPrefix;
+            
             
             document.getElementById('display-org').innerText = org || '未設定';
             document.getElementById('display-email').innerText = email || '未設定';
