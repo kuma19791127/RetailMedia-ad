@@ -171,6 +171,34 @@
             <button onclick="sendDownloadLink()" style="margin-top:10px; margin-bottom:10px; background:#3b82f6; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:block;">📧 アプリのダウンロードリンクを送信する</button>
         </li>
         <li><strong>【セキュリティパッチの実装】</strong>初期設定画面にて、配布された専用のQRコードを読み込ませることで、デバイスオーナー権限が付与され、<strong>USBポートの無効化と完全キオスクモード化（画面固定）が全自動でパッチ適用</strong>されます。<br>
+
+    <div style="margin-top:15px; padding:15px; background:#fff; border:1px solid #e2e8f0; border-radius:5px; text-align:center;">
+        <strong style="color:#1e293b; display:block; margin-bottom:10px;">📱 Androidセットアップ用 プロビジョニングQRコード</strong>
+        <div id="mdm-qr-code" style="display:inline-block; padding:10px; background:white; border:2px solid #cbd5e1; border-radius:8px;"></div>
+        <p style="font-size:0.8rem; color:#64748b; margin-top:10px;">※初期化されたAndroid端末の「こんにちは」画面を6回連続タップし、このQRコードを読み込ませてください。</p>
+    </div>
+    <script>
+        const mdmPayload = {
+            "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME": "com.retailmedia.signage/.AdminReceiver",
+            "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION": "https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk",
+            "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM": "DUMMY_CHECKSUM_UPDATE_LATER",
+            "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED": true
+        };
+        setTimeout(function() {
+            if(document.getElementById('mdm-qr-code') && typeof QRCode !== 'undefined') {
+                document.getElementById('mdm-qr-code').innerHTML = '';
+                new QRCode(document.getElementById('mdm-qr-code'), {
+                    text: JSON.stringify(mdmPayload),
+                    width: 150,
+                    height: 150,
+                    colorDark : '#000000',
+                    colorLight : '#ffffff',
+                    correctLevel : QRCode.CorrectLevel.L
+                });
+            }
+        }, 500);
+    </script>
+    
             <span style="font-size:0.85rem; color:#64748b;">※手動インストールの場合は、アプリ初回起動時に表示される「画面のピン留め」を許可してください。これにより不正操作をブロックします。</span>
         </li>
     </ul>
@@ -181,7 +209,7 @@
     </p>
     <ul style="margin:0; padding-left:20px; font-size:0.9rem; line-height:1.8; color:#334155;">
         <li>以下のボタンから「Windows専用セキュリティパッチ兼セットアップファイル(.bat)」をダウンロードします。
-            <a href="setup_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; background:#10b981; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">💻 Win用セキュリティパッチDL</a>
+            <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/setup_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; background:#10b981; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">💻 Win用セキュリティパッチDL</a>
         </li>
         <li><strong>【セキュリティパッチの実装】</strong>ダウンロードしたファイルを実行するだけで、<strong>USBメモリの読み込み無効化、キオスクモード設定、全画面起動</strong>が全自動でパッチ適用されます。</li>
     </ul>
