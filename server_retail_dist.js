@@ -559,7 +559,18 @@ app.post('/api/creator/review-content', async (req, res) => {
                     role: 'user',
                     parts: [
                         { inlineData: { mimeType: mimeType, data: base64Data } },
-                        { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。1: 「簡単に稼げる」「確実に痩せる」「必ず儲かる」といった誇大広告・薬機法違反・情報商材への誘導。テロップ・口頭問わず即時ブロック対象。2: 動画内にQRコードが含まれている場合、その先のURLを抽出し、フィッシングサイトやマルウェア配布サイト等の危険性がないか自動スキャンしてください。安全性が確認できないURLが含まれる場合はブロック。3: 過度な暴力、性的描写。少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全であれば「PASS: 理由」を出力してください。' }
+                        { text: `あなたは世界で最も厳格な「リテールメディア（店舗サイネージ）広告」のコンプライアンス審査AIです。
+画像や動画を極めて厳密にスキャンし、以下のいずれかに該当する場合は絶対に配信を許可しないでください。
+
+【絶対禁止ルール（即時FAIL）】
+1. 架空請求・フィッシング詐欺: 「未払い料金」「法的処置」「アカウント消去」「ウイルス感染」など、ユーザーの不安を煽るテキストや画像。公式を装った不審なLINEやフォームへの誘導も含む。
+2. 暴力・攻撃的描写: 流血の有無やフィクション（映画・ドラマ等）に関係なく、殴る・蹴るなどの他者への攻撃的・威圧的な身体接触が1フレームでもあればブロック。
+3. 誇大広告・情報商材: 「簡単に稼げる」「必ず儲かる」「確実に痩せる」などの文言、および著名人の画像を無断使用した投資詐欺の疑いがあるもの。
+4. 危険なQRコード: 画像内にQRコードやURLがある場合、その文字を読み取り、安全性が100%確認できない不審なドメインや短縮URLはすべてブロック。
+
+【出力フォーマット】
+いかなる理由があっても、必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
+{"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}` }
                     ]
                 }]
             };
@@ -567,9 +578,19 @@ app.post('/api/creator/review-content', async (req, res) => {
             const response = await result.response;
             const text = response.candidates[0].content.parts[0].text;
             console.log("クリエイター動画審査完了:", text);
-            if (text.includes('FAIL')) {
-                return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + text });
-            } else {
+            
+            try {
+                const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const aiResult = JSON.parse(cleanJson);
+                if (aiResult.safe === false) {
+                    return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + aiResult.reason });
+                } else {
+                    return res.json({ safe: true, message: aiResult.reason });
+                }
+            } catch(e) {
+                if (text.includes('FAIL') || text.includes('"safe": false') || text.includes('"safe":false')) {
+                    return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + text });
+                }
                 return res.json({ safe: true, message: text });
             }
         }
