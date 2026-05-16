@@ -533,14 +533,24 @@ app.post('/api/creator/review-content', async (req, res) => {
     try {
         const { video_base64 } = req.body;
         console.log("クリエイター動画審査開始: Gemini 1.5 Pro");
-        if (!video_base64) return res.status(400).json({ error: '動画データがありません' });
+        if (!video_base64) return res.status(400).json({ error: '動画データがありません', safe: false });
         
         if (video_base64 === "mock_data" || video_base64.length < 500) {
              return res.json({ safe: true, message: "審査通過 (デモ用自動パス)" });
         }
 
-        const base64Data = video_base64.replace(/^data:video\/\w+;base64,/, "");
+        // 正しくMIMEタイプを抽出し、base64データ部分を分離する
+        const match = video_base64.match(/^data:(.*?);base64,(.*)$/);
+        let mimeType = 'video/mp4';
+        let base64Data = video_base64;
         
+        if (match) {
+            mimeType = match[1];
+            base64Data = match[2];
+        } else {
+            // data:スキーマがない場合
+            base64Data = video_base64;
+        }
         
         // Use generativeModel defined globally in server_retail_dist
         if(typeof generativeModel !== 'undefined') {
@@ -548,7 +558,7 @@ app.post('/api/creator/review-content', async (req, res) => {
                 contents: [{
                     role: 'user',
                     parts: [
-                        { inlineData: { mimeType: 'video/mp4', data: base64Data } },
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
                         { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。1: 「簡単に稼げる」「確実に痩せる」「必ず儲かる」といった誇大広告・薬機法違反・情報商材への誘導。テロップ・口頭問わず即時ブロック対象。2: 動画内にQRコードが含まれている場合、その先のURLを抽出し、フィッシングサイトやマルウェア配布サイト等の危険性がないか自動スキャンしてください。安全性が確認できないURLが含まれる場合はブロック。3: 過度な暴力、性的描写。少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全であれば「PASS: 理由」を出力してください。' }
                     ]
                 }]
@@ -564,11 +574,11 @@ app.post('/api/creator/review-content', async (req, res) => {
             }
         }
         
-        
         res.json({ safe: true, message: "審査通過 (問題なし)" });
     } catch (error) {
         console.error('コンテンツ審査エラー:', error);
-        res.status(500).json({ error: '審査中にエラーが発生しました。ファイルサイズが大きすぎる可能性があります。', safe: true });
+        // エラー時はフェイルクローズ（安全ではない）とする
+        res.status(500).json({ error: '審査中にエラーが発生しました。ファイルサイズが大きすぎる可能性があります。', safe: false });
     }
 });
 
