@@ -1758,14 +1758,57 @@ app.post('/api/admin/agency-verify', express.json(), (req, res) => {
 // --- CREATOR BANK DATA STORE ---
 const creatorBankData = {};
 
-app.post('/api/creator/bank', (req, res) => {
-    const { email, bankName, branchName, accountNum, holderName } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
+app.post('/api/creator/bank', async (req, res) => {
+    const { email, bankName, branchName, accountNum, holderName, idBase64 } = req.body;
+    if (!email || !holderName) return res.status(400).json({ error: "必要な情報が不足しています" });
+    if (!idBase64) return res.status(400).json({ error: "身分証画像が必要です" });
 
-    // Using email as primary key
-    creatorBankData[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
-    console.log(`[Creator] Bank Info Updated for: ${email}`);
-    res.json({ success: true });
+    try {
+        let mimeType = 'image/jpeg';
+        let base64Data = idBase64;
+        const match = idBase64.match(/^data:(.*?);base64,(.*)$/);
+        if (match) {
+            mimeType = match[1];
+            base64Data = match[2];
+        }
+
+        if (typeof generativeModel !== 'undefined') {
+            const promptText = `あなたは厳密なKYC（本人確認）AIです。
+以下の身分証画像を読み取り、書かれている「氏名（本名）」を抽出してください。
+その後、申請者が入力した口座名義（カタカナ）「${holderName}」と同一人物であるか厳密に判定してください。
+もし氏名の読みと口座名義が一致していれば match: true、偽名や別人の口座（法人口座含む）であれば match: false としてください。
+必ず以下のJSON形式のみを出力してください。
+{"match": true, "detected_name": "山田 太郎", "reason": "読みが一致するため"}`;
+            
+            const request = {
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
+                        { text: promptText }
+                    ]
+                }]
+            };
+            const result = await generativeModel.generateContent(request);
+            const response = await result.response;
+            const text = response.candidates[0].content.parts[0].text;
+            
+            const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const aiResult = JSON.parse(cleanJson);
+            
+            if (aiResult.match !== true) {
+                console.log(`[Creator KYC Blocked] ${email} - ID: ${aiResult.detected_name} != Bank: ${holderName}`);
+                return res.status(400).json({ error: `【AI判定エラー】身分証の氏名（${aiResult.detected_name || '不明'}）と口座名義（${holderName}）が一致しませんでした。詐欺防止のため登録を拒否しました。` });
+            }
+        }
+        
+        creatorBankData[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
+        console.log(`[Creator] Bank Info Updated & KYC Passed for: ${email}`);
+        res.json({ success: true, message: "本人確認（KYC）を通過し、口座情報を保存しました" });
+    } catch (e) {
+        console.error("KYC Error:", e);
+        res.status(500).json({ error: "本人確認システムの処理に失敗しました。画像が不鮮明な可能性があります。" });
+    }
 });
 
 app.get('/api/admin/creators', (req, res) => {
