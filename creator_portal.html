@@ -686,12 +686,39 @@ h2 {
                             const reviewRes = await fetch(API_BASE + '/api/creator/review-content', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ video_base64: fileUrl || "mock_data", title: title })
+                                body: JSON.stringify({ video_base64: fileUrl || "mock_data", title: title, email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth') })
                             });
                             reviewData = await reviewRes.json();
                         }
                         
+                        
                         if (!reviewData.safe) {
+                            if (reviewData.isBanned) {
+                                Swal.fire({
+                                    title: '❌ アカウント凍結',
+                                    html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '</div><br><button id="btn-unlock-req" class="btn btn-primary" style="margin-top:10px;">ロック解除を申請する</button>',
+                                    icon: 'error',
+                                    showConfirmButton: false,
+                                    didOpen: () => {
+                                        document.getElementById('btn-unlock-req').onclick = async () => {
+                                            const { value: text } = await Swal.fire({
+                                                title: '申し開き（理由）',
+                                                input: 'textarea',
+                                                inputPlaceholder: '規約に違反していない理由をご記入ください...'
+                                            });
+                                            if (text) {
+                                                await fetch(API_BASE + '/api/creator/request-unlock', {
+                                                    method: 'POST',
+                                                    headers: {'Content-Type':'application/json'},
+                                                    body: JSON.stringify({ email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth'), appealText: text })
+                                                });
+                                                Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                            }
+                                        }
+                                    }
+                                });
+                                return;
+                            }
                             Swal.fire({
                                 title: '❌ 審査不合格',
                                 html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '</div>',

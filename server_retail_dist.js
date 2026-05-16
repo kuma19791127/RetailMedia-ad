@@ -529,6 +529,41 @@ app.get('/api/creator/stats', (req, res) => {
 
 
 // --- クリエイター: コンテンツ審査API (Vertex AI Gemini 1.5 Pro) ---
+// --- STRIKE TRACKING & DEMO LOGIC ---
+const accountStrikes = {};
+const isDemoAccount = (email) => {
+    if (!email) return true;
+    return email.includes('demo') || email === 'admin';
+};
+const unlockRequests = [];
+
+app.get('/api/review/unlock', (req, res) => {
+    res.json(unlockRequests);
+});
+app.post('/api/review/unlock/:id/approve', (req, res) => {
+    const id = req.params.id;
+    const reqItem = unlockRequests.find(r => r.id === id);
+    if (reqItem) {
+        reqItem.status = 'approved';
+        accountStrikes[reqItem.creatorId] = 0; // Reset strikes
+    }
+    res.json({ success: true });
+});
+
+app.post('/api/creator/request-unlock', (req, res) => {
+    const { email, appealText } = req.body;
+    unlockRequests.push({
+        id: Date.now().toString(),
+        creatorId: email,
+        appealText: appealText,
+        aiRiskScore: 0,
+        aiReason: '手動申請',
+        status: 'pending',
+        date: new Date().toISOString()
+    });
+    res.json({ success: true });
+});
+
 app.post('/api/creator/review-content', async (req, res) => {
     try {
         const { video_base64 } = req.body;
