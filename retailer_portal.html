@@ -485,21 +485,32 @@ async function deleteVideo(id) {
 }
 
 function showAdPolicy() {
-    Swal.fire({
-        title: '配信・広告審査基準 (AI Moderation)',
-        html: `<div style="text-align:left; font-size:0.95rem; line-height:1.6; color:#475569;">
-            以下のコンテンツが含まれている場合、AIによって自動的に拒絶・アカウント停止となる可能性があります。
-            <ul style="margin-top:10px; padding-left:20px;">
-                <li style="margin-bottom:8px;"><b>公序良俗違反:</b> 過度な暴力、性的描写、ヘイトスピーチ等に反する内容。</li>
-                <li style="margin-bottom:8px;"><b>誇大広告・詐欺:</b> 「必ず儲かる」「投資で稼ぐ」といった投資詐欺や、科学的根拠のない効果効能の標榜（薬機法違反）。</li>
-                <li style="margin-bottom:8px;"><b>スパム・悪質誘導:</b> 「続きはLINEで」「LINE登録はこちら」など、外部SNSへ誘導して情報商材を売るようなスパム・詐欺的誘導。</li>
-            </ul>
-        </div>`,
-        icon: 'info',
-        confirmButtonText: '確認しました',
-        confirmButtonColor: '#3b82f6'
-    });
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '配信・広告審査基準 (厳格化版)',
+            html: `<div style="text-align:left; font-size:0.9rem; line-height:1.5; color:#333;">
+                <p style="color:#e74c3c; font-weight:bold; margin-bottom:10px;">※サイネージでの詐欺被害を防ぐため、以下の項目が1つでも含まれる広告・動画はAIにより即時ブロック（アカウント停止）されます。</p>
+                <ul style="padding-left:20px; margin-bottom:0;">
+                    <li style="margin-bottom:8px;"><b>1. 架空請求・サポート詐欺:</b> 「未払い料金」「法的処置」「アカウント消去」「ウイルス感染」等で不安を煽る内容。</li>
+                    <li style="margin-bottom:8px;"><b>2. 定期購入の隠蔽・点検詐欺:</b> 「初回無料」等と極端に安価を謳いつつ継続条件を隠す優良誤認広告や、不自然な格安修理業者。</li>
+                    <li style="margin-bottom:8px;"><b>3. 暴力・攻撃的描写:</b> 流血の有無やフィクションに関係なく、殴打や威圧的な身体接触を含むもの。</li>
+                    <li style="margin-bottom:8px;"><b>4. 投資詐欺・誇大広告:</b> 「確実に稼げる」等の表現、著名人の無断使用、安全性が確認できないQRコード・LINE誘導。</li>
+                </ul>
+            </div>`,
+            icon: 'info',
+            confirmButtonText: '確認しました',
+            width: '600px'
+        });
+    } else {
+        alert("【配信・広告審査基準】
+1. 架空請求・サポート詐欺
+2. 定期購入の隠蔽・格安点検詐欺
+3. 暴力・攻撃的描写
+4. 投資詐欺・危険なQRコード
+これらを含むものはAIにより即時ブロックされます。");
+    }
 }
+
 </script>
 </body>
 </html>
