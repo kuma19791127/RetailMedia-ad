@@ -251,6 +251,7 @@ app.post('/api/kyc', async (req, res) => {
         };
         
         kycRequests.push(newReq);
+        saveFinanceDB();
         console.log(`[KYC] New request from ${newReq.userEmail}. AI Score: ${aiScore}%`);
         res.json({ success: true, id: newReq.id, aiScore: aiScore });
     } catch(err) {
@@ -2969,6 +2970,44 @@ async function executeGMOBankTransfer(bankCode, branchCode, accountType, account
 
 // 出金リクエスト（クリエイターから）
 let withdrawalRequests = [];
+let creatorBanks = {};
+
+// ==========================================
+// お金・KYC関連データのローカルJSON永続化 (A案)
+// ==========================================
+const financeDbPath = require('path').join(__dirname, 'finance_database.json');
+
+function loadFinanceDB() {
+    try {
+        if (require('fs').existsSync(financeDbPath)) {
+            const dataStr = require('fs').readFileSync(financeDbPath, 'utf8');
+            const data = JSON.parse(dataStr);
+            if (data.withdrawalRequests) withdrawalRequests = data.withdrawalRequests;
+            if (data.creatorBanks) creatorBanks = data.creatorBanks;
+            if (data.kycRequests) kycRequests = data.kycRequests;
+            console.log(`[Finance DB] Loaded ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs.`);
+        }
+    } catch (e) {
+        console.error("[Finance DB] Load Error", e);
+    }
+}
+
+function saveFinanceDB() {
+    try {
+        const data = {
+            withdrawalRequests,
+            creatorBanks,
+            kycRequests
+        };
+        require('fs').writeFileSync(financeDbPath, JSON.stringify(data, null, 2), 'utf8');
+    } catch (e) {
+        console.error("[Finance DB] Save Error", e);
+    }
+}
+
+// サーバー起動時に読み込み
+loadFinanceDB();
+
 
 app.post('/api/creator/withdraw', async (req, res) => {
     const { email, amount } = req.body;
@@ -2988,6 +3027,8 @@ app.post('/api/creator/withdraw', async (req, res) => {
 
     // 出金リクエストを登録
     const reqId = 'wd_' + Date.now();
+    withdrawalRequests.push({
+        setTimeout(saveFinanceDB, 100);
     withdrawalRequests.push({
         id: reqId,
         email: email,
