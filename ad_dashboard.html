@@ -2516,6 +2516,10 @@
                         })
                     });
 
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.error || 'API Error: ' + res.status);
+                    }
                     if (res.ok) {
                         let targetInfo = "";
                         if (formValues.gender !== 'all' || formValues.age !== 'all' || formValues.time !== 'all' || (formValues.targetStores && formValues.targetStores[0] !== 'all')) {
