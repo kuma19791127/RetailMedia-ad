@@ -882,7 +882,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    Swal.fire('登録完了', デバイス  を店舗  に紐付けました！<br>サイネージ画面が自動で切り替わります。, 'success');
+                    Swal.fire('登録完了', `デバイスを店舗に紐付けました！<br>サイネージ画面が自動で切り替わります。`, 'success');
                     document.getElementById('zero-device-id').value = '';
                 } else {
                     Swal.fire('エラー', '登録に失敗しました', 'error');
