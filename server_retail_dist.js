@@ -1145,6 +1145,22 @@ app.post('/api/campaigns', (req, res) => {
     console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
         const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email, ytUrl, fileUrl } = req.body;
+
+        // --- Demo Account Restriction ---
+        if (ad_email && (ad_email.includes('demo') || ad_email.includes('admin') || ad_email.includes('test'))) {
+            console.log(`[API /api/campaigns] Upload rejected: Demo account (${ad_email}) cannot upload to production.`);
+            return res.status(403).json({ error: "【デモ制限】デモアカウント（テスト用）では実際の動画アップロード・配信はできません。本番アカウントを登録してください。" });
+        }
+
+        // --- 3-Strike Check ---
+        if (ad_email) {
+            accountStrikes[ad_email] = accountStrikes[ad_email] || 0;
+            if (accountStrikes[ad_email] >= 3) {
+                console.log(`[API /api/campaigns] Upload rejected: Account ${ad_email} is BANNED (3 strikes).`);
+                return res.status(403).json({ error: "【アカウント凍結】重大な規約違反を繰り返したため、アカウントが凍結されています。画面下部からロック解除申請を行ってください。", isBanned: true });
+            }
+        }
+
         console.log(`[API] Creating Campaign: ${name} (${plan}) | Advertiser: ${ad_email}`);
 
         // Handle Agency Commission Match
@@ -1189,7 +1205,15 @@ app.post('/api/campaigns', (req, res) => {
                         };
                         const result = await generativeModel.generateContent(request);
                         const text = result.response.candidates[0].content.parts[0].text;
-                        if (text.includes('FAIL')) { adStatus = 'rejected'; } else { adStatus = 'active'; } 
+                        if (text.includes('FAIL')) { 
+                            adStatus = 'rejected'; 
+                            if (ad_email) {
+                                accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
+                                console.log(`[Strike] Account ${ad_email} received a strike! Total: ${accountStrikes[ad_email]}`);
+                            }
+                        } else { 
+                            adStatus = 'active'; 
+                        } 
                         console.log(`[AutoReview] AI Result: ${text} -> (実装テスト中のため active として処理)`);
                     } else {
                         adStatus = 'active'; // Fallback
