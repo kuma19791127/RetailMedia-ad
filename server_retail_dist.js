@@ -3030,8 +3030,7 @@ app.post('/api/creator/withdraw', async (req, res) => {
 
     // 出金リクエストを登録
     const reqId = 'wd_' + Date.now();
-    withdrawalRequests.push({
-        setTimeout(saveFinanceDB, 100);
+    setTimeout(saveFinanceDB, 100);
     withdrawalRequests.push({
         id: reqId,
         email: email,

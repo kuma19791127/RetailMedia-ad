@@ -1505,7 +1505,7 @@ async function handleAiPdf(e) {
                 });
                 
                 renderEditSteps();
-                Swal.fire('解析成功', ${addedSteps}個の目次チャプターを自動生成しました！<br>カテゴリ: [], 'success');
+                Swal.fire('解析成功', `${addedSteps}個の目次チャプターを自動生成しました！<br>カテゴリ: []`, 'success');
             } else {
                 Swal.fire('AIエラー', data.error || 'PDF解析に失敗しました', 'error');
             }

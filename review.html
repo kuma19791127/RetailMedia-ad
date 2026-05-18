@@ -141,7 +141,7 @@
                 }
             });
         }
-function loadKYCReq() {
+async function loadKYCReq() {
         try {
             const res = await fetch('/api/kyc');
             const data = await res.json();

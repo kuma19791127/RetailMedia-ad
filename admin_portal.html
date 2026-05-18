@@ -1520,14 +1520,14 @@
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                const agencyRes = await fetch('/api/admin/agency');
-                const agencies = await agencyRes.json();
-                const pendingAgencies = agencies.filter(a => a.status === 'verified');
+                let agencyRes = await fetch('/api/admin/agency');
+                var agencies = await agencyRes.json();
+                var pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 // 代理店の未払い報酬（ステータスが verified のもの）も取得
-                const agencyRes = await fetch('/api/admin/agency');
-                const agencies = await agencyRes.json();
-                const pendingAgencies = agencies.filter(a => a.status === 'verified');
+                let agencyRes = await fetch('/api/admin/agency');
+                var agencies = await agencyRes.json();
+                var pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
                     Swal.fire('データなし', '現在、処理待ちの出金申請や代理店報酬はありません。', 'info');
@@ -1618,14 +1618,14 @@
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                const agencyRes = await fetch('/api/admin/agency');
-                const agencies = await agencyRes.json();
-                const pendingAgencies = agencies.filter(a => a.status === 'verified');
+                let agencyRes = await fetch('/api/admin/agency');
+                var agencies = await agencyRes.json();
+                var pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 // 代理店の未払い報酬（ステータスが verified のもの）も取得
-                const agencyRes = await fetch('/api/admin/agency');
-                const agencies = await agencyRes.json();
-                const pendingAgencies = agencies.filter(a => a.status === 'verified');
+                let agencyRes = await fetch('/api/admin/agency');
+                var agencies = await agencyRes.json();
+                var pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
                     Swal.fire('データなし', '現在、処理待ちの出金申請や代理店報酬はありません。', 'info');
