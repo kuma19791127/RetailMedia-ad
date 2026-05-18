@@ -3084,6 +3084,39 @@ app.get('/api/admin/payouts', (req, res) => {
     res.json(withdrawalRequests);
 });
 
+
+// ==========================================
+// どこでもレジ (モバイルPOS) 連携API
+// ==========================================
+app.post('/api/pos/checkout', (req, res) => {
+    const { companyName, storeName, totalAmount, billingEmail, items } = req.body;
+    
+    if (!companyName || !totalAmount) {
+        return res.status(400).json({ error: "必須データが不足しています" });
+    }
+
+    const transactionId = 'pos_' + Date.now() + Math.floor(Math.random()*1000);
+    
+    setTimeout(saveFinanceDB, 100);
+    posTransactions.push({
+        id: transactionId,
+        companyName,
+        storeName: storeName || '未設定',
+        totalAmount,
+        billingEmail: billingEmail || '',
+        items: items || [],
+        status: 'completed', // または 'pending_square'
+        timestamp: Date.now()
+    });
+
+    console.log(`[POS] 売上登録: ${companyName} - ¥${totalAmount}`);
+    res.json({ success: true, transactionId });
+});
+
+app.get('/api/pos/transactions', (req, res) => {
+    res.json(posTransactions);
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
     console.log(`[Entry] Login Portal: http://localhost:${PORT}/`);
