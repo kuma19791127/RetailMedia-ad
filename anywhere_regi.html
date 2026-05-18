@@ -261,6 +261,275 @@
             <h2 class="login-title">anywhere Login</h2>
             
             <form onsubmit="event.preventDefault(); handleLogin();" style="width:100%; margin:0; padding:0;">
+            <form action="javascript:void(0);" onsubmit="doLogin();" style="display:flex; flex-direction:column; gap:15px; width:100%;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
+            <input type="email" id="input-email" name="username" class="login-input" placeholder="store@demo.com" required autocomplete="username">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
+            <input type="password" id="input-pass" name="password" class="login-input" placeholder="Password" required autocomplete="current-password">
+            <button type="submit" class="btn-primary">ログイン開始</button>
+        </form>>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>どこでもレジ | Anywhere Register</title>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
+    <script src="square_integration.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent-color: #F59E0B;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #1F2937;
+            --text-sub: #6B7280;
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 共通ヘッダー */
+        .app-header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            z-index: 100;
+        }
+
+        .header-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2563EB;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-logo::before { content: '⚡'; }
+        .header-info { font-size: 11px; text-align: right; color: var(--text-sub); line-height: 1.3; }
+
+        .page {
+            display: none; flex: 1; padding: 20px; overflow-y: auto; animation: fadeIn 0.3s ease-out;
+        }
+        .page.active { display: flex; flex-direction: column; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Login Screen */
+        #page-login { justify-content: center; align-items: center; }
+        .login-card { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: var(--shadow-lg); width: 100%; max-width: 320px; text-align: center; }
+        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 30px; color: var(--text-main); }
+        .login-input { width: 100%; padding: 16px; font-size: 16px; border: 2px solid #E5E7EB; border-radius: 12px; box-sizing: border-box; text-align: left; margin-bottom: 15px; transition: border-color 0.2s; font-family: inherit; }
+        .login-input:focus { border-color: #2563EB; outline: none; }
+        .btn-primary { background: #2563EB; color: white; width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* Store Selector Bar */
+        .store-selector-bar { background: white; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        select { flex: 1; padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-family: inherit; color: var(--text-main); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-logout { background: #F3F4F6; color: var(--text-sub); }
+
+        /* Scanner Area */
+        #scanner-container { width: 100%; max-width: 400px; margin: 20px auto 0; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4/3; position: relative; box-shadow: var(--shadow-lg); flex-shrink: 0; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .scan-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 40%; border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 8px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.4); z-index: 10; }
+        .scan-guide::after { content: 'SCAN BARCODE'; position: absolute; bottom: -25px; width: 100%; text-align: center; color: white; font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+
+        /* Action Buttons */
+        .action-area { max-width: 400px; margin: 20px auto 0; width: 100%; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+        .btn-next { background: var(--bg-gradient); color: var(--text-main); border: 2px solid #2563EB; display: none; }
+        .btn-pay { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
+
+        /* Cart List */
+        .cart-container { background: white; border-radius: 16px 16px 0 0; margin-top: 20px; flex: 1; min-height: 200px; padding: 20px; box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; flex-shrink: 0; }
+        .total-display { font-size: 32px; font-weight: 800; color: var(--text-main); text-align: right; border-bottom: 2px solid #F3F4F6; padding-bottom: 15px; margin-bottom: 15px; }
+        .total-display span { font-size: 18px; color: var(--text-sub); margin-right: 5px; }
+        #items { overflow-y: auto; flex: 1; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; animation: slideIn 0.2s ease-out; }
+        
+        @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Payment SCreen */
+        #page-payment { align-items: center; justify-content: center; text-align: center; }
+        .payment-card { background: white; padding: 40px; border-radius: 24px; box-shadow: var(--shadow-lg); width: 100%; max-width: 340px; }
+        
+        #sq-payment-form { width: 100%; margin-top: 20px; }
+
+        /* Overlay Mask */
+        #mask { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); color: white; justify-content: center; align-items: center; flex-direction: column; z-index: 50; backdrop-filter: blur(5px); }
+        .mask-icon { font-size: 40px; margin-bottom: 15px; }
+
+        #modal-reset { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 200; }
+    </style>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/app-icon.png">
+    <script>
+    function updateProfileDisplay() { 
+        if(document.getElementById('header-user-info')) {
+            const org = localStorage.getItem('demo_org') || "Demo Store";
+            const email = localStorage.getItem('demo_email') || (currentSession ? currentSession.email : "store@demo.com");
+            document.getElementById('header-user-info').innerHTML = org + ' <br class="mobile-br">[' + email + '] <i class="fa-solid fa-pen" style="font-size:10px;"></i>';
+        }
+    }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js'); });
+      }
+    </script>
+
+    <!-- Global Mobile Typography Fix -->
+    <style>
+        body, h1, h2, h3, h4, h5, p, span, div {
+            word-break: auto-phrase !important; /* Forces modern browser Japanese phrase break */
+            word-break: keep-all; /* Fallback */
+            overflow-wrap: break-word;
+        }
+        .mobile-br { display: none; }
+        .desktop-br { display: block; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+            .desktop-br { display: none; }
+            
+            /* Auto-reduce huge headings on mobile globally to prevent overflow */
+            h1 { font-size: clamp(1.8rem, 8vw, 2.8rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.5rem, 6vw, 2.2rem) !important; line-height: 1.4 !important; }
+            h3 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; line-height: 1.4 !important; }
+
+            .mobile-bottom-nav {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--glass-bg);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #e5e7eb;
+                padding-top: 8px;
+                padding-bottom: env(safe-area-inset-bottom, 12px);
+                justify-content: space-around;
+                z-index: 1000;
+            }
+            .mobile-bottom-nav button {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background: none;
+                border: none;
+                color: var(--text-sub);
+                font-family: inherit;
+                gap: 4px;
+                flex: 1;
+                cursor: pointer;
+            }
+            .mobile-bottom-nav button:active { color: var(--primary-color); }
+            .mobile-bottom-nav .icon { font-size: 22px; }
+            .mobile-bottom-nav .text { font-size: 10px; font-weight: 600; }
+            
+            .nav-btn-mobile { display: none !important; }
+            #page-pos { padding-bottom: 80px !important; }
+        }
+        @media (min-width: 769px) {
+            .mobile-bottom-nav { display: none !important; }
+        }
+    </style>
+
+    <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
+    <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
+                elements.forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+
+    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
+    <script>
+        // Check if the user has a valid session token (cleared on restart or cache clear)
+        if (!sessionStorage.getItem('retailMediaAuth')) {
+            window.location.replace('index.html');
+        }
+    </script>
+
+    
+    <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
+    
+    <style>
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, .subtitle, li, .card p, .card h3 {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        @media (max-width: 768px) {
+            .desktop-br { display: none !important; }
+            h1 { font-size: clamp(1.8rem, 6vw, 2.5rem) !important; line-height: 1.3 !important; }
+            h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+        });
+    </script>
+    <!-- END TYPOGRAPHY FIX -->
+
+
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <!-- 1. Login Screen (Updated to Email/Password) -->
+    <div id="page-login" class="page active">
+        <div class="header-logo" style="margin-bottom: 30px; font-size:28px; justify-content: center; width: 100%;">どこでもレジ</div>
+        <div class="login-card">
+            <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+            <h2 class="login-title">anywhere Login</h2>
+            
+            <form onsubmit="event.preventDefault(); handleLogin();" style="width:100%; margin:0; padding:0;">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
             <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
@@ -573,7 +842,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     <label style="display:block; text-align:left; font-size:12px; font-weight:bold; margin-bottom:5px;">Webhook 宛先 URL</label>
                     <input id="swal-wh-url" class="swal2-input" placeholder="https://your-server.com/api/webhooks" style="width:80%; font-size:14px; margin-top:0;">
                     <label style="display:block; text-align:left; font-size:12px; font-weight:bold; margin-top:15px; margin-bottom:5px;">Webhook Secret</label>
-                    <input id="swal-wh-sec" type="password" class="swal2-input" placeholder="Secure token" style="width:80%; font-size:14px; margin-top:0;">
+                    <input id="swal-wh-sec" type="password" class="swal2-input" placeholder="Secure token" style="width:80%; font-size:14px; margin-top:0;" autocomplete="current-password" >
                 `,
                 focusConfirm: false,
                 showCancelButton: true,

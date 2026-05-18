@@ -65,17 +65,15 @@
         <p style="color:#bfdbfe; margin-bottom:30px;">小売企業 マーケティング部専用画面</p>
         <div class="login-box">
             <h2 style="margin-top:0; color:#1e293b;">ログイン</h2>
-            <iframe name="dummyframe" id="dummyframe" style="display:none;"></iframe>
-            <form id="login-form" target="dummyframe" action="about:blank" method="POST" onsubmit="setTimeout(handleLogin, 10); return true;">
-                <input type="email" id="login-email" class="login-input" placeholder="メールアドレス (法人ID)" required autocomplete="username">
-                <input type="password" id="login-password" class="login-input" placeholder="パスワード" required autocomplete="current-password">
+            <div>
+                <form action="javascript:void(0);" onsubmit="handleLogin();" style="display:flex; flex-direction:column; gap:15px;">
+                <input type="email" id="login-email" name="username" class="login-input" placeholder="メールアドレス (店舗ID)" required autocomplete="username">
+                <input type="password" id="login-password" name="password" class="login-input" placeholder="パスワード" required autocomplete="current-password">
                 <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
-                    <label style="cursor: pointer; color: #475569;">
-                        <input type="checkbox" id="save-password-chk" style="margin-right: 5px;">
-                        次回から自動入力する
-                    </label>
+                    <a href="#" style="color: #4CAF50; text-decoration: none;">パスワードをお忘れですか？</a>
                 </div>
                 <button type="submit" class="login-btn">ログイン</button>
+            </form>
             </form>
             <p id="login-error" style="color:red; font-size:14px; display:none; margin-top:10px;">認証に失敗しました</p>
             

@@ -99,5 +99,6 @@
   "manualhelpState": {
     "manuals": [],
     "logs": []
-  }
+  },
+  "scheduledBroadcasts": []
 }

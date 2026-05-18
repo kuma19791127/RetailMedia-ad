@@ -91,6 +91,105 @@
         <p style="color:#10B981; font-weight:bold; margin-top:5px; font-size:14px;">(retail)</p>
         
         <form onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:20px 0 0 0; padding:0;">
+            <form action="javascript:void(0);" onsubmit="doLogin();" style="display:flex; flex-direction:column; gap:15px; width:100%;">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
+            <input type="email" id="input-email" name="username" class="login-input" placeholder="store@demo.com" required autocomplete="username">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>
+            <input type="password" id="input-pass" name="password" class="login-input" placeholder="Password" required autocomplete="current-password">
+            <button type="submit" class="btn-primary">ログイン開始</button>
+        </form>>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>小売り向け設定パネル</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #F8FAFC;
+            color: #1E293B;
+            margin: 0; padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h2 { text-align: center; color: #10B981; }
+        
+        /* 16文字程度での改行を促すための幅制限と文字組み */
+        .desc-text {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #64748B;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+            padding: 10px;
+            background: #F1F5F9;
+            border-radius: 8px;
+        }
+
+        .menu-btn {
+            display: block;
+            box-sizing: border-box;
+            text-align: center;
+            text-decoration: none;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background: #F8FAFC;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: #2563EB;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="page-login" class="container" style="text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+        <h2 style="margin:0;">anywhere Login</h2>
+        <p style="color:#10B981; font-weight:bold; margin-top:5px; font-size:14px;">(retail)</p>
+        
+        <form onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:20px 0 0 0; padding:0;">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Email Address</div>
             <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" autocomplete="username">
             <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">Password</div>

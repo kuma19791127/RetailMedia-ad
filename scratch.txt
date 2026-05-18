@@ -1,48 +1,150 @@
-﻿        function generateBatFile() {
-            const suffix = document.getElementById('store-suffix').value.trim();
-            if(!suffix) {
-                Swal.fire("繧ｨ繝ｩ繝ｼ", "蠎苓・逡ｪ蜿ｷ・医∪縺溘・蠎苓・蜷搾ｼ峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・, "error");
-                return;
-            }
-            
-            const storeId = ${currentPrefix}_;
-            const targetUrl = https://retail-ad.com/signage_player.html?storeId=;
-            
-            const batContent = @echo off
-echo =========================================================
-echo Retail Media 繧ｵ繧､繝阪・繧ｸ閾ｪ蜍戊ｵｷ蜍輔そ繝・ヨ繧｢繝・・ ()
-echo =========================================================
-set "TARGET_URL="
-set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
-set "SHORTCUT_NAME=RetailAd_Signage_.lnk"
-set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not exist "%CHROME_PATH%" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-
-set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
-echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"
-echo sLinkFile = "%STARTUP_FOLDER%\%SHORTCUT_NAME%" >> "%VBS_SCRIPT%"
-echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
-echo oLink.TargetPath = "%CHROME_PATH%" >> "%VBS_SCRIPT%"
-echo oLink.Arguments = "--kiosk """ ^& "%TARGET_URL%" ^& """ --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" >> "%VBS_SCRIPT%"
-echo oLink.Save >> "%VBS_SCRIPT%"
-
-cscript /nologo "%VBS_SCRIPT%"
-del "%VBS_SCRIPT%"
-
-echo 繧ｻ繝・ヨ繧｢繝・・縺悟ｮ御ｺ・＠縺ｾ縺励◆・・
-echo 谺｡蝗櫁ｵｷ蜍墓凾縺九ｉ閾ｪ蜍慕噪縺ｫ繧ｫ繝｡繝ｩ縺瑚ｨｱ蜿ｯ縺輔ｌ縲∝虚逕ｻ縺後Ν繝ｼ繝怜・逕溘＆繧後∪縺吶・
-timeout /t 3 >nul
-start "" "%CHROME_PATH%" --kiosk "%TARGET_URL%" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run
-exit /b
-;
-            
-            const blob = new Blob([batContent], { type: 'application/x-bat' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = setup_.bat;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            Swal.fire("逋ｺ陦悟ｮ御ｺ・, 蠎苓・繧ｹ繧ｿ繝・ヵ縺ｫ縲茎etup_.bat縲阪ｒ驟榊ｸ・＠縺ｦ縺上□縺輔＞縲・ "success");
-        }
+1144: app.post('/api/campaigns', (req, res) => {
+1145:     console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
+1146:     try {
+1147:         const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email, ytUrl, fileUrl } = req.body;
+1148:         console.log(`[API] Creating Campaign: ${name} (${plan}) | Advertiser: ${ad_email}`);
+1149: 
+1150:         // Handle Agency Commission Match
+1151:         let appliedPrice = parseInt(budget) || 10000;
+1152:         let matchedAgency = agencyReferrals.find(r => r.advertise === ad_email && r.status === 'Pending');
+1153:         if (matchedAgency) {
+1154:             matchedAgency.status = '稼働中';
+1155:             matchedAgency.price = appliedPrice; // Update to actual budget
+1156:             const commission = Math.floor(appliedPrice * 0.2);
+1157:             console.log(`[Agency] Match found! 20% Commission (¥${commission}) applied for ${matchedAgency.agency}`);
+1158:             
+1159:             // Subtract commission from the platform/store's total revenue side
+1160:             // For demo purposes, we reflect it in global totalRevenue
+1161:             totalRevenue += (appliedPrice - commission);
+1162:         } else {
+1163:             totalRevenue += appliedPrice;
+1164:         }
+1165: 
+1166:         // Map Plan to Server Types
+1167:         let type = 'PAID';
+1168:         if (plan === 'moment') type = 'MOMENT';
+1169:         if (plan === 'impression') type = 'IMPRESSION';
+1170:         // CPA is also PAID but with specific tracking setup
+1171: 
+1172:         const processAndInject = async (finalUrl) => {
+1173:             let adStatus = 'pending';
+1174:             try {
+1175:                 if (finalUrl && finalUrl.startsWith('data:')) {
+1176:                     const base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
+1177:                     if (base64Data.length < 500) {
+1178:                         adStatus = 'active';
+1179:                     } else if (typeof generativeModel !== 'undefined') {
+1180:                         const mimeType = finalUrl.startsWith('data:image') ? 'image/jpeg' : 'video/mp4';
+1181:                         const request = {
+1182:                             contents: [{
+1183:                                 role: 'user',
+1184:                                 parts: [
+1185:                                     { inlineData: { mimeType: mimeType, data: base64Data } },
+1186:                                     { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。\n1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容\n2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告\n3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。これらが少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全な小売広告であれば「PASS: 理由」を出力してください。' }
+1187:                                 ]
+1188:                             }]
+1189:                         };
+1190:                         const result = await generativeModel.generateContent(request);
+1191:                         const text = result.response.candidates[0].content.parts[0].text;
+1192:                         if (text.includes('FAIL')) { adStatus = 'rejected'; } else { adStatus = 'active'; } 
+1193:                         console.log(`[AutoReview] AI Result: ${text} -> (実装テスト中のため active として処理)`);
+1194:                     } else {
+1195:                         adStatus = 'active'; // Fallback
+1196:                     }
+1197:                 } else {
+1198:                     adStatus = 'active'; // YouTube/Empty
+1199:                 }
+1200:             } catch (err) {
+1201:                 console.error("[AutoReview] AI Review failed:", err);
+1202:                 adStatus = 'pending'; // Failsafe
+1203:             }
+1204:             console.log(`[AutoReview] Campaign '${name}' auto-review result: ${adStatus}`);
+1205: 
+1206:             const metadata = {
+1207:                 title: name,
+1208:                 format: format, // Pass format (image/video/youtube)
+1209:                 status: adStatus, // Result of automatic review
+1210:                 // Prioritize passed URL (Base64) or YouTube URL. DO NOT default to Sintel anymore.
+1211:                 url: finalUrl,
+1212:                 youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : (youtube_url || ytUrl),
+1213:                 duration: 15,
+1214:                 start_date: start,
+1215:                 end_date: end,
+1216:                 budget: budget,
+1217:                 plan_type: plan,
+1218:                 trigger: trigger,          // For Moment
+1219:                 target_imp: target_imp     // For Impression
+1220:             };
+1221: 
+1222:             // Inject into Server Logic
+1223:             if (signageServer && signageServer.injectCampaign) {
+1224:                 signageServer.injectCampaign('16:9', metadata, type);
+1225:             }
+1226:         };
+1227: 
+1228:         const rawUrl = url || file_url || youtube_url || "";
+1229: 
+1230:         if (rawUrl.startsWith('data:video/quicktime;base64,') || rawUrl.startsWith('data:video/mp4;base64,')) {
+1231:             console.log("[AdUpload] Detected raw video file, transcoding and compressing heavily...");
+1232:             const base64Data = rawUrl.split(';base64,').pop();
+1233:             const ext = rawUrl.startsWith('data:video/quicktime') ? 'mov' : 'mp4';
+1234:             const tempId = Date.now();
+1235:             const inputPath = path.join(__dirname, 'uploads', `ad_temp_${tempId}.${ext}`);
+1236:             const outputPath = path.join(__dirname, 'uploads', `ad_video_${tempId}.mp4`);
+1237:             fs.writeFileSync(inputPath, base64Data, { encoding: 'base64' });
+1238: 
+1239:             ffmpeg(inputPath)
+1240:                 .output(outputPath)
+1241:                 .videoCodec('libx264')
+1242:                 .addOption('-preset', 'fast')
+1243:                 .addOption('-crf', '28') // Heavy compression for Retail Signage
+1244:                 .on('error', (err) => {
+1245:                     console.error("[AdUpload] FFmpeg transcoding failed (likely missing on Windows). Fallback to raw base64 data.", err);
+1246:                     try { require('fs').unlinkSync(inputPath); } catch(e){}
+1247:                     processAndInject(rawUrl);
+1248:                     if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+1249:                 })
+1250:                 .on('end', () => {
+1251:                     console.log("[AdUpload] Transcoding & Compression finished.");
+1252:                     if (typeof s3Client !== 'undefined' && s3Client && typeof bucketName !== 'undefined' && bucketName) {
+1253:                         try {
+1254:                             const { PutObjectCommand } = require('@aws-sdk/client-s3');
+1255:                             const fileBuf = require('fs').readFileSync(outputPath);
+1256:                             s3Client.send(new PutObjectCommand({
+1257:                                 Bucket: bucketName,
+1258:                                 Key: `uploads/ad_video_${tempId}.mp4`,
+1259:                                 Body: fileBuf,
+1260:                                 ContentType: 'video/mp4'
+1261:                             })).then(() => {
+1262:                                 console.log("[AdUpload] S3 Upload complete.");
+1263:                                 require('fs').unlinkSync(inputPath);
+1264:                                 require('fs').unlinkSync(outputPath);
+1265:                                 processAndInject(`/uploads/ad_video_${tempId}.mp4`);
+1266:                                 if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+1267:                             }).catch(err => {
+1268:                                 console.error("[S3] Upload error:", err);
+1269:                                 require('fs').unlinkSync(inputPath);
+1270:                                 processAndInject(`/uploads/ad_video_${tempId}.mp4`);
+1271:                             });
+1272:                         } catch(e) {}
+1273:                     } else {
+1274:                         require('fs').unlinkSync(inputPath);
+1275:                         processAndInject(`/uploads/ad_video_${tempId}.mp4`);
+1276:                         // We must wait to broadcast or return. Because Express prefers sync response,
+1277:                         // we returned "Campaign Created" below before finish, but that's fine.
+1278:                         if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+1279:                     }
+1280:                 }).run();
+1281: 
+1282:             res.json({ success: true, message: "Campaign Created (Transcoding in background)" });
+1283:         } else {
+1284:             processAndInject(rawUrl);
+1285:             if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+1286:             res.json({ success: true, message: "Campaign Created" });
+1287:         }
+1288:     } catch (e) {
+1289:         res.status(500).json({ error: e.message });
+1290:     }
+1291: });
+1292: 
+1293: app.get('/api/campaigns', (req, res) => {
