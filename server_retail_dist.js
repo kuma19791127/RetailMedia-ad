@@ -1790,6 +1790,7 @@ let shiftState = { staff: [], chatHistory: [] };
 let agencyReferrals = [];
 
 app.post('/api/admin/agency-submit', express.json(), async (req, res) => {
+    setTimeout(saveFinanceDB, 100);
     agencyReferrals.push({
         date: req.body.date,
         agency: req.body.agency,
@@ -2985,7 +2986,8 @@ function loadFinanceDB() {
             if (data.withdrawalRequests) withdrawalRequests = data.withdrawalRequests;
             if (data.creatorBanks) creatorBanks = data.creatorBanks;
             if (data.kycRequests) kycRequests = data.kycRequests;
-            console.log(`[Finance DB] Loaded ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs.`);
+            if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
+            console.log(`[Finance DB] Loaded ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyReferrals.length} Agency Referrals.`);
         }
     } catch (e) {
         console.error("[Finance DB] Load Error", e);
@@ -2997,7 +2999,8 @@ function saveFinanceDB() {
         const data = {
             withdrawalRequests,
             creatorBanks,
-            kycRequests
+            kycRequests,
+            agencyReferrals
         };
         require('fs').writeFileSync(financeDbPath, JSON.stringify(data, null, 2), 'utf8');
     } catch (e) {
