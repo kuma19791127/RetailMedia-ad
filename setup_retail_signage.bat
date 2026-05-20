@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 >nul
+chcp 932 >nul
 
 :: --- 管理者権限の自動取得（UACプロンプトの表示） ---
 net session >nul 2>&1
