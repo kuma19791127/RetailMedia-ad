@@ -425,16 +425,16 @@ function copyQrUrl() {
             if(data.transactions && data.transactions.length > 0) {
                 historyHtml = data.transactions.map(t => {
                     const d = new Date(parseInt(t.timestamp)).toLocaleString('ja-JP');
-                    return <div style="border-bottom:1px solid #eee; padding:5px 0; color:#333; text-align:left;">
-                        <span style="font-size:12px; color:#888;"></span><br>
-                        金額: <strong style="color:#2563EB;">¥</strong>
-                    </div>;
+                    return `<div style="border-bottom:1px solid #eee; padding:5px 0; color:#333; text-align:left;">`
+                        <span style="font-size:12px; color:#888;">${d}</span><br>
+                        金額: <strong style="color:#2563EB;">¥${t.totalAmount || 0}</strong>
+                    </div>`;
                 }).join('');
             }
             
             Swal.fire({
                 title: '最近の決済履歴',
-                html: <div style="max-height:200px; overflow-y:auto; font-size:14px; text-align:left;"></div>,
+                html: `<div style="max-height:200px; overflow-y:auto; font-size:14px; text-align:left;">${historyHtml}</div>`,
                 confirmButtonText: '閉じる'
             });
         } catch(e) {

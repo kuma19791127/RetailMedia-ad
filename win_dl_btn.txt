@@ -1,0 +1,6 @@
+"https://retail-media-db-2026.s3.us-east-1.amazonaws.com/setup_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; background:#10b981; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">💻 Win用セキュリティパッチDL</a>
+        </li>
+        <li><strong>【セキュリティパッチの実装】</strong><br class="mobile-br">ダウンロードしたファイルを実行<br class="mobile-br">するだけで、<strong>USBメモリの<br class="mobile-br">読み込み無効化、キオスク<br class="mobile-br">モード設定、全画面起動</strong>が<br class="mobile-br">全自動でパッチ適用されます。</li>
+    </ul>
+
+    <h4 style

@@ -165,7 +165,7 @@ async function loadKYCReq() {
 
                 let actionBtns = '';
                 if(req.status === 'pending') {
-                    actionBtns = \`
+                    actionBtns = `
                         <button class="action-btn btn-approve" onclick="updateKyc('\${req.id}', 'approved')">承認</button>
                         <button class="action-btn btn-reject" onclick="updateKyc('\${req.id}', 'rejected')">却下</button>
                     \`;

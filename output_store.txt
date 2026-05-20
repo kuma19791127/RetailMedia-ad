@@ -1,0 +1,35 @@
+<h2 style="margin:0;">📊 売上センター (Revenue Center)</h2>
+<h4>Square API設定</h4>
+<h3 style="margin-top:0; color:#047857;">📱 サイネージ自動起動セットアップ（Android専用アプリ）</h3>
+<h4 style="margin-top:0; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">1. リテアドの透明LEDフィルム<br class="mobile-br">セットアップ方法と<br class="mobile-br">セキュリティパッチ</h4>
+<h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">2. Androidアプリと<br class="mobile-br">サイネージパネルの<br class="mobile-br">セットアップと<br class="mobile-br">セキュリティパッチ</h4>
+<h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">3. Win(パソコン)のセットアップ</h4>
+<h4 style="margin-top:25px; color:#0f172a; border-left:4px solid #f59e0b; padding-left:10px; font-size: 1.1rem;">4. セキュリティパッチを<br class="mobile-br">利用しない場合<br class="mobile-br">（初期化できないサイネージパネル）</h4>
+<h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">🎙️ AI ボイス スタジオ <a href="ai_voice_studio_lp.html" target="_blank" style="font-size:14px; color:#3498db; text-decoration:underline;">LPはこちら</a></h2>
+<h2 style="margin-top:0;">🔌 POS・データ連携設定</h2>
+<h3 style="margin-top:0; color:#10b981;">🟢 方法1: どこでもレジ（PC接続型・推奨）と商品一括取込</h3>
+<h3 style="margin-top:0; color:#2563eb;">🔄 POS売上データの定期自動送信機能 (バックグラウンド同期)</h3>
+<h3 style="margin-top:0; color:#d97706;">🟡 方法2: クラウドPOSの「Webhooks連携」（スマレジ・Square等）</h3>
+<h3 style="margin-top:0; color:#dc2626;">🔴 方法3: 既存の大手レジメーカーへの組み込み（SDK連携）</h3>
+<h2 style="margin-top:0;">📦 在庫連携 (Inventory Sync)</h2>
+<h3 style="margin-top:0; color:#2980b9;">📥 商品データのインポート</h3>
+<h3 style="margin-top:0; color:#8e44ad;">📡 Webhooks連携エクスポート (送信)</h3>
+<h2 style="margin-top:0;">👀 広告審査 (Ad Approval)</h2>
+<h3 style="margin-top:0; color:#c0392b;">審査待ちのキャンペーン</h3>
+<h4 style="margin:0 0 5px 0; color:#1e293b;">${c.name || c.title || '無題'}</h4>
+<h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
+
+--- Snippet around 推奨スペック ---
+m; color:#334155; line-height:1.6;">
+        既存のAndroidコントローラーと<br class="mobile-br">サイネージパネルをお持ちの場合は<br class="mobile-br">専用アプリをインストールするだけで<br class="mobile-br">始められます。
+    </p>
+
+    <div style="background:#e0f2fe; padding:12px; border-radius:6px; border:1px solid #bae6fd; margin-bottom:15px; font-size:0.85rem; color:#0c4a6e; line-height:1.6;">
+        <strong style="color:#0369a1;">🖥️ リテアドを稼働させる推奨スペック</strong><br>
+        ・メモリ(RAM): <span style="font-weight:bold; color:#e74c3c;">推奨 3GB 以上</span><br>
+        ・ストレージ: <span style="font-weight:bold; color:#e74c3c;">空き容量 2GB 以上</span><br>
+        <span style="font-size:0.75rem; color:#0284c7;">※長時間の安定した動画再生のため、上記スペック以上の端末を推奨いたします。</span>
+    </div>
+    <ul style="margin:0; padding-left:20px; font-size:0.9rem; line-height:1.8; color:#334155;">
+        <li>専用のダウンロードリンクから<br class="mobile-br">「RetailMedia Signage」アプリ<br class="mobile-br">（APK）をインストールします。</li>
+        <li><strong>【セキュリティパッチの実装】</strong><br class="mobile-br">初期設定画面にて、配布された<br class="mobile-br">専用のQRコードを読み込ませる<br class="mobile-br">ことで、デバイスオーナー権限が<br class="mobile-br">付与され、<strong>USBポートの無効化と<br class="mobile-br">完全キオスクモード化（画面固定）が<br class="mobile-br">全自動でパッチ適用</strong>されます。

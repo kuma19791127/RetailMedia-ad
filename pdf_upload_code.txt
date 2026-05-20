@@ -1,0 +1,27 @@
+function handlePdfUpload(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            // --- 優しい設計: プレビュー機能 ---
+            const previewContainer = document.getElementById('pdf-preview-container');
+            if (previewContainer) {
+                previewContainer.style.display = 'block';
+                document.getElementById('pdf-preview-name').innerText = file.name;
+            }
+            // --------------------------------
+            document.getElementById('ai-loading').style.display = 'block';
+            document.getElementById('ai-status').innerHTML = '📄 PDFを解析中...<br><span style="font-size:0.8rem;">(ステップ自動階層化処理)</span>';
+            
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    if(window.pdfjsLib) {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let addedSteps = 0;
+                        for(let i=1; i<=pdf.numPages; i++) {
+                            try {
+                                const page = await pdf.getPage(i);
+                                const textContent = await page.getTextContent();
+                

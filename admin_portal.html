@@ -1520,14 +1520,14 @@
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                let agencyRes = await fetch('/api/admin/agency');
-                var agencies = await agencyRes.json();
-                var pendingAgencies = agencies.filter(a => a.status === 'verified');
+                const agencyResTmp = await fetch('/api/admin/agency');
+                const localAgencies = await localAgencyRes.json();
+                const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 // 代理店の未払い報酬（ステータスが verified のもの）も取得
-                let agencyRes = await fetch('/api/admin/agency');
-                var agencies = await agencyRes.json();
-                var pendingAgencies = agencies.filter(a => a.status === 'verified');
+                agencyResTmp = await fetch('/api/admin/agency');
+                const localAgencies = await localAgencyRes.json();
+                const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
                     Swal.fire('データなし', '現在、処理待ちの出金申請や代理店報酬はありません。', 'info');
@@ -1618,108 +1618,4 @@
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                let agencyRes = await fetch('/api/admin/agency');
-                var agencies = await agencyRes.json();
-                var pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
-                // 代理店の未払い報酬（ステータスが verified のもの）も取得
-                let agencyRes = await fetch('/api/admin/agency');
-                var agencies = await agencyRes.json();
-                var pendingAgencies = agencies.filter(a => a.status === 'verified');
-                
-                if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
-                    Swal.fire('データなし', '現在、処理待ちの出金申請や代理店報酬はありません。', 'info');
-                    return;
-                }
-                if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
-                    Swal.fire('データなし', '現在、未処理の出金申請はありません。', 'info');
-                    return;
-                }
-
-                const confirm = await Swal.fire({
-                    title: 'freee仕訳CSVの生成',
-                    html: `クリエイター <b>${pendingPayouts.length}件</b> および 代理店 <b>${pendingAgencies.length}件</b> の源泉徴収・手数料を自動計算し、freeeの「振替伝票」インポート用CSVを出力します。<br><br><span style="font-size:0.8rem; color:#666;">※freeeの「決算申告＞振替伝票」からインポートできます。</span>`,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: 'CSVダウンロード'
-                });
-
-                if (confirm.isConfirmed) {
-                    // freee振替伝票フォーマット
-                    let csvContent = "\uFEFF伝票No,発生日,借方勘定科目,借方金額,借方税区分,貸方勘定科目,貸方金額,貸方税区分,備考\r\n";
-                    
-                    const today = new Date().toISOString().split('T')[0];
-                    
-                    pendingPayouts.forEach((p, index) => {
-                        const slipNo = index + 1;
-                        const isCorp = p.bankInfo.businessType === 'corporate';
-                        const withholdingTax = isCorp ? 0 : Math.floor(p.amount * 0.1021);
-                        const bankFee = 145; // 振込手数料目安
-                        const finalAmount = p.amount - withholdingTax - bankFee;
-                        const memo = `${p.bankInfo.holderName} 報酬支払`;
-
-                        // 1行目: 借方(支払報酬) vs 貸方(未払金)
-                        csvContent += `${slipNo},${today},支払報酬,${p.amount},課税仕入,未払金,${finalAmount},対象外,${memo}\r\n`;
-                        
-                        // 2行目: 貸方のみ(源泉徴収)
-                        if (withholdingTax > 0) {
-                            csvContent += `${slipNo},${today},,,,預り金,${withholdingTax},対象外,${memo}(源泉税)\r\n`; 
-                        }
-                        
-                        // 3行目: 貸方のみ(振込手数料)
-                        if (bankFee > 0) {
-                            csvContent += `${slipNo},${today},,,,支払手数料,${bankFee},対象外,${memo}(振込手数料)\r\n`;
-                        }
-                    });
-
-                    // 代理店のデータをCSVに追加
-                    pendingAgencies.forEach(a => {
-                        const amount = a.price || 0;
-                        const finalAmount = amount - 145; // 仮の振込手数料
-                        // 代理店の銀行口座情報は現在UI未実装のため仮の値をセット
-                        const bankCode = "0000"; 
-                        const branchCode = "000"; 
-                        const accountType = "1"; 
-                        const accountNum = "9999999"; // 要確認
-                        const holderName = a.agency_name ? a.agency_name.replace(/ /g, '') : "ダイリテン";
-                        
-                        csvContent += `${bankCode},${branchCode},${accountType},${accountNum},${holderName},${finalAmount}\r\n`;
-                    });
-                    
-                    let slipNoOffset = pendingPayouts.length;
-                    pendingAgencies.forEach((a, index) => {
-                        const slipNo = slipNoOffset + index + 1;
-                        const amount = a.price || 0;
-                        const isCorp = true; // 仮: 代理店は基本法人とみなす（必要に応じてUI追加）
-                        const withholdingTax = isCorp ? 0 : Math.floor(amount * 0.1021);
-                        const bankFee = 145; 
-                        const finalAmount = amount - withholdingTax - bankFee;
-                        const memo = `${a.agency_name} 代理店紹介マージン`;
-
-                        csvContent += `${slipNo},${today},支払報酬,${amount},課税仕入,未払金,${finalAmount},対象外,${memo}\r\n`;
-                        if (withholdingTax > 0) csvContent += `${slipNo},${today},,,,預り金,${withholdingTax},対象外,${memo}(源泉税)\r\n`; 
-                        if (bankFee > 0) csvContent += `${slipNo},${today},,,,支払手数料,${bankFee},対象外,${memo}(振込手数料)\r\n`;
-                    });
-
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", `freee_journal_${Date.now()}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    Swal.fire('出力完了', 'freee用の仕訳CSVをダウンロードしました。', 'success');
-                }
-            } catch (e) {
-                console.error(e);
-                Swal.fire('エラー', 'CSVの生成に失敗しました。', 'error');
-            }
-        }
-
-</script>
-    </div> <!-- End of #main-app -->
-</body>
-
-</html>

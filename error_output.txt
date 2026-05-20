@@ -1,0 +1,9 @@
+C:\Users\one\Desktop\RetailMedia_System\temp_script_8.js:17
+                    Swal.fire('登録完了', デバイス  を店舗  に紐付けました！<br>サイネージ画面が自動で切り替わります。, 'success');
+                                      ^^^^
+
+SyntaxError: missing ) after argument list
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at checkSyntax (node:internal/main/check_syntax:76:3)
+
+Node.js v24.13.0

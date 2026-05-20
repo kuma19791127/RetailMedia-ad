@@ -1,0 +1,13 @@
+r:#e74c3c;">店舗側でのセキュリティ知識や<br class="mobile-br">設定作業は一切不要です。<br class="mobile-br">電源を挿し、Wi-Fi等の<br class="mobile-br">インターネットに接続するだけで<br class="mobile-br">安全に稼働します。</span>
+    </p>
+    <button onclick="sendDownloadLink()" style="margin-top:10px; margin-bottom:10px; background:#3b82f6; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:block;">📧 アプリのダウンロードリンクを送信する</button>
+
+    <h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">2. Androidアプリと<br class="mobile-br">サイネージパネルの<br class="mobile-br">セットアップと<br class="mobile-br">セキュリティパッチ</h4>
+    <p style="font-size:0.9rem; color:#334155; line-height:1.6;">
+        既存のAndroidコントローラーと<br class="mobile-br">サイネージパネルをお持ちの場合は<br class="mobile-br">専用アプリをインストールするだけで<br class="mobile-br">始められます。
+    </p>
+
+    <div style="background:#e0f2fe; padding:12px; border-radius:6px; border:1px solid #bae6fd; margin-bottom:15px; font-size:0.85rem; color:#0c4a6e; line-height:1.6;">
+        <strong style="color:#0369a1;">🖥️ リテアドを稼働させる推奨スペック</strong><br>
+        ・メモリ(RAM): <span style="font-weight:bold; color:#e74c3c;">推奨 3GB 以上</span><br>
+   
