@@ -279,7 +279,8 @@
             <!-- 3. Standard Form Login -->
             
             
-<form id="loginForm" method="dialog" onsubmit="handleLogin(event)">
+<iframe name="dummyframe_login" style="display:none;"></iframe>
+            <form id="loginForm" action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(function(){ handleLogin(new Event('submit')); }, 10); return true;">
                 <p style="font-size:0.80rem; font-weight:bold; color:var(--dark); text-align:center; margin-bottom:15px;">またはメールアドレスでログイン</p>
 
                 <!-- Hidden select to store the chosen role -->

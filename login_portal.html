@@ -417,18 +417,19 @@
             <p class="subtitle">Retail Media Platform</p>
         </div>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <iframe name="dummyframe_login" style="display:none;"></iframe>
+        <form id="loginForm" action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(function(){ handleLogin(new Event('submit')); }, 10); return true;">
             <div class="form-group">
                 <label>Email Address</label>
                 <div class="input-wrapper">
-                    <input type="email" id="email" placeholder="user@example.com" required autocomplete="username">
+                    <input type="email" id="email" name="email" placeholder="user@example.com" required autocomplete="username">
                 </div>
             </div>
 
             <div class="form-group">
                 <label>Password</label>
                 <div class="input-wrapper">
-                    <input type="password" id="password" placeholder="••••••••" required
+                    <input type="password" id="password" name="password" placeholder="••••••••" required
                         autocomplete="current-password">
                 </div>
             </div>

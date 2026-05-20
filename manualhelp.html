@@ -322,10 +322,11 @@
             <h1 class="brand" style="margin-bottom:20px; font-size:2rem;">ManualHelp</h1>
             <p style="color:#cbd5e1; margin-bottom:20px; font-size:0.9rem;">役割を選択してログインしてください</p>
             
-            <form id="login-form" onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:0; padding:0;">
+            <iframe name="dummyframe_login" style="display:none;"></iframe>
+            <form id="login-form" action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(doLogin, 10); return true;" style="width:100%; margin:0; padding:0;">
             <input type="text" id="login-name" placeholder="氏名 (例: 鈴木 一郎)" autocomplete="name">
-            <input type="email" id="login-email" placeholder="メールアドレス" autocomplete="username">
-            <input type="password" id="login-pass" placeholder="パスワード" autocomplete="current-password">
+            <input type="email" id="login-email" name="email" placeholder="メールアドレス" autocomplete="username">
+            <input type="password" id="login-pass" name="password" placeholder="パスワード" autocomplete="current-password">
             <select id="login-role">
                 <option value="corp">企業側 (マニュアル作成)</option>
                 <option value="employee">従業員 (学習・タスク実行)</option>
