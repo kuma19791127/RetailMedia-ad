@@ -73,18 +73,29 @@ set "STARTUP_DIR=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup
 set "SHORTCUT_PATH=%STARTUP_DIR%\RetailAd_Signage.lnk"
 set "TARGET_URL=https://retail-ad.com/signage_player.html?terminal_id=!panel_id!"
 
-:: Edgeをキオスクモードで起動するショートカットを作成 (VBScriptを使用)
+set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+set "EDGE_PATH=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+
+if exist "%CHROME_PATH%" (
+    set "BROWSER_PATH=%CHROME_PATH%"
+    echo [OK] Google Chrome を使用します。
+) else (
+    set "BROWSER_PATH=%EDGE_PATH%"
+    echo [OK] Microsoft Edge を使用します。
+)
+
+:: ブラウザをキオスクモードで起動するショートカットを作成 (VBScriptを使用)
 set "VBS_SCRIPT=%TEMP%\CreateShortcut.vbs"
 echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"
 echo sLinkFile = "%SHORTCUT_PATH%" >> "%VBS_SCRIPT%"
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
-echo oLink.TargetPath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" >> "%VBS_SCRIPT%"
-echo oLink.Arguments = "--kiosk ""%TARGET_URL%"" --edge-kiosk-type=fullscreen" >> "%VBS_SCRIPT%"
+echo oLink.TargetPath = "%BROWSER_PATH%" >> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk ""%TARGET_URL%"" --kiosk-type=fullscreen" >> "%VBS_SCRIPT%"
 echo oLink.Save >> "%VBS_SCRIPT%"
 cscript //nologo "%VBS_SCRIPT%"
 del "%VBS_SCRIPT%"
 
-echo [OK] Microsoft Edgeのキオスクモード自動起動ショートカットを作成しました。
+echo [OK] ブラウザのキオスクモード自動起動ショートカットを作成しました。
 echo 接続先URL: %TARGET_URL%
 
 echo.
