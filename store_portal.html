@@ -2,6 +2,14 @@
 <html lang="ja">
 
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>繝ｪ繝・い繝・| Store Portal</title>
@@ -598,7 +606,7 @@
             <script>
                 async function loadPosData() {
                     try {
-                        const response = await fetch('/api/admin/sales-history');
+                        const response = await fetch(window.API_BASE_URL + '/api/admin/sales-history');
                         const data = await response.json();
                         let total = 0;
                         let cust = 0;
@@ -996,7 +1004,7 @@
                             const stylePrompt = document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "cheerfully";
                             const voiceName = manualSelection.value.replace('gemini_', '');
 
-                            const response = await fetch('/api/voice/synthesize', {
+                            const response = await fetch(window.API_BASE_URL + '/api/voice/synthesize', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ text, voiceName, stylePrompt })
@@ -1772,9 +1780,7 @@
 
     <script>
         // --- API Configuration ---
-        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
-            ? 'http://localhost:3000'
-            : '';
+        const API_URL = window.API_BASE_URL;
 
         // --- Navigation ---
         function showPanel(id) {
@@ -2220,7 +2226,7 @@
         // Live Revenue Updates
         async function fetchStoreRevenue() {
             try {
-                const res = await fetch('/api/store/revenue');
+                const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
                 const json = await res.json();
                 if (json.success) {
                     document.getElementById('your-share').innerText = 'ﾂ･' + json.adnet.toLocaleString();
@@ -2290,7 +2296,7 @@
         }
         
         try {
-            await fetch('/api/profile', {
+            await fetch(window.API_BASE_URL + '/api/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, org, name, type: 'store' })

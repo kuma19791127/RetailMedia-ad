@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>広告主 KYC 審査専用ページ | RetailMedia</title>
@@ -70,7 +78,7 @@
 <script>
         async function loadUnlockReq() {
             try {
-                const res = await fetch('/api/review/unlock');
+                const res = await fetch(window.API_BASE_URL + '/api/review/unlock');
                 const data = await res.json();
                 const tbody = document.getElementById('unlock-body');
                 tbody.innerHTML = '';
@@ -128,7 +136,7 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        const res = await fetch('/api/review/unlock/' + id + '/approve', { method: 'POST' });
+                        const res = await fetch(window.API_BASE_URL + '/api/review/unlock/' + id + '/approve', { method: 'POST' });
                         if (res.ok) {
                             Swal.fire('承認完了', 'アカウントロックを解除しました。', 'success');
                             loadUnlockReq();
@@ -143,7 +151,7 @@
         }
 async function loadKYCReq() {
         try {
-            const res = await fetch('/api/kyc');
+            const res = await fetch(window.API_BASE_URL + '/api/kyc');
             const data = await res.json();
             const tbody = document.getElementById('kyc-history-body');
             
@@ -194,7 +202,7 @@ async function loadKYCReq() {
 
     async function updateKyc(id, status) {
         try {
-            const res = await fetch('/api/kyc/' + id + '/status', {
+            const res = await fetch(window.API_BASE_URL + '/api/kyc/' + id + '/status', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({status})

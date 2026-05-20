@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>小売り向け設定パネル</title>
@@ -250,7 +258,7 @@
         }
         
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(window.API_BASE_URL + '/api/auth/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ email, password: pass })
@@ -402,7 +410,7 @@ function copyQrUrl() {
         const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
         try {
             Swal.fire({title: '通信中...', text: 'サーバーから売上を取得しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            const res = await fetch(`/api/retailer/dashboard?store_id=${email}`);
+            const res = await fetch(window.API_BASE_URL + `/api/retailer/dashboard?store_id=${email}`);
             const data = await res.json();
             Swal.fire({
                 icon: 'success',
@@ -418,7 +426,7 @@ function copyQrUrl() {
         const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
         try {
             Swal.fire({title: '通信中...', didOpen: () => Swal.showLoading()});
-            const res = await fetch(`/api/retailer/dashboard?store_id=${email}`);
+            const res = await fetch(window.API_BASE_URL + `/api/retailer/dashboard?store_id=${email}`);
             const data = await res.json();
             
             let historyHtml = '<p>履歴がありません</p>';
@@ -453,7 +461,7 @@ function copyQrUrl() {
         });
         if (sysName) {
             try {
-                await fetch('/api/retailer/settings', {
+                await fetch(window.API_BASE_URL + '/api/retailer/settings', {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({store_id: email, settings: {pos_system: sysName}})
                 });
@@ -481,7 +489,7 @@ function copyQrUrl() {
             Swal.fire({title: 'データ照合中...', html: 'POSサーバーの売上計上と<br>各スキャン履歴の整合性を確認しています...', didOpen: () => Swal.showLoading()});
             
             // Get data from backend POS endpoints
-            const posRes = await fetch('/api/pos/transactions');
+            const posRes = await fetch(window.API_BASE_URL + '/api/pos/transactions');
             const posData = await posRes.json();
             
             // Filter transactions for this retailer's email
@@ -491,7 +499,7 @@ function copyQrUrl() {
             // Note: If you want to check against daily sales, you'd filter by today's date
             // For now, we compare total logged POS transactions with expected sales
             
-            const dashRes = await fetch(`/api/retailer/dashboard?store_id=${email}`);
+            const dashRes = await fetch(window.API_BASE_URL + `/api/retailer/dashboard?store_id=${email}`);
             const dashData = await dashRes.json();
             const dashTotal = dashData.sales || 0; // Using current mock from S3 mock
 

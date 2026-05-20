@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <title>小売りモバイルPOS レジ管理画面</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">

@@ -2,6 +2,14 @@
 <html lang="ja">
 
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anywhere Ads | AI Video Studio</title>
@@ -351,7 +359,7 @@
             // Call API to register this "Fake Video" as the active campaign
             const text = document.getElementById('ad-text').value;
             const speed = document.getElementById('voice-speed').value;
-            await fetch(`/api/ai/generate?text=${encodeURIComponent(text)}&speed=${speed}`);
+            await fetch(window.API_BASE_URL + `/api/ai/generate?text=${encodeURIComponent(text)}&speed=${speed}`);
 
             Swal.fire('Broadcasted!', 'Your AI Video is now live on store signage.', 'success');
         }

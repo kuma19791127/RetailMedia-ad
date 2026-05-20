@@ -1,6 +1,14 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <title>Retail Media - Retailer Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -431,7 +439,7 @@
                         prefix: currentPrefix,
                         time_limit: enableTimeLimit
                     };
-                    const res = await fetch('/api/retailer/upload', {
+                    const res = await fetch(window.API_BASE_URL + '/api/retailer/upload', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(reqBody)
@@ -454,7 +462,7 @@
 
 async function loadVideos() {
     try {
-        const res = await fetch('/api/retailer/videos?prefix=' + currentPrefix);
+        const res = await fetch(window.API_BASE_URL + '/api/retailer/videos?prefix=' + currentPrefix);
         const videos = await res.json();
         let html = '';
         if(videos.length === 0) {
@@ -480,7 +488,7 @@ async function loadVideos() {
 
 async function deleteVideo(id) {
     if(confirm("縺薙・蜍慕判縺ｮ驟堺ｿ｡繧貞●豁｢縺励∝炎髯､縺励∪縺吶°・・)) {
-        await fetch('/api/retailer/videos/' + id, { method: 'DELETE' });
+        await fetch(window.API_BASE_URL + '/api/retailer/videos/' + id, { method: 'DELETE' });
         loadVideos();
     }
 }

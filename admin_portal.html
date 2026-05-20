@@ -2,6 +2,14 @@
 <html lang="ja">
 
 <head>
+
+    <!-- === API Base URL Config === -->
+    <script>
+        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
+            ? 'http://localhost:3000' 
+            : 'https://api.your-server.com'; // TODO: 本番環境のバックエンドURLに変更してください
+    </script>
+
     <meta charset="UTF-8">
     <title>retail-ad Admin Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -840,7 +848,7 @@
     </div>
 
     <script>
-        const API_BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+        const API_BASE = window.API_BASE_URL;
 
         async function registerDevice() {
             const deviceId = document.getElementById('zero-device-id').value;
@@ -848,7 +856,7 @@
             if (!deviceId || !storeId) return alert('両方のIDを入力してください');
             
             try {
-                const res = await fetch('/api/admin/devices', {
+                const res = await fetch(window.API_BASE_URL + '/api/admin/devices', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ deviceId, storeId })
@@ -976,7 +984,7 @@
         async function verifyAgencyApplication(advertise) {
             if(!confirm(advertise + ' の申請を承認(Verify)しますか？')) return;
             try {
-                const res = await fetch('/api/admin/agency-verify', {
+                const res = await fetch(window.API_BASE_URL + '/api/admin/agency-verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ advertise })
@@ -1264,7 +1272,7 @@
             const pass = document.getElementById('admin-pass').value.trim();
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: user, password: pass, role: 'admin' })
@@ -1273,7 +1281,7 @@
                 
                 if (data.require2FASetup) {
                     // --- NATIVE HTML 2FA (NO SWEETALERT) ---
-                    const qrRes = await fetch('/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user})});
+                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user})});
                     const qrData = await qrRes.json();
                     
                     document.getElementById('native-2fa-qr').src = qrData.qrcode;
@@ -1288,7 +1296,7 @@
                             const code = document.getElementById('native-2fa-code').value.trim();
                             if(!code) return;
                             
-                            const vRes = await fetch('/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, secret: qrData.secret})});
+                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, secret: qrData.secret})});
                             const vData = await vRes.json();
                             
                             if(vData.success) {
@@ -1318,7 +1326,7 @@
                             const code = document.getElementById('native-2fa-verify-code').value.trim();
                             if(!code) return;
                             
-                            const vRes = await fetch('/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code})});
+                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code})});
                             const vData = await vRes.json();
                             
                             if(vData.success) {
@@ -1448,7 +1456,7 @@
     
         async function loadPayouts() {
             try {
-                const res = await fetch('/api/admin/payouts');
+                const res = await fetch(window.API_BASE_URL + '/api/admin/payouts');
                 const payouts = await res.json();
                 const tbody = document.getElementById('payout-list');
                 tbody.innerHTML = '';
@@ -1494,7 +1502,7 @@
             if (confirm.isConfirmed) {
                 Swal.fire({ title: '処理中...', text: '銀行・会計システムと通信しています', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                 try {
-                    const res = await fetch('/api/admin/payout/execute', {
+                    const res = await fetch(window.API_BASE_URL + '/api/admin/payout/execute', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ reqId })
@@ -1516,16 +1524,16 @@
 
         async function downloadGMOCsv() {
             try {
-                const res = await fetch('/api/admin/payouts');
+                const res = await fetch(window.API_BASE_URL + '/api/admin/payouts');
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                const agencyResTmp = await fetch('/api/admin/agency');
+                const agencyResTmp = await fetch(window.API_BASE_URL + '/api/admin/agency');
                 const localAgencies = await localAgencyRes.json();
                 const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 // 代理店の未払い報酬（ステータスが verified のもの）も取得
-                agencyResTmp = await fetch('/api/admin/agency');
+                agencyResTmp = await fetch(window.API_BASE_URL + '/api/admin/agency');
                 const localAgencies = await localAgencyRes.json();
                 const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
@@ -1614,7 +1622,7 @@
 
         async function downloadFreeeCsv() {
             try {
-                const res = await fetch('/api/admin/payouts');
+                const res = await fetch(window.API_BASE_URL + '/api/admin/payouts');
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
