@@ -1074,7 +1074,7 @@
                 fileReader.onload = async function() {
                     const typedarray = new Uint8Array(this.result);
                     if(window.pdfjsLib) {
-                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                        pdfjsLib.GlobalWorkerOptions.disableWorker = true; // Use main thread to avoid CORS on S3 static hosting
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
                         let addedSteps = 0;
                         for(let i=1; i<=pdf.numPages; i++) {
