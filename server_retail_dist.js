@@ -3267,6 +3267,63 @@ Return ONLY a JSON object:
     }
 });
 
+
+// --- 4. Creator Assistant Agent (クリエイター向け 制作アシスタント) ---
+app.post('/api/agent/creator', async (req, res) => {
+    const { message, creatorId } = req.body;
+
+    try {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        // Analytics Context Simulation
+        const reviewContext = "Recent Network Trend: Videos with fast-paced cuts in the first 3 seconds and clear, large text overlays have a 40% higher approval and engagement rate. Rejected reasons often include: 'Text too small for signage', 'Low contrast'.";
+
+        const prompt = `
+You are a Creator Assistant AI Agent for a Retail Media Signage Network.
+The creator asked: "${message}"
+
+You must analyze this request using the network trend and review context.
+Context: ${reviewContext}
+
+Return ONLY a JSON object:
+{
+    "analysis": "Explanation of the issue or trend (Japanese)",
+    "improvementPlan": "Actionable advice on how to improve the video for digital signage (Japanese)",
+    "encouragement": "A supportive closing message to motivate the creator (Japanese)"
+}
+`;
+
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const fetch = (await import('node-fetch')).default;
+        const geminiRes = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        if (!geminiRes.ok) throw new Error('Gemini API Error');
+        const data = await geminiRes.json();
+        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        const responseHtml = `
+            <strong><i class="fas fa-lightbulb" style="color:#a855f7;"></i> AIアシスタントからのアドバイス</strong><br><br>
+            <strong>📊 過去の傾向分析:</strong> ${result.analysis}<br>
+            <strong>🛠 改善の具体案:</strong> ${result.improvementPlan}<br>
+            <br><em>${result.encouragement}</em>
+        `;
+
+        res.json({ success: true, message: responseHtml });
+    } catch (e) {
+        console.error('Creator Agent Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
     const { message, email } = req.body;

@@ -369,9 +369,76 @@ h2 {
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+
+    <style>
+    .agent-chat-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin: 20px 0;
+        border: 2px solid #a855f7;
+        overflow: hidden;
+    }
+    .agent-header {
+        padding: 10px 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .agent-body {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .agent-body textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .agent-body button {
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .agent-body button:hover {
+        opacity: 0.9;
+    }
+    .agent-result {
+        padding: 15px;
+        margin: 0 15px 15px 15px;
+        border-radius: 8px;
+        font-size: 0.95em;
+        white-space: pre-wrap;
+    }
+    </style>
 </head>
 
 <body>
+
+        <!-- === AI Agent Chat UI (Top Center) === -->
+        <div class="agent-chat-container">
+            <div class="agent-header" style="background: #a855f7; color: white;">
+                <i class="fas fa-magic"></i> 制作アシスタントエージェント
+            </div>
+            <div class="agent-body">
+                <textarea id="aiAgentInput" placeholder="例: 過去の動画が審査落ちした理由を教えて。もっと注目される構成案を出して。" rows="2" style="border: 1px solid #a855f7;"></textarea>
+                <button onclick="runCreatorAgent()" id="aiAgentBtn" style="background: #a855f7; color: white;">
+                    <i class="fas fa-lightbulb"></i> アドバイスをもらう
+                </button>
+            </div>
+            <div id="aiAgentResult" class="agent-result" style="display:none; border-left: 4px solid #a855f7; background: #faf5ff;"></div>
+        </div>
+
 
     <header>
         <div class="nav-links">
@@ -1036,6 +1103,41 @@ async function submit2FASetup() {
         }
 
 </script>
+
+    <script>
+    async function runCreatorAgent() {
+        const input = document.getElementById('aiAgentInput').value;
+        const btn = document.getElementById('aiAgentBtn');
+        const resultDiv = document.getElementById('aiAgentResult');
+        
+        if(!input) return alert("相談内容を入力してください");
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIが動画を分析・提案中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+        
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/agent/creator', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input, creatorId: 'demo_creator' })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                resultDiv.innerHTML = data.message;
+                resultDiv.style.display = 'block';
+            } else {
+                alert("エラー: " + data.error);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e.message);
+        }
+        
+        btn.innerHTML = '<i class="fas fa-lightbulb"></i> アドバイスをもらう';
+        btn.disabled = false;
+    }
+    </script>
 </body>
 
 </html>
