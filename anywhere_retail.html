@@ -518,5 +518,61 @@ function copyQrUrl() {
     }
 
 </script>
+
+        <button onclick="document.getElementById('aiAgentModal').style.display='flex'" style="position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #000; border: none; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 4px 15px rgba(0,255,136,0.4); font-size: 24px; cursor: pointer; z-index: 1000;">
+            <i class="fas fa-robot"></i>
+        </button>
+        
+    <!-- AI Agent Chat Modal -->
+    <div id="aiAgentModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🤖 AI 広告運用エージェント</h2>
+                <span class="close-btn" onclick="document.getElementById('aiAgentModal').style.display='none'">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>キャンペーンの要望を自然言語で入力してください。</p>
+                <textarea id="aiAgentInput" placeholder="例: 来週の火曜日から夏物飲料のキャンペーンを予算5万円でやりたい" style="width: 100%; height: 100px; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border);"></textarea>
+                <button class="primary-btn" onclick="runAiAgent()" id="aiAgentBtn" style="width: 100%;"><i class="fas fa-magic"></i> エージェントに依頼する</button>
+                
+                <div id="aiAgentResult" style="margin-top: 20px; padding: 15px; background: rgba(0, 255, 136, 0.1); border-radius: 8px; display: none; white-space: pre-wrap; font-size: 0.9em; border: 1px solid var(--primary);"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    async function runAiAgent() {
+        const input = document.getElementById('aiAgentInput').value;
+        const btn = document.getElementById('aiAgentBtn');
+        const resultDiv = document.getElementById('aiAgentResult');
+        
+        if(!input) return alert("指示を入力してください");
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> エージェントが分析・実行中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+        
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/agent/ad-ops', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input, storeId: 'current_store' })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                resultDiv.innerHTML = data.message;
+                resultDiv.style.display = 'block';
+            } else {
+                alert("エラー: " + data.error);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e.message);
+        }
+        
+        btn.innerHTML = '<i class="fas fa-magic"></i> エージェントに依頼する';
+        btn.disabled = false;
+    }
+    </script>
 </body>
 </html>
