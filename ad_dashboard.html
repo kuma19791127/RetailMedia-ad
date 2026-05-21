@@ -936,9 +936,85 @@
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+
+    <style>
+    .agent-chat-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin: 20px;
+        border: 2px solid var(--primary);
+        overflow: hidden;
+    }
+    .agent-header {
+        background: var(--primary);
+        color: white;
+        padding: 10px 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .agent-body {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .agent-body textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .agent-body button {
+        background: var(--dark);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .agent-body button:hover {
+        opacity: 0.9;
+    }
+    .agent-result {
+        padding: 15px;
+        margin: 0 15px 15px 15px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid var(--primary);
+        font-size: 0.95em;
+        white-space: pre-wrap;
+    }
+    @media (max-width: 768px) {
+        .agent-chat-container { margin: 10px; }
+    }
+    </style>
 </head>
 
 <body>
+        <!-- === AI Agent Chat UI (Top Center) === -->
+        <div class="agent-chat-container">
+            <div class="agent-header">
+                <i class="fas fa-robot"></i> 広告主向け 自動運用エージェント
+            </div>
+            <div class="agent-body">
+                <textarea id="aiAgentInput" placeholder="例: 来週の火曜日から夏物飲料のキャンペーンを予算5万円でやりたい" rows="2"></textarea>
+                <button onclick="runAdvertiserAgent()" id="aiAgentBtn">
+                    <i class="fas fa-paper-plane"></i> 指示を送信
+                </button>
+            </div>
+            <div id="aiAgentResult" class="agent-result" style="display:none;"></div>
+        </div>
+
     <!-- 1. Left Sidebar -->
     <nav class="sidebar">
         <div class="logo">
@@ -3135,6 +3211,44 @@ async function submit2FASetup() {
     }
 }
 </script>
+
+    <script>
+    async function runAdvertiserAgent() {
+        const input = document.getElementById('aiAgentInput').value;
+        const btn = document.getElementById('aiAgentBtn');
+        const resultDiv = document.getElementById('aiAgentResult');
+        
+        if(!input) return alert("指示を入力してください");
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> エージェントが分析・実行中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+        
+        try {
+            const userEmail = localStorage.getItem('ad_email') || 'demo@example.com';
+            const res = await fetch(window.API_BASE_URL + '/api/agent/advertiser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input, email: userEmail })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                resultDiv.innerHTML = data.message;
+                resultDiv.style.display = 'block';
+                // Trigger dashboard refresh if function exists
+                if(typeof loadDashboard === 'function') loadDashboard();
+            } else {
+                alert("エラー: " + data.error);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e.message);
+        }
+        
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> 指示を送信';
+        btn.disabled = false;
+    }
+    </script>
 </body>
 
 </html>
