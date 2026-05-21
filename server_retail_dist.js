@@ -3324,6 +3324,63 @@ Return ONLY a JSON object:
     }
 });
 
+
+// --- 5. Store Owner Agent (店舗オーナー向け 競合分析・経営支援エージェント) ---
+app.post('/api/agent/store', async (req, res) => {
+    const { message, storeId } = req.body;
+
+    try {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        // Network trend simulation
+        const networkContext = "Network Trend: High demand for 'Ice Cream' and 'Sunscreen' in the region. Rival stores are currently heavily promoting these on their front entrance signage.";
+
+        const prompt = `
+You are a Store Owner Advisory AI Agent.
+The store owner asked: "${message}"
+
+You must analyze this request using the network trend data.
+Trend Data: ${networkContext}
+
+Return ONLY a JSON object:
+{
+    "trendAnalysis": "Explanation of what is selling well across the network (Japanese)",
+    "actionableAdvice": "Concrete advice on what items to stock and where to place signage (Japanese)",
+    "projectedImpact": "Estimated impact on sales if the advice is followed (Japanese)"
+}
+`;
+
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const fetch = (await import('node-fetch')).default;
+        const geminiRes = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        if (!geminiRes.ok) throw new Error('Gemini API Error');
+        const data = await geminiRes.json();
+        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        const responseHtml = `
+            <strong><i class="fas fa-chart-line" style="color:#ef4444;"></i> AI経営アドバイス</strong><br><br>
+            <strong>📈 ネットワーク全体のトレンド:</strong> ${result.trendAnalysis}<br>
+            <strong>💡 自店への推奨アクション:</strong> ${result.actionableAdvice}<br>
+            <strong>💰 予測される効果:</strong> ${result.projectedImpact}
+        `;
+
+        res.json({ success: true, message: responseHtml });
+    } catch (e) {
+        console.error('Store Agent Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
     const { message, email } = req.body;
