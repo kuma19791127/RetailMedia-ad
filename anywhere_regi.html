@@ -257,9 +257,77 @@
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+
+    <style>
+    .agent-chat-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin: 15px;
+        border: 2px solid #eab308;
+        overflow: hidden;
+    }
+    .agent-header {
+        padding: 10px 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .agent-body {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .agent-body textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .agent-body button {
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .agent-body button:hover {
+        opacity: 0.9;
+    }
+    .agent-result {
+        padding: 15px;
+        margin: 0 15px 15px 15px;
+        border-radius: 8px;
+        font-size: 0.95em;
+        white-space: pre-wrap;
+    }
+    </style>
 </head>
 
 <body>
+
+        <!-- === AI Agent Chat UI (Top Center) === -->
+        <div class="agent-chat-container">
+            <div class="agent-header" style="background: #eab308; color: #000;">
+                <i class="fas fa-magic"></i> 今日のお買い得＆AIレシピ提案
+            </div>
+            <div class="agent-body">
+                <p style="font-size: 0.9em; margin: 0; color: #555;">カートに入れた食材（または冷蔵庫の余り物）を教えてください！</p>
+                <textarea id="aiAgentInput" placeholder="例: 豚肉とキャベツで何作れる？" rows="2" style="border: 1px solid #eab308;"></textarea>
+                <button onclick="runRegiAgent()" id="aiAgentBtn" style="background: #eab308; color: #000;">
+                    <i class="fas fa-utensils"></i> AIにレシピを聞く
+                </button>
+            </div>
+            <div id="aiAgentResult" class="agent-result" style="display:none; border-left: 4px solid #eab308; background: #fefce8;"></div>
+        </div>
+
 
     <!-- 1. Login Screen (Updated to Email/Password) -->
     <div id="page-login" class="page active">
@@ -1386,5 +1454,41 @@ function switchPaymentTab(tab) {
             }, 2000);
         }
 </script>
+
+    <script>
+    async function runRegiAgent() {
+        const input = document.getElementById('aiAgentInput').value;
+        const btn = document.getElementById('aiAgentBtn');
+        const resultDiv = document.getElementById('aiAgentResult');
+        
+        // If empty, auto-generate a request for bargains
+        const message = input || "今日の特売品からおすすめの夕食レシピを教えて！";
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIがレシピを考案中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+        
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/agent/regi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message, scannedItems: window.cartItems || [] })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                resultDiv.innerHTML = data.message;
+                resultDiv.style.display = 'block';
+            } else {
+                alert("エラー: " + data.error);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e.message);
+        }
+        
+        btn.innerHTML = '<i class="fas fa-utensils"></i> AIにレシピを聞く';
+        btn.disabled = false;
+    }
+    </script>
 </body>
 </html>

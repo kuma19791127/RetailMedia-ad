@@ -3201,6 +3201,72 @@ Return ONLY a JSON object:
     }
 });
 
+
+// --- 3. Anywhere Register Customer Agent (レジ顧客向け レシピ＆提案エージェント) ---
+app.post('/api/agent/regi', async (req, res) => {
+    const { message, scannedItems } = req.body;
+
+    try {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        // Store-specific POS Data simulation (Morning Cache)
+        const posDataContext = "Store Morning Cache: Today's special items are 'Pork Belly (豚バラ肉)' and 'Cabbage (キャベツ)'.";
+        
+        let itemsContext = "No items scanned yet.";
+        if (scannedItems && scannedItems.length > 0) {
+            itemsContext = "Items currently in cart: " + scannedItems.map(i => i.name || i).join(', ');
+        }
+
+        const prompt = `
+You are a friendly Supermarket AI Assistant helping a customer at the register.
+The customer requested: "${message}"
+
+You must analyze this request using the store's current specials and the customer's cart.
+Specials: ${posDataContext}
+Cart: ${itemsContext}
+
+Return ONLY a JSON object:
+{
+    "suggestedIngredients": "List of recommended bargain items to add (Japanese)",
+    "recipeTitle": "A catchy title for a recipe they can make tonight (Japanese)",
+    "recipeSteps": "Brief 2-3 step instructions for the recipe (Japanese)",
+    "friendlyMessage": "A warm greeting and summary (Japanese)"
+}
+`;
+
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const fetch = (await import('node-fetch')).default;
+        const geminiRes = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        if (!geminiRes.ok) throw new Error('Gemini API Error');
+        const data = await geminiRes.json();
+        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        const responseHtml = `
+            <strong><i class="fas fa-magic" style="color:#eab308;"></i> ${result.friendlyMessage}</strong><br><br>
+            <strong>🛒 本日のお買い得推奨:</strong> ${result.suggestedIngredients}<br>
+            <strong>🍲 AIおすすめレシピ:</strong> ${result.recipeTitle}<br>
+            <div style="font-size:0.9em; margin-top:5px; padding:10px; background:rgba(255,255,255,0.5); border-radius:5px;">
+                ${result.recipeSteps.replace(/\n/g, '<br>')}
+            </div>
+        `;
+
+        res.json({ success: true, plan: result, message: responseHtml });
+    } catch (e) {
+        console.error('Regi Agent Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
     const { message, email } = req.body;
