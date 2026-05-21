@@ -64,8 +64,81 @@
     .mbr { display: block; }
 }
 </style>
+
+    <style>
+    .agent-chat-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin: 20px 0 30px 0;
+        border: 2px solid #22c55e;
+        overflow: hidden;
+    }
+    .agent-header {
+        background: #22c55e;
+        color: white;
+        padding: 10px 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .agent-body {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .agent-body textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .agent-body button {
+        background: var(--dark);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .agent-body button:hover {
+        opacity: 0.9;
+    }
+    .agent-result {
+        padding: 15px;
+        margin: 0 15px 15px 15px;
+        background: #f0fdf4;
+        border-radius: 8px;
+        border-left: 4px solid #22c55e;
+        font-size: 0.95em;
+        white-space: pre-wrap;
+    }
+    </style>
 </head>
 <body>
+        <!-- === AI Agent Chat UI (Top Center) === -->
+        <div class="agent-chat-container">
+            <div class="agent-header">
+                <i class="fas fa-robot"></i> 自社販促エージェント（マーケティング部向け）
+            </div>
+            <div class="agent-body">
+                <textarea id="aiAgentInput" placeholder="例: 今日の特売品の動画を作ってベースループ（自社枠）に追加して" rows="2"></textarea>
+                <button onclick="runRetailerAgent()" id="aiAgentBtn">
+                    <i class="fas fa-paper-plane"></i> 販促を指示
+                </button>
+            </div>
+            <div id="aiAgentResult" class="agent-result" style="display:none;"></div>
+        </div>
+
 
     <!-- Login Overlay -->
     <div id="login-overlay">
@@ -519,5 +592,42 @@ function showAdPolicy() {
 }
 
 </script>
+
+    <script>
+    async function runRetailerAgent() {
+        const input = document.getElementById('aiAgentInput').value;
+        const btn = document.getElementById('aiAgentBtn');
+        const resultDiv = document.getElementById('aiAgentResult');
+        
+        if(!input) return alert("指示を入力してください");
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> エージェントが分析・実行中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+        
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/agent/retailer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input, storeId: 'current_store' })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                resultDiv.innerHTML = data.message;
+                resultDiv.style.display = 'block';
+                // Trigger refresh to show new base_loop_videos
+                if(typeof loadVideos === 'function') loadVideos();
+            } else {
+                alert("エラー: " + data.error);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e.message);
+        }
+        
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> 販促を指示';
+        btn.disabled = false;
+    }
+    </script>
 </body>
 </html>

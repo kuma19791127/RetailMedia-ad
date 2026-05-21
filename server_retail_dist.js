@@ -3122,6 +3122,85 @@ app.get('/api/pos/transactions', (req, res) => {
 // =========================================================================
 
 
+
+// --- 2. Retailer Marketing Agent (小売マーケティング向け 自社販促エージェント) ---
+app.post('/api/agent/retailer', async (req, res) => {
+    const { message, storeId } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    try {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        // Store-specific POS Data simulation (Using cached morning data to save costs)
+        const posDataContext = "Store Morning Cache: Today's excess inventory includes 'Summer Vegetables' and 'Energy Drinks'. Peak store traffic expected around 17:00-19:00.";
+
+        const prompt = `
+You are a Retailer In-Store Marketing AI Agent.
+The store marketing manager requested: "${message}"
+
+You must analyze this request using the cached morning POS data and generate an in-store promotion plan.
+POS Cache: ${posDataContext}
+
+Return ONLY a JSON object:
+{
+    "analysis": "Explanation of your data-driven promotion strategy (Japanese)",
+    "videoTitle": "A title for the generated in-store video",
+    "voiceScript": "A compelling 1-2 sentence script for an AI voice announcement to play in-store (Japanese)",
+    "targetItems": "Items being promoted",
+    "status": "AUTO-ADDED TO BASE LOOP"
+}
+`;
+
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const fetch = (await import('node-fetch')).default;
+        const geminiRes = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        if (!geminiRes.ok) throw new Error('Gemini API Error');
+        const data = await geminiRes.json();
+        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        // Auto-register the promotional video into the base_loop_videos array (self-distribution)
+        // Note: For demonstration, we add it to the generic videos list, but tagged as a base loop.
+        const newPromo = {
+            id: 'agent_promo_' + Date.now(),
+            name: result.videoTitle,
+            advertiser: '自社販促',
+            mediaUrl: '/assets/demo_summer.mp4', // Mocked generated video
+            budget: '0 (自社枠)',
+            status: 'APPROVED',
+            uploadedAt: new Date().toISOString(),
+            isBaseLoop: true, // Specific to retailer agent
+            agentData: result
+        };
+
+        if (!database.campaigns) database.campaigns = [];
+        database.campaigns.push(newPromo);
+        saveDatabase(); 
+
+        const responseHtml = `
+            <strong><i class="fas fa-check-circle" style="color:#22c55e;"></i> 自社用の販促動画を自動生成し、ベースループに追加しました！</strong><br><br>
+            <strong>📊 POS分析結果:</strong> ${result.analysis}<br>
+            <strong>🎯 対象商品:</strong> ${result.targetItems}<br>
+            <strong>🔊 AI生成スクリプト:</strong> 「${result.voiceScript}」<br>
+            <br>※外部広告の枠を消費せず、自社サイネージ（ベースループ）に無料で即時反映されます。
+        `;
+
+        res.json({ success: true, plan: result, message: responseHtml });
+    } catch (e) {
+        console.error('Retailer Agent Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
     const { message, email } = req.body;

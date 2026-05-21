@@ -1,32 +1,28 @@
 import codecs
-import re
 
 with codecs.open('store_portal.html', 'r', 'utf-8') as f:
-    text = f.read()
+    content = f.read()
 
-bad_block_regex = r'<p style="font-size:0\.95rem; color:#555; line-height:1\.6;">\s*Android搭載のサイネージパネルに.*?自動再開されます。\s*</p>'
-bad_blocks = re.findall(bad_block_regex, text, re.DOTALL)
+# Inject API_BASE_URL config
+api_config = """
+<!-- === API Base URL Config === -->
+<script>
+window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? 'http://localhost:3000'
+    : 'https://nsg3hyme2k.us-east-1.awsapprunner.com';
+</script>
+"""
 
-if bad_blocks and len(bad_blocks) > 0:
-    # Just remove the SECOND occurrence if there are duplicates of the text itself
-    # Actually wait, let's just search and replace the duplicate text blocks if they are exactly identical.
-    pass
+if "window.API_BASE_URL" not in content:
+    idx = content.find('<head>')
+    if idx != -1:
+        content = content[:idx+6] + '\n' + api_config + content[idx+6:]
 
-# A safer way: Find the text "Android搭載のサイネージパネルに"
-parts = text.split('Android搭載のサイネージパネルに')
-if len(parts) > 2:
-    print(f"Found {len(parts)-1} occurrences.")
-    
-# Let's fix it safely:
-# The user's paste had:
-# 🖥️ リテアドを稼働させる共通推奨スペック
-# ...
-# Android搭載のサイネージパネルに
-# 専用アプリをインストールするだけで...
-
-text = re.sub(r'(<p[^>]*>\s*Android搭載のサイネージパネルに.*?</p>\s*<div[^>]*>\s*💡 停電時の自動復旧について.*?</div>)\s*(<p[^>]*>\s*Android搭載のサイネージパネルに.*?</p>\s*<p[^>]*>\s*💡 停電時の自動復旧について.*?</p>)', r'\1', text, flags=re.DOTALL)
+# Also replace raw fetch('/api/... with fetch(window.API_BASE_URL + '/api/...
+import re
+content = re.sub(r"fetch\(['\"]/api/", "fetch(window.API_BASE_URL + '/api/", content)
+content = re.sub(r"fetch\(`/api/", "fetch(window.API_BASE_URL + `/api/", content)
 
 with codecs.open('store_portal.html', 'w', 'utf-8') as f:
-    f.write(text)
-
-print("Fixed duplication in store_portal.html")
+    f.write(content)
+print("store_portal.html fixed!")
