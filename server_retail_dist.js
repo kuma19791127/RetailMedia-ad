@@ -3121,6 +3121,84 @@ app.get('/api/pos/transactions', (req, res) => {
 // AI Agent Endpoints (Ad Operations & Shift-Manual Sync)
 // =========================================================================
 
+
+// --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
+app.post('/api/agent/advertiser', async (req, res) => {
+    const { message, email } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    try {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        // POS Data simulation (In a real scenario, query DynamoDB)
+        const posDataContext = "POS Data Analytics (Network-wide): Peak sales for beverages are 13:00 - 15:00. High conversion for video ads with energetic AI voice.";
+
+        const prompt = `
+You are an Advertiser Operations AI Agent.
+The advertiser requested: "${message}"
+
+You must analyze this request using the POS data context and generate a complete campaign plan.
+POS Context: ${posDataContext}
+
+Return ONLY a JSON object:
+{
+    "analysis": "Explanation of your data-driven decision (Japanese)",
+    "campaignName": "A catchy campaign name",
+    "voiceScript": "A compelling 1-2 sentence script for an AI voice announcement (Japanese)",
+    "targetTime": "Suggested time block (e.g. 13:00-15:00)",
+    "budget": "Extracted budget",
+    "status": "DRAFT"
+}
+`;
+
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const fetch = (await import('node-fetch')).default;
+        const geminiRes = await fetch(FIXED_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        if (!geminiRes.ok) throw new Error('Gemini API Error');
+        const data = await geminiRes.json();
+        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        // Auto-register the campaign into the database
+        const newCampaign = {
+            id: 'agent_camp_' + Date.now(),
+            name: result.campaignName,
+            advertiser: email || 'agent_demo',
+            mediaUrl: '/assets/demo_summer.mp4', // Mocked generated video
+            budget: result.budget || '50000',
+            status: 'REVIEWING',
+            uploadedAt: new Date().toISOString(),
+            agentData: result
+        };
+
+        if (!database.campaigns) database.campaigns = [];
+        database.campaigns.push(newCampaign);
+        saveDatabase(); // Ensure saved
+
+        const responseHtml = `
+            <strong><i class="fas fa-check-circle" style="color:var(--primary);"></i> キャンペーンの自動設定が完了しました！</strong><br><br>
+            <strong>📊 AI分析結果:</strong> ${result.analysis}<br>
+            <strong>🎯 配信推奨時間:</strong> ${result.targetTime}<br>
+            <strong>🔊 AI生成スクリプト:</strong> 「${result.voiceScript}」<br>
+            <br>※キャンペーン一覧に「審査中(REVIEWING)」として追加されました。
+        `;
+
+        res.json({ success: true, plan: result, message: responseHtml });
+    } catch (e) {
+        console.error('Advertiser Agent Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- 1. Ad Operations Agent ---
 app.post('/api/agent/ad-ops', async (req, res) => {
     const { message, storeId } = req.body;
