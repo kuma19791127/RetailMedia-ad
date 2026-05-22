@@ -625,17 +625,15 @@
                 // Simulate fetching ad revenue data and applying the calculation
                 async function loadAdRevenueData() {
                     try {
-                        // モックデータ: 広告主の直販広告費総額 100,000円
-                        const mockTotalAdSpend = 100000;
-                        // モックデータ: AdSense収益 12,500円
-                        const mockAdsenseRev = 12500;
+                        const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
+                        if (!res.ok) throw new Error('Failed to fetch revenue');
+                        const data = await res.json();
                         
-                        const rev = calculateRevenueShare(mockTotalAdSpend, mockAdsenseRev);
+                        const rev = calculateRevenueShare(data.totalAdSpend, data.adsenseRevenue);
                         
                         document.getElementById('your-share').innerText = '¥' + rev.storeDirectAdProfit.toLocaleString();
                         document.getElementById('adsense-revenue').innerText = '¥' + rev.storeAdsenseProfit.toLocaleString();
                         
-                        // If there are detailed unit breakdowns
                         const unitA = document.getElementById('ad-unit-a');
                         if (unitA) unitA.innerText = Math.floor(rev.storeAdsenseProfit * 0.6).toLocaleString();
                         const unitB = document.getElementById('ad-unit-b');
@@ -1941,7 +1939,7 @@
             setInterval(loadRevenue, 15000); // refresh revenue data occasionally
 
             // Execute POS Data Background Sync Routine
-            startPosDataSync();
+            // startPosDataSync removed (mock generation disabled)
         };
 
         // --- 箝・Background POS Data Periodic Sync (5 minutes) ---

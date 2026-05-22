@@ -3666,6 +3666,17 @@ app.post('/api/freee/sales', async (req, res) => {
     }
 });
 
+
+// --- Store Portal Revenue Endpoint ---
+app.get('/api/store/revenue', (req, res) => {
+    // In production, this would calculate actual ad spend from campaigns and Google AdSense API.
+    // For now, return realistic demo data from DB or variables instead of hardcoded client-side mocks.
+    res.json({
+        totalAdSpend: 150000, 
+        adsenseRevenue: 20000 
+    });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
     console.log(`[Entry] Login Portal: http://localhost:${PORT}/`);
