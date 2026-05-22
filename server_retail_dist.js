@@ -3631,6 +3631,41 @@ app.post('/api/bank/transfer', async (req, res) => {
     }
 });
 
+
+// ==========================================
+// freee API Integration Routes
+// ==========================================
+const freeeApi = require('./freee_api');
+
+app.get('/api/freee/companies', async (req, res) => {
+    try {
+        const result = await freeeApi.getCompanies();
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/freee/accounts', async (req, res) => {
+    try {
+        const companyId = req.query.companyId || undefined;
+        const result = await freeeApi.getAccountItems(companyId);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/freee/sales', async (req, res) => {
+    try {
+        const companyId = req.body.companyId || undefined;
+        const result = await freeeApi.createSalesEntry(companyId, req.body);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
     console.log(`[Entry] Login Portal: http://localhost:${PORT}/`);
