@@ -6,7 +6,8 @@
 // WARNING: In production, these should be loaded from environment variables (.env)
 // and handled via OAuth2 Authorization Code flow to refresh tokens automatically.
 // For current development/sandbox testing, we use the provided token.
-const FREEE_ACCESS_TOKEN = "QSWX2Wlq5LoiPeQTsQvynhJrSlTYihWKyvFNU6wrZYM";
+require('dotenv').config();
+const FREEE_ACCESS_TOKEN = process.env.FREEE_ACCESS_TOKEN || "QSWX2Wlq5LoiPeQTsQvynhJrSlTYihWKyvFNU6wrZYM";
 const FREEE_API_BASE = "https://api.freee.co.jp/api/1";
 
 // 開発用テスト事業所 (Development Test Company)
