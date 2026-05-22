@@ -3589,6 +3589,48 @@ Return ONLY a JSON object:
     }
 });
 
+
+// ==========================================
+// GMO Aozora Net Bank Mock API Routes
+// ==========================================
+const gmoBankMock = require('./gmo_bank_mock');
+
+app.get('/api/bank/accounts', async (req, res) => {
+    try {
+        const result = await gmoBankMock.getAccounts();
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/bank/balance', async (req, res) => {
+    try {
+        const result = await gmoBankMock.getBalance(req.query.accountId);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/bank/deposits', async (req, res) => {
+    try {
+        const result = await gmoBankMock.getDepositTransactions(req.query.accountId, req.query.dateFrom, req.query.dateTo);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/bank/transfer', async (req, res) => {
+    try {
+        const result = await gmoBankMock.requestTransfer(req.body);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nRetail Media Server running!`);
     console.log(`[Entry] Login Portal: http://localhost:${PORT}/`);
