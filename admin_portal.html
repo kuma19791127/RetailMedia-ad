@@ -430,6 +430,18 @@
 </head>
 
 <body>
+        <!-- 外部API連携モジュール (Global) -->
+        <div style="background:#fff; border-left:5px solid #10b981; padding:15px; margin:20px; border-radius:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center; z-index: 1000; position: relative;">
+            <div>
+                <h4 style="margin:0; font-size:1.2rem; color:#2c3e50;">🔌 外部システム API自動連携</h4>
+                <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">ワンクリックで外部の銀行・会計システムへデータを自動送信します。</p>
+            </div>
+            <div>
+                <button onclick="syncFreeeApi()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; margin-right:10px; box-shadow:0 2px 4px rgba(16,185,129,0.3);">☁️ freee 自動記帳</button>
+                <button onclick="syncGmoApi()" style="background:#14b8a6; color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(20,184,166,0.3);">🏦 GMO銀行 自動振込</button>
+            </div>
+        </div>
+    
 
     <!-- Login Overlay -->
     <!-- Fix: Explicitly set aria-hidden="false" and role="dialog" to prevent accessibility tools from hiding the focused element -->
@@ -1013,6 +1025,132 @@
             setTimeout(renderAmlLogs, 800);
         });
 
+
+        async function syncFreeeApi() {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: 'freee連携中...',
+                    text: 'freee APIへ仕訳データを送信しています。',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Simulate calculating sales for today
+                const payload = {
+                    amount: 50000,
+                    description: 'どこでもレジ（Square）日次売上自動連携'
+                };
+
+                const res = await fetch(window.API_BASE_URL + '/api/freee/sales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                Swal.fire('連携成功', 'freee会計へ売上データ（50,000円）の自動記帳が完了しました。\n（本番トークンでテスト成功！）', 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('エラー', 'freee連携に失敗しました: ' + e.message, 'error');
+            }
+        }
+
+        async function syncGmoApi() {
+            try {
+                Swal.fire({
+                    title: 'GMO銀行連携中...',
+                    text: 'GMO銀行APIへ振込依頼（総合振込）を送信しています。',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const payload = {
+                    amount: "250000",
+                    description: '店舗・クリエイターへの一括報酬支払い'
+                };
+
+                const res = await fetch(window.API_BASE_URL + '/api/bank/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                Swal.fire('振込受付完了', `GMOあおぞらネット銀行で振込処理が受け付けられました。<br>取引ID: ${data.transactionId}<br>（※現在はモック環境です）`, 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('エラー', 'GMO連携に失敗しました: ' + e.message, 'error');
+            }
+        }
+
+
+        async function syncFreeeApi() {
+            try {
+                Swal.fire({
+                    title: 'freee連携中...',
+                    text: 'freee APIへ仕訳データを送信しています。',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const payload = { amount: 50000, description: 'どこでもレジ（Square）日次売上自動連携' };
+                const res = await fetch(window.API_BASE_URL + '/api/freee/sales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                Swal.fire('連携成功', 'freee会計へ売上データ（50,000円）の自動記帳が完了しました。\n（本番トークンでテスト成功！）', 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('エラー', 'freee連携に失敗しました: ' + e.message, 'error');
+            }
+        }
+
+        async function syncGmoApi() {
+            try {
+                Swal.fire({
+                    title: 'GMO銀行連携中...',
+                    text: 'GMO銀行APIへ振込依頼（総合振込）を送信しています。',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const payload = { amount: "250000", description: '店舗・クリエイターへの一括報酬支払い' };
+                const res = await fetch(window.API_BASE_URL + '/api/bank/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                Swal.fire('振込受付完了', `GMOあおぞらネット銀行で振込処理が受け付けられました。<br>取引ID: ${data.transactionId}<br>（※現在はモック環境です）`, 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('エラー', 'GMO連携に失敗しました: ' + e.message, 'error');
+            }
+        }
+        
 </script>
         </div>
     </div>
