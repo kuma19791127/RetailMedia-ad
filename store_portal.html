@@ -12,7 +12,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リテアド | Store Portal</title>
+    <title>繝ｪ繝・い繝・| Store Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -601,55 +601,7 @@
 
         <!-- Revenue Panel -->
         <div id="panel-revenue" class="panel active">
-
-            <!-- Revenue Calculation Logic -->
-            <script>
-                // 収益計算関数 (Total Direct Ad Spend -> Store gets 10%)
-                function calculateRevenueShare(totalAdSpend, adsenseRevenue) {
-                    const agencyFee = totalAdSpend * 0.20;       // 代理店 20%
-                    const creatorFee = totalAdSpend * 0.10;      // クリエイター 10%
-                    const retailAdExpense = totalAdSpend * 0.50; // リテアド実費 50%
-                    
-                    // 残りの利益 (20%) をノンロジと店舗で折半 (10%ずつ)
-                    const remaining = totalAdSpend - (agencyFee + creatorFee + retailAdExpense); // = 20%
-                    const nonLogiProfit = remaining / 2; // = 10%
-                    const storeProfit = remaining / 2;   // = 10%
-                    
-                    return {
-                        storeDirectAdProfit: storeProfit,
-                        storeAdsenseProfit: adsenseRevenue,      // マル取り 100%
-                        totalStoreProfit: storeProfit + adsenseRevenue
-                    };
-                }
-
-                // Simulate fetching ad revenue data and applying the calculation
-                async function loadAdRevenueData() {
-                    try {
-                        const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
-                        if (!res.ok) throw new Error('Failed to fetch revenue');
-                        const data = await res.json();
-                        
-                        const rev = calculateRevenueShare(data.totalAdSpend, data.adsenseRevenue);
-                        
-                        document.getElementById('your-share').innerText = '¥' + rev.storeDirectAdProfit.toLocaleString();
-                        document.getElementById('adsense-revenue').innerText = '¥' + rev.storeAdsenseProfit.toLocaleString();
-                        
-                        const unitA = document.getElementById('ad-unit-a');
-                        if (unitA) unitA.innerText = Math.floor(rev.storeAdsenseProfit * 0.6).toLocaleString();
-                        const unitB = document.getElementById('ad-unit-b');
-                        if (unitB) unitB.innerText = Math.floor(rev.storeAdsenseProfit * 0.4).toLocaleString();
-                        
-                    } catch(e) {
-                        console.error('Error loading revenue data:', e);
-                    }
-                }
-                
-                document.addEventListener('DOMContentLoaded', () => {
-                    loadAdRevenueData();
-                });
-            </script>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">💰 売上センター (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 邨・ｹ・繝｡繝ｼ繝ｫ險ｭ螳・/button></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">投 螢ｲ荳翫そ繝ｳ繧ｿ繝ｼ (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 邨・ｹ・繝｡繝ｼ繝ｫ險ｭ螳・/button></div>
 
             <script>
                 async function loadPosData() {
@@ -742,8 +694,8 @@
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #2ecc71;">
                 <h3
                     style="margin-top:0; color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:10px; display:flex; align-items:flex-start;">
-                    <span style="white-space:pre;">ℹ️ </span>
-                    <span style="line-height:1.4;"><a href="business_lp.html" target="_blank" style="color:#2ecc71; text-decoration:underline;">収益化の仕組みについて</a></span>
+                    <span style="white-space:pre;">腸 </span>
+                    <span style="line-height:1.4;"><a href="business_lp.html" target="_blank" style="color:#2ecc71; text-decoration:underline;">桃 蜿守寢蛹悶・莉慕ｵ・∩縺ｫ縺､縺・※</a></span>
                 </h3>
 
                 <p style="font-size:14px; color:#555; line-height:1.6;">
@@ -811,7 +763,7 @@
 
             <div class="metric-grid">
                 <div class="card" style="border-left: 5px solid #27ae60;">
-                    <div class="card-label">リテアド広告収益 (直販 10%分配後)</div>
+                    <div class="card-label">繝ｪ繝・い繝牙ｺ・相蜿守寢 (50% 蛻・・蠕・</div>
                     <div class="revenue-big" id="your-share">ﾂ･0</div>
                     <div style="color:#27ae60; font-size:12px; font-weight:bold;">竊・莨∵･ｭ蠎・相繝ｻ繝｡繝ｼ繧ｫ繝ｼ蠎・相</div>
                 </div>
@@ -819,7 +771,7 @@
                 <div class="card"
                     style="border-left: 5px solid #4285F4; background: linear-gradient(145deg, #ffffff, #f0f4f8);">
                     <div class="card-label" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span>Google AdSense 収益 (連携中・100%還元)</span>
+                        <span>Google AdSense 蜿守寢 (騾｣謳ｺ荳ｭ)</span>
                         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Ads_logo.svg"
                             alt="Google Ads" style="height:20px;">
                     </div>
