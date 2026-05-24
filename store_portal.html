@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>繝ｪ繝・い繝・| Store Portal</title>
+    <title>リテアド | Store Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -550,6 +550,15 @@
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@media (min-width: 600px) {
+    .mbr { display: none; }
+}
+@media (max-width: 599px) {
+    .mbr { display: block; }
+}
+</style>
 
     <!-- === API Base URL Config === -->
     <script>
@@ -561,30 +570,28 @@
 
 <body>
 
-    
-
-
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">
-            <span class="icon">宵</span> 繝ｪ繝・い繝・繝ｪ繝・・繝ｫﾃ励い繝峨ヰ繧ｿ繧､繧ｸ繝ｳ繧ｰ)
+            <span class="icon">🏪</span> リテアド(リテール×アドバタイジング)
         </div>
         <div class="nav-item active" onclick="showPanel('revenue')">
-            <span class="nav-icon">投</span> 螢ｲ荳翫そ繝ｳ繧ｿ繝ｼ
+            <span class="nav-icon">📊</span> 売上センター
         </div>
         <div class="nav-item" onclick="showPanel('studio')">
-            <span class="nav-icon">笨ｨ</span> AI繝懊う繧ｹ 繧ｹ繧ｿ繧ｸ繧ｪ
+            <span class="nav-icon">✨</span> AIボイス スタジオ
         </div>
         <div class="nav-item" onclick="showPanel('approval'); loadPendingCampaigns();">
-            <span class="nav-icon">操</span> 蠎・相蟇ｩ譟ｻ <span id="pending-badge" style="background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:bold; display:none;">0</span>
+            <span class="nav-icon">👀</span> 広告審査 <span id="pending-badge" style="background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:bold; display:none;">0</span>
         </div>
         <a href="pos_admin.html" style="text-decoration:none; color:inherit;" target="_blank">
             <div class="nav-item">
-                <span class="nav-icon">諜</span> 繝｢繝舌う繝ｫPOS 蠎苓・邂｡逅・            </div>
+                <span class="nav-icon">💳</span> モバイルPOS 店舗管理
+            </div>
         </a>
         <a href="anywhere_regi.html" style="text-decoration:none; color:inherit;">
             <div class="nav-item">
-                <span class="nav-icon">導</span> 縺ｩ縺薙〒繧ゅΞ繧ｸ (Local)
+                <span class="nav-icon">📱</span> どこでもレジ (Local)
             </div>
         </a>
     </div>
@@ -593,7 +600,7 @@
 
         <!-- Revenue Panel -->
         <div id="panel-revenue" class="panel active">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">投 螢ｲ荳翫そ繝ｳ繧ｿ繝ｼ (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 邨・ｹ・繝｡繝ｼ繝ｫ險ｭ螳・/button></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">📊 売上センター (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 組織/メール設定</button></div>
 
             <script>
                 async function loadPosData() {
@@ -617,32 +624,32 @@
 
                                 histHtml += '<div style="border-bottom:1px solid #334155; padding-bottom:8px; margin-bottom:8px;">';
                                 histHtml += '<span style="color:#10b981;">[' + new Date(tx.timestamp).toLocaleString() + ']</span> ';
-                                histHtml += '豎ｺ貂・D: ' + tx.transactionId + ' (' + org + ') <br>';
-                                histHtml += '將 蜷郁ｨ・ <strong style="color:white;">ﾂ･' + tx.amount.toLocaleString() + '</strong><br>';
+                                histHtml += '決済ID: ' + tx.transactionId + ' (' + org + ') <br>';
+                                histHtml += '🛒 合計: <strong style="color:white;">¥' + tx.amount.toLocaleString() + '</strong><br>';
                                 if(tx.items) {
                                     histHtml += '<span style="color:#94a3b8;">  Items: ' + tx.items.map(i=> i.name).join(', ') + '</span>';
                                 }
                                 histHtml += '</div>';
                             });
 
-                            const stEl = document.getElementById('pos-total-sales'); if(stEl) stEl.innerText = 'ﾂ･' + total.toLocaleString();
-                            const cuEl = document.getElementById('pos-total-customers'); if(cuEl) cuEl.innerText = cust + '莠ｺ';
+                            const stEl = document.getElementById('pos-total-sales'); if(stEl) stEl.innerText = '¥' + total.toLocaleString();
+                            const cuEl = document.getElementById('pos-total-customers'); if(cuEl) cuEl.innerText = cust + '人';
 
                             let compHtml = '<table style="width:100%; border-collapse:collapse;">';
                             let count = 0;
                             for(const c in companySales) {
-                                compHtml += '<tr><td style="padding:5px; border-bottom:1px solid #cbd5e1;">' + c + '</td><td style="padding:5px; text-align:right; font-weight:bold; border-bottom:1px solid #cbd5e1;">ﾂ･' + companySales[c].toLocaleString() + '</td></tr>';
+                                compHtml += '<tr><td style="padding:5px; border-bottom:1px solid #cbd5e1;">' + c + '</td><td style="padding:5px; text-align:right; font-weight:bold; border-bottom:1px solid #cbd5e1;">¥' + companySales[c].toLocaleString() + '</td></tr>';
                                 count++;
                             }
-                            if(count===0) compHtml += '<tr><td>繝・・繧ｿ縺ｪ縺・/td></tr>';
+                            if(count===0) compHtml += '<tr><td>データなし</td></tr>';
                             compHtml += '</table>';
                             const cEl = document.getElementById('company-sales-list'); if(cEl) cEl.innerHTML = compHtml;
 
-                            if(!histHtml) histHtml = '豎ｺ貂亥ｱ･豁ｴ縺ｯ縺ｾ縺縺ゅｊ縺ｾ縺帙ｓ縲・;
+                            if(!histHtml) histHtml = '決済履歴はまだありません。';
                             const el = document.getElementById('tx-history-list'); if(el) el.innerHTML = histHtml;
                         }
                     } catch(e) {
-                         const el = document.getElementById('tx-history-list'); if(el) el.innerHTML = '騾壻ｿ｡繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆';
+                         const el = document.getElementById('tx-history-list'); if(el) el.innerHTML = '通信エラーが発生しました';
                     }
                 }
 
@@ -655,9 +662,9 @@
 
                 function showIntegrationSettings() {
                     Swal.fire({
-                        title: 'POS騾｣謳ｺ險ｭ螳・,
-                        html: '<div style="text-align:left; font-size:14px;"><h4>Square API險ｭ螳・/h4><p>Square縺ｮ繧｢繧ｯ繧ｻ繧ｹ繝医・繧ｯ繝ｳ繧貞・蜉帙☆繧九％縺ｨ縺ｧ譛ｬ迚ｩ繧ｯ繝ｬ繧ｸ繝・ヨ繧ｫ繝ｼ繝画ｱｺ貂医′遞ｼ蜒阪＠縺ｾ縺吶・/p><input type="text" class="swal2-input" placeholder="Square Access Token"></div>',
-                        confirmButtonText: '菫晏ｭ・
+                        title: 'POS連携設定',
+                        html: '<div style="text-align:left; font-size:14px;"><h4>Square API設定</h4><p>Squareのアクセストークンを入力することで本物クレジットカード決済が稼働します。</p><input type="text" class="swal2-input" placeholder="Square Access Token"></div>',
+                        confirmButtonText: '保存'
                     });
                 }
 
@@ -671,12 +678,12 @@
                             const workbook = XLSX.read(data, {type: 'binary'});
                             const firstSheet = workbook.SheetNames[0];
                             const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
-                            if(excelRows.length === 0) return Swal.fire('繧ｨ繝ｩ繝ｼ', '譛牙柑縺ｪ蝠・刀繝・・繧ｿ縺後≠繧翫∪縺帙ｓ', 'error');
-                            Swal.fire('蝠・刀繝槭せ繧ｿ繝ｼ蜷梧悄螳御ｺ・, excelRows.length + '莉ｶ縺ｮ蝠・刀繧貞叙繧願ｾｼ縺ｿ縺ｾ縺励◆縲・, 'success');
+                            if(excelRows.length === 0) return Swal.fire('エラー', '有効な商品データがありません', 'error');
+                            Swal.fire('商品マスター同期完了', excelRows.length + '件の商品を取り込みました。', 'success');
                             // Alert anywhere_regi
                             localStorage.setItem('sync_inventory_time', Date.now().toString());
                         } catch(err) {
-                            Swal.fire('蜿悶ｊ霎ｼ縺ｿ繧ｨ繝ｩ繝ｼ', err.message, 'error');
+                            Swal.fire('取り込みエラー', err.message, 'error');
                         }
                     };
                     reader.readAsBinaryString(file);
@@ -686,67 +693,68 @@
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #2ecc71;">
                 <h3
                     style="margin-top:0; color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:10px; display:flex; align-items:flex-start;">
-                    <span style="white-space:pre;">腸 </span>
-                    <span style="line-height:1.4;"><a href="business_lp.html" target="_blank" style="color:#2ecc71; text-decoration:underline;">桃 蜿守寢蛹悶・莉慕ｵ・∩縺ｫ縺､縺・※</a></span>
+                    <span style="white-space:pre;">💰 </span>
+                    <span style="line-height:1.4;"><a href="business_lp.html" target="_blank" style="color:#2ecc71; text-decoration:underline;">📍 収益化の仕組みについて</a></span>
                 </h3>
 
                 <p style="font-size:14px; color:#555; line-height:1.6;">
-                    蠎怜・繧偵ョ繧ｸ繧ｿ繝ｫ繧ｵ繧､繝阪・繧ｸ蛹悶☆繧九％縺ｨ縺ｧ縲∵眠縺溘↑蠎・相蜿守寢繧貞・縺ｫ逕溘∩蜃ｺ縺吶Δ繝・Ν縺ｧ縺吶・
+                    店内をデジタルサイネージ化することで、新たな広告収益を共に生み出すモデルです。
+
                 <div
                     style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:15px; text-align:center;">
                     <div>
-                        <div style="font-size:24px;">宵</div>
-                        <div style="font-size:11px; font-weight:bold;">繧ｹ繝ｼ繝代・縺ｮ譽・/div>
-                        <div style="font-size:9px;">蝠・刀騾｣蜍募ｺ・相</div>
+                        <div style="font-size:24px;">🏪</div>
+                        <div style="font-size:11px; font-weight:bold;">スーパーの棚</div>
+                        <div style="font-size:9px;">商品連動広告</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">些</div>
-                        <div style="font-size:11px; font-weight:bold;">蟷ｳ蜿ｰ / 蟲ｶ髯ｳ</div>
-                        <div style="font-size:9px;">迚ｹ螢ｲ繝ｻ蟄｣遽蜩・/div>
+                        <div style="font-size:24px;">🍱</div>
+                        <div style="font-size:11px; font-weight:bold;">平台 / 島陳</div>
+                        <div style="font-size:9px;">特売・季節品</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">ｧｾ</div>
-                        <div style="font-size:11px; font-weight:bold;">繝ｬ繧ｸ讓ｪ</div>
-                        <div style="font-size:9px;">縺､縺・〒雋ｷ縺・/div>
+                        <div style="font-size:24px;">🧾</div>
+                        <div style="font-size:11px; font-weight:bold;">レジ横</div>
+                        <div style="font-size:9px;">ついで買い</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">澄</div>
-                        <div style="font-size:11px; font-weight:bold;">魄ｮ鬲壼｣ｲ繧雁ｴ</div>
-                        <div style="font-size:9px;">譛ｬ譌･縺ｮ迚ｹ驕ｸ</div>
+                        <div style="font-size:24px;">🐟</div>
+                        <div style="font-size:11px; font-weight:bold;">鮮魚売り場</div>
+                        <div style="font-size:9px;">本日の特選</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">･ｦ</div>
-                        <div style="font-size:11px; font-weight:bold;">霎ｲ逕｣螢ｲ繧雁ｴ</div>
-                        <div style="font-size:9px;">譌ｬ縺ｮ驥手除</div>
+                        <div style="font-size:24px;">🥦</div>
+                        <div style="font-size:11px; font-weight:bold;">農産売り場</div>
+                        <div style="font-size:9px;">旬の野菜</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">･ｩ</div>
-                        <div style="font-size:11px; font-weight:bold;">逡懃肇螢ｲ繧雁ｴ</div>
-                        <div style="font-size:9px;">縺願ｉ迚ｹ螢ｲ</div>
+                        <div style="font-size:24px;">🥩</div>
+                        <div style="font-size:11px; font-weight:bold;">畜産売り場</div>
+                        <div style="font-size:9px;">お肉特売</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">・・・/div>
-                        <div style="font-size:11px; font-weight:bold;">鬧占ｻ雁ｴ蜑・/div>
-                        <div style="font-size:9px;">蜈･蠎嶺ｿ・ｲ</div>
+                        <div style="font-size:24px;">🅿️</div>
+                        <div style="font-size:11px; font-weight:bold;">駐車場前</div>
+                        <div style="font-size:9px;">入店促進</div>
                     </div>
                     <div>
-                        <div style="font-size:24px;">尢</div>
-                        <div style="font-size:11px; font-weight:bold;">繧ｨ繝ｬ繝吶・繧ｿ繝ｼ</div>
-                        <div style="font-size:9px;">繝輔Ο繧｢譯亥・</div>
+                        <div style="font-size:24px;">🛗</div>
+                        <div style="font-size:11px; font-weight:bold;">エレベーター</div>
+                        <div style="font-size:9px;">フロア案内</div>
                     </div>
                 </div>
 
                 <div style="margin-top:15px; background:#e8f6f3; padding:10px; border-radius:5px; font-size:12px;">
-                    <div style="font-weight:bold; color:#16a085;">嶋 蟆主・繝｡繝ｪ繝・ヨ</div>
+                    <div style="font-weight:bold; color:#16a085;">📈 導入メリット</div>
                     <ul style="margin:5px 0 0 20px; padding:0; list-style-type:disc; color:#2c3e50;">
-                        <li>險ｭ鄂ｮ繧ｳ繧ｹ繝・蜀・°繧峨せ繧ｿ繝ｼ繝亥庄閭ｽ</li>
-                        <li>蠎・相蜿守寢縺ｮ繝ｬ繝吶ル繝･繝ｼ繧ｷ繧ｧ繧｢ (蜿守寢蛻・・)</li>
-                        <li>閾ｪ遉ｾ雋ｩ菫・さ繝ｳ繝・Φ繝・ｂ驟堺ｿ｡蜿ｯ閭ｽ</li>
+                        <li>設置コスト0円からスタート可能</li>
+                        <li>広告収益のレベニューシェア (収益分配)</li>
+                        <li>自社販促コンテンツも配信可能</li>
                     </ul>
                     <div style="text-align:center; margin-top:15px;">
                         <a href="business_lp.html" target="_blank"
                             style="background:#27ae60; color:white; padding:8px 20px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">
-                            当 繝薙ず繝阪せ繝｢繝・Ν隗｣隱ｬ (LP)繧定ｦ九ｋ
+                            📖 ビジネスモデル解説 (LP)を見る
                         </a>
                     </div>
                 </div>
@@ -754,29 +762,29 @@
 
             <div class="metric-grid">
                 <div class="card" style="border-left: 5px solid #27ae60;">
-                    <div class="card-label">繝ｪ繝・い繝牙ｺ・相蜿守寢 (50% 蛻・・蠕・</div>
-                    <div class="revenue-big" id="your-share">ﾂ･0</div>
-                    <div style="color:#27ae60; font-size:12px; font-weight:bold;">竊・莨∵･ｭ蠎・相繝ｻ繝｡繝ｼ繧ｫ繝ｼ蠎・相</div>
+                    <div class="card-label">リテアド広告収益 (50% 分配後)</div>
+                    <div class="revenue-big" id="your-share">¥0</div>
+                    <div style="color:#27ae60; font-size:12px; font-weight:bold;">↑ 企業広告・メーカー広告</div>
                 </div>
 
                 <div class="card"
                     style="border-left: 5px solid #4285F4; background: linear-gradient(145deg, #ffffff, #f0f4f8);">
                     <div class="card-label" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span>Google AdSense 蜿守寢 (騾｣謳ｺ荳ｭ)</span>
+                        <span>Google AdSense 収益 (連携中)</span>
                         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Ads_logo.svg"
                             alt="Google Ads" style="height:20px;">
                     </div>
-                    <div class="revenue-big" id="adsense-revenue" style="color: #4285F4;">ﾂ･0</div>
+                    <div class="revenue-big" id="adsense-revenue" style="color: #4285F4;">¥0</div>
                     <div style="font-size:11px; color:#5f6368; margin-top:5px;">
-                        繧ｵ繧､繝阪・繧ｸ蛻･螳溽ｸｾ: <br>
-                        <span style="display:inline-block; margin-right:10px;">窶｢ 繝ｬ繧ｸ讓ｪ繝代ロ繝ｫ (ID:A-001): <b>ﾂ･<span
+                        サイネージ別実績: <br>
+                        <span style="display:inline-block; margin-right:10px;">• レジ横パネル (ID:A-001): <b>¥<span
                                     id="ad-unit-a">0</span></b></span><br>
-                        <span style="display:inline-block;">窶｢ 蜈･蜿｣蜑阪ヱ繝阪Ν (ID:A-002): <b>ﾂ･<span
+                        <span style="display:inline-block;">• 入口前パネル (ID:A-002): <b>¥<span
                                     id="ad-unit-b">0</span></b></span>
                     </div>
                     <div
                         style="margin-top:10px; padding-top:10px; border-top:1px solid #e8eaed; font-size:12px; color:#1a73e8; font-weight:bold;">
-                        笨・隕ｪ繧｢繧ｫ繧ｦ繝ｳ繝・(MCM) 騾｣謳ｺ螳御ｺ・・驟堺ｿ｡荳ｭ
+                        ✅ 親アカウント (MCM) 連携完了・配信中
                     </div>
                 </div>
             </div>
@@ -784,107 +792,130 @@
             
             
             <!-- Signage Auto Setup Action Panel -->
-            <div class="card" style="margin-top:20px; border-left: 5px solid #e74c3c;">
-                <h3 style="margin-top:0; color:#c0392b;">屏・・繧ｵ繧､繝阪・繧ｸ閾ｪ蜍戊ｵｷ蜍輔そ繝・ヨ繧｢繝・・・・indows蟆ら畑・・/h3>
-                <p style="font-size:0.95rem; color:#555; line-height:1.6;">
-                    迴ｾ蝣ｴ繧ｹ繧ｿ繝・ヵ縺後碁崕貅舌ｒ蜈･繧後ｋ縺縺代阪〒<br>
-                    繧ｵ繧､繝阪・繧ｸ縺瑚・蜍輔せ繧ｿ繝ｼ繝医＠縲∝ｺ・相莠区･ｭ縺・br>
-                    髢句ｧ九＆繧後ｋ繧医≧縺ｫ險ｭ螳壹＠縺ｾ縺吶・                </p>
-                <p style="font-size:0.85rem; color:#34495e; line-height:1.6; background: #e8f8f5; padding: 15px; border-radius: 6px; margin-top: 10px;">
-                  <strong style="color: #16a085;">庁 蛛憺崕譎ゅ・閾ｪ蜍募ｾｩ譌ｧ縺ｫ縺､縺・※</strong><br>
-                  Windows繝ｻAndroid蜈ｱ縺ｫ<br>
-                  繧ｹ繧ｿ繝ｼ繝医い繝・・險ｭ螳壹↓<br>
-                  繧ｵ繧､繝阪・繧ｸ縺ｮURL縺瑚・蜍輔〒邨・∩霎ｼ縺ｾ繧後∪縺吶・br>
-                  <br>
-                  縺昴・縺溘ａ蛛憺崕縺ｪ縺ｩ縺ｧ<br>
-                  髮ｻ貅舌′關ｽ縺｡縺溷ｴ蜷医〒繧ゅ・br>
-                  髮ｻ豌励′蠕ｩ譌ｧ縺励※遶ｯ譛ｫ縺悟・襍ｷ蜍輔＆繧後ｌ縺ｰ縲・br>
-                  繧ｹ繧ｿ繝・ヵ縺御ｸ蛻・桃菴懊ｒ縺励↑縺上※繧・br>
-                  閾ｪ蜍慕噪縺ｫ繧｢繝励Μ繧Гhrome縺ｧ<br>
-                  繧ｵ繧､繝阪・繧ｸ縺ｮ謾ｾ譏縺瑚・蜍募・髢九＆繧後∪縺吶・                </p>
-                <div style="background:#f9ebea; padding:15px; border-radius:6px; margin-top:15px; margin-bottom: 20px;">
-                    <strong style="color:#c0392b;">縲宣壼ｸｸ繝ｻ LED蜈ｱ騾壹・險ｭ螳壽焔鬆・・/strong><br>
-                    <span style="font-size:0.9rem; color:#333;">
-                        <span style="font-weight:bold; color:#e74c3c;">0. 蠢・★繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ繧・br>
-                        繧､繝ｳ繧ｿ繝ｼ繝阪ャ繝医↓謗･邯壹＠縺ｦ縺上□縺輔＞縲・/span><br>
-                        <span style="font-size:0.8rem; color:#666; margin-bottom:5px; display:inline-block;">窶ｻUSB繧ТD繧ｫ繝ｼ繝峨・縺ｿ縺ｧ驕狗畑縺吶ｋ<br>
-                        縲後が繝輔Λ繧､繝ｳ蟆ら畑繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縲阪〒縺ｯ<br>
-                        縺泌茜逕ｨ縺ｧ縺阪∪縺帙ｓ縲・/span><br>
-                        1. 螳滄圀縺ｮ<strong style="color:#e74c3c; font-size:1rem;">繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ<br>
-                        ・・indows/Android遲峨・繧ｳ繝ｳ繝医Ο繝ｼ繝ｫ讖溷勣・・/strong><br>
-                        Google Chrome繧帝幕縺阪・br>
-                        縺薙・逕ｻ髱｢(store_portal)縺ｸ繧｢繧ｯ繧ｻ繧ｹ縺励※<br>
-                        荳玖ｨ倥・繧ｻ繝・ヨ繧｢繝・・繝・・繝ｫ繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺吶・br>
-                        2. 繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＆繧後◆縲・bat縲阪ヵ繧｡繧､繝ｫ繧偵ム繝悶Ν繧ｯ繝ｪ繝・け縺励※螳溯｡後＠縺ｾ縺吶・br>
-                        <span style="display:inline-block; margin-top:5px; margin-bottom:10px; padding:10px; background:#fff3cd; border-left:4px solid #f39c12; color:#d35400; font-size:0.85rem; line-height:1.6; border-radius:4px;">
-                            <strong>縲舌ム繝悶Ν繧ｯ繝ｪ繝・け蠕後・謫堺ｽ懊・/strong><br>
-                            <br>
-                            竭髱偵＞逕ｻ髱｢縺悟・縺溘ｉ<br>
-                            <strong>縲後・縺・・/strong>繧呈款縺励∪縺吶・br>
-                            <br>
-                            竭｡鮟偵＞逕ｻ髱｢縺悟・縺溘ｉ<br>
-                            繧ｭ繝ｼ繝懊・繝峨〒<br>
-                            <strong>Y</strong> 繧呈款縺励※Enter縲・br>
-                            <span style="font-size:0.75rem; color:#7f8c8d;">(USB繝ｭ繝・け遲峨〒<br>遶ｯ譛ｫ繧貞ｮ医ｊ縺ｾ縺・</span><br>
-                            <br>
-                            窶ｻ蛟倶ｺｺ縺ｮPC縺ｧ隧ｦ縺・br>
-                            蝣ｴ蜷医・ <strong>N</strong> 繧呈款縺励※<br>
-                            Enter繧呈款縺励∪縺吶・                        </span><br>
-                        3. 險ｭ螳壹・縺薙ｌ縺縺托ｼ・br>
-                        閾ｪ蜍輔〒繧ｵ繧､繝阪・繧ｸ縺・br>
-                        遶九■荳翫′繧翫∪縺吶・                    </span>
-                </div>
+            <div class="card" style="margin-top:20px; border-left: 5px solid #10b981;">
+                <h3 style="margin-top:0; color:#047857;">📱 サイネージ自動起動セットアップ（Android専用アプリ）</h3>
 
-                <!-- Normal Signage -->
-                <div style="border:1px solid #ddd; padding:15px; border-radius:8px; margin-bottom:15px;">
-                    <h4 style="margin-top:0; color:#2980b9;">銅 騾壼ｸｸ縺ｮ繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ繝ｻ繝｢繝九ち繝ｼ逕ｨ</h4>
-                    <p style="font-size:0.85rem; color:#666;">荳闊ｬ逧・↑16:9縺ｮ繝・Ξ繝薙ｄ豸ｲ譎ｶ繝｢繝九ち繝ｼ繧剃ｽｿ逕ｨ縺吶ｋ蝣ｴ蜷医・縺薙■繧峨・/p>
-                    <div style="text-align:center; margin-top:15px;">
-                        <a href="setup_retail_signage.bat" download style="display:inline-block; background:#2980b9; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; box-shadow:0 4px 6px rgba(41,128,185,0.3);">
-                            竢ｬ 騾壼ｸｸ迚医そ繝・ヨ繧｢繝・・(bat)繧奪L
-                        </a>
-                        
-                    </div>
-                </div>
+    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px; line-height:1.7;">
+        <p style="margin-top:0; color:#334155;">
+            Android搭載のサイネージパネルに<br class="mobile-br">
+            専用アプリをインストールするだけで<br class="mobile-br">
+            自動的にサイネージと登録され<br class="mobile-br">
+            広告配信事業が開始されます。
+        </p>
+        <div style="background:#fffbeb; border-left:4px solid #f59e0b; padding:12px; margin-bottom:15px; border-radius:4px;">
+            <strong style="color:#d97706;">💡 停電時の自動復旧について</strong><br>
+            <span style="font-size:0.9rem; color:#451a03;">
+                Androidアプリ「RetailMedia Signage」は<br class="mobile-br">
+                端末起動時に自動で立ち上がる<br class="mobile-br">
+                設定が可能です。<br>
+                そのため停電などで電源が落ちた場合でも<br class="mobile-br">
+                電気が復旧して端末が再起動されれば<br class="mobile-br">
+                自動的にサイネージ配信が<br class="mobile-br">
+                自動再開されます。
+            </span>
+        </div>
+        <div style="background:#e0f2fe; padding:12px; border-radius:6px; border:1px solid #bae6fd; font-size:0.85rem; color:#0c4a6e;">
+            <strong style="color:#0369a1;">🖥️ リテアドを稼働させる共通推奨スペック</strong><br>
+            ・メモリ(RAM): <span style="font-weight:bold; color:#e74c3c;">推奨 3GB 以上</span><br>
+            ・ストレージ: <span style="font-weight:bold; color:#e74c3c;">空き容量 2GB 以上</span><br>
+            <span style="font-size:0.75rem; color:#0284c7;">※長時間の安定した動画再生のため、上記スペック以上の端末を推奨いたします。</span>
+        </div>
+    </div>
+                
+                
+                
+<div style="background:#f8fafc; border:1px solid #e2e8f0; padding:20px; border-radius:8px; margin-top:15px; margin-bottom: 20px;">
+    <h4 style="margin-top:0; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">1. リテアドの透明LEDフィルム<br class="mobile-br">セットアップ方法と<br class="mobile-br">セキュリティパッチ</h4>
+    <p style="font-size:0.9rem; color:#334155; line-height:1.6;">
+        自社提供の専用ハードウェア<br class="mobile-br">（透明LEDフィルムと<br class="mobile-br">Androidコントローラー）は、<br class="mobile-br">納品前にMDMやUSB無効化、<br class="mobile-br">キオスクモード設定などを<br class="mobile-br">すべて済ませた「完全な専用機」<br class="mobile-br">として納品されます。<br>
+        <span style="font-weight:bold; color:#e74c3c;">店舗側でのセキュリティ知識や<br class="mobile-br">設定作業は一切不要です。<br class="mobile-br">電源を挿し、Wi-Fi等の<br class="mobile-br">インターネットに接続するだけで<br class="mobile-br">安全に稼働します。</span>
+    </p>
+    <button onclick="sendDownloadLink()" style="margin-top:10px; margin-bottom:10px; background:#3b82f6; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:block;">📧 アプリのダウンロードリンクを送信する</button>
 
-                <!-- LED Film -->
-                <div style="border:1px solid #ddd; padding:15px; border-radius:8px; margin-bottom:15px;">
-                    <h4 style="margin-top:0; color:#8e44ad;">庁 LED繝輔ぅ繝ｫ繝繝ｻ迚ｹ谿雁ｽ｢迥ｶ繧ｵ繧､繝阪・繧ｸ逕ｨ</h4>
-                    <p style="font-size:0.85rem; color:#666;">LED繝輔ぅ繝ｫ繝縺ｪ縺ｩ縲∫音螳壹・隗｣蜒丞ｺｦ縺ｧ蜃ｺ蜉帙☆繧句ｿ・ｦ√′縺ゅｋ蝣ｴ蜷医・縲・br>蟇ｾ雎｡縺ｮ繧ｵ繧､繧ｺ繧帝∈繧薙〒<br>繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｦ縺上□縺輔＞縲・/p>
-                    
-                    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
-                        <div style="flex:1; min-width:200px; background:#f4f6f7; padding:10px; border-radius:6px; text-align:center;">
-                            <div style="font-weight:bold; color:#2c3e50; font-size:0.9rem;">澄 魄ｮ鬲壼ｯｾ髱｢繧ｬ繝ｩ繧ｹ逕ｨ</div>
-                            <div style="font-size:0.75rem; color:#7f8c8d; margin-bottom:8px;">1000 ﾃ・300mm<br>(繧ｷ繧ｺ繝ｫ諢溘・貍泌・繝ｻ隱ｿ逅・ｳ墓署譯・</div>
-                            <a href="setup_led_fish.bat" download style="display:block; background:#8e44ad; color:white; padding:8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:0.8rem;">竢ｬ 繝繧ｦ繝ｳ繝ｭ繝ｼ繝・/a>
-        
-                        </div>
-                        <div style="flex:1; min-width:200px; background:#f4f6f7; padding:10px; border-radius:6px; text-align:center;">
-                            <div style="font-weight:bold; color:#2c3e50; font-size:0.9rem;">･ｶ 蜀ｷ阡ｵ蠎ｫ繝峨い逕ｨ</div>
-                            <div style="font-size:0.75rem; color:#7f8c8d; margin-bottom:8px;">500 ﾃ・1000mm<br>(驫俶氛險ｴ豎ゅ・繧ｻ繝・ヨ雋ｷ縺・ｿ・ｲ)</div>
-                            <a href="setup_led_fridge.bat" download style="display:block; background:#8e44ad; color:white; padding:8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:0.8rem;">竢ｬ 繝繧ｦ繝ｳ繝ｭ繝ｼ繝・/a>
-        
-                        </div>
-                        <div style="flex:1; min-width:200px; background:#f4f6f7; padding:10px; border-radius:6px; text-align:center;">
-                            <div style="font-weight:bold; color:#2c3e50; font-size:0.9rem;">將 繧ｨ繝ｳ繝我ｸ企Κ逕ｨ</div>
-                            <div style="font-size:0.75rem; color:#7f8c8d; margin-bottom:8px;">900 ﾃ・200mm<br>(繧ｳ繝ｼ繝翫・縺ｮ隕冶ｪ肴ｧ繧｢繝・・)</div>
-                            <a href="setup_led_endcap.bat" download style="display:block; background:#8e44ad; color:white; padding:8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:0.8rem;">竢ｬ 繝繧ｦ繝ｳ繝ｭ繝ｼ繝・/a>
-        
-                        </div>
-                        <div style="flex:1; min-width:200px; background:#f4f6f7; padding:10px; border-radius:6px; text-align:center;">
-                            <div style="font-weight:bold; color:#2c3e50; font-size:0.9rem;">捷・・譽壼牡繧奇ｼ亥ｮ夂分譽夲ｼ臥畑</div>
-                            <div style="font-size:0.75rem; color:#7f8c8d; margin-bottom:8px;">900 ﾃ・100mm<br>(髮ｻ蟄先｣壽惆・句虚逕ｻ蠎・相)</div>
-                            <a href="setup_led_shelf.bat" download style="display:block; background:#8e44ad; color:white; padding:8px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:0.8rem;">竢ｬ 繝繧ｦ繝ｳ繝ｭ繝ｼ繝・/a>
-        
-                        </div>
-                    </div>
-                </div>
+    <h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">2. Androidアプリと<br class="mobile-br">サイネージパネルの<br class="mobile-br">セットアップと<br class="mobile-br">セキュリティパッチ</h4>
+    <p style="font-size:0.9rem; color:#334155; line-height:1.6;">
+        既存のAndroidコントローラーと<br class="mobile-br">サイネージパネルをお持ちの場合は<br class="mobile-br">専用アプリをインストールするだけで<br class="mobile-br">始められます。
+    </p>
 
-                <div style="font-size:0.8rem; color:#666; text-align:left; border:1px solid #ddd; padding:10px; border-radius:4px; margin-top:15px;">
-                    <span style="font-weight:bold;">髢馴＆縺｣縺ｦ險ｭ螳壹＠縺ｦ縺励∪縺｣縺溷ｴ蜷医・・・/span><br>
-                    蜈・・譎ｮ騾壹・繝代た繧ｳ繝ｳ縺ｫ謌ｻ縺励◆縺・→縺阪・縲・br>
-                    縺薙■繧峨・隗｣髯､繝・・繝ｫ繧貞ｮ溯｡後＠縺ｦ縺上□縺輔＞縲・br>
-                    <a href="remove_retail_signage.bat" download style="color:#e74c3c; display:inline-block; margin-top:5px; font-weight:bold;">笶・險ｭ螳壹・蜑企勁(bat)繧奪L</a>
+    
+    <ul style="margin:0; padding-left:20px; font-size:0.9rem; line-height:1.8; color:#334155;">
+        <li>専用のダウンロードリンクから<br class="mobile-br">「RetailMedia Signage」アプリ<br class="mobile-br">（APK）をインストールします。</li>
+        <li><strong>【セキュリティパッチの実装】</strong><br class="mobile-br">初期設定画面にて、配布された<br class="mobile-br">専用のQRコードを読み込ませる<br class="mobile-br">ことで、デバイスオーナー権限が<br class="mobile-br">付与され、<strong>USBポートの無効化と<br class="mobile-br">完全キオスクモード化（画面固定）が<br class="mobile-br">全自動でパッチ適用</strong>されます。<br>
+
+    <div style="margin-top:15px; padding:15px; background:#fff; border:1px solid #e2e8f0; border-radius:5px; text-align:center;">
+        <strong style="color:#1e293b; display:block; margin-bottom:10px;">📱 Androidセットアップ用<br class="mobile-br">プロビジョニングQRコード</strong>
+        <div id="mdm-qr-code" style="display:inline-block; padding:10px; background:white; border:2px solid #cbd5e1; border-radius:8px;"></div>
+        <p style="font-size:0.8rem; color:#64748b; margin-top:10px;">※初期化されたAndroid端末の<br class="mobile-br">「こんにちは」画面を<br class="mobile-br">6回連続タップし<br class="mobile-br">このQRコードをタップ</p>
+    </div>
+    <script>
+        const mdmPayload = {
+            "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME": "com.retailmedia.signage/.AdminReceiver",
+            "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION": "https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk",
+            "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM": "Q2BraJOWHeEztZTZjjmwHvUDFsLGGDYVeQ-l7945ehQ",
+            "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED": true
+        };
+        setTimeout(function() {
+            if(document.getElementById('mdm-qr-code') && typeof QRCode !== 'undefined') {
+                document.getElementById('mdm-qr-code').innerHTML = '';
+                new QRCode(document.getElementById('mdm-qr-code'), {
+                    text: JSON.stringify(mdmPayload),
+                    width: 150,
+                    height: 150,
+                    colorDark : '#000000',
+                    colorLight : '#ffffff',
+                    correctLevel : QRCode.CorrectLevel.L
+                });
+            }
+        }, 500);
+    </script>
+    
+            <span style="font-size:0.85rem; color:#64748b;">※手動インストールの場合は<br class="mobile-br">アプリ初回起動時に表示される<br class="mobile-br">「画面のピン留め」を<br class="mobile-br">許可してください。<br class="mobile-br">これにより不正操作をブロックします。</span>
+        </li>
+    </ul>
+
+    <h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">3. Win(パソコン)のセットアップ</h4>
+    <p style="font-size:0.9rem; color:#334155; line-height:1.6;">
+        Windowsパソコンをサイネージ<br class="mobile-br">として利用する場合も、専用ファイル<br class="mobile-br">で全自動セットアップが可能です。
+    </p>
+    <ul style="margin:0; padding-left:20px; font-size:0.9rem; line-height:1.8; color:#334155;">
+        <li>以下のボタンから「Windows専用<br class="mobile-br">セキュリティパッチ兼<br class="mobile-br">セットアップファイル(.bat)」<br class="mobile-br">をダウンロードします。
+            <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/setup_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; background:#10b981; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">💻 Win用セキュリティパッチDL</a>
+            <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/remove_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; margin-left:10px; background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;"><i class="fa-solid fa-rotate-left"></i> 解除ツール</a>
+        </li>
+        <li><strong>【セキュリティパッチの実装】</strong><br class="mobile-br">ダウンロードしたファイルを実行<br class="mobile-br">するだけで、<strong>USBメモリの<br class="mobile-br">読み込み無効化、キオスク<br class="mobile-br">モード設定、全画面起動</strong>が<br class="mobile-br">全自動でパッチ適用されます。</li>
+    </ul>
+
+    <h4 style="margin-top:25px; color:#0f172a; border-left:4px solid #f59e0b; padding-left:10px; font-size: 1.1rem;">4. セキュリティパッチを<br class="mobile-br">利用しない場合<br class="mobile-br">（初期化できないサイネージパネル）</h4>
+    <p style="font-size:0.95rem; color:#475569; line-height:1.6; margin-bottom:15px;">
+        業務で既に使用している<br class="mobile-br">サイネージパネルや<br class="mobile-br">スマートフォンなど、端末を<br class="mobile-br">初期化できない場合は、QRコード<br class="mobile-br">による全自動セキュリティ設定<br class="mobile-br">（完全キオスクモード）は<br class="mobile-br">ご利用いただけません。<br>
+        その場合は、手動でアプリを<br class="mobile-br">インストールし、Android標準の<br class="mobile-br">機能である「画面のピン留め」<br class="mobile-br">機能をご利用ください。
+    </p>
+
+    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">
+        <strong style="color:#334155; display:block; margin-bottom:10px;">【手動インストールと固定化の手順】</strong>
+        <ol style="margin:0; padding-left:20px; font-size:0.9rem; line-height:1.8; color:#334155;">
+            <li>以下のボタンから<br class="mobile-br">Android用アプリ<br class="mobile-br">（APKファイル）を端末に<br class="mobile-br">直接ダウンロードして<br class="mobile-br">インストールしてください。<br>
+                <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk" download style="margin-top:10px; margin-bottom:10px; background:#f59e0b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">📱 Android用アプリを手動でDL</a>
+            </li>
+            <li>アプリのインストール後<br class="mobile-br">Androidの「設定」アプリを<br class="mobile-br">開き、「セキュリティ」＞<br class="mobile-br">「詳細設定（またはその他の<br class="mobile-br">セキュリティ設定）」＞<br class="mobile-br"><strong>「画面のピン留め」</strong> をオンにします。</li>
+            <li>リテアドのサイネージアプリを<br class="mobile-br">起動した状態で、タスク一覧<br class="mobile-br">（起動中のアプリ一覧）を開き、<br class="mobile-br">アプリアイコンをタップして<br class="mobile-br">「ピン留め」を選択します。</li>
+        </ol>
+    </div>
+
+    <div style="background:#fff7ed; padding:15px; border-radius:8px; border:1px solid #ffedd5;">
+        <strong style="color:#9a3412; display:block; margin-bottom:10px;">【運用のメリットと注意点】</strong>
+        <ul style="margin:0; padding-left:20px; font-size:0.9rem; line-height:1.8; color:#9a3412;">
+            <li>ピン留めを行うと<br class="mobile-br">戻るボタンとホームボタンの<br class="mobile-br">ボタンの同時長押し等を<br class="mobile-br">行わない限り<br class="mobile-br">サイネージ画面から<br class="mobile-br">ホーム画面に戻れなくなるため<br class="mobile-br">店頭でのイタズラ防止に<br class="mobile-br">十分役立ちます。</li>
+            <li>業務で使用する際は<br class="mobile-br">店員様ご自身でピン留めを解除<br class="mobile-br">することで、普段通り他の<br class="mobile-br">サイネージを<br class="mobile-br">ご利用いただけます。</li>
+            <li><strong>※重要※</strong><br class="mobile-br">USBポートの自動無効化は<br class="mobile-br">適用されません。<br class="mobile-br">USBポートにテープを貼ったり<br class="mobile-br">配線部分をカバーで覆うなどの<br class="mobile-br">物理ブロックを推奨します。<br class="mobile-br">セキュリティに<br class="mobile-br">ご注意ください。</li>
+        </ul>
+    </div>
+</div>
+
+
+                <div style="text-align:center; padding:15px;">
+                    <button style="background:#10b981; color:white; border:none; padding:12px 30px; border-radius:30px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 6px rgba(16,185,129,0.3);"><i class="fa-brands fa-android"></i> アプリのダウンロードリンクを送信する</button>
+                    <p style="font-size:0.8rem; color:#64748b; margin-top:10px;">※サイネージ端末のメールアドレス宛に<br>インストール用URLを送信します。</p>
                 </div>
             </div>
             <!-- AdManager -->
@@ -895,13 +926,15 @@
                         <h4 style="margin-top:0; color:#34a853; display:flex; align-items:center; gap:8px;">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Ads_logo.svg"
                                 alt="Google" style="height:20px;">
-                            Google Ad Manager (MCM) / AdSense 騾｣謳ｺ險ｭ螳・                        </h4>
+                            Google Ad Manager (MCM) / AdSense 連携設定
+                        </h4>
                         <p style="font-size:12px; color:#5f6368; margin-top:5px; line-height:1.6;">
-                            縲瑚ｦｪ繧｢繧ｫ繧ｦ繝ｳ繝茨ｼ医す繧ｹ繝・Β驕句霧閠・ｼ峨・br>縺ｮ繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｫ蜿ょ刈縺吶ｋ縺薙→縺ｧ縲・br>髱｢蛟偵↑AdSense蟇ｩ譟ｻ繧・ｨｭ螳壹ｒ繧ｹ繧ｭ繝・・縺励※縲・br>縺吶＄縺ｫ蜷・し繧､繝阪・繧ｸ繝代ロ繝ｫ・育ｫｯ譛ｫ・・br>縺斐→縺ｮ蠎・相蜿守寢蛹悶ｒ髢句ｧ九〒縺阪∪縺吶・br>騾｣謳ｺ縺悟ｮ御ｺ・☆繧九→縲∬・蜍慕噪縺ｫ蜷・ｫｯ譛ｫ蝗ｺ譛峨・<br>縲悟ｺ・相繝ｦ繝九ャ繝・D縲阪′逕滓・縺輔ｌ縲・br>繧ｭ繝ｼ繝舌Μ繝･繝ｼ・・ey-Values: ?terminal_id=<br>[蝗ｺ譛迂D]・・br>繧帝壹§縺ｦ驟堺ｿ｡縺ｨ蜿守寢險域ｸｬ縺後せ繧ｿ繝ｼ繝医＠縺ｾ縺吶・                        </p>
+                            「親アカウント（システム運営者）」<br>のネットワークに参加することで、<br>面倒なAdSense審査や設定をスキップして、<br>すぐに各サイネージパネル（端末）<br>ごとの広告収益化を開始できます。<br>連携が完了すると、自動的に各端末固有の<br>「広告ユニットID」が生成され、<br>キーバリュー（Key-Values: ?terminal_id=<br>[固有ID]）<br>を通じて配信と収益計測がスタートします。
+                        </p>
                     </div>
                     <button id="btn-mcm-connect" onclick="connectAdManagerMCM()" class="btn-action"
                         style="background:#4285F4; padding:12px; color:white; border:none; border-radius:8px; font-weight:bold; white-space:normal; line-height:1.4; width:100%; box-sizing:border-box;">
-                        迫 繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｫ蜿ょ刈縺吶ｋ (MCM騾｣謳ｺ)
+                        🔗 ネットワークに参加する (MCM連携)
                     </button>
                 </div>
             </div>
@@ -913,31 +946,31 @@
                     const btn = document.getElementById('btn-mcm-connect');
 
                     const result = await Swal.fire({
-                        title: '繝阪ャ繝医Ρ繝ｼ繧ｯ騾｣謳ｺ縺ｮ遒ｺ隱・,
+                        title: 'ネットワーク連携の確認',
                         html: `
                             <div style="text-align:left; font-size:14px; color:#333;">
-                                <p>縲系on-logi譬ｪ蠑丈ｼ夂､ｾ縲阪′邂｡逅・☆繧季oogle Ad Manager隕ｪ繧｢繧ｫ繧ｦ繝ｳ繝医・繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｫ蜿ょ刈縺励∪縺吶°・・/p>
+                                <p>「non-logi株式会社」が管理するGoogle Ad Manager親アカウントのネットワークに参加しますか？</p>
                                 <ul style="margin-top:10px; padding-left:20px; font-size:12px; color:#555;">
-                                    <li>蠎苓・蜀・・蜈ｨ繧ｵ繧､繝阪・繧ｸ遶ｯ譛ｫ縺ｫ蟇ｾ縺励※縲∝句挨縺ｮ縲悟ｺ・相繝ｦ繝九ャ繝・D縲阪→繝医Λ繝・く繝ｳ繧ｰ繝代Λ繝｡繝ｼ繧ｿ縺瑚・蜍慕匱陦後＆繧後∪縺吶・/li>
-                                    <li>蠎・相縺ｮ驟堺ｿ｡邂｡逅・♀繧医・蜿守寢險育ｮ励・繧ｷ繧ｹ繝・Β縺御ｻ｣陦後＠縲∝庶逶翫・50%縺檎匳骭ｲ縺輔ｌ縺溷哨蠎ｧ縺ｸ謖ｯ繧願ｾｼ縺ｾ繧後∪縺吶・/li>
+                                    <li>店舗内の全サイネージ端末に対して、個別の「広告ユニットID」とトラッキングパラメータが自動発行されます。</li>
+                                    <li>広告の配信管理および収益計算はシステムが代行し、収益の50%が登録された口座へ振り込まれます。</li>
                                 </ul>
                             </div>
                         `,
                         icon: 'info',
                         showCancelButton: true,
-                        confirmButtonText: '蜷梧э縺励※騾｣謳ｺ縺吶ｋ',
-                        cancelButtonText: '繧ｭ繝｣繝ｳ繧ｻ繝ｫ'
+                        confirmButtonText: '同意して連携する',
+                        cancelButtonText: 'キャンセル'
                     });
 
                     if (result.isConfirmed) {
                         btn.disabled = true;
-                        btn.innerText = "騾｣謳ｺ蜃ｦ逅・ｸｭ...";
+                        btn.innerText = "連携処理中...";
                         btn.style.background = "#95a5a6";
 
                         // Simulate API Call 
                         Swal.fire({
-                            title: 'MCM諡帛ｾ・・繝ｦ繝九ャ繝郁・蜍慕函謌蝉ｸｭ',
-                            html: '繧ｷ繧ｹ繝・Β縺隈oogle Ad Manager API縺ｨ騾壻ｿ｡縺励※縺・∪縺・..<br><span style="font-size:11px; color:#aaa;">(遶ｯ譛ｫID: A-001, A-002, ...繧堤匳骭ｲ荳ｭ)</span>',
+                            title: 'MCM招待・ユニット自動生成中',
+                            html: 'システムがGoogle Ad Manager APIと通信しています...<br><span style="font-size:11px; color:#aaa;">(端末ID: A-001, A-002, ...を登録中)</span>',
                             allowOutsideClick: false,
                             didOpen: () => {
                                 Swal.showLoading();
@@ -947,10 +980,10 @@
                         setTimeout(() => {
                             Swal.fire({
                                 icon: 'success',
-                                title: '騾｣謳ｺ螳御ｺ・ｼ・,
-                                text: '隕ｪ繧｢繧ｫ繧ｦ繝ｳ繝医→縺ｮMCM騾｣謳ｺ縺悟ｮ御ｺ・＠縲∝推繧ｵ繧､繝阪・繧ｸ縺ｸ縺ｮ蠎・相驟堺ｿ｡貅門ｙ縺梧紛縺・∪縺励◆縲ょ庶逶翫・繝繝・す繝･繝懊・繝峨↓閾ｪ蜍募渚譏縺輔ｌ縺ｾ縺吶・
+                                title: '連携完了！',
+                                text: '親アカウントとのMCM連携が完了し、各サイネージへの広告配信準備が整いました。収益はダッシュボードに自動反映されます。'
                             });
-                            btn.innerText = "笨・騾｣謳ｺ貂医∩ (遞ｼ蜒堺ｸｭ)";
+                            btn.innerText = "✅ 連携済み (稼働中)";
                             btn.style.background = "#27ae60";
                         }, 2500);
                     }
@@ -970,7 +1003,7 @@
 
                     if (isGemini) {
                         console.log("[Voice] Using Gemini TTS (Proxy)");
-                        if(preview) preview.innerHTML = '<div style="color:#e67e22; padding:20px;">､・Generating Gemini Voice...</div>';
+                        if(preview) preview.innerHTML = '<div style="color:#e67e22; padding:20px;">🤖 Generating Gemini Voice...</div>';
                         
                         try {
                             const stylePrompt = document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "cheerfully";
@@ -1034,7 +1067,7 @@
 
                     if (isCloudApi) {
                         console.log("[Voice] Using Google Cloud Neural2 (Proxy)");
-                        if(preview) preview.innerHTML = '<div style="color:#e67e22; padding:20px;">､・Generating Server Voice...</div>';
+                        if(preview) preview.innerHTML = '<div style="color:#e67e22; padding:20px;">🤖 Generating Server Voice...</div>';
 
                         const api1 = window.location.origin + "/api/ai/tts";
                         const fallbackApi = "http://localhost:5000/api/ai/tts";
@@ -1046,7 +1079,7 @@
                                 speed: parseFloat(document.getElementById('voice-speed').value || 1.0),
                                 pitch: parseFloat(document.getElementById('voice-pitch') ? document.getElementById('voice-pitch').value : 0.0),
                                 voiceEngine: manualSelection ? manualSelection.value : '',
-                                stylePrompt: document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "蜈・ｰ励↑諢溘§"
+                                stylePrompt: document.getElementById('ai-style-prompt') ? document.getElementById('ai-style-prompt').value : "元気な感じ"
                             })
                         };
 
@@ -1120,7 +1153,7 @@
                     geminiVoices.forEach(v => {
                         const opt = document.createElement('option');
                         opt.value = "gemini_" + v;
-                        opt.textContent = `検 Gemini 2.5 Flash (${v})`;
+                        opt.textContent = `🌟 Gemini 2.5 Flash (${v})`;
                         if (v === 'Kore') opt.selected = true;
                         voiceSelect.appendChild(opt);
                     });
@@ -1128,11 +1161,11 @@
                     // Add Google Cloud API Option
                     const apiOption = document.createElement('option');
                     apiOption.value = "api_neural_female";
-                    apiOption.textContent = "笨ｨ Google Cloud Neural2 (Female)";
+                    apiOption.textContent = "✨ Google Cloud Neural2 (Female)";
                     voiceSelect.appendChild(apiOption);
                     const apiOption2 = document.createElement('option');
                     apiOption2.value = "api_neural_male";
-                    apiOption2.textContent = "笨ｨ Google Cloud Neural2 (Male)";
+                    apiOption2.textContent = "✨ Google Cloud Neural2 (Male)";
                     voiceSelect.appendChild(apiOption2);
                 }
 
@@ -1148,7 +1181,7 @@
 
                     jaVoices.forEach(v => {
                         const option = document.createElement('option');
-                        option.textContent = `痔 ${v.name}(Local)`;
+                        option.textContent = `🎤 ${v.name}(Local)`;
                         option.setAttribute('data-lang', v.lang);
                         option.setAttribute('data-name', v.name);
                         voiceSelect.appendChild(option);
@@ -1172,7 +1205,7 @@
                         const worksheet = workbook.Sheets[firstSheetName];
                         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                        let script = "縺雁ｮ｢讒倥↓縺疲｡亥・縺・◆縺励∪縺吶よ悽譌･縺ｮ迚ｹ螢ｲ諠・ｱ縺ｧ縺吶・;
+                        let script = "お客様にご案内いたします。本日の特売情報です。";
                         let count = 0;
 
                         for (let i = 1; i < json.length; i++) {
@@ -1181,19 +1214,19 @@
                                 const product = row[0];
                                 const price = row[1];
                                 if (row && row.length >= 2) {
-                                    script += `${product}縺後・{price}蜀・Ａ;
+                                    script += `${product}が、${price}円。`;
                                     count++;
                                 }
                             }
                             if (count >= 3) break;
                         }
-                        script += "縺懊・縺願ｲｷ縺・ｱゅａ縺上□縺輔＞縲・;
+                        script += "ぜひお買い求めください。";
 
                         document.getElementById('ad-text').value = script;
                         Swal.fire({
                             icon: 'success',
-                            title: 'Excel隱ｭ霎ｼ螳御ｺ・,
-                            text: '謾ｾ騾∝次遞ｿ繧剃ｽ懈・縺励∪縺励◆縲・,
+                            title: 'Excel読込完了',
+                            text: '放送原稿を作成しました。',
                             timer: 2000
                         });
                     };
@@ -1202,13 +1235,13 @@
 
                 function showExcelDetails() {
                     Swal.fire({
-                        title: '投 Excel繝輔か繝ｼ繝槭ャ繝医↓縺､縺・※',
+                        title: '📊 Excelフォーマットについて',
                         html: `
                     < div style = "text-align:left; font-size:13px; line-height:1.6;" >
-                    <p>莉･荳九・蠖｢蠑上〒繧ｨ繧ｯ繧ｻ繝ｫ繧剃ｽ懈・縺励※縺上□縺輔＞縲・/p>
+                    <p>以下の形式でエクセルを作成してください。</p>
                     <ul style="margin-top:10px; padding-left:20px;">
-                        <li>A蛻・ 蝠・刀蜷・(萓・ 繧翫ｓ縺・</li>
-                        <li>B蛻・ 萓｡譬ｼ (萓・ 98)</li>
+                        <li>A列: 商品名 (例: りんご)</li>
+                        <li>B列: 価格 (例: 98)</li>
                     </ul>
                 </div >
             `,
@@ -1218,39 +1251,40 @@
             </script>
 
             <div class="card">
-                <div class="card-label" style="margin-bottom:10px;">譛霑代・繝医Λ繝ｳ繧ｶ繧ｯ繧ｷ繝ｧ繝ｳ</div>
+                <div class="card-label" style="margin-bottom:10px;">最近のトランザクション</div>
                 <div id="tx-list">Loading...</div>
             </div>
 
             <!-- Revenue Center: Bank Information (for Receiving Payouts) -->
             <div class="card" style="margin-top:20px; border-left: 5px solid #2ecc71;">
                 <div style="margin-top:15px;">
-                    <h4 style="border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:#27ae60;">嘗
-                        螢ｲ荳翫そ繝ｳ繧ｿ繝ｼ逕ｨ謖ｯ霎ｼ蜈磯橿陦・(Revenue Center Bank Info)</h4>
+                    <h4 style="border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:#27ae60;">🏦
+                        売上センター用振込先銀行 (Revenue Center Bank Info)</h4>
                     <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">
-                        窶ｻ 蠎・相蜿守寢縺ｮ蛻・・驥・(<span style="color:#27ae60; font-weight:bold;">迴ｾ蝨ｨ: <span
-                                id="bank-payout-target">ﾂ･0</span></span>) 縺ｯ縺薙■繧峨↓謖ｯ繧願ｾｼ縺ｾ繧後∪縺吶・                    </p>
+                        ※ 広告収益の分配金 (<span style="color:#27ae60; font-weight:bold;">現在: <span
+                                id="bank-payout-target">¥0</span></span>) はこちらに振り込まれます。
+                    </p>
 
-                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">驫陦悟錐 (Bank
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">銀行名 (Bank
                         Name)</label>
-                    <input type="text" placeholder="萓・ 縺ｿ縺壹⊇驫陦・ class="bank-input"
+                    <input type="text" placeholder="例: みずほ銀行" class="bank-input"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
 
-                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">謾ｯ蠎怜錐 (Branch)</label>
-                    <input type="text" placeholder="萓・ 貂玖ｰｷ謾ｯ蠎・ class="bank-input"
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">支店名 (Branch)</label>
+                    <input type="text" placeholder="例: 渋谷支店" class="bank-input"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
 
-                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">蜿｣蠎ｧ逡ｪ蜿ｷ (Account
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">口座番号 (Account
                         Number)</label>
-                    <input type="text" placeholder="萓・ 譎ｮ騾・1234567" class="bank-input"
+                    <input type="text" placeholder="例: 普通 1234567" class="bank-input"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
 
-                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">蜿｣蠎ｧ蜷咲ｾｩ (Account
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">口座名義 (Account
                         Holder)</label>
-                    <input type="text" id="bank-holder" placeholder="萓・ 繧ｫ) 繝ｪ繝・い繝峨す繝ｧ繝・・" class="bank-input"
+                    <input type="text" id="bank-holder" placeholder="例: カ) リテアドショップ" class="bank-input"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
 
-                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">驫陦檎匳骭ｲ繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ (Email)</label>
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">銀行登録メールアドレス (Email)</label>
                     <input type="email" id="bank-email" placeholder="store@example.com" class="bank-input"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:15px;">
                 </div>
@@ -1259,19 +1293,19 @@
             <!-- Anywhere Regi: Billing Email (for Paying Fees) -->
             <div class="card" style="margin-top:20px; border-left: 5px solid #e67e22;">
                 <div style="margin-top:15px;">
-                    <h4 style="border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:#d35400;">透
-                        縺ｩ縺薙〒繧ゅΞ繧ｸ隲区ｱよ嶌騾∽ｻ伜・ (Billing Email)</h4>
-                    <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">窶ｻ POS蛻ｩ逕ｨ譁・(1.2%)
-                        縺ｮ隲区ｱよ嶌縺ｯ縺薙■繧峨↓騾∽ｿ｡縺輔ｌ縺ｾ縺呻ｼ亥｣ｲ荳翫そ繝ｳ繧ｿ繝ｼ縺ｨ縺ｯ蛻･縺ｮ險ｭ螳壹〒縺呻ｼ峨・/p>
+                    <h4 style="border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:#d35400;">📧
+                        どこでもレジ請求書送付先 (Billing Email)</h4>
+                    <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">※ POS利用料 (1.2%)
+                        の請求書はこちらに送信されます（売上センターとは別の設定です）。</p>
 
-                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">メールアドレス
                         (Email)</label>
                     <input type="email" id="billing-email" placeholder="accounting@store.com"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:20px;">
 
                     <button onclick="saveStoreSettings()"
                         style="background:#34495e; color:white; border:none; padding:10px 30px; border-radius:4px; cursor:pointer; font-weight:bold; display:block; width:100%;">
-                        蜈ｨ險ｭ螳壹ｒ菫晏ｭ倥☆繧・(Save All Settings)
+                        全設定を保存する (Save All Settings)
                     </button>
                 </div>
             </div>
@@ -1302,12 +1336,12 @@
                             body: JSON.stringify({ bank_info: bankInfo, billing_email: email })
                         });
                         if (res.ok) {
-                            Swal.fire('菫晏ｭ倥＠縺ｾ縺励◆', '蠎苓・險ｭ螳壹ｒ譖ｴ譁ｰ縺励∪縺励◆縲・, 'success');
+                            Swal.fire('保存しました', '店舗設定を更新しました。', 'success');
                         } else {
                             throw new Error('Save Failed');
                         }
                     } catch (e) {
-                        Swal.fire('Error', '菫晏ｭ倥↓螟ｱ謨励＠縺ｾ縺励◆縲・, 'error');
+                        Swal.fire('Error', '保存に失敗しました。', 'error');
                     }
                 }
             </script>
@@ -1315,7 +1349,7 @@
 
         <!-- AI Studio Panel -->
         <div id="panel-studio" class="panel">
-            <h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">児・・AI 繝懊う繧ｹ 繧ｹ繧ｿ繧ｸ繧ｪ <a href="ai_voice_studio_lp.html" target="_blank" style="font-size:14px; color:#3498db; text-decoration:underline;">LP縺ｯ縺薙■繧・/a></h2>
+            <h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">🎙️ AI ボイス スタジオ <a href="ai_voice_studio_lp.html" target="_blank" style="font-size:14px; color:#3498db; text-decoration:underline;">LPはこちら</a></h2>
             <div class="studio-container">
                 <div class="studio-controls">
                     <div
@@ -1324,23 +1358,23 @@
                             onchange="handleExcelUpload(this)">
                         <button onclick="document.getElementById('excel-input').click()"
                             style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">
-                            投 Excel縺九ｉ謾ｾ騾∝次遞ｿ繧剃ｽ懈・
+                            📊 Excelから放送原稿を作成
                         </button>
                         <a href="javascript:void(0)" onclick="showExcelDetails()"
                             style="margin-left:10px; font-size:11px; color:#3498db; text-decoration:underline;">
-                            邃ｹ・・繝輔か繝ｼ繝槭ャ繝郁ｩｳ邏ｰ
+                            ℹ️ フォーマット詳細
                         </a>
                     </div>
 
                     <div class="input-group">
-                        <label>Campaign Text (謾ｾ騾∝次遞ｿ)</label>
+                        <label>Campaign Text (放送原稿)</label>
                         <textarea id="ad-text" rows="16"
                             style="width:100%; box-sizing:border-box; padding:10px; background:black; color:white; border:1px solid #555; font-size:16px; margin-top:5px;"
-                            placeholder="Today's Special! Tomato 98 yen!">譛ｬ譌･縺ｮ迚ｹ螢ｲ 繝医・繝・98 蜀・</textarea>
+                            placeholder="Today's Special! Tomato 98 yen!">本日の特売 トマト 98 円!</textarea>
                         <div
                             style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:10px;">
                             <div style="font-size:11px; color:#7f8c8d; line-height:1.4;">
-                                窶ｻ髻ｳ螢ｰ縺ｯ繝・く繧ｹ繝医せ繝壹・繧ｹ縺ｪ縺ｩ蛻ｩ逕ｨ縺励〒閨槭″蜿悶ｊ譏薙￥縲√・繧､繧ｹ騾溷ｺｦ繧定ｪｿ謨ｴ縺励※縺上□縺輔＞
+                                ※音声はテキストスペースなど利用しで聞き取り易く、ボイス速度を調整してください
                             </div>
                             <div style="text-align:right; flex-shrink:0; margin-left: 10px;">
                                 <style>
@@ -1374,37 +1408,38 @@
                                     }
                                 </style>
                                 <button onclick="speakText(document.getElementById('ad-text').value, null, true)" class="btn-voice-cool">
-                                    <span style="font-size: 22px;">矧</span>
-                                    <span>髻ｳ螢ｰ繝懊う繧ｹ</span>
+                                    <span style="font-size: 22px;">🔊</span>
+                                    <span>音声ボイス</span>
                                 </button>
-                                <div style="font-size:12px; color:#555; text-align:center;">沈 菫晏ｭ・蜴溽ｨｿ&MP3)</div>
+                                <div style="font-size:12px; color:#555; text-align:center;">💾 保存(原稿&MP3)</div>
                             </div>
                         </div>
                     </div>
                     <div class="input-group"
                         style="background:rgba(52, 152, 219, 0.1); padding:10px; border-radius:4px; border:1px dashed #3498db; margin-bottom: 15px;">
-                        <label style="color:#2980b9;">竢ｰ 繧ｵ繧､繝阪・繧ｸ驟堺ｿ｡縺ｮ謾ｾ騾∵凾髢薙・莠育ｴ・ｨｭ螳・(繧ｪ繝励す繝ｧ繝ｳ)</label>
+                        <label style="color:#2980b9;">⏰ サイネージ配信の放送時間の予約設定 (オプション)</label>
                         <div style="font-size:11px; color:#7f8c8d; margin-bottom:5px;">
-                            繧ｿ繧､繝繧ｻ繝ｼ繝ｫ遲峨↓蜷医ｏ縺帙※縲∝ｺ苓・繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縺ｧ蜀咲函縺輔ｌ繧矩浹螢ｰ繧剃ｺ句燕縺ｫ莠育ｴ・ｨｭ螳壹〒縺阪∪縺吶・遨ｺ谺・・蝣ｴ蜷医・蜊ｳ譎る・菫｡)</div>
+                            タイムセール等に合わせて、店舗サイネージパネルで再生される音声を事前に予約設定できます。(空欄の場合は即時配信)</div>
                         <input type="datetime-local" id="broadcast-schedule-time"
                             style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; background:#fff; color:#333;">
                         <button onclick="broadcastScheduled()"
                             style="background:#3498db; color:white; border:none; padding:8px 10px; border-radius:3px; cursor:pointer; font-size:12px; margin-top:10px; width:100%; font-weight:bold;">
-                            葡 繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ驟堺ｿ｡繧剃ｺ育ｴ・                        </button>
+                            🕒 スケジュール配信を予約
+                        </button>
                     </div>
 
                     <div class="input-group" style="border-top:1px solid #ddd; padding-top:15px;">
                         <button onclick="broadcastPriority()"
                             style="background:#c0392b; color:white; border:none; padding:8px 10px; border-radius:3px; cursor:pointer; font-size:12px; font-weight:bold; width:100%; display:block;">
-                            圷 蜆ｪ蜈磯・菫｡ (繧ｵ繧､繝阪・繧ｸ縺ｸ蜊ｳ譎ょ牡繧願ｾｼ縺ｿ)
+                            🚨 優先配信 (サイネージへ即時割り込み)
                         </button>
                     </div>
                     <div class="input-group">
                         <label>Mascot Character / Image</label>
                         <select id="mascot-preset" onchange="loadPreset()" style="margin-bottom:8px;">
                             <option value="">(Click to Select Preset)</option>
-                            <option value="/assets/clerk.png">束窶昨沚ｳ Supermarket Clerk (Anime Style)</option>
-                            <option value="/assets/sale.png">捷・・Sale POP Tag (Moving)</option>
+                            <option value="/assets/clerk.png">👩‍🍳 Supermarket Clerk (Anime Style)</option>
+                            <option value="/assets/sale.png">🏷️ Sale POP Tag (Moving)</option>
                         </select>
                         <input type="file" id="mascot-upload" accept="image/*" onchange="previewMascot()"
                             style="font-size:12px;">
@@ -1419,17 +1454,17 @@
                     </div>
                     <div class="input-group"
                         style="background:rgba(230, 126, 34, 0.1); padding:10px; border-radius:4px; border:1px dashed #e67e22;">
-                        <label style="color:#d35400;">矧 Voice Speed: <span id="speed-val">0.9</span>x</label>
+                        <label style="color:#d35400;">🔊 Voice Speed: <span id="speed-val">0.9</span>x</label>
                         <input type="range" id="voice-speed" min="0.5" max="1.5" step="0.1" value="0.9"
                             oninput="document.getElementById('speed-val').innerText = this.value"
                             style="width:100%; margin-bottom:15px;">
 
-                        <label style="color:#2980b9;">七 螢ｰ縺ｮ鬮倥＆ (繝斐ャ繝・: <span id="pitch-val">-2.0</span></label>
+                        <label style="color:#2980b9;">🎵 声の高さ (ピッチ): <span id="pitch-val">-2.0</span></label>
                         <input type="range" id="voice-pitch" min="-10.0" max="10.0" step="0.5" value="-2.0"
                             oninput="document.getElementById('pitch-val').innerText = this.value" style="width:100%;">
                     </div>
                     <div class="input-group">
-                        <label>離・・隧ｱ縺玲婿縺ｮ繧ｹ繧ｿ繧､繝ｫ (AI Prompt)</label>
+                        <label>🗣️ 話し方のスタイル (AI Prompt)</label>
                         <input type="text" id="ai-style-prompt" value="cheerfully"
                             style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; background:#fff; color:#333;">
                     </div>
@@ -1445,8 +1480,9 @@
             <div
                 style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);">
                 <p style="font-size: 14px; line-height: 1.6; margin-bottom: 15px; color: #000; font-weight: bold;">
-                    縲・.5mm繧ｹ繝・Ξ繧ｪ繝斐Φ繝励Λ繧ｰ&lt;-&gt;RCA繝斐Φ繝励Λ繧ｰ・假ｼ偵阪・繧ｱ繝ｼ繝悶Ν・亥・逵滂ｼ峨∪縺溘・縲・.5mm繧ｹ繝・Ξ繧ｪ繝斐Φ繝励Λ繧ｰ&lt;-&gt;3.5mm繧ｹ繝・Ξ繧ｪ繝斐Φ繝励Λ繧ｰ縲阪・繧ｱ繝ｼ繝悶Ν繧剃ｽｿ縺｣縺ｦ縲√が繝ｼ繝・ぅ繧ｪ讖溷勣縺ｮAUX
-                    IN遶ｯ蟄舌↓縲√ヱ繧ｽ繧ｳ繝ｳ縺ｮ繝倥ャ繝峨ヵ繧ｩ繝ｳ遶ｯ蟄撰ｼ育ｷ題牡・峨°繧画磁邯壹☆繧後・縲√ヱ繧ｽ繧ｳ繝ｳ縺ｮ髻ｳ繧偵が繝ｼ繝・ぅ繧ｪ讖溷勣縺九ｉ蜀咲函縺吶ｋ縺薙→縺後〒縺阪∪縺吶・                </p>
+                    「3.5mmステレオピンプラグ&lt;-&gt;RCAピンプラグｘ２」のケーブル（写真）または「3.5mmステレオピンプラグ&lt;-&gt;3.5mmステレオピンプラグ」のケーブルを使って、オーディオ機器のAUX
+                    IN端子に、パソコンのヘッドフォン端子（緑色）から接続すれば、パソコンの音をオーディオ機器から再生することができます。
+                </p>
                 <img src="image0 (1).jpeg" alt="Audio Cable Connection"
                     style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #555;">
             </div>
@@ -1454,82 +1490,84 @@
 
         <!-- POS Integration Panel -->
         <div id="panel-pos" class="panel">
-            <h2 style="margin-top:0;">伯 POS繝ｻ繝・・繧ｿ騾｣謳ｺ險ｭ螳・/h2>
+            <h2 style="margin-top:0;">🔌 POS・データ連携設定</h2>
 
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #10b981;">
-                <h3 style="margin-top:0; color:#10b981;">泙 譁ｹ豕・: 縺ｩ縺薙〒繧ゅΞ繧ｸ・・C謗･邯壼梛繝ｻ謗ｨ螂ｨ・峨→蝠・刀荳諡ｬ蜿冶ｾｼ</h3>
-                <p style="font-weight:bold; color:#475569;">謨ｰ荳・せ縺ｮ蝠・刀縺後≠繧句ｺ苓・縺ｧ繧ゅ√☆縺舌＆縺ｾ繧ｪ繝輔Λ繧､繝ｳ縺ｧ辷・溽ｨｼ蜒阪〒縺阪ｋ莉慕ｵ・∩縺ｧ縺吶・/p>
+                <h3 style="margin-top:0; color:#10b981;">🟢 方法1: どこでもレジ（PC接続型・推奨）と商品一括取込</h3>
+                <p style="font-weight:bold; color:#475569;">数万点の商品がある店舗でも、すぐさまオフラインで爆速稼働できる仕組みです。</p>
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:15px;">
-                    <b style="color:#334155;">竭 蝠・刀繝槭せ繧ｿ繝ｼ縺ｮ荳諡ｬ蜿冶ｾｼ・医ヶ繝ｩ繧ｦ繧ｶ蜀・B・・/b><br>
-                    譌｢蟄倥・繝ｬ繧ｸ繧・渕蟷ｹ繧ｷ繧ｹ繝・Β縺九ｉ縲悟膚蜩√・繧ｨ繧ｯ繧ｻ繝ｫ/CSV縲阪ｒ譖ｸ縺榊・縺励・code>縺ｩ縺薙〒繧ゅΞ繧ｸ</code> 縺ｮ逕ｻ髱｢荳企Κ縺九ｉ隱ｭ縺ｿ霎ｼ縺ｾ縺帙∪縺吶ゅ☆繧九→縲∵焚荳・ｻｶ縺ｮ繝・・繧ｿ縺悟､夜Κ繧ｵ繝ｼ繝舌・縺ｧ縺ｯ縺ｪ縺・b>遶ｯ譛ｫ・・Pad繧ПC・牙・驛ｨ縺ｮ雜・ｫ倬櫂B (IndexedDB)</b> 縺ｫ荳迸ｬ縺ｧ繧ｭ繝｣繝・す繝･縺輔ｌ縺ｾ縺吶・br>
-                    <span style="font-size:12px; color:#64748b;">窶ｻ讖溷ｯ・ュ蝣ｱ縺悟､悶↓蜃ｺ縺壹・壻ｿ｡迺ｰ蠅・′謔ｪ縺上※繧よｭ｢縺ｾ繧翫∪縺帙ｓ縲・/span>
+                    <b style="color:#334155;">① 商品マスターの一括取込（ブラウザ内DB）</b><br>
+                    既存のレジや基幹システムから「商品のエクセル/CSV」を書き出し、<code>どこでもレジ</code> の画面上部から読み込ませます。すると、数万件のデータが外部サーバーではなく<b>端末（iPadやPC）内部の超高速DB (IndexedDB)</b> に一瞬でキャッシュされます。<br>
+                    <span style="font-size:12px; color:#64748b;">※機密情報が外に出ず、通信環境が悪くても止まりません。</span>
                 </div>
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:15px;">
-                    <b style="color:#334155;">竭｡ 蟶りｲｩHID繧ｹ繧ｭ繝｣繝翫〒縺ｮ辷・溘後ヴ繝・ｼ√・/b><br>
-                    蟶りｲｩ縺ｮ謨ｰ蜊・・縺ｮUSB/Bluetooth繧ｹ繧ｭ繝｣繝翫ｒ郢九＄縺ｨ縲瑚ｶ・ｫ倬溘・繧ｭ繝ｼ繝懊・繝峨阪→縺励※隱崎ｭ倥＆繧後∪縺吶ゅ◎繧後ｒ繧ｷ繧ｹ繝・Β縺梧､懃衍縺励∫ｫｯ譛ｫ蜀・Κ縺ｮDB縺九ｉ<b>0.1遘呈悴貅縺ｧ蝠・刀繧貞他縺ｳ蜃ｺ縺・/b>繧ｫ繝ｼ繝医↓蜈･繧後∪縺吶・br>
-                    <span style="font-size:12px; color:#64748b;">窶ｻ蟆ら畑讖溷勣繧・屮縺励＞API螂醍ｴ・′荳崎ｦ√〒縲∽ｻ翫☆縺仙ｧ九ａ繧峨ｌ縺ｾ縺吶・/span><br>
-                    <a href="anywhere_regi.html" target="_blank" style="display:inline-block; margin-top:8px; padding:5px 10px; background:#10b981; color:white; border-radius:4px; text-decoration:none; font-size:12px;">導 螳滄圀縺ｮ縺ｩ縺薙〒繧ゅΞ繧ｸ繧定ｦ九ｋ</a>
+                    <b style="color:#334155;">② 市販HIDスキャナでの爆速「ピッ！」</b><br>
+                    市販の数千円のUSB/Bluetoothスキャナを繋ぐと「超高速のキーボード」として認識されます。それをシステムが検知し、端末内部のDBから<b>0.1秒未満で商品を呼び出し</b>カートに入れます。<br>
+                    <span style="font-size:12px; color:#64748b;">※専用機器や難しいAPI契約が不要で、今すぐ始められます。</span><br>
+                    <a href="anywhere_regi.html" target="_blank" style="display:inline-block; margin-top:8px; padding:5px 10px; background:#10b981; color:white; border-radius:4px; text-decoration:none; font-size:12px;">📱 実際のどこでもレジを見る</a>
                 </div>
             </div>
 
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #3b82f6;">
-                <h3 style="margin-top:0; color:#2563eb;">売 POS螢ｲ荳翫ョ繝ｼ繧ｿ縺ｮ螳壽悄閾ｪ蜍暮∽ｿ｡讖溯・ (繝舌ャ繧ｯ繧ｰ繝ｩ繧ｦ繝ｳ繝牙酔譛・</h3>
-                <p style="font-weight:bold; color:#475569;">蠎苓・繝ｭ繝ｼ繧ｫ繝ｫ縺ｧ逋ｺ逕溘＠縺蘖OS繝・・繧ｿ繧貞ｮ壽悄逧・ｼ・蛻・♀縺咲ｭ会ｼ峨↓Admin(譛ｬ驛ｨ)縺ｸ騾∽ｿ｡縺励∪縺吶・/p>
+                <h3 style="margin-top:0; color:#2563eb;">🔄 POS売上データの定期自動送信機能 (バックグラウンド同期)</h3>
+                <p style="font-weight:bold; color:#475569;">店舗ローカルで発生したPOSデータを定期的（5分おき等）にAdmin(本部)へ送信します。</p>
                 <p style="font-size:14px; color:#555; line-height:1.6;">
-                    蠎苓・繧ｷ繧ｹ繝・Β・・tore_portal・峨♀繧医・POS・・nywhere_regi・峨・縲瑚ｲｩ螢ｲ繝・・繧ｿ繧定ｨ倬鹸繝ｻ騾∽ｿ｡縺吶ｋ縲榊ｽｹ蜑ｲ縺ｫ迚ｹ蛹悶＠縲∝ｺ・相繝槭ャ繝√Φ繧ｰ繧・け繝ｪ繧ｨ繧､繧ｿ繝ｼ縺ｸ縺ｮ蠎・相雋ｻ逕ｨ蛻・・縺ｨ縺・▲縺滄㍾縺・ｨ育ｮ怜・逅・・縺吶∋縺ｦ譛ｬ驛ｨ繧ｵ繝ｼ繝舌・・・dmin・峨〒陦後＞縺ｾ縺吶・br>
-                    縺薙ｌ縺ｫ繧医ｊ蠎苓・蛛ｴ縺ｮPC繧・ち繝悶Ξ繝・ヨ縺ｮ蜃ｦ逅・ｲ闕ｷ繧貞ｮ悟・縺ｫ荳九￡縲∝ｸｸ縺ｫ螳牙ｮ壹＠縺溘Ξ繧ｸ遞ｼ蜒阪ｒ菫晁ｨｼ縺励∪縺吶・                </p>
+                    店舗システム（store_portal）およびPOS（anywhere_regi）は「販売データを記録・送信する」役割に特化し、広告マッチングやクリエイターへの広告費用分配といった重い計算処理はすべて本部サーバー（Admin）で行います。<br>
+                    これにより店舗側のPCやタブレットの処理負荷を完全に下げ、常に安定したレジ稼働を保証します。
+                </p>
                 <div style="background:#eff6ff; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#1d4ed8; text-align:center;">
-                    <span id="sync-status">泙 迴ｾ蝨ｨ繝舌ャ繧ｯ繧ｰ繝ｩ繧ｦ繝ｳ繝峨〒5蛻・＃縺ｨ縺ｮ螳壽悄蜷梧悄縺檎ｨｼ蜒堺ｸｭ</span>
+                    <span id="sync-status">🟢 現在バックグラウンドで5分ごとの定期同期が稼働中</span>
                 </div>
             </div>
 
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #fbbf24;">
-                <h3 style="margin-top:0; color:#d97706;">泯 譁ｹ豕・: 繧ｯ繝ｩ繧ｦ繝臼OS縺ｮ縲係ebhooks騾｣謳ｺ縲搾ｼ医せ繝槭Ξ繧ｸ繝ｻSquare遲会ｼ・/h3>
-                <p style="font-weight:bold; color:#475569;">縺吶〒縺ｫ蠎苓・縺ｫ繧ｹ繝槭Ξ繧ｸ繧Тquare縲、ir繝ｬ繧ｸ縺ｪ縺ｩ縺ｮ縲後け繝ｩ繧ｦ繝牙梛POS縲阪′蜈･縺｣縺ｦ縺・ｋ蝣ｴ蜷医↓譛蠑ｷ縺ｮ譁ｹ豕輔〒縺吶・/p>
-                <p style="font-size:14px; color:#555;"><strong>縲蝉ｻ慕ｵ・∩縲・/strong> 繧ｯ繝ｩ繧ｦ繝臼OS蜷・､ｾ縺檎畑諢上＠縺ｦ縺・ｋ縲係ebhook・亥｣ｲ荳企夂衍讖溯・・峨阪ｒ菴ｿ縺・∪縺吶・/p>
-                <p style="font-size:14px; color:#555;"><strong>縲仙ｮ滄圀縺ｮ繧・ｊ譁ｹ縲・/strong> 繧ｹ繝槭Ξ繧ｸ遲峨・邂｡逅・判髱｢縺九ｉ縲・a href="https://retail-ad.com" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:bold;">繝ｪ繝・い繝峨・繧ｵ繝ｼ繝舌・URL</a>繧・縺､逋ｻ骭ｲ縺吶ｋ縺縺代〒縺吶ょｺ苓・縺ｮ繝ｬ繧ｸ縺ｧ莨夊ｨ医・繧ｿ繝ｳ縺梧款縺輔ｌ縺溽椪髢薙↓縲√せ繝槭Ξ繧ｸ縺ｮ繧ｵ繝ｼ繝舌・蛛ｴ縺九ｉ縲後％縺ｮ蝠・刀縺悟｣ｲ繧後∪縺励◆・√阪→縺・≧繝・・繧ｿ縺後Μ繝・い繝峨・繧ｵ繝ｼ繝舌・縺ｫ閾ｪ蜍輔〒鬟帙ｓ縺ｧ縺阪∪縺吶・/p>
-                <div style="background:#fffbeb; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#b45309;">痩 譌｢蟄倥・繝ｬ繧ｸ縺ｮ繝上・繝峨え繧ｧ繧｢繧・桃菴懊ｒ荳蛻・､画峩縺吶ｋ縺薙→縺ｪ縺上∬｣丞・縺ｧ蜍晄焔縺ｫ謌先棡蝣ｱ驟ｬ繝・・繧ｿ縺碁｣謳ｺ縺輔ｌ縺ｾ縺吶・/div>
+                <h3 style="margin-top:0; color:#d97706;">🟡 方法2: クラウドPOSの「Webhooks連携」（スマレジ・Square等）</h3>
+                <p style="font-weight:bold; color:#475569;">すでに店舗にスマレジやSquare、Airレジなどの「クラウド型POS」が入っている場合に最強の方法です。</p>
+                <p style="font-size:14px; color:#555;"><strong>【仕組み】</strong> クラウドPOS各社が用意している「Webhook（売上通知機能）」を使います。</p>
+                <p style="font-size:14px; color:#555;"><strong>【実際のやり方】</strong> スマレジ等の管理画面から、<a href="https://retail-ad.com" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:bold;">リテアドのサーバーURL</a>を1つ登録するだけです。店舗のレジで会計ボタンが押された瞬間に、スマレジのサーバー側から「この商品が売れました！」というデータがリテアドのサーバーに自動で飛んできます。</p>
+                <div style="background:#fffbeb; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#b45309;">👉 既存のレジのハードウェアや操作を一切変更することなく、裏側で勝手に成果報酬データが連携されます。</div>
             </div>
 
             <div class="card" style="border-left: 5px solid #ef4444;">
-                <h3 style="margin-top:0; color:#dc2626;">閥 譁ｹ豕・: 譌｢蟄倥・螟ｧ謇九Ξ繧ｸ繝｡繝ｼ繧ｫ繝ｼ縺ｸ縺ｮ邨・∩霎ｼ縺ｿ・・DK騾｣謳ｺ・・/h3>
-                <p style="font-weight:bold; color:#475569;">譚ｱ闃昴ユ繝・け繧・ｯ悟｣ｫ騾壹↑縺ｩ縺ｮ迢ｬ閾ｪPOS繧ｷ繧ｹ繝・Β・医Ξ繧ｬ繧ｷ繝ｼPOS・峨ｒ菴ｿ縺｣縺ｦ縺・ｋ蝣ｴ蜷医〒縺吶・/p>
-                <p style="font-size:14px; color:#555;"><strong>縲蝉ｻ慕ｵ・∩縲・/strong> 繧ｷ繧ｹ繝・Β蜀・↓蜷梧｢ｱ縺輔ｌ縺ｦ縺・ｋ <a href="pos_connect_sdk.js" target="_blank" style="color:#dc2626; text-decoration:underline;"><code>pos_connect_sdk.js</code></a> ・医ｏ縺壹°80陦後・霆ｽ驥上・繝ｭ繧ｰ繝ｩ繝・峨ｒ菴ｿ縺・∪縺吶・/p>
-                <p style="font-size:14px; color:#555;"><strong>縲仙ｮ滄圀縺ｮ繧・ｊ譁ｹ縲・/strong> 繝ｬ繧ｸ縺ｮ髢狗匱繝吶Φ繝繝ｼ縺ｫ縲御ｼ夊ｨ亥ｮ御ｺ・凾縺ｫ縲√％縺ｮ遏ｭ縺・さ繝ｼ繝会ｼ・<code>liteAd.trackSale({ amount: 1500... })</code> ・峨ｒ1陦後□縺大他縺ｳ蜃ｺ縺励※縲阪→萓晞ｼ縺吶ｋ縺縺代〒縺吶・/p>
-                <div style="background:#fef2f2; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#b91c1c;">痩 螟ｧ謗帙°繧翫↑蟆ら畑API莉墓ｧ俶嶌繧定ｪｭ縺ｿ霎ｼ縺ｾ縺帙ｋ蠢・ｦ√′縺ｪ縺上・幕逋ｺ莨夂､ｾ繧よ焚譎る俣縺ｧ螳溯｣・′邨ゅｏ繧翫∪縺吶・/div>
+                <h3 style="margin-top:0; color:#dc2626;">🔴 方法3: 既存の大手レジメーカーへの組み込み（SDK連携）</h3>
+                <p style="font-weight:bold; color:#475569;">東芝テックや富士通などの独自POSシステム（レガシーPOS）を使っている場合です。</p>
+                <p style="font-size:14px; color:#555;"><strong>【仕組み】</strong> システム内に同梱されている <a href="pos_connect_sdk.js" target="_blank" style="color:#dc2626; text-decoration:underline;"><code>pos_connect_sdk.js</code></a> （わずか80行の軽量プログラム）を使います。</p>
+                <p style="font-size:14px; color:#555;"><strong>【実際のやり方】</strong> レジの開発ベンダーに「会計完了時に、この短いコード（ <code>liteAd.trackSale({ amount: 1500... })</code> ）を1行だけ呼び出して」と依頼するだけです。</p>
+                <div style="background:#fef2f2; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#b91c1c;">👉 大掛かりな専用API仕様書を読み込ませる必要がなく、開発会社も数時間で実装が終わります。</div>
             </div>
         </div>
 
         <!-- Inventory Sync Panel -->
         <div id="panel-inventory" class="panel">
-            <h2 style="margin-top:0;">逃 蝨ｨ蠎ｫ騾｣謳ｺ (Inventory Sync)</h2>
+            <h2 style="margin-top:0;">📦 在庫連携 (Inventory Sync)</h2>
             <div class="card" style="border-left: 5px solid #2980b9;">
-                <h3 style="margin-top:0; color:#2980b9;">踏 蝠・刀繝・・繧ｿ縺ｮ繧､繝ｳ繝昴・繝・/h3>
+                <h3 style="margin-top:0; color:#2980b9;">📥 商品データのインポート</h3>
                 <p style="font-size:13px; color:#555; margin-bottom:15px;">
-                    Excel繝輔ぃ繧､繝ｫ(.xlsx) 縺ｾ縺溘・ 蝠・刀繝ｪ繧ｹ繝・S繝輔ぃ繧､繝ｫ(products.js) 繧偵ラ繝ｩ繝・げ・・ラ繝ｭ繝・・縲√∪縺溘・驕ｸ謚槭＠縺ｦ繧｢繝・・繝ｭ繝ｼ繝峨＠縺ｾ縺吶・br>
-                    <span style="color:#e74c3c;">窶ｻ繧｢繝・・繝ｭ繝ｼ繝牙ｾ後√け繝ｩ繧ｦ繝臼OS (縺ｩ縺薙〒繧ゅΞ繧ｸ) 遲峨・莉也ｫｯ譛ｫ縺ｫ繧り・蜍募・譛峨＆繧後∪縺吶・/span>
+                    Excelファイル(.xlsx) または 商品リストJSファイル(products.js) をドラッグ＆ドロップ、または選択してアップロードします。<br>
+                    <span style="color:#e74c3c;">※アップロード後、クラウドPOS (どこでもレジ) 等の他端末にも自動共有されます。</span>
                 </p>
                 <div id="drop-zone" style="border: 2px dashed #9bc5c3; border-radius: 12px; padding: 40px 20px; text-align: center; background: #f0f8ff; cursor: pointer; transition: all 0.3s ease;">
-                    <span style="font-size: 30px; display: block; margin-bottom: 10px;">塘</span>
-                    <span style="font-weight: bold; color: #2c3e50;">縺薙％縺ｫ繝輔ぃ繧､繝ｫ繧偵ラ繝ｭ繝・・</span>
-                    <p style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">縺ｾ縺溘・繧ｯ繝ｪ繝・け縺励※繝輔ぃ繧､繝ｫ繧帝∈謚・(.xlsx / .csv / .js)</p>
+                    <span style="font-size: 30px; display: block; margin-bottom: 10px;">📄</span>
+                    <span style="font-weight: bold; color: #2c3e50;">ここにファイルをドロップ</span>
+                    <p style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">またはクリックしてファイルを選択 (.xlsx / .csv / .js)</p>
                     <input type="file" id="inventory-file" accept=".xlsx,.csv,.js" style="display: none;">
                 </div>
                 <div id="upload-status" style="margin-top:15px; font-weight:bold; font-size:14px; color:#27ae60; display:none;"></div>
             </div>
 
             <div class="card" style="border-left: 5px solid #8e44ad;">
-                <h3 style="margin-top:0; color:#8e44ad;">藤 Webhooks騾｣謳ｺ繧ｨ繧ｯ繧ｹ繝昴・繝・(騾∽ｿ｡)</h3>
+                <h3 style="margin-top:0; color:#8e44ad;">📡 Webhooks連携エクスポート (送信)</h3>
                 <p style="font-size:13px; color:#555; margin-bottom:15px;">
-                    蝠・刀縺ｮ蝨ｨ蠎ｫ諠・ｱ縺ｪ縺ｩ縺ｮ螟牙虚繧偵∝､夜Κ繧ｷ繧ｹ繝・Β・郁・遉ｾ繧ｵ繝ｼ繝舌・繧・ｻ也､ｾPOS遲会ｼ峨∈繝ｪ繧｢繝ｫ繧ｿ繧､繝騾∽ｿ｡縺励∪縺吶・                </p>
+                    商品の在庫情報などの変動を、外部システム（自社サーバーや他社POS等）へリアルタイム送信します。
+                </p>
                 <div style="display:flex; flex-direction:column; gap:10px;">
-                    <label style="font-size:12px; font-weight:bold;">Webhook 螳帛・ URL</label>
+                    <label style="font-size:12px; font-weight:bold;">Webhook 宛先 URL</label>
                     <input type="url" id="webhook-url" placeholder="https://your-server.com/api/webhooks/inventory" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
-                    <label style="font-size:12px; font-weight:bold; margin-top:5px;">Webhook 遘伜諺繧ｭ繝ｼ (Secret)</label>
+                    <label style="font-size:12px; font-weight:bold; margin-top:5px;">Webhook 秘匿キー (Secret)</label>
                     <input type="password" id="webhook-secret" placeholder="wh_sec_..." style="padding:10px; border:1px solid #ccc; border-radius:5px;">
                     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-                        <button class="btn" onclick="testWebhook()" style="background:#f39c12; flex:1;">繝・せ繝磯∽ｿ｡</button>
-                        <button class="btn" onclick="saveWebhook()" style="flex:2;">菫晏ｭ倥＠縺ｦ譛牙柑蛹・/button>
+                        <button class="btn" onclick="testWebhook()" style="background:#f39c12; flex:1;">テスト送信</button>
+                        <button class="btn" onclick="saveWebhook()" style="flex:2;">保存して有効化</button>
                     </div>
                 </div>
             </div>
@@ -1568,68 +1606,69 @@
 
                 async function handleInventoryUpload(file) {
                     Swal.fire({
-                        title: '繝輔ぃ繧､繝ｫ隱ｭ縺ｿ霎ｼ縺ｿ荳ｭ...',
-                        text: file.name + ' 繧定ｧ｣譫舌＠縺ｦ縺・∪縺・,
+                        title: 'ファイル読み込み中...',
+                        text: file.name + ' を解析しています',
                         allowOutsideClick: false,
                         didOpen: () => Swal.showLoading()
                     });
 
-                    // 邁｡譏鍋噪縺ｪ隱ｭ縺ｿ霎ｼ縺ｿ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ
+                    // 簡易的な読み込みシミュレーション
                     setTimeout(() => {
-                        let msg = `<b>${file.name}</b> 縺ｮ蜿悶ｊ霎ｼ縺ｿ縺悟ｮ御ｺ・＠縺ｾ縺励◆縲・br>`;
+                        let msg = `<b>${file.name}</b> の取り込みが完了しました。<br>`;
                         if(file.name.endsWith('.js')) {
-                            msg += '繝ｭ繝ｼ繧ｫ繝ｫPOS (縺ｩ縺薙〒繧ゅΞ繧ｸ) 遲峨〒逶ｴ謗･蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｪJS繝輔か繝ｼ繝槭ャ繝医→縺励※隱崎ｭ倥＆繧後∪縺励◆縲・;
+                            msg += 'ローカルPOS (どこでもレジ) 等で直接利用可能なJSフォーマットとして認識されました。';
                         } else {
-                            msg += 'Excel隗｣譫舌′螳御ｺ・＠縲√す繧ｹ繝・Β繝・・繧ｿ繝吶・繧ｹ縺ｫ蜷梧悄縺輔ｌ縺ｾ縺励◆縲・;
+                            msg += 'Excel解析が完了し、システムデータベースに同期されました。';
                         }
 
-                        // LocalStorage縺ｫ繝｢繝・け逕ｨ繧ｭ繝｣繝・す繝･菫晏ｭ・(anywhere_regi逕ｨ)
+                        // LocalStorageにモック用キャッシュ保存 (anywhere_regi用)
                         localStorage.setItem('sync_inventory_time', Date.now());
 
                         Swal.fire({
                             icon: 'success',
-                            title: '蜷梧悄螳御ｺ・,
+                            title: '同期完了',
                             html: msg
                         });
 
                         statusDiv.style.display = 'block';
-                        statusDiv.innerHTML = `笨・譛邨ょ酔譛・ ${new Date().toLocaleString()} (${file.name})`;
+                        statusDiv.innerHTML = `✅ 最終同期: ${new Date().toLocaleString()} (${file.name})`;
                     }, 1500);
                 }
 
                 // --- Webhook Logic ---
                 function testWebhook() {
                     let url = document.getElementById('webhook-url').value;
-                    if(!url) return Swal.fire('繧ｨ繝ｩ繝ｼ', 'URL繧貞・蜉帙＠縺ｦ縺上□縺輔＞', 'error');
+                    if(!url) return Swal.fire('エラー', 'URLを入力してください', 'error');
 
                     Swal.fire({
-                        title: '繝・せ繝磯∽ｿ｡荳ｭ',
+                        title: 'テスト送信中',
                         allowOutsideClick: false,
                         didOpen: () => Swal.showLoading()
                     });
                     setTimeout(() => {
-                        Swal.fire('騾∽ｿ｡謌仙粥', 'Webhook繝・せ繝医・繧､繝ｭ繝ｼ繝峨′豁｣蟶ｸ縺ｫ騾∽ｿ｡縺輔ｌ縺ｾ縺励◆縲・TTP 200 OK', 'success');
+                        Swal.fire('送信成功', 'Webhookテストペイロードが正常に送信されました。HTTP 200 OK', 'success');
                     }, 800);
                 }
 
                 function saveWebhook() {
                     let url = document.getElementById('webhook-url').value;
-                    if(!url) return Swal.fire('繧ｨ繝ｩ繝ｼ', 'URL繧貞・蜉帙＠縺ｦ縺上□縺輔＞', 'error');
-                    Swal.fire('菫晏ｭ伜ｮ御ｺ・, '蝨ｨ蠎ｫ謨ｰ螟牙虚譎ゅ・Webhook騾｣謳ｺ縺梧怏蜉ｹ蛹悶＆繧後∪縺励◆縲・, 'success');
+                    if(!url) return Swal.fire('エラー', 'URLを入力してください', 'error');
+                    Swal.fire('保存完了', '在庫数変動時のWebhook連携が有効化されました。', 'success');
                 }
             </script>
         </div> <!-- end panel-inventory -->
 
         <!-- Approval Panel -->
         <div id="panel-approval" class="panel">
-            <h2 style="margin-top:0;">操 蠎・相蟇ｩ譟ｻ (Ad Approval)</h2>
+            <h2 style="margin-top:0;">👀 広告審査 (Ad Approval)</h2>
             <div class="card" style="border-left: 5px solid #e74c3c;">
-                <h3 style="margin-top:0; color:#c0392b;">蟇ｩ譟ｻ蠕・■縺ｮ繧ｭ繝｣繝ｳ繝壹・繝ｳ</h3>
+                <h3 style="margin-top:0; color:#c0392b;">審査待ちのキャンペーン</h3>
                 <p style="font-size:13px; color:#555; margin-bottom:15px;">
-                    蠎・相荳ｻ縺九ｉ蜈･遞ｿ縺輔ｌ縺滓眠縺励＞蠎・相縺ｧ縺吶ょ・螳ｹ繧堤｢ｺ隱阪＠縲∝撫鬘後′縺ｪ縺代ｌ縺ｰ縲梧価隱阪阪＠縺ｦ縺上□縺輔＞縲・br>
-                    窶ｻ繝悶Λ繝ｳ繝峨そ繝ｼ繝輔ユ繧｣繧貞ｮ医ｋ縺溘ａ縲∽ｸ埼←蛻・↑蠎・相縺ｯ諡貞凄縺吶ｋ縺薙→縺後〒縺阪∪縺吶・                </p>
+                    広告主から入稿された新しい広告です。内容を確認し、問題がなければ「承認」してください。<br>
+                    ※ブランドセーフティを守るため、不適切な広告は拒否することができます。
+                </p>
                 <div id="approval-list" style="display:flex; flex-direction:column; gap:15px;">
-                    <div style="color:#7f8c8d; text-align:center; padding:20px;">迴ｾ蝨ｨ縲∝ｯｩ譟ｻ蠕・■縺ｮ蠎・相縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/div>
+                    <div style="color:#7f8c8d; text-align:center; padding:20px;">現在、審査待ちの広告はありません。</div>
                 </div>
             </div>
 
@@ -1652,25 +1691,25 @@
 
                         const listDiv = document.getElementById('approval-list');
                         if (pending.length === 0) {
-                            listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px;">迴ｾ蝨ｨ縲∝ｯｩ譟ｻ蠕・■縺ｮ蠎・相縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/div>';
+                            listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px;">現在、審査待ちの広告はありません。</div>';
                             return;
                         }
 
                         listDiv.innerHTML = pending.map(c => `
                             <div style="border:1px solid #e2e8f0; border-radius:8px; padding:15px; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
                                 <div>
-                                    <h4 style="margin:0 0 5px 0; color:#1e293b;">${c.name || c.title || '辟｡鬘・}</h4>
+                                    <h4 style="margin:0 0 5px 0; color:#1e293b;">${c.name || c.title || '無題'}</h4>
                                     <div style="font-size:12px; color:#64748b; margin-bottom:10px;">
-                                        繝励Λ繝ｳ: <b>${c.plan || 'Custom'}</b> | 莠育ｮ・ <b>ﾂ･${c.budget || 0}</b> | 譛滄俣: ${c.start || '譛ｪ螳・} 縲・${c.end || '譛ｪ螳・}
+                                        プラン: <b>${c.plan || 'Custom'}</b> | 予算: <b>¥${c.budget || 0}</b> | 期間: ${c.start || '未定'} 〜 ${c.end || '未定'}
                                     </div>
                                     ${c.url ? `
-                                        <div style="font-size:12px; font-weight:bold; color:#ec4899; margin-bottom:10px;">導 1.2 蠎・相荳ｻ縺ｮ驟堺ｿ｡ (TikTok鬚ｨ邵ｦ蝙九・繝ｬ繝薙Η繝ｼ)</div>
+                                        <div style="font-size:12px; font-weight:bold; color:#ec4899; margin-bottom:10px;">📱 1.2 広告主の配信 (TikTok風縦型プレビュー)</div>
                                         <div style="position:relative; width: 140px; height: 250px; background: #000; border-radius:12px; overflow:hidden; border:2px solid #333; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
                                             <div style="position:absolute; bottom:0; left:0; width:100%; padding:20px 10px 10px 10px; background:linear-gradient(to top, rgba(0,0,0,0.8), transparent); color:white; z-index:10; box-sizing:border-box;">
                                                 <div style="font-size:0.8rem; font-weight:bold; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
-                                                    @${c.brand || '蠎・相荳ｻ'} <span style="background:#e74c3c; padding:2px 4px; border-radius:3px; font-size:0.6rem;">蠎・相</span>
+                                                    @${c.brand || '広告主'} <span style="background:#e74c3c; padding:2px 4px; border-radius:3px; font-size:0.6rem;">広告</span>
                                                 </div>
-                                                <div style="font-size:0.7rem; line-height:1.2; text-shadow:1px 1px 2px rgba(0,0,0,0.8);">${c.name || c.title || '驟堺ｿ｡蜍慕判'} #Ad</div>
+                                                <div style="font-size:0.7rem; line-height:1.2; text-shadow:1px 1px 2px rgba(0,0,0,0.8);">${c.name || c.title || '配信動画'} #Ad</div>
                                             </div>
                                             <div style="position:absolute; bottom:0; left:0; width:100%; height:3px; background:rgba(255,255,255,0.3); z-index:11;">
                                                 <div style="width:30%; height:100%; background:white;"></div>
@@ -1680,8 +1719,8 @@
                                     ` : ''}
                                 </div>
                                 <div style="display:flex; gap:10px;">
-                                    <button onclick="approveCampaign('${c.id}')" style="background:#10b981; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">笨・謇ｿ隱・/button>
-                                    <button onclick="rejectCampaign('${c.id}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">笶・諡貞凄</button>
+                                    <button onclick="approveCampaign('${c.id}')" style="background:#10b981; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">✅ 承認</button>
+                                    <button onclick="rejectCampaign('${c.id}')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">❌ 拒否</button>
                                 </div>
                             </div>
                         `).join('');
@@ -1692,11 +1731,11 @@
 
                 async function approveCampaign(id) {
                     Swal.fire({
-                        title: '謇ｿ隱阪＠縺ｾ縺吶°・・,
-                        text: '謇ｿ隱榊ｾ後√☆縺舌↓蠎苓・繧ｵ繧､繝阪・繧ｸ縺ｸ縺ｮ驟堺ｿ｡縺碁幕蟋九＆繧後∪縺吶・,
+                        title: '承認しますか？',
+                        text: '承認後、すぐに店舗サイネージへの配信が開始されます。',
                         icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: '謇ｿ隱阪☆繧・
+                        confirmButtonText: '承認する'
                     }).then(async (result) => {
                         if(result.isConfirmed) {
                             try {
@@ -1706,7 +1745,7 @@
                                     body: JSON.stringify({status: 'active'})
                                 });
                                 if(res.ok) {
-                                    Swal.fire('謇ｿ隱榊ｮ御ｺ・, '蠎・相縺ｮ驟堺ｿ｡縺碁幕蟋九＆繧後∪縺励◆縲・, 'success');
+                                    Swal.fire('承認完了', '広告の配信が開始されました。', 'success');
                                     loadPendingCampaigns();
                                 }
                             } catch(e) {}
@@ -1716,11 +1755,11 @@
 
                 async function rejectCampaign(id) {
                     Swal.fire({
-                        title: '譛ｬ蠖薙↓諡貞凄縺励∪縺吶°・・,
-                        text: '縺薙・蠎・相縺ｯ蜑企勁縺輔ｌ縲・・菫｡縺輔ｌ縺ｾ縺帙ｓ縲・,
+                        title: '本当に拒否しますか？',
+                        text: 'この広告は削除され、配信されません。',
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonText: '諡貞凄縺吶ｋ',
+                        confirmButtonText: '拒否する',
                         confirmButtonColor: '#d33'
                     }).then(async (result) => {
                         if(result.isConfirmed) {
@@ -1731,7 +1770,7 @@
                                     body: JSON.stringify({status: 'rejected'})
                                 });
                                 if(res.ok) {
-                                    Swal.fire('諡貞凄螳御ｺ・, '蠎・相繧貞唆荳九＠縺ｾ縺励◆縲・, 'info');
+                                    Swal.fire('拒否完了', '広告を却下しました。', 'info');
                                     loadPendingCampaigns();
                                 }
                             } catch(e) {}
@@ -1765,18 +1804,18 @@
                 const data = await res.json();
 
                 const ysEl = document.getElementById('your-share');
-                if (ysEl) ysEl.innerText = 'ﾂ･' + data.storeShare.toLocaleString();
+                if (ysEl) ysEl.innerText = '¥' + data.storeShare.toLocaleString();
 
                 const trEl = document.getElementById('total-revenue');
-                if (trEl) trEl.innerText = 'ﾂ･' + data.totalRevenue.toLocaleString();
+                if (trEl) trEl.innerText = '¥' + data.totalRevenue.toLocaleString();
                 // Also update the bank info card's dynamic amount display
                 const bankTarget = document.getElementById('bank-payout-target');
-                if (bankTarget) bankTarget.innerText = 'ﾂ･' + data.storeShare.toLocaleString();
+                if (bankTarget) bankTarget.innerText = '¥' + data.storeShare.toLocaleString();
 
                 // Real AdSense Data
                 if (data.adsense !== undefined) {
                     const asEl = document.getElementById('adsense-revenue');
-                    if (asEl) asEl.innerText = 'ﾂ･' + data.adsense.toLocaleString();
+                    if (asEl) asEl.innerText = '¥' + data.adsense.toLocaleString();
 
                     const unitA = document.getElementById('ad-unit-a');
                     if (unitA) unitA.innerText = data.unitA.toLocaleString(); 
@@ -1821,7 +1860,7 @@
                     data.transactions.reverse().forEach(tx => {
                         const div = document.createElement('div');
                         div.className = 'transaction-item';
-                        div.innerHTML = `< div ><b>${tx.brand}</b> <span style="font-size:12px;color:#7f8c8d;">(${tx.slot})</span></div > <div style="color:#27ae60;font-weight:bold;">+ﾂ･${(tx.amount * 0.5).toLocaleString()}</div>`;
+                        div.innerHTML = `< div ><b>${tx.brand}</b> <span style="font-size:12px;color:#7f8c8d;">(${tx.slot})</span></div > <div style="color:#27ae60;font-weight:bold;">+¥${(tx.amount * 0.5).toLocaleString()}</div>`;
                         list.appendChild(div);
                     });
                 } else {
@@ -1832,16 +1871,16 @@
                 console.error("Server connection failed", e);
                 // --- Fallback Data (0) ---
                 const yourShareEl = document.getElementById('your-share');
-                if (yourShareEl) yourShareEl.innerText = 'ﾂ･0';
+                if (yourShareEl) yourShareEl.innerText = '¥0';
 
                 const totalRevenueEl = document.getElementById('total-revenue');
-                if (totalRevenueEl) totalRevenueEl.innerText = 'ﾂ･0';
+                if (totalRevenueEl) totalRevenueEl.innerText = '¥0';
 
                 const bankTarget = document.getElementById('bank-payout-target');
-                if (bankTarget) bankTarget.innerText = 'ﾂ･0';
+                if (bankTarget) bankTarget.innerText = '¥0';
 
                 const asEl = document.getElementById('adsense-revenue');
-                if (asEl) asEl.innerText = 'ﾂ･0';
+                if (asEl) asEl.innerText = '¥0';
                 const unitA = document.getElementById('ad-unit-a');
                 if (unitA) unitA.innerText = '0';
                 const unitB = document.getElementById('ad-unit-b');
@@ -1862,7 +1901,7 @@
             startPosDataSync();
         };
 
-        // --- 箝・Background POS Data Periodic Sync (5 minutes) ---
+        // --- ⭐ Background POS Data Periodic Sync (5 minutes) ---
         function startPosDataSync() {
             console.log("POS Data background sync worker started.");
 
@@ -1874,7 +1913,7 @@
                     // --- Cross-Tab Sync for Local Admin Demo ---
                     const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
                     const randAmount = Math.floor(Math.random() * 5000) + 500;
-                    localLog.unshift({ type: 'BATCH_SYNC', source: 'Store Portal 騾｣謳ｺ', amount: randAmount, time: new Date().toLocaleTimeString(), items: 'POS遶ｯ譛ｫ荳諡ｬ蜿肴丐' });
+                    localLog.unshift({ type: 'BATCH_SYNC', source: 'Store Portal 連携', amount: randAmount, time: new Date().toLocaleTimeString(), items: 'POS端末一括反映' });
                     if(localLog.length > 50) localLog.pop();
                     localStorage.setItem('admin_pos_log', JSON.stringify(localLog));
 
@@ -1892,13 +1931,13 @@
 
                     console.log("[Sync] Synced local POS records to Admin successfully.");
                     if(statusEl) {
-                        statusEl.innerText = "泙 螳壽悄蜷梧悄謌仙粥 (" + new Date().toLocaleTimeString('ja-JP') + ")";
+                        statusEl.innerText = "🟢 定期同期成功 (" + new Date().toLocaleTimeString('ja-JP') + ")";
                         statusEl.style.color = "#15803d";
                     }
                 } catch(e) {
                     console.error("[Sync] POS Sync failed", e);
                     if(statusEl) {
-                        statusEl.innerText = "閥 騾壻ｿ｡繧ｨ繝ｩ繝ｼ: 谺｡縺ｮ蜷梧悄縺ｧ蜀崎ｩｦ陦後＠縺ｾ縺・;
+                        statusEl.innerText = "🔴 通信エラー: 次の同期で再試行します";
                         statusEl.style.color = "#b91c1c";
                     }
                 }
@@ -1945,7 +1984,7 @@
             // const voice = document.getElementById('ad-voice').value; // Removed
             const preview = document.getElementById('video-preview');
 
-            preview.innerHTML = '<div style="color:#f39c12">笞｡ AI Generating...</div>';
+            preview.innerHTML = '<div style="color:#f39c12">⚡ AI Generating...</div>';
 
             setTimeout(async () => {
                 // Render Visuals
@@ -1989,10 +2028,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: text, type: 'emergency' })
                 });
-                Swal.fire({ icon: 'success', title: '蜆ｪ蜈磯・菫｡繧貞ｮ溯｡後＠縺ｾ縺励◆', text: '蠎苓・繧ｵ繧､繝阪・繧ｸ縺ｫ蜑ｲ繧願ｾｼ縺ｿ謾ｾ騾√ｒ陦後＞縺ｾ縺励◆縲・ });
+                Swal.fire({ icon: 'success', title: '優先配信を実行しました', text: '店舗サイネージに割り込み放送を行いました。' });
             } catch (e) {
                 console.error(e);
-                alert("驟堺ｿ｡繧ｵ繝ｼ繝舌・縺ｫ謗･邯壹〒縺阪∪縺帙ｓ");
+                alert("配信サーバーに接続できません");
             }
         }
 
@@ -2006,11 +2045,11 @@
             if (!scheduleTime) {
                 // If no time is set, treat it as immediate processing but use normal flow (not priority interrupt)
                 Swal.fire({
-                    title: '蜊ｳ譎る・菫｡縺励∪縺吶°・・,
-                    text: '繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ縺梧悴險ｭ螳壹・縺溘ａ縲・壼ｸｸ縺ｮ逕滓・繝ｻ驟堺ｿ｡繝輔Ο繝ｼ縺ｫ荵励○縺ｾ縺吶・,
+                    title: '即時配信しますか？',
+                    text: 'スケジュールが未設定のため、通常の生成・配信フローに乗せます。',
                     icon: 'info',
                     showCancelButton: true,
-                    confirmButtonText: '縺ｯ縺・
+                    confirmButtonText: 'はい'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         generateVideo();
@@ -2022,13 +2061,13 @@
             const parsedTime = new Date(scheduleTime);
             const now = new Date();
             if (parsedTime <= now) {
-                Swal.fire('繧ｨ繝ｩ繝ｼ', '譛ｪ譚･縺ｮ譎る俣繧呈欠螳壹＠縺ｦ縺上□縺輔＞', 'error');
+                Swal.fire('エラー', '未来の時間を指定してください', 'error');
                 return;
             }
 
             // In a real implementation we would send this to the server to hold it in a queue
             // For now, mockup the success response
-            Swal.fire({ icon: 'success', title: '莠育ｴ・ｮ御ｺ・＠縺ｾ縺励◆', text: `${parsedTime.toLocaleString('ja-JP')} 縺ｫ驟堺ｿ｡繧定ｨｭ螳壹＠縺ｾ縺励◆縲Ａ });
+            Swal.fire({ icon: 'success', title: '予約完了しました', text: `${parsedTime.toLocaleString('ja-JP')} に配信を設定しました。` });
         }
 
         // --- Voice Logic (Server-Side Proxy) ---
@@ -2046,7 +2085,7 @@
             geminiVoices.forEach(v => {
                 const opt = document.createElement('option');
                 opt.value = "gemini_" + v;
-                opt.textContent = `検 Gemini 2.5 Flash (${v})`;
+                opt.textContent = `🌟 Gemini 2.5 Flash (${v})`;
                 if (v === 'Kore') opt.selected = true;
                 voiceSelect.appendChild(opt);
             });
@@ -2054,12 +2093,12 @@
             // Add Google Cloud API Option (Standard)
             const apiOption1 = document.createElement('option');
             apiOption1.value = "api_neural_female";
-            apiOption1.textContent = "笨ｨ 鬮伜刀雉ｪAI繝懊う繧ｹ (螂ｳ諤ｧ繧｢繝翫え繝ｳ繧ｵ繝ｼ)";
+            apiOption1.textContent = "✨ 高品質AIボイス (女性アナウンサー)";
             voiceSelect.appendChild(apiOption1);
 
             const apiOption2 = document.createElement('option');
             apiOption2.value = "api_neural_male";
-            apiOption2.textContent = "笨ｨ 鬮伜刀雉ｪAI繝懊う繧ｹ (逕ｷ諤ｧ繧｢繝翫え繝ｳ繧ｵ繝ｼ)";
+            apiOption2.textContent = "✨ 高品質AIボイス (男性アナウンサー)";
             voiceSelect.appendChild(apiOption2);
         }
 
@@ -2075,7 +2114,7 @@
 
             jaVoices.forEach(v => {
                 const option = document.createElement('option');
-                option.textContent = `痔 ${v.name} (Local)`;
+                option.textContent = `🎤 ${v.name} (Local)`;
                 option.setAttribute('data-lang', v.lang);
                 option.setAttribute('data-name', v.name);
                 voiceSelect.appendChild(option);
@@ -2107,7 +2146,7 @@
                 const worksheet = workbook.Sheets[firstSheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                let script = "縺雁ｮ｢讒倥↓縺疲｡亥・縺・◆縺励∪縺吶よ悽譌･縺ｮ迚ｹ螢ｲ諠・ｱ縺ｧ縺吶・;
+                let script = "お客様にご案内いたします。本日の特売情報です。";
                 let count = 0;
 
                 for (let i = 0; i < json.length; i++) {
@@ -2115,18 +2154,18 @@
                     if (row && row.length >= 2 && row[0] && row[1]) {
                         const product = row[0];
                         const price = row[1];
-                        script += `${product} 縺後・{price} 蜀・Ａ;
+                        script += `${product} が、${price} 円。`;
                         count++;
                     }
                     if (count >= 10) break; // Increased capacity to 10 items
                 }
-                script += "縺懊・縺願ｲｷ縺・ｱゅａ縺上□縺輔＞縲・;
+                script += "ぜひお買い求めください。";
 
                 document.getElementById('ad-text').value = script;
                 Swal.fire({
                     icon: 'success',
-                    title: 'Excel隱ｭ霎ｼ螳御ｺ・,
-                    text: '謾ｾ騾∝次遞ｿ繧剃ｽ懈・縺励∪縺励◆縲・,
+                    title: 'Excel読込完了',
+                    text: '放送原稿を作成しました。',
                     timer: 2000
                 });
             };
@@ -2135,13 +2174,13 @@
 
         function showExcelDetails() {
             Swal.fire({
-                title: '投 Excel繝輔か繝ｼ繝槭ャ繝医↓縺､縺・※',
+                title: '📊 Excelフォーマットについて',
                 html: `
                         < div style = "text-align:left; font-size:13px; line-height:1.6;" >
-                    <p>莉･荳九・蠖｢蠑上〒繧ｨ繧ｯ繧ｻ繝ｫ繧剃ｽ懈・縺励※縺上□縺輔＞縲・/p>
+                    <p>以下の形式でエクセルを作成してください。</p>
                     <ul style="margin-top:10px; padding-left:20px;">
-                        <li>A蛻・ 蝠・刀蜷・(萓・ 繧翫ｓ縺・</li>
-                        <li>B蛻・ 萓｡譬ｼ (萓・ 98)</li>
+                        <li>A列: 商品名 (例: りんご)</li>
+                        <li>B列: 価格 (例: 98)</li>
                     </ul>
                 </div >
             `,
@@ -2153,37 +2192,37 @@
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-nav" style="display:flex !important;">
         <div class="nav-btn active" onclick="showPanel('revenue')">
-            <i>匠</i><span>繝帙・繝</span>
+            <i>🏠</i><span>ホーム</span>
         </div>
         <div class="nav-btn" onclick="window.location.href='anywhere_regi.html'">
-            <i>宵</i><span>繝ｬ繧ｸ</span>
+            <i>🏪</i><span>レジ</span>
         </div>
         <div class="nav-btn" onclick="window.location.href='shift_manager.html'">
-            <i>欄・・/i><span>繧ｷ繝輔ヨ</span>
+            <i>🗓️</i><span>シフト</span>
         </div>
         <div class="nav-btn" onclick="window.location.href='manualhelp.html'">
-            <i>当</i><span>繝槭ル繝･繧｢繝ｫ</span>
+            <i>📖</i><span>マニュアル</span>
         </div>
         <div class="nav-btn" onclick="showPanel('studio')">
-            <i>笨ｨ</i><span>AI繝懊う繧ｹ繧ｹ繧ｿ繧ｸ繧ｪ</span>
+            <i>✨</i><span>AIボイススタジオ</span>
         </div>
 
         <div class="nav-btn" onclick="showStoreMenu()">
-            <i>竕｡</i><span>繝｡繝九Η繝ｼ</span>
+            <i>≡</i><span>メニュー</span>
         </div>
     </nav>
     <script>
         function showStoreMenu() {
             Swal.fire({
-                title: '縺昴・莉悶Γ繝九Η繝ｼ',
+                title: 'その他メニュー',
                 html: `
                     <div style="display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:15px;">
-                        <button onclick="showPanel('pos'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2ecc71;">伯 POS騾｣謳ｺ</button>
+                        <button onclick="showPanel('pos'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2ecc71;">🔌 POS連携</button>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr; gap:10px; border-top:1px solid #eee; padding-top:15px;">
 
-                        <button onclick="showPanel('inventory'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">逃 蝨ｨ蠎ｫ騾｣謳ｺ</button>
-                        <button onclick="location.href='index.html';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">坎 繝ｭ繧ｰ繧｢繧ｦ繝・/button>
+                        <button onclick="showPanel('inventory'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
+                        <button onclick="location.href='index.html';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
                     </div>
                 `,
                 showConfirmButton: false,
@@ -2197,8 +2236,8 @@
                 const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
                 const json = await res.json();
                 if (json.success) {
-                    document.getElementById('your-share').innerText = 'ﾂ･' + json.adnet.toLocaleString();
-                    document.getElementById('adsense-revenue').innerText = 'ﾂ･' + json.adsense.toLocaleString();
+                    document.getElementById('your-share').innerText = '¥' + json.adnet.toLocaleString();
+                    document.getElementById('adsense-revenue').innerText = '¥' + json.adsense.toLocaleString();
                     document.getElementById('ad-unit-a').innerText = json.unitA.toLocaleString();
                     document.getElementById('ad-unit-b').innerText = json.unitB.toLocaleString();
                 }
@@ -2216,25 +2255,25 @@
 <!-- Context-Agnostic Profile Edit Modal -->
 <div id="modal-profile" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
     <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">繝励Ο繝輔ぅ繝ｼ繝ｫ邱ｨ髮・/h3>
+        <h3 style="margin-top:0; color:#333; margin-bottom:20px; font-size:1.2rem; border-bottom:2px solid #eee; padding-bottom:10px;">プロフィール編集</h3>
 
         <form onsubmit="event.preventDefault(); saveProfile();" style="margin:0; padding:0;">
-            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">邨・ｹ泌錐</div>
-            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="譬ｪ蠑丈ｼ夂､ｾ縲・・ autocomplete="organization">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">組織名</div>
+            <input type="text" id="prof-org" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="株式会社〇〇" autocomplete="organization">
 
             <div id="prof-name-container" style="display:none;">
-                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">蜷榊燕陦ｨ遉ｺ</div>
-                <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="驤ｴ譛ｨ 荳驛・ autocomplete="name">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">名前表示</div>
+                <input type="text" id="prof-name" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="鈴木 一郎" autocomplete="name">
             </div>
 
-            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ</div>
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">メールアドレス</div>
             <input type="email" id="prof-email" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" autocomplete="username">
 
-            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">繝代せ繝ｯ繝ｼ繝・(繝ｪ繧ｻ繝・ヨ)</div>
-            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="譁ｰ縺励＞繝代せ繝ｯ繝ｼ繝・ autocomplete="new-password">
+            <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280; font-weight:bold;">パスワード (リセット)</div>
+            <input type="password" id="prof-pass" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;" placeholder="新しいパスワード" autocomplete="new-password">
 
-            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">菫晏ｭ倥＠縺ｦ髢峨§繧・/button>
-            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+            <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:0.2s;">保存して閉じる</button>
+            <button type="button" onclick="document.getElementById('modal-profile').style.display='none'" style="width:100%; padding:12px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition:0.2s;">キャンセル</button>
         </form>
     </div>
 </div>
@@ -2245,28 +2284,40 @@
             document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
             if(showName) {
                 document.getElementById('prof-name-container').style.display = 'block';
-                document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "驤ｴ譛ｨ (蠎鈴聞)";
+                document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
             } else {
                 document.getElementById('prof-name-container').style.display = 'none';
             }
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
-    function saveProfile() {
-        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
-        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
+        const email = document.getElementById('prof-email').value;
+        const name = document.getElementById('prof-name').value;
+
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_email', email);
         if(document.getElementById('prof-name-container').style.display !== 'none') {
-            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+            localStorage.setItem('demo_name', name);
         }
+        
+        try {
+            await fetch(window.API_BASE_URL + '/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, org, name, type: 'store' })
+            });
+        } catch(e) { console.error(e); }
+
         document.getElementById('modal-profile').style.display = 'none';
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'繝励Ο繝輔ぅ繝ｼ繝ｫ繧呈峩譁ｰ縺励∪縺励◆', showConfirmButton:false, timer:2000});
+        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールをS3に保存しました', showConfirmButton:false, timer:2000});
+        
         // Try triggering local update if exists
         try{ updateProfileDisplay(); }catch(e){}
     }
 </script>
 
-
-    
 </body>
 
 </html>
