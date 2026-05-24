@@ -661,7 +661,7 @@ h2 {
 
                     window._bgReviewPromise = null;
                     const startBgReview = async (file, title) => {
-                        let base64 = "mock_data";
+                        let base64 = "";
                         if(file) base64 = await fileToBase64(file);
                         window._bgReviewPromise = fetch(API_BASE + '/api/creator/review-content', {
                             method: 'POST',
@@ -871,7 +871,11 @@ h2 {
                         <p style="font-size:0.75rem; color:#888; margin-top:0;">運転免許証等（※身分証と口座名義が一致しない場合はAIにより登録拒否されます）</p>
                         <input type="file" id="bank-id-image" accept="image/*" style="width:80%; margin:0 0 15px 0; padding:10px; border:1px solid #ccc; border-radius:5px;">
                         
-                        <p style="font-size:0.8rem; color:#888;">※登録した口座に、月末締めの翌月末払いで広告収益が自動で振り込まれます。</p>
+                                                <div style="font-size:0.8rem; color:#333; background:#f1f5f9; padding:10px; border-radius:5px; margin-top:10px; text-align:left;">
+                            <strong>【報酬振込に関するご案内】</strong><br>
+                            ・報酬の振込は「翌月末払い（1ヶ月後）」となります。<br>
+                            ・振込手数料（一律145円）はお客様（受取人）のご負担となります。
+                        </div>
                     </div>
                 `,
                 showCancelButton: true,
