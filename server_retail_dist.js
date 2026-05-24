@@ -1039,10 +1039,11 @@ app.post('/api/auth/login', (req, res) => {
         console.log(`[Auth] 🆕 Auto-Registered: ${email} (${user.role})`);
         // RDS sync will handle persistence automatically in background
     } else {
-        // Update name and org if provided and different
+        // Update name, org, and role if provided and different
         let updated = false;
         if (name && user.name !== name) { user.name = name; updated = true; }
         if (org && user.org !== org) { user.org = org; updated = true; }
+        if (role && user.role !== role && !email.includes('@demo.com')) { user.role = role; updated = true; }
     }
 
     if (user && user.password === password) {
@@ -1052,7 +1053,7 @@ app.post('/api/auth/login', (req, res) => {
         if ((user.role === 'admin' || user.role === 'system_admin') ) {
             if (!totpCode) {
                 if (!user.twoFactorSecret) {
-                    return res.json({ success: true, require2FASetup: true, email: email });
+                    return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role) });
                 } else {
                     return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                 }
