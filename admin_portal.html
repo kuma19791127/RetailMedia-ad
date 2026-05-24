@@ -1534,6 +1534,11 @@
         if (typeof Swal === "undefined") { alert("SweetAlert(ポップアップ機能)がブラウザの拡張機能によってブロックされています！アドブロック等をオフにしてください。"); }
 
     const user = document.getElementById('admin-user').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(user)) {
+                Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
+                return;
+            }
             const pass = document.getElementById('admin-pass').value.trim();
 
             try {

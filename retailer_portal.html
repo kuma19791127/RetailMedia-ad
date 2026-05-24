@@ -460,6 +460,11 @@
 
         async function handleLogin() {
             const email = document.getElementById('login-email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
+                return;
+            }
             currentEmail = email;
             currentPrefix = email.split('@')[0];
             

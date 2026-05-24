@@ -571,6 +571,20 @@
 
 <body>
 
+    <!-- Login Overlay -->
+    <div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#f8fafc; z-index:9999; display:flex; justify-content:center; align-items:center;">
+        <div style="background:white; padding:40px; border-radius:12px; width:350px; text-align:center; box-shadow:0 15px 30px rgba(0,0,0,0.1); border:1px solid #e2e8f0;">
+            <h2 style="margin-bottom:20px; color:#6366f1;">ログイン</h2>
+            <form action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(handleLogin, 10); return true;" style="display:flex; flex-direction:column; gap:15px;">
+                <input type="email" id="login-email" required placeholder="メールアドレス" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="username">
+                <input type="password" id="login-pass" required placeholder="パスワード" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="current-password">
+                <button type="submit" style="background:#6366f1; color:white; border:none; padding:12px; border-radius:5px; font-size:16px; cursor:pointer; font-weight:bold;">ログイン</button>
+            </form>
+            <iframe name="dummyframe_login" style="display:none;"></iframe>
+        </div>
+    </div>
+
+
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">
@@ -2358,6 +2372,26 @@
         try{ updateProfileDisplay(); }catch(e){}
     }
 </script>
+
+
+    <script>
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                if(typeof Swal !== 'undefined') Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
+                else alert('エラー: 有効なメールアドレスを入力してください。');
+                return;
+            }
+            if (pass.length < 1) {
+                if(typeof Swal !== 'undefined') Swal.fire('エラー', 'パスワードを入力してください。', 'error');
+                else alert('エラー: パスワードを入力してください。');
+                return;
+            }
+            document.getElementById('login-overlay').style.display = 'none';
+        }
+    </script>
 
 </body>
 

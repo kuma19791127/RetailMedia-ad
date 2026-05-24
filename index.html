@@ -342,7 +342,7 @@
                     <span style="color:var(--primary); cursor:pointer; font-weight:bold;" onclick="autoFillDemo()">※デモ入力</span>
                 </div>
 
-                <button type="submit" class="btn-primary">メールアドレスでログイン</button>
+                <button type="submit" class="btn-primary">新規登録またはメールアドレスでログイン</button>
             </form>
             
             <p style="text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:20px;">本サービスへのログインにより、プライバシーポリシーに同意したものとみなされます。</p>
@@ -369,7 +369,7 @@
         <p class="text-body" style="display:inline-block; text-align:left;">
             小売り・スーパーの現場は、 10円単位で<br class="mobile-br">
             経費削減の 努力を重ねています。<br>
-            しかし現場の従業員は ITに不慣れや<br class="mobile-br">
+            しかし現場的は従業員は ITに不慣れや<br class="mobile-br">
             今だに紙でマニュアル作成を 行ったり<br class="mobile-br">
             キャッシュレスに 移行できない企業が<br class="mobile-br">
             数多く存在します。<br>
@@ -531,7 +531,7 @@
 
             <h3 style="color: var(--dark); margin-top: 40px; margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;">3. 「どこでもレジ（モバイルチェックアウト）」の導入価値</h3>
             <p style="margin-bottom: 20px;">
-                小売業界が抱える慢性的な課題の一つが「レジ待ちの行列」と「慢性的な人手不足」です。<br>
+                小売業界が抱える慢性的な課題の一つが「レジ待ち的行列」と「慢性的な人手不足」です。<br>
                 リテアドが提供する「どこでもレジ」システムは、既存のPOSシステムとシームレスに連携し、お客様自身のスマートフォンをレジ端末として機能させます。専用アプリのインストールは一切不要で、店舗の入り口にあるQRコードを読み取るだけで、お客様は店内のどこにいても商品のバーコードをスキャンし、Apple PayやGoogle Pay等の生体認証で瞬時に決済（1タップ決済）を完了できます。<br>
                 これにより、店舗側は高額なPOSレジハードウェアの追加投資を抑えつつ、ピークタイムのレジ稼働率を大幅に引き下げ、人件費の削減と顧客満足度の劇的な向上を同時に達成できます。
             </p>
@@ -650,6 +650,12 @@
             const password = document.getElementById('password').value;
             const role = document.getElementById('login-role').value;
 
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
+                return;
+            }
+
             if (!role) {
                 Swal.fire('エラー', 'ログインする「役割（ロール）」を選択してください。', 'warning');
                 return;
@@ -712,7 +718,7 @@
                     });
 
                     if (!setupResult) {
-                        btn.innerText = 'メールアドレスでログイン';
+                        btn.innerText = '新規登録またはメールアドレスでログイン';
                         return; // Aborted
                     } else {
                         data.success = true;
@@ -743,7 +749,7 @@
                     });
 
                     if (!verifyResult) {
-                        btn.innerText = 'メールアドレスでログイン';
+                        btn.innerText = '新規登録またはメールアドレスでログイン';
                         return;
                     } else {
                         data.success = true;
@@ -766,11 +772,11 @@
                         window.location.href = data.redirect;
                     }, 500);
                 } else {
-                    btn.innerText = 'メールアドレスでログイン';
+                    btn.innerText = '新規登録またはメールアドレスでログイン';
                     Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
                 }
             } catch (err) {
-                btn.innerText = 'メールアドレスでログイン';
+                btn.innerText = '新規登録またはメールアドレスでログイン';
                 Swal.fire('エラー', 'サーバー通信に失敗しました。', 'error');
             }
         }
