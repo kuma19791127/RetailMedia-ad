@@ -571,8 +571,9 @@ app.post('/api/creator/review-content', async (req, res) => {
         console.log("クリエイター動画審査開始: Gemini 1.5 Pro");
         if (!video_base64) return res.status(400).json({ error: '動画データがありません', safe: false });
         
-        if (video_base64 === "mock_data" || video_base64.length < 500) {
-             return res.json({ safe: true, message: "審査通過 (デモ用自動パス)" });
+        if (!video_base64 || video_base64 === "mock_data" || video_base64.length < 500) {
+             console.warn("Invalid or dummy video provided for review.");
+             return res.status(400).json({ error: "有効な動画データが提供されていません。" });
         }
 
         // 正しくMIMEタイプを抽出し、base64データ部分を分離する
