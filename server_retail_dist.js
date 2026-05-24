@@ -1054,7 +1054,7 @@ app.post('/api/auth/login', (req, res) => {
                 if (!user.twoFactorSecret) {
                     return res.json({ success: true, require2FASetup: true, email: email });
                 } else {
-                    return res.json({ success: true, require2FA: true, email: email });
+                    return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                 }
             } else {
                 const speakeasy = require('speakeasy');
@@ -1069,7 +1069,7 @@ app.post('/api/auth/login', (req, res) => {
             // If they have 2FA enabled, enforce it
             if (user.twoFactorSecret) {
                 if (!totpCode) {
-                    return res.json({ success: true, require2FA: true, email: email });
+                    return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                 } else {
                     const speakeasy = require('speakeasy');
                     const verified = speakeasy.totp.verify({ secret: user.twoFactorSecret, encoding: 'base32', token: totpCode, window: 1 });
