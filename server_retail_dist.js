@@ -1017,6 +1017,7 @@ app.post('/api/auth/2fa/enable', (req, res) => {
         const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
         if (verified && users[email]) {
             users[email].twoFactorSecret = secret;
+            if (typeof saveDatabase === 'function') saveDatabase();
             res.json({ success: true });
         } else {
             res.json({ success: false, error: "無効なコードです" });
@@ -3677,6 +3678,66 @@ app.get('/api/store/revenue', (req, res) => {
         totalAdSpend: 150000, 
         adsenseRevenue: 20000 
     });
+});
+
+app.get('/api/analytics/pos-search', (req, res) => {
+    const q = (req.query.q || '').toLowerCase();
+    
+    let simulatedData = {
+        keyword: q || '全体',
+        totalSales: 0,
+        totalItems: 0,
+        trend: '+0%'
+    };
+
+    if (q.includes('ビール') || q.includes('beer')) {
+        simulatedData.totalSales = 1250000;
+        simulatedData.totalItems = 4500;
+        simulatedData.trend = '+15%';
+    } else if (q.includes('スナック') || q.includes('菓子')) {
+        simulatedData.totalSales = 850000;
+        simulatedData.totalItems = 6200;
+        simulatedData.trend = '+8%';
+    } else if (q !== '') {
+        simulatedData.totalSales = 320000;
+        simulatedData.totalItems = 1200;
+        simulatedData.trend = '+2%';
+    }
+
+    res.json({ success: true, data: simulatedData });
+});
+
+app.get('/api/creator/match-ads', (req, res) => {
+    const matchedAds = [
+        { 
+            id: "ad_beer_001", 
+            title: "プレミアムビール「極み生」 15秒CM", 
+            sponsor: "ビールメーカーA社", 
+            matchScore: 98, 
+            rewardRate: "¥5 / 再生", 
+            category: "酒類", 
+            description: "【クロスセル提案】あなたの「餃子の作り方」や「焼き鳥レビュー」動画は、ビールへの欲求（顧客インサイト）を強く刺激するため、この広告と最高のマッチング効果を発揮します。" 
+        },
+        { 
+            id: "ad_beer_002", 
+            title: "地域限定クラフトビール フェア", 
+            sponsor: "ご当地酒造B社", 
+            matchScore: 92, 
+            rewardRate: "¥6 / 再生", 
+            category: "酒類", 
+            description: "【ローカル文脈提案】あなたの「近場の酒場・居酒屋巡り」の配信は、深いビール知識を求める層と合致しており、購買意欲の喚起に非常に有効です。" 
+        },
+        { 
+            id: "ad_snack_002", 
+            title: "新感覚！激辛おつまみスナック", 
+            sponsor: "菓子メーカーC社", 
+            matchScore: 88, 
+            rewardRate: "¥4 / 再生", 
+            category: "食品", 
+            description: "【関連消費提案】お酒に関連する動画を見ているユーザーは、同時におつまみも購入する傾向（併売率）が高いため、高い効果が見込めます。" 
+        }
+    ];
+    res.json({ success: true, matches: matchedAds });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
