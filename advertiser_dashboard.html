@@ -750,6 +750,34 @@
                     </tbody>
                 </table></div>
             </div>
+
+            <!-- POS Data Search Section -->
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="margin-top:0; color:var(--dark); display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-search-dollar" style="color:#2563eb;"></i> POSデータ検索（自社商品分析）
+                </h3>
+                <p style="font-size:0.9rem; color:#64748b;">商品のJANコードや商品名から、実店舗での売上実績を検索できます。広告出稿前後の効果測定にご活用ください。</p>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="pos-search-keyword" placeholder="商品名またはJANコードを入力..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <button onclick="searchPosData()" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">検索</button>
+                </div>
+                <div id="pos-search-results" style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div>
+                            <span style="font-size:0.85rem; color:#64748b;">累計販売個数</span><br>
+                            <strong id="pos-result-count" style="font-size:1.4rem; color:#0f172a;">0個</strong>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:0.85rem; color:#64748b;">累計売上金額</span><br>
+                            <strong id="pos-result-sales" style="font-size:1.4rem; color:#10b981;">¥0</strong>
+                        </div>
+                    </div>
+                    <table class="data-table" style="margin:0;">
+                        <thead><tr><th>日時</th><th>商品名 / ブランド</th><th>売上金額</th></tr></thead>
+                        <tbody id="pos-result-list"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- NEW CAMPAIGN MODAL -->
@@ -966,6 +994,37 @@
             document.getElementById('new-campaign-modal').style.display = 'none';
         }
 
+        async function searchPosData() {
+            const keyword = document.getElementById('pos-search-keyword').value;
+            if (!keyword) return alert('検索キーワードまたはJANコードを入力してください。');
+            
+            try {
+                const res = await fetch(`/api/analytics/pos-search?keyword=${encodeURIComponent(keyword)}`);
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('pos-search-results').style.display = 'block';
+                    document.getElementById('pos-result-count').innerText = `${data.stats.count.toLocaleString()}個`;
+                    document.getElementById('pos-result-sales').innerText = `¥${data.stats.totalSales.toLocaleString()}`;
+                    
+                    const tbody = document.getElementById('pos-result-list');
+                    if (data.transactions.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">該当する販売データがありません</td></tr>`;
+                    } else {
+                        tbody.innerHTML = data.transactions.map(tx => `
+                            <tr>
+                                <td>${new Date(tx.time || Date.now()).toLocaleString('ja-JP')}</td>
+                                <td>${tx.productName || tx.brand || '不明な商品'}</td>
+                                <td style="color:#10b981; font-weight:bold;">¥${(tx.amount || 0).toLocaleString()}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                alert("POSデータの検索に失敗しました。");
+            }
+        }
+
         // API: Load Campaigns
         async function loadCampaigns() {
             try {
@@ -1096,7 +1155,7 @@
                         // === AI Moderation & Rules ===
             Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             try {
-                const reviewRes = await fetch(API_URL + '/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'mock_data' }) });
+                const reviewRes = await fetch(API_URL + '/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: "" }) });
                 const reviewData = await reviewRes.json();
                 if (!reviewData.safe) {
                     Swal.fire({ title: '❌ 審査不合格 (アカウント制限)', html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>', icon: 'error' });
