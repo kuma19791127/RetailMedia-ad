@@ -1,4 +1,5 @@
 const pool = require('./db_connector');
+const dbHelper = require('./db');
 const express = require('express');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -985,28 +986,30 @@ app.post('/api/admin/sales', (req, res) => {
 });
 
 // --- AUTH (2FA) ---
-const users = {
-    // Demo Accounts (Pre-seeded)
-    "advertiser@demo.com": { password: "DemoPass2026!", role: "advertiser" },
-    "store@demo.com": { password: "DemoPass2026!", role: "store" },
-    "agency@demo.com": { password: "DemoPass2026!", role: "agency" },
-    "creator@demo.com": { password: "DemoPass2026!", role: "creator" }
-};
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
     const { email, password, role } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email and Password required" });
 
-    if (users[email]) return res.status(400).json({ error: "User already exists" });
+    try {
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        if (user) return res.status(400).json({ error: "User already exists" });
 
-    // Register User
-    users[email] = { password: hashPassword(password), role: role || "store" }; // Default to Store if not specified
-    console.log(`[Auth] 🆕 New User Registered: ${email} (${users[email].role})`);
-    if (typeof saveDatabase === 'function') saveDatabase();
+        const defaultRole = role || "store";
+        const hashedPassword = hashPassword(password);
+        await dbHelper.query.run(
+            'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
+            [email, hashedPassword, defaultRole]
+        );
+        console.log(`[Auth] 🆕 New User Registered: ${email} (${defaultRole})`);
 
-    const token = jwt.sign({ email, role: users[email].role }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
-    res.json({ success: true, redirect: getRedirectUrl(users[email].role) });
+        const token = jwt.sign({ email, role: defaultRole }, JWT_SECRET, { expiresIn: '24h' });
+        res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+        res.json({ success: true, redirect: getRedirectUrl(defaultRole) });
+    } catch (e) {
+        console.error("[Auth Register Error]", e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // --- 2FA Setup ---
@@ -1026,14 +1029,15 @@ app.post('/api/auth/2fa/setup', (req, res) => {
 });
 
 
-app.post('/api/auth/2fa/verify', (req, res) => {
+app.post('/api/auth/2fa/verify', async (req, res) => {
     const { email, token } = req.body;
     try {
         const speakeasy = require('speakeasy');
-        if (users[email] && users[email].twoFactorSecret) {
-            const verified = speakeasy.totp.verify({ secret: users[email].twoFactorSecret, encoding: 'base32', token: token, window: 1 });
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        
+        if (user && user.two_factor_secret) {
+            const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 1 });
             if (verified) {
-                const user = users[email];
                 const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
                 res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
                 res.json({ success: true });
@@ -1048,15 +1052,15 @@ app.post('/api/auth/2fa/verify', (req, res) => {
     }
 });
 
-app.post('/api/auth/2fa/enable', (req, res) => {
+app.post('/api/auth/2fa/enable', async (req, res) => {
     const { email, secret, token } = req.body;
     try {
         const speakeasy = require('speakeasy');
         const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
-        if (verified && users[email]) {
-            users[email].twoFactorSecret = secret;
-            if (typeof saveDatabase === 'function') saveDatabase();
-            const user = users[email];
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+
+        if (verified && user) {
+            await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ?', [secret, email]);
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
             res.json({ success: true });
@@ -1064,82 +1068,114 @@ app.post('/api/auth/2fa/enable', (req, res) => {
             res.json({ success: false, error: "無効なコードです" });
         }
     } catch (e) {
-        res.json({ success: false, error: e.message });
+        res.status(500).json({ error: e.message });
     }
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { email, password, role, name, org, totpCode } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
-    let user = users[email];
+    try {
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
 
-    // Auto-Register if user does not exist (to keep the ease of demo but persist data)
-    if (!user) {
-        users[email] = { password: hashPassword(password), role: role || "store", name: name, org: org };
-        user = users[email];
-        console.log(`[Auth] 🆕 Auto-Registered: ${email} (${user.role})`);
-        if (typeof saveDatabase === 'function') saveDatabase();
-        // RDS sync will handle persistence automatically in background
-    } else {
-        // Update name, org, and role if provided and different
-        let updated = false;
-        if (name && user.name !== name) { user.name = name; updated = true; }
-        if (org && user.org !== org) { user.org = org; updated = true; }
-        if (role && user.role !== role && !email.includes('@demo.com')) { user.role = role; updated = true; }
-        if (updated && typeof saveDatabase === 'function') saveDatabase();
-    }
-
-    if (user && verifyPassword(password, user.password)) {
-        // Track login count for 2FA suggestion
-        user.loginCount = (user.loginCount || 0) + 1;
-        if (typeof saveDatabase === 'function') saveDatabase();
-
-        if ((user.role === 'admin' || user.role === 'system_admin') ) {
-            if (!totpCode) {
-                if (!user.twoFactorSecret) {
-                    return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role) });
-                } else {
-                    return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
-                }
-            } else {
-                const speakeasy = require('speakeasy');
-                const verified = speakeasy.totp.verify({ secret: user.twoFactorSecret, encoding: 'base32', token: totpCode, window: 1 });
-                if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
-            }
+        // Auto-Register if user does not exist (to keep the ease of demo but persist data)
+        if (!user) {
+            const defaultRole = role || "store";
+            const hashedPassword = hashPassword(password);
+            await dbHelper.query.run(
+                'INSERT INTO users (email, password, role, name, org) VALUES (?, ?, ?, ?, ?)',
+                [email, hashedPassword, defaultRole, name || null, org || null]
+            );
+            user = { email, password: hashedPassword, role: defaultRole, name, org, two_factor_secret: null };
+            console.log(`[Auth] 🆕 Auto-Registered: ${email} (${defaultRole})`);
         } else {
-            // For general users: Require 2FA on every login if not already setup
-            if (!user.twoFactorSecret && email !== 'demo@retail-ad.com') {
-                return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role), role: user.role });
+            // Update name, org, and role if provided and different
+            let updated = false;
+            let updateSql = 'UPDATE users SET ';
+            const updateParams = [];
+            
+            if (name && user.name !== name) {
+                updateSql += 'name = ?, ';
+                updateParams.push(name);
+                user.name = name;
+                updated = true;
             }
-            // If they have 2FA enabled, enforce it
-            if (user.twoFactorSecret) {
-                if (!totpCode) {
-                    return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
-                } else {
-                    const speakeasy = require('speakeasy');
-                    const verified = speakeasy.totp.verify({ secret: user.twoFactorSecret, encoding: 'base32', token: totpCode, window: 1 });
-                    if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
-                }
+            if (org && user.org !== org) {
+                updateSql += 'org = ?, ';
+                updateParams.push(org);
+                user.org = org;
+                updated = true;
+            }
+            if (role && user.role !== role && !email.includes('@demo.com')) {
+                updateSql += 'role = ?, ';
+                updateParams.push(role);
+                user.role = role;
+                updated = true;
+            }
+            
+            if (updated) {
+                updateSql = updateSql.slice(0, -2) + ' WHERE email = ?';
+                updateParams.push(email);
+                await dbHelper.query.run(updateSql, updateParams);
             }
         }
 
-        const token = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-        res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
-        res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
-    } else {
-        console.log(`[Auth] ❌ Login Failed: ${email}`);
-        res.json({ success: false, error: "Invalid Email or Password" });
+        if (user && verifyPassword(password, user.password)) {
+            if ((user.role === 'admin' || user.role === 'system_admin')) {
+                if (!totpCode) {
+                    if (!user.two_factor_secret) {
+                        return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role) });
+                    } else {
+                        return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
+                    }
+                } else {
+                    const speakeasy = require('speakeasy');
+                    const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 1 });
+                    if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
+                }
+            } else {
+                // For general users: Require 2FA on every login if not already setup
+                if (!user.two_factor_secret && email !== 'demo@retail-ad.com') {
+                    return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role), role: user.role });
+                }
+                // If they have 2FA enabled, enforce it
+                if (user.two_factor_secret) {
+                    if (!totpCode) {
+                        return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
+                    } else {
+                        const speakeasy = require('speakeasy');
+                        const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 1 });
+                        if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
+                    }
+                }
+            }
+
+            currentUser = { email, role: user.role }; // Set Session
+            res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
+        } else {
+            console.log(`[Auth] ❌ Login Failed: ${email}`);
+            res.json({ success: false, error: "Invalid Email or Password" });
+        }
+    } catch (e) {
+        console.error("[Auth Login Error]", e);
+        res.status(500).json({ error: e.message });
     }
 });
 
-
-app.get('/api/auth/users', (req, res) => {
-    const userList = [];
-    for (const email in users) {
-        userList.push({ email: email, name: users[email].name || email.split('@')[0], role: users[email].role, org: users[email].org || 'Demo Corp' });
+app.get('/api/auth/users', async (req, res) => {
+    try {
+        const rows = await dbHelper.query.all('SELECT * FROM users');
+        const userList = rows.map(user => ({
+            email: user.email,
+            name: user.name || user.email.split('@')[0],
+            role: user.role,
+            org: user.org || 'Demo Corp'
+        }));
+        res.json({ success: true, users: userList });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
-    res.json({ success: true, users: userList });
 });
 
 app.post('/api/auth/reset-password', (req, res) => {
@@ -1215,7 +1251,7 @@ function getRedirectUrl(role) {
 
 
 // Official Campaign Creation Endpoint (Dashboard)
-app.post('/api/campaigns', (req, res) => {
+app.post('/api/campaigns', async (req, res) => {
     console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
         const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email, ytUrl, fileUrl } = req.body;
@@ -1257,7 +1293,6 @@ app.post('/api/campaigns', (req, res) => {
         let type = 'PAID';
         if (plan === 'moment') type = 'MOMENT';
         if (plan === 'impression') type = 'IMPRESSION';
-        // CPA is also PAID but with specific tracking setup
 
         const processAndInject = async (finalUrl) => {
             let adStatus = 'pending';
@@ -1301,11 +1336,24 @@ app.post('/api/campaigns', (req, res) => {
             }
             console.log(`[AutoReview] Campaign '${name}' auto-review result: ${adStatus}`);
 
+            // Insert into SQLite database
+            let campaignId = Date.now();
+            try {
+                const dbRes = await dbHelper.query.run(
+                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [name, start, end, appliedPrice, 0.0, 0, adStatus]
+                );
+                campaignId = dbRes.lastID;
+                console.log(`[Campaign Database] Saved campaign ID: ${campaignId} into SQLite`);
+            } catch (dbErr) {
+                console.error("[Campaign Database] Save failed:", dbErr.message);
+            }
+
             const metadata = {
+                id: campaignId,
                 title: name,
                 format: format, // Pass format (image/video/youtube)
                 status: adStatus, // Result of automatic review
-                // Prioritize passed URL (Base64) or YouTube URL. DO NOT default to Sintel anymore.
                 url: finalUrl,
                 youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : (youtube_url || ytUrl),
                 duration: 15,
@@ -1371,8 +1419,6 @@ app.post('/api/campaigns', (req, res) => {
                     } else {
                         require('fs').unlinkSync(inputPath);
                         processAndInject(`/uploads/ad_video_${tempId}.mp4`);
-                        // We must wait to broadcast or return. Because Express prefers sync response,
-                        // we returned "Campaign Created" below before finish, but that's fine.
                         if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
                     }
                 }).run();
@@ -1388,28 +1434,44 @@ app.post('/api/campaigns', (req, res) => {
     }
 });
 
-app.get('/api/campaigns', (req, res) => {
-    // Return real campaigns from Signage Server State
-    let list = [];
-    if (signageServer && signageServer.getAllCampaigns) {
-        list = signageServer.getAllCampaigns();
+app.get('/api/campaigns', async (req, res) => {
+    try {
+        const rows = await dbHelper.query.all('SELECT * FROM campaigns');
+        const formattedList = rows.map(c => ({
+            id: c.id,
+            name: c.name,
+            start: c.start_date,
+            end: c.end_date,
+            budget: c.budget,
+            spend: c.spend,
+            imp: c.impressions,
+            status: c.status
+        }));
+        res.json(formattedList);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
-    res.json(list);
 });
 
 // Update Campaign Status Endpoint (for Approval)
-app.post('/api/campaigns/:id/status', (req, res) => {
+app.post('/api/campaigns/:id/status', async (req, res) => {
     const id = req.params.id;
     const { status } = req.body;
-    if (signageServer && signageServer.updateCampaignStatus) {
-        const success = signageServer.updateCampaignStatus(id, status);
-        if (success) {
-            res.json({ success: true, message: 'Status updated' });
+    try {
+        await dbHelper.query.run('UPDATE campaigns SET status = ? WHERE id = ?', [status, id]);
+        
+        if (signageServer && signageServer.updateCampaignStatus) {
+            const success = signageServer.updateCampaignStatus(id, status);
+            if (success) {
+                res.json({ success: true, message: 'Status updated' });
+            } else {
+                res.status(404).json({ error: 'Campaign not found on signage server' });
+            }
         } else {
-            res.status(404).json({ error: 'Campaign not found' });
+            res.json({ success: true, message: 'Status updated in DB only' });
         }
-    } else {
-        res.status(500).json({ error: 'Signage server disconnected' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
@@ -2331,16 +2393,32 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin_portal.
 // --- STORE SIDE API ---
 
 // Save Store Settings (Bank Info & Email)
-app.post('/api/store/settings', (req, res) => {
-    const s = storeData["default_store"];
-    if (req.body.bank_info) s.bank_info = req.body.bank_info;
-    if (req.body.billing_email) s.billing_email = req.body.billing_email;
+app.post('/api/store/settings', async (req, res) => {
+    try {
+        const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', ['default_store']);
+        if (!store) return res.status(404).json({ error: "Store not found" });
 
-    console.log(`[Store] Settings Updated for ${s.name}`);
-    res.json({ success: true });
+        const billing_email = req.body.billing_email || store.billing_email;
+        const bank = req.body.bank_info || {};
+        
+        await dbHelper.query.run(
+            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ? WHERE id = ?`,
+            [
+                billing_email,
+                bank.bank_name || store.bank_name,
+                bank.branch_name || store.branch_name,
+                bank.account_number || store.account_number,
+                bank.account_holder || store.account_holder,
+                'default_store'
+            ]
+        );
+
+        console.log(`[Store] Settings Updated for default_store`);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
-
-// --- ADMIN SIDE API ---
 
 // Save Admin Settings (Sender Email)
 app.post('/api/admin/settings', (req, res) => {
@@ -2352,47 +2430,70 @@ app.post('/api/admin/settings', (req, res) => {
 });
 
 // AnyWhere Regi Forgot Password => Billing Email mapping
-app.post('/api/admin/settings/billing-email', express.json(), (req, res) => {
+app.post('/api/admin/settings/billing-email', express.json(), async (req, res) => {
     if (req.body.email) {
-        storeData["default_store"].billing_email = req.body.email;
-        console.log(`[Admin] Billing Email Updated from AnyWhere Regi: ${req.body.email}`);
+        try {
+            await dbHelper.query.run('UPDATE stores SET billing_email = ? WHERE id = ?', [req.body.email, 'default_store']);
+            console.log(`[Admin] Billing Email Updated from AnyWhere Regi: ${req.body.email}`);
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
+        }
     }
     res.json({ success: true });
 });
 
 // Get Unified Dashboard Data
-app.get('/api/admin/dashboard', (req, res) => {
-    const billingData = [];
-    const payoutData = [];
-    for (const key of Object.keys(storeData)) {
-        if (key === "default_store") continue;
-        const s = storeData[key];
-        const displayPosSales = s.total_pos_sales || 0;
-        const billingAmount = Math.floor(displayPosSales * 0.012);
-        if (billingAmount > 0) {
-            billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_1_2_percent: billingAmount, email: s.billing_email, status: "未請求" });
+app.get('/api/admin/dashboard', async (req, res) => {
+    try {
+        const billingData = [];
+        const payoutData = [];
+        const rows = await dbHelper.query.all('SELECT * FROM stores');
+        
+        for (const s of rows) {
+            if (s.id === "default_store") continue;
+            const displayPosSales = s.total_pos_sales || 0;
+            const billingAmount = Math.floor(displayPosSales * 0.012);
+            if (billingAmount > 0) {
+                billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_1_2_percent: billingAmount, email: s.billing_email, status: "未請求" });
+            }
+            const storeAdRevenue = s.total_ad_revenue || 0;
+            const creatorReward = Math.floor(storeAdRevenue * 0.1);
+            const pureStoreRevenue = storeAdRevenue - creatorReward;
+            const shareAmount = Math.floor(pureStoreRevenue * 0.5);
+            const bank_info = {
+                bank_name: s.bank_name || '',
+                branch_name: s.branch_name || '',
+                account_number: s.account_number || '',
+                account_holder: s.account_holder || ''
+            };
+            if (shareAmount > 0) {
+                payoutData.push({ id: s.id, name: s.name, retail_ad_revenue: storeAdRevenue, creator_reward: creatorReward, total_net_revenue: pureStoreRevenue, ad_revenue_share: shareAmount, bank_info: bank_info, status: "未払", email: s.billing_email });
+            }
         }
-        const storeAdRevenue = s.total_ad_revenue || 0;
-        const creatorReward = Math.floor(storeAdRevenue * 0.1);
-        const pureStoreRevenue = storeAdRevenue - creatorReward;
-        const shareAmount = Math.floor(pureStoreRevenue * 0.5);
-        if (shareAmount > 0) {
-            payoutData.push({ id: s.id, name: s.name, retail_ad_revenue: storeAdRevenue, creator_reward: creatorReward, total_net_revenue: pureStoreRevenue, ad_revenue_share: shareAmount, bank_info: s.bank_info, status: "未払", email: (s.bank_info && s.bank_info.email) ? s.bank_info.email : s.billing_email });
-        }
+        res.json({ accounting_email: adminSettings.accounting_email, billing: billingData, payouts: payoutData });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
-    res.json({ accounting_email: adminSettings.accounting_email, billing: billingData, payouts: payoutData });
 });
 
 app.post("/api/admin/invite", async (req, res) => {
     const { name, email, budget, ccEmail } = req.body;
     const tempPassword = Math.random().toString(36).slice(-8); // 8-char random password
-    users[email] = { password: tempPassword, role: "advertiser", name: name, org: name, budget: Number(budget) || 0 };
-    const dateStr = new Date().toISOString().split("T")[0];
-    const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 (${dateStr})`;
-    const body = `${name} 様\n\nリテアドのアカウントが発行され、ご入金いただいた予算がシステムに反映されました。\n\n--------------------------------\n[アカウント情報]\nログインID (Email): ${email}\n初期パスワード: ${tempPassword}\nログインURL: https://admin-portal-demo.com/login\n\n[チャージ残高]\n利用可能ご予算: ¥${Number(budget).toLocaleString()}\n--------------------------------\n\n早速システムにログインし、広告キャンペーンを作成してください。\nご不明な点がございましたら、当メールにそのままご返信ください。`;
-    await sendSESEmail(email, subject, body);
-    if (ccEmail) { await sendSESEmail(ccEmail, subject, body); }
-    res.json({ success: true, message: "Account created and email sent via SES" });
+    
+    try {
+        await dbHelper.query.run(
+            'INSERT OR REPLACE INTO users (email, password, role, name, org) VALUES (?, ?, ?, ?, ?)',
+            [email, tempPassword, "advertiser", name, name]
+        );
+        const dateStr = new Date().toISOString().split("T")[0];
+        const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 (${dateStr})`;
+        const body = `${name} 様\n\nリテアドのアカウントが発行され、ご入金いただいた予算がシステムに反映されました。\n\n--------------------------------\n[アカウント情報]\nログインID (Email): ${email}\n初期パスワード: ${tempPassword}\nログインURL: https://admin-portal-demo.com/login\n\n[チャージ残高]\n利用可能ご予算: ¥${Number(budget).toLocaleString()}\n--------------------------------\n\n早速システムにログインし、広告キャンペーンを作成してください。\nご不明な点がございましたら、当メールにそのままご返信ください。`;
+        await sendSESEmail(email, subject, body);
+        if (ccEmail) { await sendSESEmail(ccEmail, subject, body); }
+        res.json({ success: true, message: "Account created and email sent via SES" });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // --- AWS SES Email Integration ---
@@ -3036,68 +3137,112 @@ const saveDatabase = () => {
 setTimeout(pullFromS3, 2000);
 
 let lastDBString = "";
-setInterval(() => {
+setInterval(async () => {
     try {
-        if(true) {
-            const dataStr = JSON.stringify({
-                signageState: signageServer.getState ? signageServer.getState() : {}, 
-                campaigns: typeof campaigns !== 'undefined' ? campaigns : [], 
-                clients: typeof clients !== 'undefined' ? clients : [],
-                storeData: typeof storeData !== 'undefined' ? storeData : {},
-                creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
-                transactions: typeof transactions !== 'undefined' ? transactions : [],
-                sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
-                retailer_videos: global.retailer_videos || [],
-                            globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
-                agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
-                productionStats: global.productionStats ? global.productionStats : null,
-                creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
-                globalSensorLogs: typeof globalSensorLogs !== 'undefined' ? globalSensorLogs : [],
-                users: typeof users !== 'undefined' ? users : {},
-                posTransactions: typeof posTransactions !== 'undefined' ? posTransactions : [],
-                shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
-                manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
-                manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
-                scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
-            }, null, 2);
-            fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
-            if (dataStr !== lastDBString && lastDBString !== "") {
-                pushToS3(dataStr);
-                // Also push to PostgreSQL
-                if (pool) {
-                    try {
-                        // Sync users
-                        for (const email in users) {
-                            const u = users[email];
-                            pool.query(
-                                'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
-                                [email, u.password, u.role, u.name, u.org, u.twoFactorSecret]
-                            ).catch(e => console.error("[DB] Users Sync Error:", e.message));
-                        }
-                        
-                        // Sync transactions
-                        for (const t of transactions) {
-                            pool.query(
-                                'INSERT INTO transactions (transaction_id, amount, store_id, items, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (transaction_id) DO NOTHING',
-                                [t.id, t.total, t.storeId, JSON.stringify(t.items), new Date(t.timestamp)]
-                            ).catch(e => console.error("[DB] Transactions Sync Error:", e.message));
-                        }
+        // Fetch current data from SQLite
+        const dbUsers = await dbHelper.query.all('SELECT * FROM users');
+        const dbCampaigns = await dbHelper.query.all('SELECT * FROM campaigns');
+        const dbStores = await dbHelper.query.all('SELECT * FROM stores');
+        const dbPosTx = await dbHelper.query.all('SELECT * FROM pos_transactions');
 
-                        // Sync campaigns
-                        for (const c of campaigns) {
-                            pool.query(
-                                'INSERT INTO campaigns (id, url, advertiser, budget, daily_limit, spent, status) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, budget = EXCLUDED.budget, daily_limit = EXCLUDED.daily_limit, spent = EXCLUDED.spent, status = EXCLUDED.status',
-                                [c.id, c.url, c.advertiser, c.budget, c.daily_limit, c.spent, c.status]
-                            ).catch(e => console.error("[DB] Campaigns Sync Error:", e.message));
-                        }
-                    } catch (err) {
-                        console.error("[DB] Push Error:", err.message);
+        // Map SQLite rows to database.json schema format
+        const mappedUsers = {};
+        dbUsers.forEach(u => {
+            mappedUsers[u.email] = {
+                password: u.password,
+                role: u.role,
+                name: u.name,
+                org: u.org,
+                twoFactorSecret: u.two_factor_secret
+            };
+        });
+
+        const mappedCampaigns = dbCampaigns.map(c => ({
+            id: c.id,
+            name: c.name,
+            start: c.start_date,
+            end: c.end_date,
+            budget: c.budget,
+            spend: c.spend,
+            imp: c.impressions,
+            status: c.status
+        }));
+
+        const mappedStoreData = {};
+        dbStores.forEach(s => {
+            mappedStoreData[s.id] = {
+                id: s.id,
+                name: s.name,
+                billing_email: s.billing_email,
+                bank_info: {
+                    bank_name: s.bank_name || '',
+                    branch_name: s.branch_name || '',
+                    account_number: s.account_number || '',
+                    account_holder: s.account_holder || ''
+                },
+                total_pos_sales: s.total_pos_sales || 0,
+                total_ad_revenue: s.total_ad_revenue || 0
+            };
+        });
+
+        const mappedPosTx = dbPosTx.map(tx => ({
+            storeId: tx.store_id,
+            timestamp: tx.timestamp,
+            amount: tx.total_amount
+        }));
+
+        const dataStr = JSON.stringify({
+            signageState: signageServer.getState ? signageServer.getState() : {}, 
+            campaigns: mappedCampaigns, 
+            clients: typeof clients !== 'undefined' ? clients : [],
+            storeData: mappedStoreData,
+            creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
+            transactions: typeof transactions !== 'undefined' ? transactions : [],
+            sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
+            retailer_videos: global.retailer_videos || [],
+            globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
+            agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
+            productionStats: global.productionStats ? global.productionStats : null,
+            creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
+            globalSensorLogs: typeof globalSensorLogs !== 'undefined' ? globalSensorLogs : [],
+            users: mappedUsers,
+            posTransactions: mappedPosTx,
+            shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
+            manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
+            manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
+            scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
+        }, null, 2);
+
+        fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
+
+        if (dataStr !== lastDBString && lastDBString !== "") {
+            pushToS3(dataStr);
+            // Sync with remote Postgres if defined
+            if (pool) {
+                try {
+                    for (const email in mappedUsers) {
+                        const u = mappedUsers[email];
+                        await pool.query(
+                            'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
+                            [email, u.password, u.role, u.name, u.org, u.twoFactorSecret]
+                        );
                     }
+                    
+                    for (const c of mappedCampaigns) {
+                        await pool.query(
+                            'INSERT INTO campaigns (id, url, advertiser, budget, daily_limit, spent, status) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, budget = EXCLUDED.budget, daily_limit = EXCLUDED.daily_limit, spent = EXCLUDED.spent, status = EXCLUDED.status',
+                            [c.id, c.url || '', c.advertiser || '', c.budget || 0, c.daily_limit || 0, c.spent || 0, c.status || '']
+                        );
+                    }
+                } catch (pgErr) {
+                    console.error("[DB Postgres Sync Error]", pgErr.message);
                 }
             }
-            lastDBString = dataStr;
         }
-    } catch(e){}
+        lastDBString = dataStr;
+    } catch (e) {
+        console.error("[DB Backup/Sync Error]", e.message);
+    }
 }, 10000);
 
 
@@ -3934,13 +4079,16 @@ app.post('/api/freee/sales', async (req, res) => {
 
 
 // --- Store Portal Revenue Endpoint ---
-app.get('/api/store/revenue', (req, res) => {
-    // In production, this would calculate actual ad spend from campaigns and Google AdSense API.
-    // For now, return realistic demo data from DB or variables instead of hardcoded client-side mocks.
-    res.json({
-        totalAdSpend: 150000, 
-        adsenseRevenue: 20000 
-    });
+app.get('/api/store/revenue', async (req, res) => {
+    try {
+        const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', ['default_store']);
+        res.json({
+            totalAdSpend: 150000, 
+            adsenseRevenue: store ? store.total_ad_revenue : 20000 
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 app.get('/api/analytics/pos-search', (req, res) => {
