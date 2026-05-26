@@ -1004,7 +1004,7 @@
         <!-- === AI Agent Chat UI (Top Center) === -->
         <div class="agent-chat-container">
             <div class="agent-header">
-                <i class="fas fa-robot"></i> 広告主向け 自動運用エージェント
+                <i class="fas fa-robot"></i> 広告主向け 自動運用エージェント <a href="ad_dashboard-LP.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #fff; text-decoration: underline;">[機能の詳細を見る]</a>
             </div>
             <div class="agent-body">
                 <textarea id="aiAgentInput" placeholder="例: 来週の火曜日から夏物飲料のキャンペーンを予算5万円でやりたい" rows="2"></textarea>
@@ -1820,7 +1820,7 @@
             });
             
             try {
-                // Determine base64 placeholder (we use mock_data to avoid large payloads)
+                
                 const reviewRes = await fetch(window.API_BASE_URL + '/api/creator/review-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

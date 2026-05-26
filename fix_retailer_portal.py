@@ -1,18 +1,36 @@
-with open('retailer_portal.html', 'r', encoding='utf-8') as f:
-    text = f.read()
+import os
 
-insert_html = '''
-                <div style="margin-bottom:20px; background:#f1f5f9; padding:15px; border-radius:8px; border-left:4px solid #3b82f6;">
-                    <label style="font-weight:bold; color:#1e293b; display:flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" id="enable-time-limit" style="margin-right:10px; width:18px; height:18px;">
-                        動画の再生時間を最大120秒（2分）に制限する
-                    </label>
-                    <p style="margin:5px 0 0 28px; font-size:0.85rem; color:#64748b;">※チェックを外すと、動画が完了するまで制限なくフル再生されます（デフォルト推奨）</p>
-                </div>
-'''
+replacements = {
+    '<strong>縲舌そ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝√・螳溯｣・€・/strong><br class="mobile-br">繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺溘ヵ繧｡繧､繝ｫ繧貞ｮ溯｡・br class="mobile-br">縺吶ｋ縺縺代〒縲・strong>USB繝｡繝｢繝ｪ縺ｮ<br class="mobile-br">隱ｭ縺ｿ霎ｼ縺ｿ辟｡蜉ｹ蛹悶€√く繧ｪ繧ｹ繧ｯ<br class="mobile-br">繝｢繝ｼ繝芽ｨｭ螳壹€∝・逕ｻ髱｢襍ｷ蜍・/strong>縺・br class="mobile-br">蜈ｨ閾ｪ蜍輔〒繝代ャ繝・←逕ｨ縺輔ｌ縺ｾ縺吶€・/li>': '<strong>【セキュリティパッチの実装】</strong><br class="mobile-br">ダウンロードしたファイルを実行<br class="mobile-br">するだけで、<strong>USBメモリの<br class="mobile-br">読み込み無効化、キオスク<br class="mobile-br">モード設定、全画面起動</strong>が<br class="mobile-br">全自動でパッチ適用されます。</li>',
+    '縺昴・蝣ｴ蜷医・縲∵焔蜍輔〒繧｢繝励Μ繧・br class="mobile-br">繧､繝ｳ繧ｹ繝医・繝ｫ縺励€、ndroid讓呎ｺ悶・<br class="mobile-br">讖溯・縺ｧ縺ゅｋ縲檎判髱｢縺ｮ繝斐Φ逡吶ａ縲・br class="mobile-br">讖溯・繧偵＃蛻ｩ逕ｨ縺上□縺輔＞縲・': 'その場合は、手動でアプリを<br class="mobile-br">インストールし、Android標準の<br class="mobile-br">機能である「画面のピン留め」<br class="mobile-br">機能をご利用ください。',
+    '<strong style="color:#334155; display:block; margin-bottom:10px;">縲先焔蜍輔う繝ｳ繧ｹ繝医・繝ｫ縺ｨ蝗ｺ螳壼喧縺ｮ謇矩・€・/strong>': '<strong style="color:#334155; display:block; margin-bottom:10px;">【手動インストールと固定化の手順】</strong>',
+    '<li>莉･荳九・繝懊ち繝ｳ縺九ｉ<br class="mobile-br">Android逕ｨ繧｢繝励Μ<br class="mobile-br">・・PK繝輔ぃ繧､繝ｫ・峨ｒ遶ｯ譛ｫ縺ｫ<br class="mobile-br">逶ｴ謗･繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｦ<br class="mobile-br">繧､繝ｳ繧ｹ繝医・繝ｫ縺励※縺上□縺輔＞縲・br>': '<li>以下のボタンから<br class="mobile-br">Android用アプリ<br class="mobile-br">（APKファイル）を端末に<br class="mobile-br">直接ダウンロードして<br class="mobile-br">インストールしてください。<br>',
+    '<li>繧｢繝励Μ縺ｮ繧､繝ｳ繧ｹ繝医・繝ｫ蠕・br class="mobile-br">Android縺ｮ縲瑚ｨｭ螳壹€阪い繝励Μ繧・br class="mobile-br">髢九″縲√€後そ繧ｭ繝･繝ｪ繝・ぅ縲搾ｼ・br class="mobile-br">縲瑚ｩｳ邏ｰ險ｭ螳夲ｼ医∪縺溘・縺昴・莉悶・<br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ險ｭ螳夲ｼ峨€搾ｼ・br class="mobile-br"><strong>縲檎判髱｢縺ｮ繝斐Φ逡吶ａ縲・/strong> 繧偵が繝ｳ縺ｫ縺励∪縺吶€・/li>': '<li>アプリのインストール後、<br class="mobile-br">Androidの「設定」アプリを<br class="mobile-br">開き、「セキュリティ」＞<br class="mobile-br">「詳細設定（またはその他の<br class="mobile-br">セキュリティ設定）」＞<br class="mobile-br"><strong>「画面のピン留め」</strong> をオンにします。</li>',
+    '<li>繝ｪ繝・い繝峨・繧ｵ繧､繝阪・繧ｸ繧｢繝励Μ繧・br class="mobile-br">襍ｷ蜍輔＠縺溽憾諷九〒縲√ち繧ｹ繧ｯ荳€隕ｧ<br class="mobile-br">・郁ｵｷ蜍穂ｸｭ縺ｮ繧｢繝励Μ荳€隕ｧ・峨ｒ髢九″縲・br class="mobile-br">繧｢繝励Μ繧｢繧､繧ｳ繝ｳ繧偵ち繝・・縺励※<br class="mobile-br">縲後ヴ繝ｳ逡吶ａ縲阪ｒ驕ｸ謚槭＠縺ｾ縺吶€・/li>': '<li>リテアドのサイネージアプリを<br class="mobile-br">起動した状態で、タスク一覧<br class="mobile-br">（起動中のアプリ一覧）を開き、<br class="mobile-br">アプリアイコンをタップして<br class="mobile-br">「ピン留め」を選択します。</li>',
+    '<li>繝斐Φ逡吶ａ繧定｡後≧縺ｨ<br class="mobile-br">謌ｻ繧九・繧ｿ繝ｳ縺ｨ繝帙・繝繝懊ち繝ｳ縺ｮ<br class="mobile-br">繝懊ち繝ｳ縺ｮ蜷梧凾髟ｷ謚ｼ縺礼ｭ峨ｒ<br class="mobile-br">陦後ｏ縺ｪ縺・剞繧・br class="mobile-br">繧ｵ繧､繝阪・繧ｸ逕ｻ髱｢縺九ｉ<br class="mobile-br">繝帙・繝逕ｻ髱｢縺ｫ謌ｻ繧後↑縺上↑繧九◆繧・br class="mobile-br">蠎鈴ｭ縺ｧ縺ｮ繧､繧ｿ繧ｺ繝ｩ髦ｲ豁｢縺ｫ<br class="mobile-br">蜊∝・蠖ｹ遶九■縺ｾ縺吶€・/li>': '<li>ピン留めを行うと<br class="mobile-br">戻るボタンとホームボタンの<br class="mobile-br">ボタンの同時長押し等を<br class="mobile-br">行わない限り、<br class="mobile-br">サイネージ画面から<br class="mobile-br">ホーム画面に戻れなくなるため<br class="mobile-br">店頭でのイタズラ防止に<br class="mobile-br">十分役立ちます。</li>',
+    '<li>讌ｭ蜍吶〒菴ｿ逕ｨ縺吶ｋ髫帙・<br class="mobile-br">蠎怜藤讒倥＃閾ｪ霄ｫ縺ｧ繝斐Φ逡吶ａ繧定ｧ｣髯､<br class="mobile-br">縺吶ｋ縺薙→縺ｧ縲∵勸谿ｵ騾壹ｊ莉悶・<br class="mobile-br">繧ｵ繧､繝阪・繧ｸ繧・br class="mobile-br">縺泌茜逕ｨ縺・◆縺縺代∪縺吶€・/li>': '<li>業務で使用する際は<br class="mobile-br">店員様ご自身でピン留めを解除<br class="mobile-br">することで、普段通り他の<br class="mobile-br">サイネージを<br class="mobile-br">ご利用いただけます。</li>',
+    '<li><strong>窶ｻ驥崎ｦ≫€ｻ</strong><br class="mobile-br">USB繝昴・繝医・閾ｪ蜍慕┌蜉ｹ蛹悶・<br class="mobile-br">驕ｩ逕ｨ縺輔ｌ縺ｾ縺帙ｓ縲・br class="mobile-br">USB繝昴・繝医↓繝・・繝励ｒ雋ｼ縺｣縺溘ｊ<br class="mobile-br">驟咲ｷ夐Κ蛻・ｒ繧ｫ繝舌・縺ｧ隕・≧縺ｪ縺ｩ縺ｮ<br class="mobile-br">迚ｩ逅・ヶ繝ｭ繝・け繧呈耳螂ｨ縺励∪縺吶€・br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ縺ｫ<br class="mobile-br">縺疲ｳｨ諢上￥縺縺輔＞縲・/li>': '<li><strong>※重要※</strong><br class="mobile-br">USBポートの自動無効化は<br class="mobile-br">適用されません。<br class="mobile-br">USBポートにテープを貼ったり<br class="mobile-br">配線部分をカバーで覆うなどの<br class="mobile-br">物理ブロックを推奨します。<br class="mobile-br">セキュリティに<br class="mobile-br">ご注意ください。</li>',
+    '<span style="color:#64748b; font-size:0.9rem;">縺ｾ縺溘・繧ｯ繝ｪ繝・け縺励※繝輔ぃ繧､繝ｫ繧帝∈謚・(MP4, MOV 譛€螟ｧ500MB)</span>': '<span style="color:#64748b; font-size:0.9rem;">またはクリックしてファイルを選択 (MP4, MOV 最大500MB)</span>',
+    "title: 'メールアドレス繧貞・蜉・,": "title: 'メールアドレスを入力',",
+    "inputPlaceholder: '蠎苓・縺ｮメールアドレス',": "inputPlaceholder: '店舗のメールアドレス',",
+    "Swal.fire('送信完了, result.value + ' 螳帙↓莉･荳九・繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨Μ繝ｳ繧ｯ繧帝€∽ｿ｡縺励∪縺励◆縲・br><br><a href=\"https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\" target=\"_blank\" style=\"word-break:break-all;\">https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk</a>', 'success');": "Swal.fire('送信完了', result.value + ' 宛に以下のダウンロードリンクを送信しました。<br><br><a href=\"https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\" target=\"_blank\" style=\"word-break:break-all;\">https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk</a>', 'success');",
+    '縲舌し繧､繝阪・繧ｸ蛻晄悄險ｭ螳壹・縺企｡倥＞縲曾n\\n蠎苓・縺ｮ繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ・・ndroid遶ｯ譛ｫ・峨↓縺ｦ縲∽ｻ･荳九・險ｭ螳壹ｒ縺企｡倥＞縺励∪縺吶€・n窶ｻ蠢・★Wi-Fi遲峨・繧､繝ｳ繧ｿ繝ｼ繝阪ャ繝医↓謗･邯壹＠縺ｦ縺上□縺輔＞縲６SB繧ТD繧ｫ繝ｼ繝峨・縺ｿ縺ｧ縺ｮ繧ｪ繝輔Λ繧､繝ｳ驕狗畑縺ｯ縺ｧ縺阪∪縺帙ｓ縲・n\\n1. 莉･荳九・蟆ら畑繝ｪ繝ｳ繧ｯ縺九ｉ縲軍etailMedia Signage縲阪い繝励Μ・・PK繝輔ぃ繧､繝ｫ・峨ｒ繧､繝ｳ繧ｹ繝医・繝ｫ縺励※縺上□縺輔＞縲・n笆ｼ 繝€繧ｦ繝ｳ繝ｭ繝ｼ繝蔚RL\\nhttps://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\\n\\n2. 繧｢繝励Μ繧定ｵｷ蜍輔☆繧九□縺代〒蛻晄悄險ｭ螳壹・螳御ｺ・〒縺吶€・n・遺€ｻ閾ｪ蜍輔〒蠎苓・縺ｨ邏蝉ｻ倥￥縺溘ａ縲！D縺ｮ蜈･蜉帷ｭ峨・荳崎ｦ√〒縺呻ｼ噂n\\n窶ｻ謨ｰ遘偵〒閾ｪ蜍慕噪縺ｫ蠎・相繝ｻCM縺ｮ謾ｾ譏縺後せ繧ｿ繝ｼ繝医＠縺ｾ縺吶€る崕貅舌ｒ蜈･繧後ｋ縺縺代〒谺｡蝗槭°繧峨・閾ｪ蜍募・逕溘＆繧後€∝●髮ｻ譎ゅｂ閾ｪ蜍募ｾｩ譌ｧ縺励∪縺吶€Ａ': '【サイネージ初期設定のお願い】\\n\\n店舗のサイネージパネル（Android端末）にて、以下の設定をお願いします。\\n※必ずWi-Fi等のインターネットに接続してください。USBやSDカードのみでのオフライン運用はできません。\\n\\n1. 以下の専用リンクから「RetailMedia Signage」アプリ（APKファイル）をインストールしてください。\\n👇 ダウンロードURL\\nhttps://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\\n\\n2. アプリを起動するだけで初期設定は完了です。\\n（※自動で店舗と紐付くため、IDの入力等は不要です）\\n\\n※数秒で自動的に広告・CMの放映がスタートします。電源を入れるだけで次回からは自動再生され、停電時も自動復旧します。',
+    'if(confirm("縺薙・蜍慕判縺ｮ驟堺ｿ｡繧貞●豁｢縺励€∝炎髯､縺励∪縺吶°・・)) {': 'if(confirm("この動画の配信を停止し、削除しますか？")) {',
+    '<p style="color:#e74c3c; font-weight:bold; margin-bottom:10px;">窶ｻ繧ｵ繧､繝阪・繧ｸ縺ｧ縺ｮ隧先ｬｺ陲ｫ螳ｳ繧帝亟縺舌◆繧√€∽ｻ･荳九・鬆・岼縺・縺､縺ｧ繧ょ性縺ｾ繧後ｋ蠎・相繝ｻ蜍慕判縺ｯAI縺ｫ繧医ｊ蜊ｳ譎ゅヶ繝ｭ繝・け・医い繧ｫ繧ｦ繝ｳ繝亥●豁｢・峨＆繧後∪縺吶€・/p>': '<p style="color:#e74c3c; font-weight:bold; margin-bottom:10px;">※サイネージでの詐欺被害を防ぐため、以下の項目が1つでも含まれる広告・動画はAIにより即時ブロック（アカウント停止）されます。</p>',
+    '<li style="margin-bottom:8px;"><b>1. 譫ｶ遨ｺ隲区ｱゅ・繧ｵ繝昴・繝郁ｩ先ｬｺ:</b> 縲梧悴謇輔＞譁咎≡縲阪€梧ｳ慕噪蜃ｦ鄂ｮ縲阪€後い繧ｫ繧ｦ繝ｳ繝域ｶ亥悉縲阪€後え繧､繝ｫ繧ｹ諢滓沒縲咲ｭ峨〒荳榊ｮ峨ｒ辣ｽ繧句・螳ｹ縲・/li>': '<li style="margin-bottom:8px;"><b>1. 架空請求・サポート詐欺:</b> 「未払い料金」「法的処置」「アカウント消去」「ウイルス感染」等で不安を煽る内容。</li>',
+    '<li style="margin-bottom:8px;"><b>2. 螳壽悄雉ｼ蜈･縺ｮ髫阡ｽ繝ｻ轤ｹ讀懆ｩ先ｬｺ:</b> 縲悟・蝗樒┌譁吶€咲ｭ峨→讌ｵ遶ｯ縺ｫ螳我ｾ｡繧定ｬｳ縺・▽縺､邯咏ｶ壽擅莉ｶ繧帝國縺吝━濶ｯ隱､隱榊ｺ・相繧・€∽ｸ崎・辟ｶ縺ｪ譬ｼ螳我ｿｮ逅・･ｭ閠・€・/li>': '<li style="margin-bottom:8px;"><b>2. 定期購入の隠蔽・点検詐欺:</b> 「初回無料」等と極端に安価を謳いつつ継続条件を隠す優良誤認広告や、不自然な格安修理業者。</li>',
+    '<li style="margin-bottom:8px;"><b>3. 證ｴ蜉帙・謾ｻ謦・噪謠丞・:</b> 豬∬｡€縺ｮ譛臥┌繧・ヵ繧｣繧ｯ繧ｷ繝ｧ繝ｳ縺ｫ髢｢菫ゅ↑縺上€∵ｮｴ謇薙ｄ螽∝悸逧・↑霄ｫ菴捺磁隗ｦ繧貞性繧€繧ゅ・縲・/li>': '<li style="margin-bottom:8px;"><b>3. 暴力・攻撃的描写:</b> 流血の有無やフィクションに関係なく、殴打や威圧的な身体接触を含むもの。</li>',
+    '<li style="margin-bottom:8px;"><b>4. 投資詐欺・誇大広告:</b> 「確螳溘↓遞ｼ縺偵ｋ縲咲ｭ峨・陦ｨ迴ｾ縲∬送蜷堺ｺｺ縺ｮ辟｡譁ｭ菴ｿ逕ｨ縲∝ｮ牙・諤ｧ縺檎｢ｺ隱阪〒縺阪↑縺РR繧ｳ繝ｼ繝峨・LINE隱伜ｰ弱€・/li>': '<li style="margin-bottom:8px;"><b>4. 投資詐欺・誇大広告:</b> 「確実に稼げる」等の表現、著名人の無断使用、安全性が確認できないQRコードやLINE誘導。</li>',
+    "confirmButtonText: '遒ｺ隱阪＠縺ｾ縺励◆',": "confirmButtonText: '確認しました',",
+    "alert(`縲宣・菫｡繝ｻ蠎・相蟇ｩ譟ｻ蝓ｺ貅悶€・1. 譫ｶ遨ｺ隲区ｱゅ・繧ｵ繝昴・繝郁ｩ先ｬｺ": "alert(`【配信・広告審査基準】\\n1. 架空請求・サポート詐欺",
+    "4. 謚戊ｳ・ｩ先ｬｺ繝ｻ蜊ｱ髯ｺ縺ｪQR繧ｳ繝ｼ繝・縺薙ｌ繧峨ｒ蜷ｫ繧€繧ゅ・縺ｯAI縺ｫ繧医ｊ蜊ｳ譎ゅヶ繝ｭ繝・け縺輔ｌ縺ｾ縺吶€Ａ);": "4. 投資詐欺・危険なQRコード\\nこれらを含むものはAIにより即時ブロックされます。`);"
+}
 
-target = '<div class="drop-zone" id="drop-zone" onclick="document.getElementById(\'file-input\').click()">'
-text = text.replace(target, insert_html + '\n                ' + target)
-
+content = open('retailer_portal.html', encoding='utf-8').read()
+for k, v in replacements.items():
+    if k in content:
+        content = content.replace(k, v)
 with open('retailer_portal.html', 'w', encoding='utf-8') as f:
-    f.write(text)
+    f.write(content)
+
+print("Remaining fix applied.")

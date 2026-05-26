@@ -519,8 +519,83 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    btn.innerText = 'Redirecting...';
-                    window.location.href = data.redirect;
+                    if (data.require2FASetup) {
+                        btn.innerText = 'Login';
+                        btn.style.opacity = '1';
+                        // 2FA Setup Flow
+                        const setupRes = await fetch(`${API_URL}/api/auth/2fa/setup`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                        });
+                        const setupData = await setupRes.json();
+                        
+                        const { value: code } = await Swal.fire({
+                            title: '二段階認証の設定',
+                            html: `
+                                <p style="font-size: 14px;">認証アプリ(Google Authenticator等)でQRコードをスキャンしてください</p>
+                                <img src="${setupData.qrcode}" alt="QR Code" style="margin: 10px auto; border-radius: 8px; border: 1px solid #ccc;">
+                                <p style="font-size: 12px; color: #888; user-select: all;">シークレットキー: <b>${setupData.secret}</b></p>
+                                <input id="totp-setup-code" type="text" class="swal2-input" placeholder="6桁の認証コード" autocomplete="one-time-code">
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: '設定してログイン',
+                            preConfirm: () => {
+                                return document.getElementById('totp-setup-code').value;
+                            }
+                        });
+
+                        if (code) {
+                            const verifyRes = await fetch(`${API_URL}/api/auth/2fa/enable`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, secret: setupData.secret, token: code })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.success) {
+                                Swal.fire('完了', '二段階認証を設定しました！', 'success').then(() => {
+                                    window.location.href = data.redirect || 'store_portal.html';
+                                });
+                            } else {
+                                Swal.fire('エラー', verifyData.error, 'error');
+                            }
+                        }
+                    } else if (data.require2FA) {
+                        btn.innerText = 'Login';
+                        btn.style.opacity = '1';
+                        // 2FA Verify Flow
+                        const { value: code } = await Swal.fire({
+                            title: '二段階認証',
+                            input: 'text',
+                            inputLabel: 'アプリに表示されている6桁のコードを入力してください',
+                            inputPlaceholder: '123456',
+                            showCancelButton: true,
+                            confirmButtonText: '認証してログイン',
+                            inputAttributes: {
+                                autocomplete: 'one-time-code'
+                            }
+                        });
+
+                        if (code) {
+                            btn.innerText = 'Verifying 2FA...';
+                            const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, password, totpCode: code })
+                            });
+                            const loginData = await loginRes.json();
+                            if (loginData.success) {
+                                btn.innerText = 'Redirecting...';
+                                window.location.href = loginData.redirect || 'store_portal.html';
+                            } else {
+                                btn.innerText = 'Login';
+                                Swal.fire('エラー', loginData.error, 'error');
+                            }
+                        }
+                    } else {
+                        btn.innerText = 'Redirecting...';
+                        window.location.href = data.redirect || 'store_portal.html';
+                    }
                 } else {
                     btn.innerText = 'Login';
                     btn.style.opacity = '1';

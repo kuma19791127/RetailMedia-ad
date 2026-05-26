@@ -2,7 +2,20 @@
   "signageState": {
     "register_side": {
       "interrupt": null,
-      "paid": [],
+      "paid": {
+        "id": "creator_1779458591996",
+        "title": "Creator: Test Video for Signage",
+        "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyprises.mp4",
+        "duration": 45,
+        "aspect_ratio": "9:16",
+        "location_qr": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Creator",
+        "is_youtube": false,
+        "is_image": false,
+        "is_recipe": false,
+        "status": "active",
+        "brand": "Creator",
+        "youtube_url": null
+      },
       "moment": null,
       "impression": null,
       "network": null,
@@ -50,7 +63,21 @@
   "creatorState": {
     "total_views": 0,
     "total_revenue": 0,
-    "videos": []
+    "videos": [
+      {
+        "id": 1779458591996,
+        "title": "Test Video for Signage",
+        "format": "縦型 (Shorts)",
+        "views": 0,
+        "revenue": 0,
+        "status": "active",
+        "attention": "--",
+        "skip": "--",
+        "uplift": "--",
+        "rank": "-",
+        "color": "#64748b"
+      }
+    ]
   },
   "transactions": [],
   "sensorLogs": [],

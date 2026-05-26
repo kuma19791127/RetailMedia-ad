@@ -1,34 +1,200 @@
 const fs = require('fs');
+let html = fs.readFileSync('store_portal.html', 'utf8');
 
-// 1. store_portal.html
-let storeHtml = fs.readFileSync('store_portal.html', 'utf8');
-storeHtml = storeHtml.replace(
-    /<i>✨<\/i><span>AIボイススタジオ<\/span>[\s\S]*?<\/a>/g, 
-    match => match + '\n            <a href=\"anywhere_lp.html\" class=\"nav-item\" target=\"_blank\">\n                <i class="fa-solid fa-cash-register"></i><span>どこでもレジ (LP)</span>\n            </a>'
-);
-fs.writeFileSync('store_portal.html', storeHtml);
+const replacements = {
+    // Nav & Common
+    '投 螢ｲ荳翫そ繝ｳ繧ｿ繝ｼ': '💰 売上センター',
+    '笨ｨ AI繝懊う繧ｹ 繧ｹ繧ｿ繧ｸ繧ｪ': '🎙️ AIボイス スタジオ',
+    '諜 繝｢繝舌う繝ｫPOS 蠎苓・邂｡逅・': '📱 モバイルPOS 店長管理',
+    '導 縺ｩ縺薙〒繧ゅΞ繧ｸ (Local)': '🛒 どこでもレジ (Local)',
+    '邨・ｹ・繝｡繝ｼ繝ｫ險ｭ螳・': '組織・メール設定',
+    '繝帙・繝': 'ホーム',
+    '繝ｬ繧ｸ': 'レジ',
+    '繧ｷ繝輔ヨ': 'シフト',
+    '繝槭ル繝･繧｢繝ｫ': 'マニュアル',
+    'AI繝懊う繧ｹ繧ｹ繧ｿ繧ｸ繧ｪ': 'AIボイススタジオ',
+    '繝｡繝九Η繝ｼ': 'メニュー',
+    '縺昴・莉悶Γ繝九Η繝ｼ': 'その他メニュー',
+    'POS騾｣謳ｺ': 'POS連携',
+    '蝨ｨ蠎ｫ騾｣謳ｺ': '在庫連携',
+    '繝ｭ繧ｰ繧｢繧ｦ繝・': 'ログアウト',
+    '繝励Ο繝輔ぅ繝ｼ繝ｫ邱ｨ髮・': 'プロフィール編集',
+    '邨・ｹ泌錐': '組織名',
+    '譬ｪ蠑丈ｼ夂､ｾ縲・€・': '株式会社...',
+    '蜷榊燕陦ｨ遉ｺ': '名前表示',
+    '驤ｴ譛ｨ 荳€驛・': '鈴木 一郎',
+    '繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ': 'メールアドレス',
+    '繝代せ繝ｯ繝ｼ繝・(繝ｪ繧ｻ繝・ヨ)': 'パスワード (リセット)',
+    '譁ｰ縺励＞繝代せ繝ｯ繝ｼ繝・': '新しいパスワード',
+    '菫晏ｭ倥＠縺ｦ髢峨§繧・': '保存して閉じる',
+    '繧ｭ繝｣繝ｳ繧ｻ繝ｫ': 'キャンセル',
+    '驤ｴ譛ｨ (蠎鈴聞)': '鈴木 (店長)',
+    '繝励Ο繝輔ぅ繝ｼ繝ｫ繧担3縺ｫ菫晏ｭ倥＠縺ｾ縺励◆': 'プロフィールをS3に保存しました',
+    '豎ｺ貂・D:': '決済ID:',
+    '将 蜷郁ｨ・': '💰 合計',
+    '莠ｺ': '人',
+    '坎': '🚪',
+    '逃': '📦',
+    '伯': '🔗',
+    
+    // POS Settings section
+    '<h2 style="margin-top:0;">伯 POS繝ｻ繝・・繧ｿ騾｣謳ｺ險ｭ螳・/h2>': '<h2 style="margin-top:0;">🔗 POS・データ連携設定</h2>',
+    '<h3 style="margin-top:0; color:#10b981;">泙 譁ｹ豕・: 縺ｩ縺薙〒繧ゅΞ繧ｸ・・C謗･邯壼梛繝ｻ謗ｨ螂ｨ・峨→蝠・刀荳€諡ｬ蜿冶ｾｼ</h3>': '<h3 style="margin-top:0; color:#10b981;">💡 方法1: どこでもレジ（PC接続型・推奨）と商品一括取込</h3>',
+    '<p style="font-weight:bold; color:#475569;">謨ｰ荳・せ縺ｮ蝠・刀縺後≠繧句ｺ苓・縺ｧ繧ゅ€√☆縺舌＆縺ｾ繧ｪ繝輔Λ繧､繝ｳ縺ｧ辷・€溽ｨｼ蜒阪〒縺阪ｋ莉慕ｵ・∩縺ｧ縺吶€・/p>': '<p style="font-weight:bold; color:#475569;">数万件の商品がある店舗でも、すぐさまオフラインで超高速稼働できる仕組みです。</p>',
+    '<b style="color:#334155;">竭 蝠・刀繝槭せ繧ｿ繝ｼ縺ｮ荳€諡ｬ蜿冶ｾｼ・医ヶ繝ｩ繧ｦ繧ｶ蜀・B・・/b>': '<b style="color:#334155;">① 商品マスターの一括取込（ブラウザ内DB）</b>',
+    '譌ｬ蟄倥・レジ繧・渕蟷ｹ繧ｷ繧ｹ繝・Β縺九ｉ縲悟膚蜩√・繧ｨ繧ｯ繧ｻ繝ｫ/CSV縲阪ｒ譖ｸ縺榊・縺励€・code>縺ｩ縺薙〒繧ゅΞ繧ｸ</code> 縺ｮ逕ｻ髱｢荳企Κ縺九ｉ隱ｭ縺ｿ霎ｼ縺ｾ縺帙∪縺吶€ゅ☆繧九→縲∵焚荳・ｻｶ縺ｮ繝・・繧ｿ縺悟､夜Κ繧ｵ繝ｼ繝舌・縺ｧ縺ｯ縺ｪ縺・b>遶ｯ譛ｫ・・Pad繧ПC・牙・驛ｨ縺ｮ雜・ｫ倬€櫂B (IndexedDB)</b> 縺ｫ荳€迸ｬ縺ｧ繧ｭ繝｣繝・す繝･縺輔ｌ縺ｾ縺吶€・br>': '既存のレジや基幹システムから「商品のエクセル/CSV」を書き出し、<code>どこでもレジ</code> の画面上部から読み込ませます。すると、数万件のデータが外部サーバーではなく<b>端末（iPadやPC）内部の超高速DB (IndexedDB)</b> に一瞬でキャッシュされます。<br>',
+    '<span style="font-size:12px; color:#64748b;">窶ｻ讖溷ｯ・ュ蝣ｱ縺悟､悶↓蜃ｺ縺壹€・€壻ｿ｡迺ｰ蠅・′謔ｪ縺上※繧よｭ｢縺ｾ繧翫∪縺帙ｓ縲・/span>': '<span style="font-size:12px; color:#64748b;">※機密情報が外に出ず、通信環境が悪くても止まりません。</span>',
+    '<b style="color:#334155;">竭｡ 蟶りｲｩHID繧ｹ繧ｭ繝｣繝翫〒縺ｮ辷・€溘€後ヴ繝・ｼ√€・/b>': '<b style="color:#334155;">② 市販HIDスキャナでの超高速「ピッ！」</b>',
+    '蟶りｲｩ縺ｮ謨ｰ蜊・・縺ｮUSB/Bluetooth繧ｹ繧ｭ繝｣繝翫ｒ郢九＄縺ｨ縲瑚ｶ・ｫ倬€溘・繧ｭ繝ｼ繝懊・繝峨€阪→縺励※隱崎ｭ倥＆繧後∪縺吶€ゅ◎繧後ｒ繧ｷ繧ｹ繝・Β縺梧､懃衍縺励€∫ｫｯ譛ｫ蜀・Κ縺ｮDB縺九ｉ<b>0.1遘呈悴貅€縺ｧ蝠・刀繧貞他縺ｳ蜃ｺ縺・/b>繧ｫ繝ｼ繝医↓蜈･繧後∪縺吶€・br>': '市販の数千円のUSB/Bluetoothスキャナを繋ぐと「超高速のキーボード」として認識されます。それをシステムが検知し、端末内部のDBから<b>0.1秒未満で商品を呼び出し</b>カートに入れます。<br>',
+    '<span style="font-size:12px; color:#64748b;">窶ｻ蟆ら畑讖溷勣繧・屮縺励＞API螂醍ｴ・′荳崎ｦ√〒縲∽ｻ翫☆縺仙ｧ九ａ繧峨ｌ縺ｾ縺吶€・/span>': '<span style="font-size:12px; color:#64748b;">※専用機器や難しいAPI契約が不要で、今すぐ始められます。</span>',
+    '導 螳滄圀縺ｮ縺ｩ縺薙〒繧ゅΞ繧ｸ繧帝幕縺・': '🛒 実際のどこでもレジを開く',
+    '<h3 style="margin-top:0; color:#d97706;">泯 譁ｹ豕・: 繧ｯ繝ｩ繧ｦ繝臼OS縺ｮ縲係ebhooks騾｣謳ｺ縲搾ｼ医せ繝槭Ξ繧ｸ繝ｻSquare遲会ｼ・/h3>': '<h3 style="margin-top:0; color:#d97706;">💡 方法2: クラウドPOSの「Webhooks連携」（スマレジ・Square等）</h3>',
+    '<p style="font-weight:bold; color:#475569;">縺吶〒縺ｫ蠎苓・縺ｫ繧ｹ繝槭Ξ繧ｸ繧Тquare縲、irレジ縺ｪ縺ｩ縺ｮ縲後け繝ｩ繧ｦ繝牙梛POS縲阪′蜈･縺｣縺ｦ縺・ｋ蝣ｴ蜷医↓譛€蠑ｷ縺ｮ譁ｹ豕輔〒縺吶€・/p>': '<p style="font-weight:bold; color:#475569;">すでに店舗にスマレジやSquare、Airレジなどの「クラウド型POS」が入っている場合に最強の方法です。</p>',
+    '<strong>縲蝉ｻ慕ｵ・∩縲・/strong> 繧ｯ繝ｩ繧ｦ繝臼OS蜷・､ｾ縺檎畑諢上＠縺ｦ縺・ｋ縲係ebhook・亥｣ｲ荳企€夂衍讖溯・・峨€阪ｒ菴ｿ縺・∪縺吶€・': '<strong>【仕組み】</strong> クラウドPOS各社が用意している「Webhook（売上通知機能）」を使います。',
+    '<strong>縲仙ｮ滄圀縺ｮ繧・ｊ譁ｹ縲・/strong> 繧ｹ繝槭Ξ繧ｸ遲峨・邂｡逅・判髱｢縺九ｉ縲・a href="https://retail-ad.com" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:bold;">繝ｪ繝・い繝峨・繧ｵ繝ｼ繝舌・URL</a>繧・縺､逋ｻ骭ｲ縺吶ｋ縺縺代〒縺吶€ょｺ苓・縺ｮレジ縺ｧ莨夊ｨ医・繧ｿ繝ｳ縺梧款縺輔ｌ縺溽椪髢薙↓縲√せ繝槭Ξ繧ｸ縺ｮ繧ｵ繝ｼ繝舌・蛛ｴ縺九ｉ縲後％縺ｮ蝠・刀縺悟｣ｲ繧後∪縺励◆・√€阪→縺・≧繝・・繧ｿ縺後Μ繝・い繝峨・繧ｵ繝ｼ繝舌・縺ｫ閾ｪ蜍輔〒鬟帙ｓ縺ｧ縺阪∪縺吶€・': '<strong>【実際のやり方】</strong> スマレジ等の管理画面から、<a href="https://retail-ad.com" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:bold;">リテアドのサーバーURL</a>を１つ登録するだけです。店舗のレジで会計ボタンが押された瞬間に、スマレジのサーバー側から「この商品が売れました！」というデータがリテアドのサーバーに自動で飛んできます。',
+    '<div style="background:#fffbeb; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#b45309;">痩 譌｢蟄倥・レジ縺ｮ繝上・繝峨え繧ｧ繧｢繧・桃菴懊ｒ荳€蛻・､画峩縺吶ｋ縺薙→縺ｪ縺上€∬｣丞・縺ｧ蜍晄焔縺ｫ謌先棡蝣ｱ驟ｬ繝・・繧ｿ縺碁€｣謳ｺ縺輔ｌ縺ｾ縺吶€・/div>': '<div style="background:#fffbeb; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; color:#b45309;">💡 既存のレジのハードウェアや操作を一切変更することなく、裏側で勝手に成果報酬データが連携されます。</div>',
+    '<h3 style="margin-top:0; color:#dc2626;">閥 譁ｹ豕・: 譌｢蟄倥・螟ｧ謇九Ξ繧ｸ繝｡繝ｼ繧ｫ繝ｼ縺ｸ縺ｮ邨・∩霎ｼ縺ｿ・・DK騾｣謳ｺ・・/h3>': '<h3 style="margin-top:0; color:#dc2626;">💡 方法3: 既存の大手レジメーカーへの組み込み（SDK連携）</h3>',
+    '<p style="font-weight:bold; color:#475569;">譚ｱ闃昴ユ繝・け繧・ｯ悟｣ｫ騾壹↑縺ｩ縺ｮ迢ｬ閾ｪPOS繧ｷ繧ｹ繝・Β・医Ξ繧ｬ繧ｷ繝ｼPOS・峨ｒ菴ｿ縺｣縺ｦ縺・ｋ蝣ｴ蜷医〒縺吶€・/p>': '<p style="font-weight:bold; color:#475569;">東芝テックや富士通などの独自POSシステム（レガシーPOS）を使っている場合です。</p>',
+    '<strong>縲蝉ｻ慕ｵ・∩縲・/strong> 繧ｷ繧ｹ繝・Β蜀・↓蜷梧｢ｱ縺輔ｌ縺ｦ縺・ｋ <a href="pos_connect_sdk.js" target="_blank" style="color:#dc2626; text-decoration:underline;"><code>pos_connect_sdk.js</code></a> ・医ｏ縺壹°80陦後・霆ｽ驥上・繝ｭ繧ｰ繝ｩ繝・峨ｒ菴ｿ縺・∪縺吶€・': '<strong>【仕組み】</strong> システム内に同梱されている <a href="pos_connect_sdk.js" target="_blank" style="color:#dc2626; text-decoration:underline;"><code>pos_connect_sdk.js</code></a> （わずか80行の軽量プログラム）を使います。',
+    '<strong>縲仙ｮ滄圀縺ｮ繧・ｊ譁ｹ縲・/strong> レジ縺ｮ髢狗匱繝吶Φ繝€繝ｼ縺ｫ縲御ｼ夊ｨ亥ｮ御ｺ・凾縺ｫ縲√％縺ｮ遏ｭ縺・さ繝ｼ繝会ｼ・<code>liteAd.trackSale({ amount: 1500... })</code> ・峨ｒ1陦後□縺大他縺ｳ蜃ｺ縺励※縲阪→萓晞ｼ縺吶ｋ縺縺代〒縺吶€・': '<strong>【実際のやり方】</strong> レジの開発ベンダーに「会計完了時に、この短いコード（<code>liteAd.trackSale({ amount: 1500... })</code> ）を1行だけ呼び出して」と依頼するだけです。',
+    '<h3 style="margin-top:0; color:#2980b9;">踏 蝠・刀繝・・繧ｿ縺ｮ繧､繝ｳ繝昴・繝・/h3>': '<h3 style="margin-top:0; color:#2980b9;">📦 商品データのインポート</h3>',
+    'Excel繝輔ぃ繧､繝ｫ(.xlsx) 縺ｾ縺溘・ 蝠・刀繝ｪ繧ｹ繝・S繝輔ぃ繧､繝ｫ(products.js) 繧偵ラ繝ｩ繝・げ・・ラ繝ｭ繝・・縲√∪縺溘・驕ｸ謚槭＠縺ｦ繧｢繝・・繝ｭ繝ｼ繝峨＠縺ｾ縺吶€・br>': 'Excelファイル(.xlsx) または 商品リストJSファイル(products.js) をドラッグ＆ドロップ、または選択してアップロードします。<br>',
+    '<span style="color:#e74c3c;">窶ｻ繧｢繝・・繝ｭ繝ｼ繝牙ｾ後€√け繝ｩ繧ｦ繝臼OS (縺ｩ縺薙〒繧ゅΞ繧ｸ) 遲峨・莉也ｫｯ譛ｫ縺ｫ繧り・蜍募・譛峨＆繧後∪縺吶€・/span>': '<span style="color:#e74c3c;">※アップロード後、クラウドPOS (どこでもレジ) 等の他端末にも自動共有されます。</span>',
+    '<span style="font-weight: bold; color: #2c3e50;">縺薙％縺ｫ繝輔ぃ繧､繝ｫ繧偵ラ繝ｭ繝・・</span>': '<span style="font-weight: bold; color: #2c3e50;">ここにファイルをドロップ</span>',
+    '<p style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">縺ｾ縺溘・繧ｯ繝ｪ繝・け縺励※繝輔ぃ繧､繝ｫ繧帝∈謚・(.xlsx / .csv / .js)</p>': '<p style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">またはクリックしてファイルを選択 (.xlsx / .csv / .js)</p>',
+    '<h3 style="margin-top:0; color:#8e44ad;">藤 Webhooks騾｣謳ｺ繧ｨ繧ｯ繧ｹ繝昴・繝・(騾∽ｿ｡)</h3>': '<h3 style="margin-top:0; color:#8e44ad;">📡 Webhooks連携エクスポート (送信)</h3>',
+    '蝠・刀縺ｮ蝨ｨ蠎ｫ諠・ｱ縺ｪ縺ｩ縺ｮ螟牙虚繧偵€∝､夜Κ繧ｷ繧ｹ繝・Β・郁・遉ｾ繧ｵ繝ｼ繝舌・繧・ｻ也､ｾPOS遲会ｼ峨∈繝ｪ繧｢繝ｫ繧ｿ繧､繝騾∽ｿ｡縺励∪縺吶€・': '商品の在庫情報などの変動を、外部システム（自社サーバーや他社POS等）へリアルタイム送信します。',
+    '<label style="font-size:12px; font-weight:bold; margin-top:5px;">Webhook 遘伜諺繧ｭ繝ｼ (Secret)</label>': '<label style="font-size:12px; font-weight:bold; margin-top:5px;">Webhook 秘匿キー (Secret)</label>',
+    '<button class="btn" onclick="testWebhook()" style="background:#f39c12; flex:1;">繝・せ繝磯€∽ｿ｡</button>': '<button class="btn" onclick="testWebhook()" style="background:#f39c12; flex:1;">テスト送信</button>',
+    'title: \'繝輔ぃ繧､繝ｫ隱ｭ縺ｿ霎ｼ縺ｿ荳ｭ...\',': 'title: \'ファイル読み込み中...\',',
+    'msg += \'繝ｭ繝ｼ繧ｫ繝ｫPOS (縺ｩ縺薙〒繧ゅΞ繧ｸ) 遲峨〒逶ｴ謗･蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｪJS繝輔か繝ｼ繝槭ャ繝医→縺励※隱崎ｭ倥＆繧後∪縺励◆縲・;': 'msg += \'ローカルPOS (どこでもレジ) 等で直接利用可能なJSフォーマットとして認識されました。\';',
+    'msg += \'Excel隗｣譫舌′螳御ｺ・＠縲√す繧ｹ繝・Β繝・・繧ｿ繝吶・繧ｹ縺ｫ蜷梧悄縺輔ｌ縺ｾ縺励◆縲・;': 'msg += \'Excel解析が完了し、システムデータベースに同期されました。\';',
+    'if(!url) return Swal.fire(\'繧ｨ繝ｩ繝ｼ\', \'URL繧貞・蜉帙＠縺ｦ縺上□縺輔＞\', \'error\');': 'if(!url) return Swal.fire(\'エラー\', \'URLを入力してください\', \'error\');',
+    'title: \'繝・せ繝磯€∽ｿ｡荳ｭ\',': 'title: \'テスト送信中\',',
+    'Swal.fire(\'騾∽ｿ｡謌仙粥\', \'Webhook繝・せ繝医・繧､繝ｭ繝ｼ繝峨′豁｣蟶ｸ縺ｫ騾∽ｿ｡縺輔ｌ縺ｾ縺励◆縲・TTP 200 OK\', \'success\');': 'Swal.fire(\'送信成功\', \'Webhookテストペイロードが正常に送信されました。HTTP 200 OK\', \'success\');',
+    
+    // Ad Management
+    '<h3 style="margin-top:0; color:#c0392b;">蟇ｩ譟ｻ蠕・■縺ｮ繧ｭ繝｣繝ｳ繝壹・繝ｳ</h3>': '<h3 style="margin-top:0; color:#c0392b;">審査待ちのキャンペーン</h3>',
+    '窶ｻ繝悶Λ繝ｳ繝峨そ繝ｼ繝輔ユ繧｣繧貞ｮ医ｋ縺溘ａ縲∽ｸ埼←蛻・↑蠎・相縺ｯ諡貞凄縺吶ｋ縺薙→縺後〒縺阪∪縺吶€・': '※ブランドセーフティを守るため、不適切な広告は拒否することができます。',
+    '繝励Λ繝ｳ: <b>${c.plan || \'Custom\'}</b> | 莠育ｮ・ <b>ﾂ･${c.budget || 0}</b> | 譛滄俣: ${c.start || \'譛ｪ螳・} 縲・${c.end || \'譛ｪ螳・}': 'プラン: <b>${c.plan || \'Custom\'}</b> | 予算: <b>¥${c.budget || 0}</b> | 期間: ${c.start || \'未定\'} 〜 ${c.end || \'未定\'}',
+    '<div style="font-size:12px; font-weight:bold; color:#ec4899; margin-bottom:10px;">導 1.2 蠎・相荳ｻ縺ｮ驟堺ｿ｡ (TikTok鬚ｨ邵縦蝙九・繝ｬ繝薙Η繝ｼ)</div>': '<div style="font-size:12px; font-weight:bold; color:#ec4899; margin-bottom:10px;">📱 1.2 広告主の配信 (TikTok風縦型プレビュー)</div>',
+    'text: \'謇ｿ隱榊ｾ後€√☆縺舌↓蠎苓・繧ｵ繧､繝阪・繧ｸ縺へ縺ｮ驟堺ｿ｡縺碁幕蟋九＆繧後∪縺吶€・,': 'text: \'承認後、すぐに店舗サイネージへの配信が開始されます。\',',
+    'statusEl.innerText = "閥 騾壻ｿ｡繧ｨ繝ｩ繝ｼ: 谺｡縺ｮ蜷梧悄縺ｧ蜀崎ｩｦ陦後＠縺ｾ縺・;': 'statusEl.innerText = "❌ 通信エラー: 次の同期で再試行します";',
+    'Swal.fire({ icon: \'success\', title: \'蜆ｪ蜈磯・菫｡繧貞ｮ溯｡後＠縺ｾ縺励◆\', text: \'蠎苓・繧ｵ繧､繝阪・繧ｸ縺ｫ蜑ｲ繧願ｾｼ縺ｿ謾ｾ騾√ｒ陦後＞縺ｾ縺励◆縲・ });': 'Swal.fire({ icon: \'success\', title: \'優先送信を実行しました\', text: \'店舗サイネージに割り込み放送を行いました。\' });',
+    'alert("驟堺ｿ｡繧ｵ繝ｼ繝舌・縺ｫ謗･邯壹〒縺阪∪縺帙ｓ");': 'alert("配信サーバーに接続できません");',
+    'text: \'繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ縺梧悴險ｭ螳壹・縺溘ａ縲・€壼ｸｸ縺ｮ逕滓・繝ｻ驟堺ｿ｡繝輔Ο繝ｼ縺ｫ荵励○縺ｾ縺吶€・,': 'text: \'スケジュールが未設定のため、通常の生成・配信フローに乗せます。\',',
+    'Swal.fire(\'繧ｨ繝ｩ繝ｼ\', \'譛ｪ譚･縺ｮ譎る俣繧呈欠螳壹＠縺ｦ縺上□縺輔＞\', \'error\');': 'Swal.fire(\'エラー\', \'未来の時間を指定してください\', \'error\');',
+    'apiOption1.textContent = "🎙️ 鬮伜刀雉ｪAI繝懊う繧ｹ (螂ｳ諤ｧ繧｢繝翫え繝ｳ繧ｵ繝ｼ)";': 'apiOption1.textContent = "🎙️ 高品質AIボイス (女性アナウンサー)";',
+    'apiOption2.textContent = "🎙️ 鬮伜刀雉ｪAI繝懊う繧ｹ (逕ｷ諤ｧ繧｢繝翫え繝ｳ繧ｵ繝ｼ)";': 'apiOption2.textContent = "🎙️ 高品質AIボイス (男性アナウンサー)";',
+    'title: \'投 Excel繝輔か繝ｼ繝槭ャ繝医↓縺､縺・※\',': 'title: \'💰 Excelフォーマットについて\',',
+    '<p>莉･荳九・蠖｢蠑上〒繧ｨ繧ｯ繧ｻ繝ｫ繧剃ｽ懈・縺励※縺上□縺輔＞縲・/p>': '<p>以下の形式でエクセルを作成してください。</p>',
+    '<li>A蛻・ 蝠・刀蜷・(萓・ 繧翫ｓ縺・</li>': '<li>A列: 商品名 (例: りんご)</li>',
+    '<div class="card-label" style="margin-bottom:10px;">譛€霑代・繝医Λ繝ｳ繧ｶ繧ｯ繧ｷ繝ｧ繝ｳ</div>': '<div class="card-label" style="margin-bottom:10px;">最近のトランザクション</div>',
+    '螢ｲ荳翫そ繝ｳ繧ｿ繝ｼ逕ｨ謖ｯ霎ｼ蜈磯橿陦・Revenue Center Bank Info)</h4>': '売上センター用振込先銀行 (Revenue Center Bank Info)</h4>',
+    '窶ｻ 蠎・相蜿守寢縺ｮ蛻・・驥・<span style="color:#27ae60; font-weight:bold;">迴ｾ蝨ｨ: <span': '※ 広告収益の分配額 (<span style="color:#27ae60; font-weight:bold;">現在: <span',
+    'id="bank-payout-target">ﾂ･0</span></span>) 縺ｯ縺薙■繧峨↓謖ｯ繧願ｾｼ縺ｾ繧後∪縺吶€・': 'id="bank-payout-target">¥0</span></span>) はこちらに振り込まれます。',
+    '<input type="text" placeholder="萓・ 縺ｿ縺壹⊇驫€陦・ class="bank-input"': '<input type="text" placeholder="例: みずほ銀行" class="bank-input"',
+    '<label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">蜿｣蠎ｧ逡ｪ蜿ｷ (Account': '<label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">口座番号 (Account',
+    '<label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">蜿｣蠎ｧ蜷咲ｾｩ (Account': '<label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">口座名義 (Account',
+    '<input type="text" id="bank-holder" placeholder="萓・ 繧ｫ) 繝ｪ繝・い繝峨す繝ｧ繝・・" class="bank-input"': '<input type="text" id="bank-holder" placeholder="例: カ) リテアドショップ" class="bank-input"',
+    '縺ｩ縺薙〒繧ゅΞ繧ｸ隲区ｱよ嶌騾∽ｻ伜・ (Billing Email)</h4>': 'どこでもレジ請求書送付先 (Billing Email)</h4>',
+    '縺ｮ隲区ｱよ嶌縺ｯ縺薙■繧峨↓騾∽ｿ｡縺輔ｌ縺ｾ縺呻ｼ亥｣ｲ荳翫そ繝ｳ繧ｿ繝ｼ縺ｨ縺ｯ蛻･縺ｮ險ｭ螳壹〒縺呻ｼ峨€・/p>': 'の請求書はこちらに送信されます（売上センターとは別の設定です）。</p>',
+    '蜈ｨ險ｭ螳壹ｒ菫晏ｭ倥☆繧・Save All Settings)': '全設定を保存する (Save All Settings)',
+    'Swal.fire(\'菫晏ｭ倥＠縺ｾ縺励◆\', \'蠎苓・險ｭ螳壹ｒ譖ｴ譁ｰ縺励∪縺励◆縲・, \'success\');': 'Swal.fire(\'保存しました\', \'店舗設定を更新しました。\', \'success\');',
+    'Swal.fire(\'Error\', \'菫晏ｭ倥↓螟ｱ謨励＠縺ｾ縺励◆縲・, \'error\');': 'Swal.fire(\'Error\', \'保存に失敗しました。\', \'error\');',
+    '<h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">児・・AI 繝懊う繧ｹ 繧ｹ繧ｿ繧ｸ繧ｪ <a href="ai_voice_studio_lp.html" target="_blank" style="font-size:14px; color:#3498db; text-decoration:underline;">LP縺ｯ縺薙■繧・/a></h2>': '<h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">🎙️ AI ボイス スタジオ <a href="ai_voice_studio_lp.html" target="_blank" style="font-size:14px; color:#3498db; text-decoration:underline;">LPはこちら</a></h2>',
+    '投 Excel縺九ｉ謾ｾ騾∝次遞ｿ繧剃ｽ懈・': '💰 Excelから放送原稿を作成',
+    '邃ｹ・・繝輔か繝ｼ繝槭ャ繝郁ｩｳ邏ｰ': 'ℹ️ フォーマット詳細',
+    'placeholder="Today\'s Special! Tomato 98 yen!">譛ｬ譌･縺ｮ迚ｹ螢ｲ 繝医・繝・98 蜀・/textarea>': 'placeholder="Today\'s Special! Tomato 98 yen!">本日の特売 トマト 98 円</textarea>',
+    '窶ｻ髻ｳ螢ｰ縺ｯ繝・く繧ｹ繝医せ繝壹・繧ｹ縺ｪ縺ｩ蛻ｩ逕ｨ縺励〒閨槭″蜿悶ｊ譏薙￥縲√・繧､繧ｹ騾溷ｺｦ繧定ｪｿ謨ｴ縺励※縺上□縺輔＞': '※音声はテキストスペースなど利用して聞き取り易く、ボイス速度を調整してください',
+    '<span>髻ｳ螢ｰ繝懊う繧ｹ</span>': '<span>音声ボイス</span>',
+    '<label style="color:#2980b9;">竢ｰ 繧ｵ繧､繝阪・繧ｸ驟堺ｿ｡縺ｮ謾ｾ騾∵凾髢薙・莠育ｴ・ｨｭ螳・(繧ｪ繝励す繝ｧ繝ｳ)</label>': '<label style="color:#2980b9;">⏰ サイネージ配信の放送時間の予約設定 (オプション)</label>',
+    '繧ｿ繧､繝繧ｻ繝ｼ繝ｫ遲峨↓蜷医ｏ縺帙※縲∝ｺ苓・繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縺ｧ蜀咲函縺輔ｌ繧矩浹螢ｰ繧剃ｺ句燕縺ｫ莠育ｴ・ｨｭ螳壹〒縺阪∪縺吶€・遨ｺ谺・・蝣ｴ蜷医・蜊ｳ譎る・菫｡)</div>': 'タイムセール等に合わせて、店舗サイネージパネルで再生される音声を事前に予約設定できます。(空欄の場合は即時配信)</div>',
+    '葡 繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ驟堺ｿ｡繧剃ｺ育ｴ・': '📅 スケジュール配信を予約',
+    '圷 蜆ｪ蜈磯・菫｡ (繧ｵ繧､繝阪・繧ｸ縺へ蜊ｳ譎ょ牡繧願ｾｼ縺ｿ)': '⚡ 優先送信 (サイネージへ即時割り込み)',
+    '<label style="color:#2980b9;">七 螢ｰ縺ｮ鬮倥＆ (繝斐ャ繝・: <span id="pitch-val">-2.0</span></label>': '<label style="color:#2980b9;">🎵 声の高さ (ピッチ): <span id="pitch-val">-2.0</span></label>',
+    '<label>離・・隧ｱ縺玲婿縺ｮ繧ｹ繧ｿ繧､繝ｫ (AI Prompt)</label>': '<label>🗣️ 話し方のスタイル (AI Prompt)</label>',
+    '縲・.5mm繧ｹ繝・Ξ繧ｪ繝斐Φ繝励Λ繧ｰ&lt;-&gt;RCA繝斐Φ繝励Λ繧ｰ・假ｼ偵€阪・繧ｱ繝ｼ繝悶Ν・亥・逵滂ｼ峨∪縺溘・縲・.5mm繧ｹ繝・Ξ繧ｪ繝斐Φ繝励Λ繧ｰ&lt;-&gt;3.5mm繧ｹ繝・Ξ繧ｪ繝斐Φ繝励Λ繧ｰ縲阪・繧ｱ繝ｼ繝悶Ν繧剃ｽｿ縺｣縺ｦ縲√が繝ｼ繝・ぅ繧ｪ讖溷勣縺ｮAUX': '「3.5mmステレオピンプラグ&lt;-&gt;RCAピンプラグ（２）」のケーブル（写真）または「3.5mmステレオピンプラグ&lt;-&gt;3.5mmステレオピンプラグ」のケーブルを使って、オーディオ機器のAUX',
+    'IN遶ｯ蟄舌↓縲√ヱ繧ｽ繧ｳ繝ｳ縺ｮ繝倥ャ繝峨ヵ繧ｩ繝ｳ遶ｯ蟄撰ｼ育ｷ題牡・峨°繧画磁邯壹☆繧後・縲√ヱ繧ｽ繧ｳ繝ｳ縺ｮ髻ｳ繧偵が繝ｼ繝・ぅ繧ｪ讖溷勣縺九ｉ蜀咲函縺吶ｋ縺薙→縺後〒縺阪∪縺吶€・': 'IN端子に、パソコンのヘッドフォン端子（緑色）から接続すれば、パソコンの音をオーディオ機器から再生することができます。',
+    
+    // Android App Setup
+    '笨・隕ｪ繧｢繧ｫ繧ｦ繝ｳ繝・(MCM) 騾｣謳ｺ螳御ｺ・・驟堺ｿ｡荳ｭ': '✅ 親アカウント(MCM) 連携完了・配信中',
+    'Android謳ｭ霈峨・繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縺ｫ<br class="mobile-br">': 'Android搭載のサイネージパネルに<br class="mobile-br">',
+    '蟆ら畑繧｢繝励Μ繧偵う繝ｳ繧ｹ繝医・繝ｫ縺吶ｋ縺縺代〒<br class="mobile-br">': '専用アプリをインストールするだけで<br class="mobile-br">',
+    '閾ｪ蜍慕噪縺ｫ繧ｵ繧､繝阪・繧ｸ縺ｨ逋ｻ骭ｲ縺輔ｌ<br class="mobile-br">': '自動的にサイネージと登録され<br class="mobile-br">',
+    '蠎・相驟堺ｿ｡莠区･ｭ縺碁幕蟋九＆繧後∪縺吶€・        </p>': '広告配信事業が開始されます。        </p>',
+    '<strong style="color:#d97706;">庁 蛛憺崕譎ゅ・閾ｪ蜍募ｾｩ譌ｧ縺ｫ縺､縺・※</strong><br>': '<strong style="color:#d97706;">💡 停電時の自動復旧について</strong><br>',
+    'Android繧｢繝励Μ縲軍etailMedia Signage縲阪・<br class="mobile-br">': 'Androidアプリ「RetailMedia Signage」は<br class="mobile-br">',
+    '遶ｯ譛ｫ襍ｷ蜍墓凾縺ｫ閾ｪ蜍輔〒遶九■荳翫′繧・br class="mobile-br">': '端末起動時に自動で立ち上がる<br class="mobile-br">',
+    '險ｭ螳壹′蜿ｯ閭ｽ縺ｧ縺吶€・br>': '設定が可能です。<br>',
+    '縺昴・縺溘ａ蛛憺崕縺ｪ縺ｩ縺ｧ髮ｻ貅舌′關ｽ縺｡縺溷ｴ蜷医〒繧・br class="mobile-br">': 'そのため停電などで電源が落ちた場合でも<br class="mobile-br">',
+    '髮ｻ豌励′蠕ｩ譌ｧ縺励※遶ｯ譛ｫ縺悟・襍ｷ蜍輔＆繧後ｌ縺ｰ<br class="mobile-br">': '電気が復旧して端末が再起動されれば<br class="mobile-br">',
+    '閾ｪ蜍慕噪縺ｫ繧ｵ繧､繝阪・繧ｸ驟堺ｿ｡縺・br class="mobile-br">': '自動的にサイネージ配信が<br class="mobile-br">',
+    '閾ｪ蜍募・髢九＆繧後∪縺吶€・            </span>': '自動再開されます。            </span>',
+    '<strong style="color:#0369a1;">箕・・繝ｪ繝・い繝峨ｒ遞ｼ蜒阪＆縺帙ｋ蜈ｱ騾壽耳螂ｨ繧ｹ繝壹ャ繧ｯ</strong><br>': '<strong style="color:#0369a1;">🖥️ リテアドを稼働させる共通推奨スペック</strong><br>',
+    '繝ｻ繝｡繝｢繝ｪ(RAM): <span style="font-weight:bold; color:#e74c3c;">謗ｨ螂ｨ 3GB 莉･荳・/span><br>': '・メモリ(RAM): <span style="font-weight:bold; color:#e74c3c;">推奨 3GB 以上</span><br>',
+    '繝ｻ繧ｹ繝医Ξ繝ｼ繧ｸ: <span style="font-weight:bold; color:#e74c3c;">遨ｺ縺榊ｮｹ驥・2GB 莉･荳・/span><br>': '・ストレージ: <span style="font-weight:bold; color:#e74c3c;">空き容量 2GB 以上</span><br>',
+    '<span style="font-size:0.75rem; color:#0284c7;">窶ｻ髟ｷ譎る俣縺ｮ螳牙ｮ壹＠縺溷虚逕ｻ蜀咲函縺ｮ縺溘ａ縲∽ｸ願ｨ倥せ繝壹ャ繧ｯ莉･荳翫・遶ｯ譛ｫ繧呈耳螂ｨ縺・◆縺励∪縺吶€・/span>': '<span style="font-size:0.75rem; color:#0284c7;">※長時間の安定した動画再生のため、上記スペック以上の端末を推奨いたします。</span>',
+    '<h4 style="margin-top:0; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">1. 繝ｪ繝・い繝峨・騾乗・LED繝輔ぅ繝ｫ繝<br class="mobile-br">繧ｻ繝・ヨ繧｢繝・・譁ｹ豕輔→<br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝・/h4>': '<h4 style="margin-top:0; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">1. リテアドの透明LEDフィルム<br class="mobile-br">セットアップ方法と<br class="mobile-br">セキュリティパッチ</h4>',
+    '閾ｪ遉ｾ謠蝉ｾ帙・蟆ら畑繝上・繝峨え繧ｧ繧｢<br class="mobile-br">・磯€乗・LED繝輔ぅ繝ｫ繝縺ｨ<br class="mobile-br">Android繧ｳ繝ｳ繝医Ο繝ｼ繝ｩ繝ｼ・峨・縲・br class="mobile-br">邏榊刀蜑阪↓MDM繧ФSB辟｡蜉ｹ蛹悶€・br class="mobile-br">繧ｭ繧ｪ繧ｹ繧ｯ繝｢繝ｼ繝芽ｨｭ螳壹↑縺ｩ繧・br class="mobile-br">縺吶∋縺ｦ貂医∪縺帙◆縲悟ｮ悟・縺ｪ蟆ら畑讖溘€・br class="mobile-br">縺ｨ縺励※邏榊刀縺輔ｌ縺ｾ縺吶€・br>': '自社提供の専用ハードウェア<br class="mobile-br">（透明LEDフィルムと<br class="mobile-br">Androidコントローラー）は、<br class="mobile-br">納品前にMDMやUSB無効化、<br class="mobile-br">キオスクモード設定などを<br class="mobile-br">すべて済ませた「完全な専用機」<br class="mobile-br">として納品されます。<br>',
+    '<span style="font-weight:bold; color:#e74c3c;">蠎苓・蛛ｴ縺ｧ縺ｮ繧ｻ繧ｭ繝･繝ｪ繝・ぅ遏･隴倥ｄ<br class="mobile-br">險ｭ螳壻ｽ懈･ｭ縺ｯ荳€蛻・ｸ崎ｦ√〒縺吶€・br class="mobile-br">髮ｻ貅舌ｒ謖ｿ縺励€仝i-Fi遲峨・<br class="mobile-br">繧､繝ｳ繧ｿ繝ｼ繝阪ャ繝医↓謗･邯壹☆繧九□縺代〒<br class="mobile-br">螳牙・縺ｫ遞ｼ蜒阪＠縺ｾ縺吶€・/span>': '<span style="font-weight:bold; color:#e74c3c;">店舗側でのセキュリティ知識や<br class="mobile-br">設定作業は一切不要です。<br class="mobile-br">電源を挿し、Wi-Fi等の<br class="mobile-br">インターネットに接続するだけで<br class="mobile-br">安全に稼働します。</span>',
+    '<button onclick="sendDownloadLink()" style="margin-top:10px; margin-bottom:10px; background:#3b82f6; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:block;">透 繧｢繝励Μ縺ｮ繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨Μ繝ｳ繧ｯ繧帝€∽ｿ｡縺吶ｋ</button>': '<button onclick="sendDownloadLink()" style="margin-top:10px; margin-bottom:10px; background:#3b82f6; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:block;">✉️ アプリのダウンロードリンクを送信する</button>',
+    '<h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">2. Android繧｢繝励Μ縺ｨ<br class="mobile-br">繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ縺ｮ<br class="mobile-br">繧ｻ繝・ヨ繧｢繝・・縺ｨ<br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝・/h4>': '<h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">2. Androidアプリと<br class="mobile-br">サイネージパネルの<br class="mobile-br">セットアップと<br class="mobile-br">セキュリティパッチ</h4>',
+    '譌｢蟄倥・Android繧ｳ繝ｳ繝医Ο繝ｼ繝ｩ繝ｼ縺ｨ<br class="mobile-br">繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ繧偵♀謖√■縺ｮ蝣ｴ蜷医・<br class="mobile-br">蟆ら畑繧｢繝励Μ繧偵う繝ｳ繧ｹ繝医・繝ｫ縺吶ｋ縺縺代〒<br class="mobile-br">蟋九ａ繧峨ｌ縺ｾ縺吶€・    </p>': '既存のAndroidコントローラーと<br class="mobile-br">サイネージパネルをお持ちの場合は<br class="mobile-br">専用アプリをインストールするだけで<br class="mobile-br">始められます。    </p>',
+    '<li>蟆ら畑縺ｮ繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨Μ繝ｳ繧ｯ縺九ｉ<br class="mobile-br">縲軍etailMedia Signage縲阪い繝励Μ<br class="mobile-br">・・PK・峨ｒ繧､繝ｳ繧ｹ繝医・繝ｫ縺励∪縺吶€・/li>': '<li>専用のダウンロードリンクから<br class="mobile-br">「RetailMedia Signage」アプリ<br class="mobile-br">（APK）をインストールします。</li>',
+    '<li><strong>縲舌そ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝√・螳溯｣・€・/strong><br class="mobile-br">蛻晄悄險ｭ螳夂判髱｢縺ｫ縺にて縲・・蟶・＆繧後◆<br class="mobile-br">蟆ら畑縺ｮQR繧ｳ繝ｼ繝峨ｒ隱ｭ縺ｿ霎ｼ縺ｾ縺帙ｋ<br class="mobile-br">縺薙→縺ｧ縲√ョ繝舌う繧ｹ繧ｪ繝ｼ繝翫・讓ｩ髯舌′<br class="mobile-br">莉倅ｸ弱＆繧後€・strong>USB繝昴・繝医・辟｡蜉ｹ蛹悶→<br class="mobile-br">螳悟・繧ｭ繧ｪ繧ｹ繧ｯ繝｢繝ｼ繝牙喧・育判髱｢蝗ｺ螳夲ｼ峨′<br class="mobile-br">蜈ｨ閾ｪ蜍輔〒繝代ャ繝・←逕ｨ</strong>縺輔ｌ縺ｾ縺吶€・br>': '<li><strong>【セキュリティパッチの実装】</strong><br class="mobile-br">初期設定画面にて、配布された<br class="mobile-br">専用のQRコードを読み込ませる<br class="mobile-br">ことで、デバイスオーナー権限が<br class="mobile-br">付与され、<strong>USBポートの無効化と<br class="mobile-br">完全キオスクモード化（画面固定）が<br class="mobile-br">全自動でパッチ適用</strong>されます。<br>',
+    '<strong style="color:#1e293b; display:block; margin-bottom:10px;">導 Android繧ｻ繝・ヨ繧｢繝・・逕ｨ<br class="mobile-br">繝励Ο繝薙ず繝ｧ繝九Φ繧ｰQR繧ｳ繝ｼ繝・/strong>': '<strong style="color:#1e293b; display:block; margin-bottom:10px;">📱 Androidセットアップ用<br class="mobile-br">プロビジョニングQRコード</strong>',
+    '<p style="font-size:0.8rem; color:#64748b; margin-top:10px;">窶ｻ蛻晄悄蛹悶＆繧後◆Android遶ｯ譛ｫ縺ｮ<br class="mobile-br">縲後％繧薙↓縺｡縺ｯ縲咲判髱｢繧・br class="mobile-br">6蝗樣€｣邯壹ち繝・・縺・br class="mobile-br">縺薙・QR繧ｳ繝ｼ繝峨ｒ繧ｿ繝・・</p>': '<p style="font-size:0.8rem; color:#64748b; margin-top:10px;">※初期化されたAndroid端末の<br class="mobile-br">「こんにちは」画面を<br class="mobile-br">6回連続タップし<br class="mobile-br">このQRコードをタップ</p>',
+    '<span style="font-size:0.85rem; color:#64748b;">窶ｻ謇句虚繧､繝ｳ繧ｹ繝医・繝ｫ縺ｮ蝣ｴ蜷医・<br class="mobile-br">繧｢繝励Μ蛻晏屓襍ｷ蜍墓凾縺ｫ陦ｨ遉ｺ縺輔ｌ繧・br class="mobile-br">縲檎判髱｢縺ｮ繝斐Φ逡吶ａ縲阪ｒ<br class="mobile-br">險ｱ蜿ｯ縺励※縺上□縺輔＞縲・br class="mobile-br">縺薙ｌ縺ｫ繧医ｊ荳肴ｭ｣謫堺ｽ懊ｒ繝悶Ο繝・け縺励∪縺吶€・/span>': '<span style="font-size:0.85rem; color:#64748b;">※手動インストールの場合は<br class="mobile-br">アプリ初回起動時に表示される<br class="mobile-br">「画面のピン留め」を<br class="mobile-br">許可してください。<br class="mobile-br">これにより不正操作をブロックします。</span>',
+    '<h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">3. Win(繝代た繧ｳ繝ｳ)縺ｮ繧ｻ繝・ヨ繧｢繝・・</h4>': '<h4 style="margin-top:25px; color:#1e293b; border-bottom:2px dashed #cbd5e1; padding-bottom:5px; font-size: 1.1rem;">3. Win(パソコン)のセットアップ</h4>',
+    'Windows繝代た繧ｳ繝ｳ繧偵し繧､繝阪・繧ｸ<br class="mobile-br">縺ｨ縺励※蛻ｩ逕ｨ縺吶ｋ蝣ｴ蜷医ｂ縲∝ｰら畑繝輔ぃ繧､繝ｫ<br class="mobile-br">縺ｧ蜈ｨ閾ｪ蜍輔そ繝・ヨ繧｢繝・・縺悟庄閭ｽ縺ｧ縺吶€・    </p>': 'Windowsパソコンをサイネージ<br class="mobile-br">として利用する場合も、専用ファイル<br class="mobile-br">で全自動セットアップが可能です。    </p>',
+    '<li>莉･荳九・繝懊ち繝ｳ縺九ｉ縲係indows蟆ら畑<br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝∝・<br class="mobile-br">繧ｻ繝・ヨ繧｢繝・・繝輔ぃ繧､繝ｫ(.bat)縲・br class="mobile-br">繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺吶€・            <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/setup_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; background:#10b981; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">捗 Win逕ｨ繧ｻ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝．L</a>': '<li>以下のボタンから「Windows専用<br class="mobile-br">セキュリティパッチ込<br class="mobile-br">セットアップファイル(.bat)」<br class="mobile-br">をダウンロードします。            <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/setup_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; background:#10b981; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">💻 Win用セキュリティパッチDL</a>',
+    '<a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/remove_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; margin-left:10px; background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;"><i class="fa-solid fa-rotate-left"></i> 隗｣髯､繝・・繝ｫ</a>': '<a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/remove_retail_signage.bat" download style="margin-top:10px; margin-bottom:10px; margin-left:10px; background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;"><i class="fa-solid fa-rotate-left"></i> 解除ツール</a>',
+    '<li><strong>縲舌そ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝√・螳溯｣・€・/strong><br class="mobile-br">繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺溘ヵ繧｡繧､繝ｫ繧貞ｮ溯｡・br class="mobile-br">縺吶ｋ縺縺代〒縲・strong>USB繝｡繝｢繝ｪ縺ｮ<br class="mobile-br">隱ｭ縺ｿ霎ｼ縺ｿ辟｡蜉ｹ蛹悶€√く繧ｪ繧ｹ繧ｯ<br class="mobile-br">繝｢繝ｼ繝芽ｨｭ螳壹€∝・逕ｻ髱｢襍ｷ蜍・/strong>縺・br class="mobile-br">蜈ｨ閾ｪ蜍輔〒繝代ャ繝・←逕ｨ縺輔ｌ縺ｾ縺吶€・/li>': '<li><strong>【セキュリティパッチの実装】</strong><br class="mobile-br">ダウンロードしたファイルを実行<br class="mobile-br">するだけで、<strong>USBメモリの<br class="mobile-br">読み込み無効化、キオスク<br class="mobile-br">モード設定、全画面起動</strong>が<br class="mobile-br">全自動でパッチ適用されます。</li>',
+    '<h4 style="margin-top:25px; color:#0f172a; border-left:4px solid #f59e0b; padding-left:10px; font-size: 1.1rem;">4. 繧ｻ繧ｭ繝･繝ｪ繝・ぅ繝代ャ繝√ｒ<br class="mobile-br">蛻ｩ逕ｨ縺励↑縺・ｴ蜷・br class="mobile-br">・亥・譛溷喧縺ｧ縺阪↑縺・し繧､繝阪・繧ｸ繝代ロ繝ｫ・・/h4>': '<h4 style="margin-top:25px; color:#0f172a; border-left:4px solid #f59e0b; padding-left:10px; font-size: 1.1rem;">4. セキュリティパッチを<br class="mobile-br">利用しない場合<br class="mobile-br">（初期化できないサイネージパネル）</h4>',
+    '讌ｭ蜍吶〒譌｢縺ｫ菴ｿ逕ｨ縺励※縺・ｋ<br class="mobile-br">繧ｵ繧､繝阪・繧ｸ繝代ロ繝ｫ繧・br class="mobile-br">繧ｹ繝槭・繝医ヵ繧ｩ繝ｳ縺ｪ縺ｩ縲∫ｫｯ譛ｫ繧・br class="mobile-br">蛻晄悄蛹悶〒縺阪↑縺・ｴ蜷医・縲＿R繧ｳ繝ｼ繝・br class="mobile-br">縺ｫ繧医ｋ蜈ｨ閾ｪ蜍輔そ繧ｭ繝･繝ｪ繝・ぅ險ｭ螳・br class="mobile-br">・亥ｮ悟・繧ｭ繧ｪ繧ｹ繧ｯ繝｢繝ｼ繝会ｼ峨・<br class="mobile-br">縺泌茜逕ｨ縺・◆縺縺代∪縺帙ｓ縲・br>': '業務で既に使用している<br class="mobile-br">サイネージパネルや<br class="mobile-br">スマートフォンなど、端末を<br class="mobile-br">初期化できない場合は、QRコード<br class="mobile-br">による全自動セキュリティ設定<br class="mobile-br">（完全キオスクモード）は<br class="mobile-br">ご利用いただけません。<br>',
+    '縺昴・蝣ｴ蜷医・縲∵焔蜍輔〒繧｢繝励Μ繧・br class="mobile-br">繧､繝ｳ繧ｹ繝医・繝ｫ縺励€、ndroid讓呎ｺ悶・<br class="mobile-br">讖溯・縺ｧ縺ゅｋ縲檎判髱｢縺ｮ繝斐Φ逡吶ａ縲・br class="mobile-br">讖溯・繧偵＃蛻ｩ逕ｨ縺上□縺輔＞縲・    </p>': 'その場合は、手動でアプリを<br class="mobile-br">インストールし、Android標準の<br class="mobile-br">機能である「画面のピン留め」<br class="mobile-br">機能をご利用ください。    </p>',
+    '<strong style="color:#334155; display:block; margin-bottom:10px;">縲先焔蜍輔う繝ｳ繧ｹ繝医・繝ｫ縺ｨ蝗ｺ螳壼喧縺ｮ謇矩・€・/strong>': '<strong style="color:#334155; display:block; margin-bottom:10px;">【手動インストールと固定化の手順】</strong>',
+    '<li>莉･荳九・繝懊ち繝ｳ縺九ｉ<br class="mobile-br">Android逕ｨ繧｢繝励Μ<br class="mobile-br">・・PK繝輔ぃ繧､繝ｫ・峨ｒ遶ｯ譛ｫ縺ｫ<br class="mobile-br">逶ｴ謗･繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｦ<br class="mobile-br">繧､繝ｳ繧ｹ繝医・繝ｫ縺励※縺上□縺輔＞縲・br>': '<li>以下のボタンから<br class="mobile-br">Android用アプリ<br class="mobile-br">（APKファイル）を端末に<br class="mobile-br">直接ダウンロードして<br class="mobile-br">インストールしてください。<br>',
+    '<a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk" download style="margin-top:10px; margin-bottom:10px; background:#f59e0b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">導 Android逕ｨ繧｢繝励Μ繧呈焔蜍輔〒DL</a>': '<a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk" download style="margin-top:10px; margin-bottom:10px; background:#f59e0b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none;">📱 Android用アプリを手動でDL</a>',
+    '<li>繧｢繝励Μ縺ｮ繧､繝ｳ繧ｹ繝医・繝ｫ蠕・br class="mobile-br">Android縺ｮ縲瑚ｨｭ螳壹€阪い繝励Μ繧・br class="mobile-br">髢九″縲√€後そ繧ｭ繝･繝ｪ繝・ぅ縲搾ｼ・br class="mobile-br">縲瑚ｩｳ邏ｰ險ｭ螳夲ｼ医∪縺溘・縺昴・莉悶・<br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ險ｭ螳夲ｼ峨€搾ｼ・br class="mobile-br"><strong>縲檎判髱｢縺ｮ繝斐Φ逡吶ａ縲・/strong> 繧偵が繝ｳ縺ｫ縺励∪縺吶€・/li>': '<li>アプリのインストール後、<br class="mobile-br">Androidの「設定」アプリを<br class="mobile-br">開き、「セキュリティ」＞<br class="mobile-br">「詳細設定（またはその他の<br class="mobile-br">セキュリティ設定）」＞<br class="mobile-br"><strong>「画面のピン留め」</strong> をオンにします。</li>',
+    '<li>繝ｪ繝・い繝峨・繧ｵ繧､繝阪・繧ｸ繧｢繝励Μ繧・br class="mobile-br">襍ｷ蜍輔＠縺溽憾諷九〒縲√ち繧ｹ繧ｯ荳€隕ｧ<br class="mobile-br">・郁ｵｷ蜍穂ｸｭ縺ｮ繧｢繝励Μ荳€隕ｧ・峨ｒ髢九″縲・br class="mobile-br">繧｢繝励Μ繧｢繧､繧ｳ繝ｳ繧偵ち繝・・縺励※<br class="mobile-br">縲後ヴ繝ｳ逡吶ａ縲阪ｒ驕ｸ謚槭＠縺ｾ縺吶€・/li>': '<li>リテアドのサイネージアプリを<br class="mobile-br">起動した状態で、タスク一覧<br class="mobile-br">（起動中のアプリ一覧）を開き、<br class="mobile-br">アプリアイコンをタップして<br class="mobile-br">「ピン留め」を選択します。</li>',
+    '<strong style="color:#9a3412; display:block; margin-bottom:10px;">縲宣°逕ｨ縺ｮ繝｡繝ｪ繝・ヨ縺ｨ豕ｨ諢冗せ縲・/strong>': '<strong style="color:#9a3412; display:block; margin-bottom:10px;">【運用のメリットと注意点】</strong>',
+    '<li>繝斐Φ逡吶ａ繧定｡後≧縺ｨ<br class="mobile-br">謌ｻ繧九・繧ｿ繝ｳ縺ｨホーム繝懊ち繝ｳ縺ｮ<br class="mobile-br">繝懊ち繝ｳ縺ｮ蜷梧凾髟ｷ謚ｼ縺礼ｭ峨ｒ<br class="mobile-br">陦後ｏ縺ｪ縺・剞繧・br class="mobile-br">繧ｵ繧､繝阪・繧ｸ逕ｻ髱｢縺九ｉ<br class="mobile-br">ホーム逕ｻ髱｢縺ｫ謌ｻ繧後↑縺上↑繧九◆繧・br class="mobile-br">蠎鈴ｭ縺ｧ縺ｮ繧､繧ｿ繧ｺ繝ｩ髦ｲ豁｢縺ｫ<br class="mobile-br">蜊∝・蠖ｹ遶九■縺ｾ縺吶€・/li>': '<li>ピン留めを行うと<br class="mobile-br">戻るボタンとホームボタンの<br class="mobile-br">ボタンの同時長押し等を<br class="mobile-br">行わない限り、<br class="mobile-br">サイネージ画面から<br class="mobile-br">ホーム画面に戻れなくなるため<br class="mobile-br">店頭でのイタズラ防止に<br class="mobile-br">十分役立ちます。</li>',
+    '<li>讌ｭ蜍吶〒菴ｿ逕ｨ縺吶ｋ髫帙・<br class="mobile-br">蠎怜藤讒倥＃閾ｪ霄ｫ縺ｧ繝斐Φ逡吶ａ繧定ｧ｣髯､<br class="mobile-br">縺吶ｋ縺薙→縺ｧ縲∵勸谿ｵ騾壹ｊ莉悶・<br class="mobile-br">繧ｵ繧､繝阪・繧ｸ繧・br class="mobile-br">縺泌茜逕ｨ縺・◆縺縺代∪縺吶€・/li>': '<li>業務で使用する際は<br class="mobile-br">店員様ご自身でピン留めを解除<br class="mobile-br">することで、普段通り他の<br class="mobile-br">サイネージを<br class="mobile-br">ご利用いただけます。</li>',
+    '<li><strong>窶ｻ驥崎ｦ≫€ｻ</strong><br class="mobile-br">USB繝昴・繝医・閾ｪ蜍慕┌蜉ｹ蛹悶・<br class="mobile-br">驕ｩ逕ｨ縺輔ｌ縺ｾ縺帙ｓ縲・br class="mobile-br">USB繝昴・繝医↓繝・・繝励ｒ雋ｼ縺｣縺溘ｊ<br class="mobile-br">驟咲ｷ夐Κ蛻・ｒ繧ｫ繝舌・縺ｧ隕・≧縺ｪ縺ｩ縺ｮ<br class="mobile-br">迚ｩ逅・ヶ繝ｭ繝・け繧呈耳螂ｨ縺励∪縺吶€・br class="mobile-br">繧ｻ繧ｭ繝･繝ｪ繝・ぅ縺ｫ<br class="mobile-br">縺疲ｳｨ諢上￥縺縺輔＞縲・/li>': '<li><strong>※重要※</strong><br class="mobile-br">USBポートの自動無効化は<br class="mobile-br">適用されません。<br class="mobile-br">USBポートにテープを貼ったり<br class="mobile-br">配線部分をカバーで覆うなどの<br class="mobile-br">物理ブロックを推奨します。<br class="mobile-br">セキュリティに<br class="mobile-br">ご注意ください。</li>',
+    '<button style="background:#10b981; color:white; border:none; padding:12px 30px; border-radius:30px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 6px rgba(16,185,129,0.3);"><i class="fa-brands fa-android"></i> 繧｢繝励Μ縺ｮ繝€繧ｦ繝ｳ繝ｭ繝ｼ繝峨Μ繝ｳ繧ｯ繧帝€∽ｿ｡縺吶ｋ</button>': '<button style="background:#10b981; color:white; border:none; padding:12px 30px; border-radius:30px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 6px rgba(16,185,129,0.3);"><i class="fa-brands fa-android"></i> アプリのダウンロードリンクを送信する</button>',
+    '<p style="font-size:0.8rem; color:#64748b; margin-top:10px;">窶ｻ繧ｵ繧､繝阪・繧ｸ遶ｯ譛ｫ縺ｮメールアドレス螳帙↓<br>繧､繝ｳ繧ｹ繝医・繝ｫ逕ｨURL繧帝€∽ｿ｡縺励∪縺吶€・/p>': '<p style="font-size:0.8rem; color:#64748b; margin-top:10px;">※サイネージ端末のメールアドレス宛に<br>インストール用URLを送信します。</p>',
+    '縲瑚ｦｪ繧｢繧ｫ繧ｦ繝ｳ繝茨ｼ医す繧ｹ繝・Β驕句霧閠・ｼ峨€・br>縺ｮ繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｫ蜿ょ刈縺吶ｋ縺薙→縺ｧ縲・br>髱｢蛟偵↑AdSense蟇ｩ譟ｻ繧・ｨｭ螳壹ｒ繧ｹ繧ｭ繝・・縺励※縲・br>縺吶＄縺ｫ蜷・し繧､繝阪・繧ｸ繝代ロ繝ｫ・育ｫｯ譛ｫ・・br>縺ごと縺ｮ蠎・相蜿守寢蛹悶ｒ髢句ｧ九〒縺阪∪縺吶€・br>騾｣謳ｺ縺悟ｮ御ｺ・☆繧九→縲∬・蜍慕噪縺ｫ蜷・ｫｯ譛ｫ蝗ｺ譛峨・<br>縲悟ｺ・相繝ｦ繝九ャ繝・D縲阪′逕滓・縺輔ｌ縲・br>繧ｭ繝ｼ繝舌Μ繝･繝ｼ・・ey-Values: ?terminal_id=<br>[蝗ｺ譛迂D]・・br>繧帝€壹§縺越驟堺ｿ｡縺ｨ蜿守寢險域ｸｬ縺後せ繧ｿ繝ｼ繝医＠縺ｾ縺吶€・': '「親アカウント（システム運営者）」<br>のネットワークに参加することで、<br>面倒なAdSense審査や設定をスキップして、<br>すぐに各サイネージパネル（端末）<br>ごとの広告収益化を開始できます。<br>連携が完了すると、自動的に各端末固有の<br>「広告ユニットID」が生成され、<br>キーバリュー（Key-Values: ?terminal_id=<br>[固有ID]）<br>を通じて配信と収益計測がスタートします。',
+    '迫 繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｫ蜿ょ刈縺吶ｋ (MCM騾｣謳ｺ)': '🤝 ネットワークに参加する (MCM連携)',
+    'title: \'繝阪ャ繝医Ρ繝ｼ繧ｯ騾｣謳ｺ縺ｮ遒ｺ隱・,': 'title: \'ネットワーク連携の確認\',',
+    '<p>縲系on-logi譬ｪ蠑丈ｼ夂､ｾ縲阪′邂｡逅・☆繧季oogle Ad Manager隕ｪ繧｢繧ｫ繧ｦ繝ｳ繝医・繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｫ蜿ょ刈縺励∪縺吶°・・/p>': '<p>「non-logi株式会社」が管理するGoogle Ad Manager親アカウントのネットワークに参加しますか？</p>',
+    '<li>蠎苓・蜀・・蜈ｨ繧ｵ繧､繝阪・繧ｸ遶ｯ譛ｫ縺ｫ蟇ｾ縺励※縲∝€句挨縺ｮ縲悟ｺ・相繝ｦ繝九ャ繝・D縲阪→繝医Λ繝・く繝ｳ繧ｰ繝代Λ繝｡繝ｼ繧ｿ縺瑚・蜍慕匱陦後＆繧後∪縺吶€・/li>': '<li>店舗内の全サイネージ端末に対して、個別の「広告ユニットID」とトラッキングパラメータが自動発行されます。</li>',
+    '<li>蠎・相縺ｮ驟堺ｿ｡邂｡逅・♀繧医・蜿守寢險育ｮ励・繧ｷ繧ｹ繝・Β縺御ｻ｣陦後＠縲∝庶逶翫・50%縺檎匳骭ｲ縺輔ｌ縺溷哨蠎ｧ縺ｸ謖ｯ繧願ｾｼ縺ｾ繧後∪縺吶€・/li>': '<li>広告の配信管理および収益計算はシステムが代行し、収益の50%が登録された口座へ振り込まれます。</li>',
+    'confirmButtonText: \'蜷梧э縺励※騾｣謳ｺ縺吶ｋ\',': 'confirmButtonText: \'同意して連携する\',',
+    'title: \'MCM諡帛ｾ・・繝ｦ繝九ャ繝郁・蜍慕函謌蝉ｸｭ\',': 'title: \'MCM招待・ユニット自動生成中\',',
+    'html: \'繧ｷ繧ｹ繝・Β縺隈oogle Ad Manager API縺ｨ騾壻ｿ｡縺励※縺・∪縺・..<br><span style="font-size:11px; color:#aaa;">(遶ｯ譛ｫID: A-001, A-002, ...繧堤匳骭ｲ荳ｭ)</span>\',': 'html: \'システムがGoogle Ad Manager APIと通信しています...<br><span style="font-size:11px; color:#aaa;">(端末ID: A-001, A-002, ...を登録中)</span>\',',
+    'let script = "縺雁ｮ｢讒倥↓縺疲｡亥・縺・◆縺励∪縺吶€よ悽譌･縺ｮ迚ｹ螢ｲ諠・ｱ縺ｧ縺吶€・;': 'let script = "お客様にご案内いたします。本日の特売情報です。";',
+    'script += `${product}縺後€・{price}蜀・€・;': 'script += `${product}が、${price}円。`;',
+    'script += "縺懊・縺願ｲｷ縺・ｱゅａ縺上□縺輔＞縲・;"': 'script += "ぜひお買い求めください。";',
+    'text: \'謾ｾ騾∝次遞ｿ繧剃ｽ懈・縺励∪縺励◆縲・,\'': 'text: \'放送原稿を作成しました。\',',
+    '繝ｪ繝・い繝牙ｺ・相蜿守寢 (50% 蛻・・蠕・': 'リテアド広告収益 (50% 分配後)',
+    '窶｢ 繝ｬ繧ｸ讓ｪ繝代ロ繝ｫ': '・ レジ横パネル',
+    '窶｢ 蜈･蜿｣蜑阪ヱ繝阪Ν': '・ 入口前パネル',
+    '導 繧ｵ繧､繝阪・繧ｸ閾ｪ蜍戊ｵｷ蜍輔そ繝・ヨ繧｢繝・・・・ndroid蟆ら畑繧｢繝励Μ・・': '🚀 サイネージ自動起動セットアップ (Android専用アプリ)',
+    '竊・莨∵･ｭ蠎・相繝ｻ繝｡繝ｼ繧ｫ繝ｼ蠎・相': '← 企業広告・メーカー広告'
+};
 
-// 2. manualhelp.html
-let manualHtml = fs.readFileSync('manualhelp.html', 'utf8');
-if (!manualHtml.includes('overflow-x: hidden')) {
-    manualHtml = manualHtml.replace('body {', 'body {\n            overflow-x: hidden;\n            max-width: 100vw;\n            box-sizing: border-box;');
+let matchCount = 0;
+for (const [corrupted, clean] of Object.entries(replacements)) {
+    if (html.includes(corrupted)) {
+        html = html.split(corrupted).join(clean);
+        matchCount++;
+    } else {
+        // console.log("Not found: " + corrupted);
+    }
 }
-fs.writeFileSync('manualhelp.html', manualHtml);
 
-// 3. shift_manager.html
-let shiftHtml = fs.readFileSync('shift_manager.html', 'utf8');
-if (!shiftHtml.includes('overflow-x: hidden')) {
-    shiftHtml = shiftHtml.replace(/body\s*\{/, 'body {\n            overflow-x: hidden;\n            max-width: 100vw;\n            box-sizing: border-box;');
-}
-fs.writeFileSync('shift_manager.html', shiftHtml);
-
-// 4. shift_manager_lp.html
-let lp = fs.readFileSync('shift_manager_lp.html', 'utf8');
-lp = lp.replace(/<span class=\"nw\">コピーして、AIがスタッフの希望チャットを読み取り、<\/span>/g, '<span class=\"nw\">コピーして、AIがスタッフの<\/span><br class=\"mobile-br\">\\n            <span class=\"nw\">希望チャットを読み取り、<\/span>');
-lp = lp.replace(/<span class=\"nw\">そのまま管理画面からアップロードするだけで、<\/span>/g, '<span class=\"nw\">そのまま管理画面から<\/span><br class=\"mobile-br\"><span class=\"nw\">アップロードするだけで、<\/span>');
-lp = lp.replace(/<span class=\"nw\">AIが自動解析しWebシステムに完全移行させます。<\/span>/g, '<span class=\"nw\">AIが自動解析しWebシステムに<\/span><br class=\"mobile-br\"><span class=\"nw\">完全移行させます。<\/span>');
-lp = lp.replace(/<span class=\"nw\">まるで店長にLINEを送るような感覚で<\/span><br class=\"mobile-br\">\s*<span class=\"nw\">希望を伝えるだけ。<\/span>/g, '<span class=\"nw\">まるで店長にLINEを送るような<\/span><br class=\"mobile-br\">\\n                    <span class=\"nw\">感覚でチャットで希望を<\/span><br class=\"mobile-br\">\\n                    <span class=\"nw\">伝えるだけ。<\/span>');
-lp = lp.replace(/<span class=\"nw\">シフト表に「休み\(休\)」や「時短\(15:00-\)」として<\/span>/g, '<span class=\"nw\">シフト表に<\/span><br class=\"mobile-br\">\\n                    <span class=\"nw\">「休み(休)」や「時短(15:00-)」として<\/span>');
-fs.writeFileSync('shift_manager_lp.html', lp);
-
-console.log("All fixes applied!");
+// Write back
+fs.writeFileSync('store_portal.html', html, 'utf8');
+console.log(`Replaced ${matchCount} patterns in store_portal.html`);
