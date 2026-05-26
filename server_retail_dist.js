@@ -1157,14 +1157,16 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
+            const isDemoUser = email.endsWith('@demo.com') || email.endsWith('@retail.com') || email === 'demo@retail-ad.com';
+
             if ((user.role === 'admin' || user.role === 'system_admin')) {
-                if (!totpCode && !skip2FA) {
+                if (!totpCode && !skip2FA && !isDemoUser) {
                     if (!user.two_factor_secret) {
                         return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role) });
                     } else {
                         return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                     }
-                } else if (totpCode) {
+                } else if (totpCode && !isDemoUser) {
                     const speakeasy = require('speakeasy');
                     const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 1 });
                     if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
@@ -1174,12 +1176,12 @@ app.post('/api/auth/login', async (req, res) => {
                     res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
                 }
             } else {
-                // For general users: Require 2FA on every login if not already setup
-                if (!user.two_factor_secret && email !== 'demo@retail-ad.com') {
+                // For general users: Require 2FA on every login if not already setup (bypass if demo user)
+                if (!user.two_factor_secret && !isDemoUser) {
                     return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role), role: user.role });
                 }
                 // If they have 2FA enabled, enforce it
-                if (user.two_factor_secret) {
+                if (user.two_factor_secret && !isDemoUser) {
                     if (!totpCode && !skip2FA) {
                         return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                     } else if (totpCode) {
