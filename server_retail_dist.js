@@ -1040,6 +1040,11 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
             if (verified) {
                 const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
                 res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
+                
+                // 5時間有効な2FAスキップクッキーを発行
+                const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
+                res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
+
                 res.json({ success: true });
             } else {
                 res.json({ success: false, error: "コードが違います" });
@@ -1063,6 +1068,11 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
             await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ?', [secret, email]);
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
+
+            // 5時間有効な2FAスキップクッキーを発行
+            const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
+            res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
+
             res.json({ success: true });
         } else {
             res.json({ success: false, error: "無効なコードです" });
@@ -1122,17 +1132,34 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         if (user && verifyPassword(password, user.password)) {
+            // 2FAスキップクッキーの検証
+            let skip2FA = false;
+            if (req.cookies && req.cookies['2fa_skip']) {
+                try {
+                    const decoded = jwt.verify(req.cookies['2fa_skip'], JWT_SECRET);
+                    if (decoded && decoded.email === email && decoded.skip2FA) {
+                        skip2FA = true;
+                    }
+                } catch (err) {
+                    // クッキーが無効または期限切れ
+                }
+            }
+
             if ((user.role === 'admin' || user.role === 'system_admin')) {
-                if (!totpCode) {
+                if (!totpCode && !skip2FA) {
                     if (!user.two_factor_secret) {
                         return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role) });
                     } else {
                         return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                     }
-                } else {
+                } else if (totpCode) {
                     const speakeasy = require('speakeasy');
                     const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 1 });
                     if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
+
+                    // 2FA検証に成功したのでスキップクッキーを更新/発行
+                    const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
+                    res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
                 }
             } else {
                 // For general users: Require 2FA on every login if not already setup
@@ -1141,12 +1168,16 @@ app.post('/api/auth/login', async (req, res) => {
                 }
                 // If they have 2FA enabled, enforce it
                 if (user.two_factor_secret) {
-                    if (!totpCode) {
+                    if (!totpCode && !skip2FA) {
                         return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
-                    } else {
+                    } else if (totpCode) {
                         const speakeasy = require('speakeasy');
                         const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 1 });
                         if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
+
+                        // 2FA検証に成功したのでスキップクッキーを更新/発行
+                        const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
+                        res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
                     }
                 }
             }
