@@ -468,7 +468,7 @@ function copyQrUrl() {
             if(data.transactions && data.transactions.length > 0) {
                 historyHtml = data.transactions.map(t => {
                     const d = new Date(parseInt(t.timestamp)).toLocaleString('ja-JP');
-                    return `<div style="border-bottom:1px solid #eee; padding:5px 0; color:#333; text-align:left;">`
+                    return `<div style="border-bottom:1px solid #eee; padding:5px 0; color:#333; text-align:left;">
                         <span style="font-size:12px; color:#888;">${d}</span><br>
                         金額: <strong style="color:#2563EB;">¥${t.totalAmount || 0}</strong>
                     </div>`;
@@ -500,7 +500,7 @@ function copyQrUrl() {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({store_id: email, settings: {pos_system: sysName}})
                 });
-                Swal.fire('保存完了', POS連携設定を「」としてS3に保存しました。, 'success');
+                Swal.fire('保存完了', `POS連携設定を「${sysName}」としてS3に保存しました。`, 'success');
             } catch(e) {
                 Swal.fire('エラー', '保存に失敗しました', 'error');
             }
@@ -664,7 +664,7 @@ function copyQrUrl() {
                 Swal.fire('エラー', '連携に失敗しました: ' + e.message, 'error');
             }
         }
-        \n</script>
+        </script>
 
     <script>
         function handleLogin() {

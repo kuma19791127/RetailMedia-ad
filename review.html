@@ -188,25 +188,25 @@ async function loadKYCReq() {
                 let actionBtns = '';
                 if(req.status === 'pending') {
                     actionBtns = `
-                        <button class="action-btn btn-approve" onclick="updateKyc('\${req.id}', 'approved')">承認</button>
-                        <button class="action-btn btn-reject" onclick="updateKyc('\${req.id}', 'rejected')">却下</button>
-                    \`;
+                        <button class="action-btn btn-approve" onclick="updateKyc('${req.id}', 'approved')">承認</button>
+                        <button class="action-btn btn-reject" onclick="updateKyc('${req.id}', 'rejected')">却下</button>
+                    `;
                 } else {
                     actionBtns = '<span style="color:#94a3b8; font-size:12px; font-weight:bold;">処理済み</span>';
                 }
 
-                tr.innerHTML = \`
-                    <td>\${dt}</td>
-                    <td><b>\${req.userEmail}</b></td>
+                tr.innerHTML = `
+                    <td>${dt}</td>
+                    <td><b>${req.userEmail}</b></td>
                     <td style="font-size:12px; line-height:1.6;">
-                        <span style="color:#64748b;">法人番号:</span> <b>\${req.corpId}</b> <br>
-                        <span style="color:#64748b;">DUNS:</span> <b>\${req.duns || '未入力'}</b> <br>
-                        <a href="https://www.houjin-bangou.nta.go.jp/houjin/v1/search?corpNumber=\${req.corpId}" target="_blank" style="color:#3b82f6; text-decoration:none; font-weight:bold;">🔍 国税庁DBワンクリック照合</a> <br>
+                        <span style="color:#64748b;">法人番号:</span> <b>${req.corpId}</b> <br>
+                        <span style="color:#64748b;">DUNS:</span> <b>${req.duns || '未入力'}</b> <br>
+                        <a href="https://www.houjin-bangou.nta.go.jp/houjin/v1/search?corpNumber=${req.corpId}" target="_blank" style="color:#3b82f6; text-decoration:none; font-weight:bold;">🔍 国税庁DBワンクリック照合</a> <br>
                         <span style="color:#10b981;">✅ AI画像解析: パス済み</span>
                     </td>
-                    <td>\${statusBdg}</td>
-                    <td>\${actionBtns}</td>
-                \`;
+                    <td>${statusBdg}</td>
+                    <td>${actionBtns}</td>
+                `;
                 tbody.appendChild(tr);
             });
         } catch(e) {
