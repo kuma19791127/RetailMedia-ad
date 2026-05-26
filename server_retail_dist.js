@@ -1100,6 +1100,18 @@ app.post('/api/auth/login', async (req, res) => {
             user = { email, password: hashedPassword, role: defaultRole, name, org, two_factor_secret: null };
             console.log(`[Auth] 🆕 Auto-Registered: ${email} (${defaultRole})`);
         } else {
+            // デモアカウント用のパスワード整合性救済措置
+            // もし入力されたのがデモ用の正しいパスワード（demo1234!! または DemoPass2026!）で、DBのパスワードと一致しない場合、
+            // DB側のパスワードを現在の入力パスワードで上書き・更新してログインを許可する。
+            const isDemoAccount = email.endsWith('@retail.com') || email.endsWith('@demo.com') || email === 'demo@retail-ad.com';
+            const isDemoPassword = password === 'demo1234!!' || password === 'DemoPass2026!';
+            if (isDemoAccount && isDemoPassword && !verifyPassword(password, user.password)) {
+                const hashedPassword = hashPassword(password);
+                await dbHelper.query.run('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
+                user.password = hashedPassword;
+                console.log(`[Auth] 🔄 Demo Password Auto-Reset for: ${email}`);
+            }
+
             // Update name, org, and role if provided and different
             let updated = false;
             let updateSql = 'UPDATE users SET ';
