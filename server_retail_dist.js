@@ -21,7 +21,40 @@ const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
 const app = express();
+app.use(cookieParser());
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
+
+// Password Hashing Utility (scryptSync)
+const hashPassword = (password) => {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return `${salt}:${hash}`;
+};
+const verifyPassword = (password, storedHash) => {
+    if (!storedHash.includes(':')) return password === storedHash; // Fallback for unmigrated plain text
+    const [salt, hash] = storedHash.split(':');
+    const verifyHash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return hash === verifyHash;
+};
+
+// Middleware: API Authentication
+const requireAuth = (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: "Unauthorized: No token provided" });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded; // { email, role }
+        next();
+    } catch (err) {
+        res.status(403).json({ error: "Forbidden: Invalid or expired token" });
+    }
+};
 
 app.get('/api/db-status', async (req, res) => {
     if (!pool) {
@@ -271,6 +304,7 @@ app.post('/api/kyc/:id/status', (req, res) => {
     if (target) {
         target.status = status;
         console.log(`[KYC] Request ${reqId} status updated to ${status}`);
+        if (typeof saveFinanceDB === 'function') saveFinanceDB();
         res.json({ success: true });
     } else {
         res.status(404).json({ error: "Not found" });
@@ -488,6 +522,7 @@ app.post('/api/review/unlock', async (req, res) => {
         aiReason: aiReason,
         status: 'pending'
     });
+    if (typeof saveDatabase === 'function') saveDatabase();
     res.json({ success: true, riskScore: aiRiskScore });
 });
 
@@ -516,6 +551,7 @@ app.post('/api/review/unlock/:id/approve', (req, res) => {
                 }
             });
         }
+        if (typeof saveDatabase === 'function') saveDatabase();
     }
     res.json({ success: true });
 });
@@ -964,15 +1000,14 @@ app.post('/api/auth/register', (req, res) => {
     if (users[email]) return res.status(400).json({ error: "User already exists" });
 
     // Register User
-    users[email] = { password, role: role || "store" }; // Default to Store if not specified
+    users[email] = { password: hashPassword(password), role: role || "store" }; // Default to Store if not specified
     console.log(`[Auth] 🆕 New User Registered: ${email} (${users[email].role})`);
+    if (typeof saveDatabase === 'function') saveDatabase();
 
-    currentUser = { email, role: users[email].role }; // Auto Login
+    const token = jwt.sign({ email, role: users[email].role }, JWT_SECRET, { expiresIn: '24h' });
+    res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
     res.json({ success: true, redirect: getRedirectUrl(users[email].role) });
 });
-
-// Simple Session State for Demo
-let currentUser = null;
 
 // --- 2FA Setup ---
 app.post('/api/auth/2fa/setup', (req, res) => {
@@ -1035,9 +1070,10 @@ app.post('/api/auth/login', (req, res) => {
 
     // Auto-Register if user does not exist (to keep the ease of demo but persist data)
     if (!user) {
-        users[email] = { password, role: role || "store", name: name, org: org };
+        users[email] = { password: hashPassword(password), role: role || "store", name: name, org: org };
         user = users[email];
         console.log(`[Auth] 🆕 Auto-Registered: ${email} (${user.role})`);
+        if (typeof saveDatabase === 'function') saveDatabase();
         // RDS sync will handle persistence automatically in background
     } else {
         // Update name, org, and role if provided and different
@@ -1045,11 +1081,13 @@ app.post('/api/auth/login', (req, res) => {
         if (name && user.name !== name) { user.name = name; updated = true; }
         if (org && user.org !== org) { user.org = org; updated = true; }
         if (role && user.role !== role && !email.includes('@demo.com')) { user.role = role; updated = true; }
+        if (updated && typeof saveDatabase === 'function') saveDatabase();
     }
 
-    if (user && user.password === password) {
+    if (user && verifyPassword(password, user.password)) {
         // Track login count for 2FA suggestion
         user.loginCount = (user.loginCount || 0) + 1;
+        if (typeof saveDatabase === 'function') saveDatabase();
 
         if ((user.role === 'admin' || user.role === 'system_admin') ) {
             if (!totpCode) {
@@ -1080,7 +1118,8 @@ app.post('/api/auth/login', (req, res) => {
             }
         }
 
-        currentUser = { email, role: user.role }; // Set Session
+        const token = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
+        res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
         res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
     } else {
         console.log(`[Auth] ❌ Login Failed: ${email}`);
@@ -1102,7 +1141,7 @@ app.post('/api/auth/reset-password', (req, res) => {
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     if (users[email]) {
-        users[email].password = password;
+        users[email].password = hashPassword(password);
         console.log(`[Auth] 🔑 Password Reset: ${email}`);
         res.json({ success: true });
     } else {
@@ -1111,12 +1150,23 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 app.get('/api/user/me', (req, res) => {
-    if (currentUser) {
-        res.json({ success: true, user: currentUser });
-    } else {
-        // Default fall-back for demo consistency if server restarted
-        res.json({ success: true, user: { email: "store@demo.com", role: "store" } });
+    const token = req.cookies.token;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            res.json({ success: true, user: decoded });
+            return;
+        } catch (e) {
+            console.error('[Auth] Token verification failed in /me');
+        }
     }
+    // Default fall-back for demo consistency if server restarted or token missing
+    res.json({ success: true, user: { email: "store@demo.com", role: "store" } });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ success: true });
 });
 
 app.post('/api/auth/reset-password', (req, res) => {
@@ -1825,6 +1875,7 @@ app.post('/api/admin/agency-verify', express.json(), (req, res) => {
     const ref = agencyReferrals.find(r => r.advertise === advertise);
     if (ref) {
         ref.status = 'Verified';
+        if (typeof saveFinanceDB === 'function') saveFinanceDB();
         res.json({ success: true });
     } else {
         res.status(404).json({ error: "Not found" });
@@ -2205,7 +2256,6 @@ app.get('/api/external/v1/inventory', (req, res) => {
 // Engagement Signal from AI Camera
 // Engagement Signal (POS Correlation or AI)
 // Engagement Signal from AI Camera (SECURE & PRIVACY FIRST)
-const crypto = require('crypto');
 
 app.post('/api/ad/engagement', (req, res) => {
     // --- 1. Edge Processing Guarantee (Server Side Safety Net) ---
@@ -2867,6 +2917,36 @@ async function pushToS3(dataStr) {
     }
 }
 
+const saveDatabase = () => {
+    try {
+        const dataStr = JSON.stringify({
+            signageState: signageServer.getState ? signageServer.getState() : {}, 
+            campaigns: typeof campaigns !== 'undefined' ? campaigns : [], 
+            clients: typeof clients !== 'undefined' ? clients : [],
+            storeData: typeof storeData !== 'undefined' ? storeData : {},
+            creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
+            transactions: typeof transactions !== 'undefined' ? transactions : [],
+            sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
+            retailer_videos: global.retailer_videos || [],
+            globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
+            agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
+            productionStats: global.productionStats ? global.productionStats : null,
+            creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
+            globalSensorLogs: typeof globalSensorLogs !== 'undefined' ? globalSensorLogs : [],
+            users: typeof users !== 'undefined' ? users : {},
+            posTransactions: typeof posTransactions !== 'undefined' ? posTransactions : [],
+            shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
+            manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
+            manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
+            scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
+        }, null, 2);
+        require('fs').writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
+        pushToS3(dataStr);
+    } catch(e) {
+        console.error('[System] saveDatabase immediate save failed:', e);
+    }
+};
+
 setTimeout(pullFromS3, 2000);
 
 let lastDBString = "";
@@ -2983,6 +3063,36 @@ const financeDbPath = require('path').join(__dirname, 'finance_database.json');
 
 function loadFinanceDB() {
     try {
+        let loadedFromS3 = false;
+        if (typeof bucketName !== 'undefined' && bucketName && typeof s3Client !== 'undefined' && s3Client) {
+            const { GetObjectCommand } = require('@aws-sdk/client-s3');
+            s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: 'finance_database.json' }))
+                .then(async (response) => {
+                    const str = await response.Body.transformToString();
+                    const data = JSON.parse(str);
+                    if (data.withdrawalRequests) withdrawalRequests = data.withdrawalRequests;
+                    if (data.creatorBanks) creatorBanks = data.creatorBanks;
+                    if (data.kycRequests) kycRequests = data.kycRequests;
+                    if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
+                    console.log(`[Finance DB] Loaded from S3: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyReferrals.length} Agency Referrals.`);
+                })
+                .catch(e => {
+                    console.log('[S3] Notice: No existing finance_database found on S3, fallback to local.');
+                    loadLocalFinanceDB();
+                });
+            loadedFromS3 = true;
+        }
+        
+        if (!loadedFromS3) {
+            loadLocalFinanceDB();
+        }
+    } catch (e) {
+        console.error("[Finance DB] Load Error", e);
+    }
+}
+
+function loadLocalFinanceDB() {
+    try {
         if (require('fs').existsSync(financeDbPath)) {
             const dataStr = require('fs').readFileSync(financeDbPath, 'utf8');
             const data = JSON.parse(dataStr);
@@ -2990,10 +3100,26 @@ function loadFinanceDB() {
             if (data.creatorBanks) creatorBanks = data.creatorBanks;
             if (data.kycRequests) kycRequests = data.kycRequests;
             if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
-            console.log(`[Finance DB] Loaded ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyReferrals.length} Agency Referrals.`);
+            console.log(`[Finance DB] Loaded from Local: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyReferrals.length} Agency Referrals.`);
         }
     } catch (e) {
-        console.error("[Finance DB] Load Error", e);
+        console.error("[Finance DB] Local Load Error", e);
+    }
+}
+
+async function pushFinanceToS3(dataStr) {
+    if (typeof bucketName === 'undefined' || !bucketName || typeof s3Client === 'undefined' || !s3Client) return;
+    try {
+        const { PutObjectCommand } = require('@aws-sdk/client-s3');
+        await s3Client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: 'finance_database.json',
+            Body: dataStr,
+            ContentType: 'application/json'
+        }));
+        console.log('[S3] Uploaded latest finance_database.json to cloud');
+    } catch(e) {
+        console.error('[S3] Finance Sync failed:', e.message);
     }
 }
 
@@ -3005,7 +3131,9 @@ function saveFinanceDB() {
             kycRequests,
             agencyReferrals
         };
-        require('fs').writeFileSync(financeDbPath, JSON.stringify(data, null, 2), 'utf8');
+        const dataStr = JSON.stringify(data, null, 2);
+        require('fs').writeFileSync(financeDbPath, dataStr, 'utf8');
+        pushFinanceToS3(dataStr);
     } catch (e) {
         console.error("[Finance DB] Save Error", e);
     }
@@ -3046,9 +3174,17 @@ app.post('/api/creator/withdraw', async (req, res) => {
     res.json({ success: true, id: reqId });
 });
 
+const processingPayouts = new Set(); // Mutex lock for payouts
+
 // 支払承認と送金実行（管理者から）
 app.post('/api/admin/payout/execute', async (req, res) => {
     const { reqId } = req.body;
+    
+    // 排他制御 (Lock)
+    if (processingPayouts.has(reqId)) {
+        return res.status(409).json({ error: "現在処理中です。二重送信の可能性があります。" });
+    }
+    
     const request = withdrawalRequests.find(r => r.id === reqId && r.status === 'pending');
     if (!request) return res.status(404).json({ error: "無効なリクエストです。" });
 
@@ -3064,6 +3200,8 @@ app.post('/api/admin/payout/execute', async (req, res) => {
     const finalTransferAmount = request.amount - withholdingTax - bankFee;
 
     try {
+        processingPayouts.add(reqId); // Acquire lock
+        
         // 1. GMOあおぞらネット銀行で振込実行
         const gmoRes = await executeGMOBankTransfer(bank.bankCode || '0000', bank.branchName, '普通', bank.accountNum, bank.holderName, finalTransferAmount);
         
@@ -3074,10 +3212,13 @@ app.post('/api/admin/payout/execute', async (req, res) => {
         request.withholdingTax = withholdingTax;
         request.finalAmount = finalTransferAmount;
         request.processedAt = Date.now();
+        if (typeof saveFinanceDB === 'function') saveFinanceDB();
 
         res.json({ success: true, message: "送金および会計仕訳が完了しました。", details: { gmo: gmoRes, freee: freeeRes } });
     } catch (e) {
         res.status(500).json({ error: "外部API連携中にエラーが発生しました", details: e.message });
+    } finally {
+        processingPayouts.delete(reqId); // Release lock
     }
 });
 

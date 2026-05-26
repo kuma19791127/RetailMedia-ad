@@ -1,0 +1,81 @@
+# RetailMedia System - バックエンド開発ルール (Backend Rules)
+
+## 🚨 必須ルール1: データ永続化 (S3保存) の徹底
+
+機能追加や既存機能の改善において、バックエンド（`server_retail_dist.js` 等）でデータを変更するエンドポイント（POST, PUT, DELETE）を作成・修正する場合は、**必ずS3への保存関数を呼び出すこと**を必須とします。
+
+メモリ上の変数を更新しただけでは、システム再起動時（AppRunner等のコンテナ再起動）に変更内容がすべて消失し、致命的なデータロストに繋がります。
+
+### 保存関数の使い分け
+
+エンドポイントで扱うデータの種類に応じて、以下のいずれかの関数を必ず同期的に呼び出してください。
+
+#### 1. `saveDatabase()`
+- **対象データ**: ユーザー情報 (`users`)、サイネージ設定 (`storeData`, `signageState`)、キャンペーン情報 (`campaigns`)、実績データ (`transactions`) など、システム全般のデータ。
+- **使用例**:
+  ```javascript
+  app.post('/api/example', (req, res) => {
+      users[req.body.email] = req.body.data;
+      if (typeof saveDatabase === 'function') saveDatabase(); // 必須
+      res.json({ success: true });
+  });
+  ```
+
+#### 2. `saveFinanceDB()`
+- **対象データ**: 出金リクエスト (`withdrawalRequests`)、本人確認データ (`kycRequests`)、振込先口座情報 (`creatorBanks`)、代理店データ (`agencyReferrals`) などの金融・審査系データ。
+- **使用例**:
+  ```javascript
+  app.post('/api/creator/withdraw', (req, res) => {
+      withdrawalRequests.push(req.body.request);
+      if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須
+      res.json({ success: true });
+  });
+  ```
+
+---
+
+## 🚨 必須ルール2: 認証とセキュリティ (Authentication & Security)
+
+ユーザーの認証状態や機密情報を扱う際は、以下のセキュリティ基準を遵守してください。
+
+1. **パスワードの平文保存禁止**: 
+   新規登録やパスワードリセット時、パスワードは必ず `crypto.scryptSync` 等を用いてハッシュ化してから保存すること。
+2. **グローバル変数によるセッション管理の禁止**:
+   `currentUser` のようなグローバル変数にログイン状態を保持すると、複数ユーザーからの同時リクエスト時にセッション情報が混同する（他人のアカウントにログインしてしまう）致命的なバグが発生します。
+   **必ず JWT (JSON Web Token) と HTTP-Only Cookie を用いてリクエスト単位で認証状態を管理** してください。
+
+---
+
+## 🚨 必須ルール3: 重要処理の排他制御 (Mutex & Concurrency)
+
+出金処理やポイント付与など、**二重実行されるとシステムや財務に致命的な影響を与えるAPI** を実装する際は、必ずメモリ上の排他制御（Mutex）を組み込んでください。
+
+- **実装例**:
+  ```javascript
+  const processingTasks = new Set();
+  
+  app.post('/api/critical/task', (req, res) => {
+      const taskId = req.body.taskId;
+      if (processingTasks.has(taskId)) {
+          return res.status(409).json({ error: "現在処理中です" }); // 連打防止
+      }
+      processingTasks.add(taskId);
+      
+      try {
+          // ... 重要な処理 ...
+      } finally {
+          processingTasks.delete(taskId); // 確実なロック解除
+      }
+  });
+  ```
+
+---
+
+## 🚨 必須ルール4: スケーラビリティとメモリ管理 (Scalability)
+
+現在進行中の SQLite への移行フェーズにおけるルールです。
+
+1. **巨大なインメモリ同期処理の回避**:
+   `users` や `financeDB` などの全件データが入った辞書（オブジェクト）に対する同期的な巨大JSON変換は、イベントループをブロックしサーバーを停止させる原因となります。
+2. **新規機能のデータベース設計**:
+   今後新たに追加するデータモデルや大量のトランザクションが予想される機能（出金履歴、ログデータなど）は、極力JSONではなく **SQLite (`db_sqlite.js`) を用いた非同期処理** で設計してください。
