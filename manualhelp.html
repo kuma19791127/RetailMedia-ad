@@ -728,25 +728,94 @@
                 });
                 const data = await response.json();
                 if (data.success) {
-                    if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: pass
+                    if (data.require2FA) {
+                        // 2FA検証のダイアログ表示
+                        const { value: totpCode } = await Swal.fire({
+                            title: '🔑 2段階認証コード',
+                            text: '認証アプリに表示されている6桁のコードを入力してください。',
+                            input: 'text',
+                            inputPlaceholder: '6桁のコードを入力',
+                            showCancelButton: true,
+                            confirmButtonText: '認証',
+                            cancelButtonText: 'キャンセル',
+                            inputValidator: (value) => {
+                                if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                            }
                         });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+
+                        if (!totpCode) return;
+
+                        Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        
+                        const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, token: totpCode })
+                        });
+                        const verifyData = await verifyRes.json();
+                        
+                        if (verifyData.success) {
+                            Swal.close();
+                            loginSuccess(email, pass, name, org, role);
+                        } else {
+                            Swal.fire('認証エラー', verifyData.error || '認証コードが違います。', 'error');
+                        }
+                        return;
                     }
-                    sessionStorage.setItem('retailMediaAuth', 'true');
-                    const realName = data.user && data.user.name ? data.user.name : name;
-                    const realOrg = data.user && data.user.org ? data.user.org : org;
-                    currentUser = { org: realOrg, name: realName, email, role, avatar: realName.charAt(0) };
-                    localStorage.setItem('ag_user', JSON.stringify(currentUser));
-                    window.location.hash = '#' + role;
-                    checkRoute();
-                    renderChat();
+
+                    if (data.require2FASetup) {
+                        // 2FAセットアップ
+                        Swal.fire({ title: '2FA初期設定中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                        });
+                        const setupData = await setupRes.json();
+
+                        const { value: totpCode } = await Swal.fire({
+                            title: '🔑 2段階認証の有効化',
+                            html: `
+                                <p style="font-size:0.9rem;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
+                                <img src="${setupData.qrcode}" style="margin: 15px auto; display:block; max-width:180px;">
+                                <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${setupData.secret}</code></p>
+                            `,
+                            input: 'text',
+                            inputPlaceholder: '6桁のコード',
+                            showCancelButton: true,
+                            confirmButtonText: '有効化する',
+                            cancelButtonText: 'キャンセル',
+                            inputValidator: (value) => {
+                                if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                            }
+                        });
+
+                        if (!totpCode) return;
+
+                        Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                        const enableRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret })
+                        });
+                        const enableData = await enableRes.json();
+
+                        if (enableData.success) {
+                            Swal.close();
+                            loginSuccess(email, pass, name, org, role);
+                        } else {
+                            Swal.fire('設定エラー', enableData.error || '無効なコードです。', 'error');
+                        }
+                        return;
+                    }
+
+                    loginSuccess(email, pass, name, org, role, data.user);
                 } else {
                     Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
                 }
             } catch(e) {
+                console.error(e);
                 // Fallback for demo
                 currentUser = { org, name, email, role, avatar: name.charAt(0) };
                 localStorage.setItem('ag_user', JSON.stringify(currentUser));
@@ -754,6 +823,24 @@
                 checkRoute();
                 renderChat();
             }
+        }
+
+        function loginSuccess(email, pass, name, org, role, serverUser) {
+            if (window.PasswordCredential) {
+                const cred = new PasswordCredential({
+                    id: email,
+                    password: pass
+                });
+                navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+            }
+            sessionStorage.setItem('retailMediaAuth', 'true');
+            const realName = serverUser && serverUser.name ? serverUser.name : name;
+            const realOrg = serverUser && serverUser.org ? serverUser.org : org;
+            currentUser = { org: realOrg, name: realName, email, role, avatar: realName.charAt(0) };
+            localStorage.setItem('ag_user', JSON.stringify(currentUser));
+            window.location.hash = '#' + role;
+            checkRoute();
+            renderChat();
         }
 
         window.addEventListener('storage', function(e) {
