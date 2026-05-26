@@ -635,7 +635,7 @@
             <!-- === AI Agent Chat UI (競合分析・経営支援エージェント) === -->
             <div class="agent-chat-container">
                 <div class="agent-header" style="background: #ef4444; color: white;">
-                    <i class="fas fa-chart-line"></i> 競合分析・経営支援エージェント
+                    <i class="fas fa-chart-line"></i> 競合分析・経営支援エージェント <a href="business_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #fff; text-decoration: underline;">[機能の詳細を見る]</a>
                 </div>
                 <div class="agent-body">
                     <textarea id="aiAgentInput" placeholder="例: 近隣の他店舗で今売れている商品を教えて。自店ではどう配置すべき？" rows="2" style="border: 1px solid #ef4444;"></textarea>
@@ -733,6 +733,64 @@
                     reader.readAsBinaryString(file);
                 }
             </script>
+            <!-- === 導入サービス＆AIエージェント一覧 === -->
+            <div class="card" style="margin-bottom:20px; border-left: 5px solid #2563eb;">
+                <h3 style="margin-top:0; color:#2563eb; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    🛠️ 導入サービス＆AIエージェント一覧
+                </h3>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px; margin-top:15px;">
+                    
+                    <!-- Card 1 -->
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <h4 style="margin:0 0 10px 0; color:#1e293b;">📱 どこでもレジ (モバイルPOS)</h4>
+                            <p style="font-size:12px; color:#64748b; margin:0 0 15px 0; line-height:1.4;">スマホでスキャンしてSquare決済ができるモバイルPOSレジサービス。</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <a href="anywhere_regi.html" target="_blank" style="display:block; text-align:center; padding:8px; background:#10b981; color:white; border-radius:6px; text-decoration:none; font-size:12px; font-weight:bold;">🚀 サービスを開く</a>
+                            <a href="anywhere_lp.html" target="_blank" style="display:block; text-align:center; padding:6px; background:#f1f5f9; color:#475569; border-radius:6px; text-decoration:none; font-size:12px; border:1px solid #cbd5e1;">📖 LP詳細を見る</a>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <h4 style="margin:0 0 10px 0; color:#1e293b;">🗓️ 自動シフト管理 (AIシフト)</h4>
+                            <p style="font-size:12px; color:#64748b; margin:0 0 15px 0; line-height:1.4;">希望シフトの回収から、AIによる自動シフト割り振りと通知が完了。</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <a href="shift_manager.html" target="_blank" style="display:block; text-align:center; padding:8px; background:#2563eb; color:white; border-radius:6px; text-decoration:none; font-size:12px; font-weight:bold;">🚀 サービスを開く</a>
+                            <a href="shift_manager_lp.html" target="_blank" style="display:block; text-align:center; padding:6px; background:#f1f5f9; color:#475569; border-radius:6px; text-decoration:none; font-size:12px; border:1px solid #cbd5e1;">📖 LP詳細を見る</a>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <h4 style="margin:0 0 10px 0; color:#1e293b;">📖 業務マニュアル (AIアシスト)</h4>
+                            <p style="font-size:12px; color:#64748b; margin:0 0 15px 0; line-height:1.4;">PDFマニュアルからAIがスタッフの疑問に即時回答する業務支援。</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <a href="manualhelp.html" target="_blank" style="display:block; text-align:center; padding:8px; background:#4f46e5; color:white; border-radius:6px; text-decoration:none; font-size:12px; font-weight:bold;">🚀 サービスを開く</a>
+                            <a href="manualhelp_lp.html" target="_blank" style="display:block; text-align:center; padding:6px; background:#f1f5f9; color:#475569; border-radius:6px; text-decoration:none; font-size:12px; border:1px solid #cbd5e1;">📖 LP詳細を見る</a>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <h4 style="margin:0 0 10px 0; color:#1e293b;">🎙️ AIボイススタジオ (サイネージ)</h4>
+                            <p style="font-size:12px; color:#64748b; margin:0 0 15px 0; line-height:1.4;">AI音声で店内販促アナウンスを自動生成し、サイネージから流します。</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <button onclick="showPanel('studio')" style="display:block; text-align:center; padding:8px; background:#db2777; color:white; border:none; border-radius:6px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer; width:100%;">🚀 サービスを開く</button>
+                            <a href="ai_voice_studio_lp.html" target="_blank" style="display:block; text-align:center; padding:6px; background:#f1f5f9; color:#475569; border-radius:6px; text-decoration:none; font-size:12px; border:1px solid #cbd5e1;">📖 LP詳細を見る</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
 <!-- Detailed Revenue Model (Intro) -->
             <div class="card" style="margin-bottom:20px; border-left: 5px solid #2ecc71;">
                 <h3
