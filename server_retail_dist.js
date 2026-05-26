@@ -2830,6 +2830,85 @@ app.post('/api/voice/synthesize', async (req, res) => {
 const s3Client = new S3Client({ region: process.env.AWS_DEFAULT_REGION || "us-east-1" });
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 
+function loadLocalDatabase() {
+    try {
+        const dbPath = require('path').join(__dirname, 'database.json');
+        if (fs.existsSync(dbPath)) {
+            const str = fs.readFileSync(dbPath, 'utf8');
+            const parsed = JSON.parse(str);
+
+            if (parsed.signageState && signageServer.setState) {
+                signageServer.setState(parsed.signageState);
+            }
+            if (parsed.campaigns && typeof campaigns !== 'undefined') {
+                campaigns.length = 0;
+                parsed.campaigns.forEach(c => campaigns.push(c));
+            }
+            if (parsed.clients && typeof clients !== 'undefined') {
+                clients.length = 0;
+                parsed.clients.forEach(c => clients.push(c));
+            }
+            if (parsed.storeData && typeof storeData !== 'undefined') {
+                Object.assign(storeData, parsed.storeData);
+            }
+            if (parsed.creatorState && typeof CREATOR_STATE !== 'undefined') {
+                Object.assign(CREATOR_STATE, parsed.creatorState);
+            }
+            if (parsed.transactions && typeof transactions !== 'undefined') {
+                transactions.length = 0;
+                parsed.transactions.forEach(t => transactions.push(t));
+            }
+            if (parsed.sensorLogs && typeof sensorLogs !== 'undefined') {
+                sensorLogs.length = 0;
+                parsed.sensorLogs.forEach(l => sensorLogs.push(l));
+            }
+            if (parsed.globalDashboardStats && typeof globalDashboardStats !== 'undefined') {
+                Object.assign(globalDashboardStats, parsed.globalDashboardStats);
+            }
+            if (parsed.users && typeof users !== 'undefined') {
+                Object.assign(users, parsed.users);
+            }
+            if (parsed.manualhelpState) {
+                manualhelpState = parsed.manualhelpState;
+            }
+            if (parsed.manualChat && Array.isArray(parsed.manualChat)) {
+                manualChat = parsed.manualChat;
+            }
+            if (parsed.shiftState && typeof parsed.shiftState === 'object') {
+                shiftState = parsed.shiftState;
+            }
+            if (parsed.posTransactions && Array.isArray(parsed.posTransactions)) {
+                posTransactions = parsed.posTransactions;
+            }
+            if (parsed.productionStats) {
+                global.productionStats = parsed.productionStats;
+            }
+            if (parsed.creatorStats && typeof creatorStats !== 'undefined') {
+                Object.assign(creatorStats, parsed.creatorStats);
+            }
+            if (parsed.globalSensorLogs && typeof globalSensorLogs !== 'undefined') {
+                globalSensorLogs.length = 0;
+                parsed.globalSensorLogs.forEach(l => globalSensorLogs.push(l));
+            }
+            if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
+                global.retailer_videos = parsed.retailer_videos;
+            }
+            if (parsed.scheduledBroadcasts && Array.isArray(parsed.scheduledBroadcasts)) {
+                scheduledBroadcasts = parsed.scheduledBroadcasts;
+            }
+            if (parsed.CREATOR_STATE && typeof parsed.CREATOR_STATE === 'object') {
+                CREATOR_STATE = parsed.CREATOR_STATE;
+            }
+            console.log('[System] Successfully loaded local database.json');
+        }
+    } catch (e) {
+        console.error('[System] Failed to load local database.json:', e);
+    }
+}
+
+// Initial load from local database immediately on startup
+loadLocalDatabase();
+
 async function pullFromS3() {
     if (!bucketName) return;
     try {
@@ -2905,6 +2984,7 @@ async function pullFromS3() {
         console.log('[S3] Successfully pulled database.json from cloud!');
     } catch (e) {
         console.log('[S3] Notice: No existing database found on S3, starting fresh or using local.');
+        loadLocalDatabase();
     }
 }
 
