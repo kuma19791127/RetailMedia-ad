@@ -3596,10 +3596,10 @@ Return ONLY a JSON object:
 
         const responseHtml = `
             <strong><i class="fas fa-check-circle" style="color:#22c55e;"></i> 自社用の販促動画を自動生成し、ベースループに追加しました！</strong><br><br>
-            <strong>📊 POS分析結果:</strong> ${result.analysis}<br>
-            <strong>🎯 対象商品:</strong> ${result.targetItems}<br>
-            <strong>🔊 AI生成スクリプト:</strong> 「${result.voiceScript}」<br>
-            <br>※外部広告の枠を消費せず、自社サイネージ（ベースループ）に無料で即時反映されます。
+            <strong>📊 POS分析結果</strong><br>${result.analysis}<br><br>
+            <strong>🎯 対象商品</strong><br>${result.targetItems}<br><br>
+            <strong>🔊 AI生成スクリプト</strong><br>「${result.voiceScript}」<br><br>
+            ※外部広告の枠を消費せず、自社サイネージ（ベースループ）に無料で即時反映されます。
         `;
 
         res.json({ success: true, plan: result, message: responseHtml });
@@ -3649,8 +3649,8 @@ Return ONLY a JSON object:
 
         const responseHtml = `
             <strong><i class="fas fa-magic" style="color:#eab308;"></i> ${result.friendlyMessage}</strong><br><br>
-            <strong>🛒 本日のお買い得推奨:</strong> ${result.suggestedIngredients}<br>
-            <strong>🍲 AIおすすめレシピ:</strong> ${result.recipeTitle}<br>
+            <strong>🛒 本日のお買い得推奨</strong><br>${result.suggestedIngredients}<br><br>
+            <strong>🍲 AIおすすめレシピ</strong><br>${result.recipeTitle}<br><br>
             <div style="font-size:0.9em; margin-top:5px; padding:10px; background:rgba(255,255,255,0.5); border-radius:5px;">
                 ${result.recipeSteps.replace(/\n/g, '<br>')}
             </div>
@@ -3696,9 +3696,9 @@ Return ONLY a JSON object:
 
         const responseHtml = `
             <strong><i class="fas fa-lightbulb" style="color:#a855f7;"></i> AIアシスタントからのアドバイス</strong><br><br>
-            <strong>📊 過去の傾向分析:</strong> ${result.analysis}<br>
-            <strong>🛠 改善の具体案:</strong> ${result.improvementPlan}<br>
-            <br><em>${result.encouragement}</em>
+            <strong>📊 過去の傾向分析</strong><br>${result.analysis}<br><br>
+            <strong>🛠 改善の具体案</strong><br>${result.improvementPlan}<br><br>
+            <em>${result.encouragement}</em>
         `;
 
         res.json({ success: true, message: responseHtml });
@@ -3793,9 +3793,9 @@ Return ONLY a JSON object:
 
         const responseHtml = `
             <strong><i class="fas fa-chart-line" style="color:#ef4444;"></i> AI経営アドバイス</strong><br><br>
-            <strong>📈 ネットワーク全体のトレンド:</strong><br>${result.trendAnalysis}<br><br>
-            <strong>💡 自店への推奨アクション:</strong><br>${result.actionableAdvice}<br><br>
-            <strong>💰 予測される効果:</strong><br>${result.projectedImpact}
+            <strong>📈 ネットワーク全体のトレンド</strong><br>${result.trendAnalysis}<br><br>
+            <strong>💡 自店への推奨アクション</strong><br>${result.actionableAdvice}<br><br>
+            <strong>💰 予測される効果</strong><br>${result.projectedImpact}
         `;
 
         res.json({ success: true, message: responseHtml });
@@ -3808,9 +3808,9 @@ Return ONLY a JSON object:
         };
         const responseHtmlFallback = `
             <strong><i class="fas fa-chart-line" style="color:#ef4444;"></i> AI経営アドバイス (デモ用フォールバック動作)</strong><br><br>
-            <strong>📈 ネットワーク全体のトレンド:</strong><br>${fallbackResult.trendAnalysis}<br><br>
-            <strong>💡 自店への推奨アクション:</strong><br>${fallbackResult.actionableAdvice}<br><br>
-            <strong>💰 予測される効果:</strong><br>${fallbackResult.projectedImpact}
+            <strong>📈 ネットワーク全体のトレンド</strong><br>${fallbackResult.trendAnalysis}<br><br>
+            <strong>💡 自店への推奨アクション</strong><br>${fallbackResult.actionableAdvice}<br><br>
+            <strong>💰 予測される効果</strong><br>${fallbackResult.projectedImpact}
         `;
         res.json({ success: true, message: responseHtmlFallback, fallback: true });
     }
@@ -3868,10 +3868,10 @@ Return ONLY a JSON object:
 
         const responseHtml = `
             <strong><i class="fas fa-check-circle" style="color:var(--primary);"></i> キャンペーンの自動設定が完了しました！</strong><br><br>
-            <strong>📊 AI分析結果:</strong> ${result.analysis}<br>
-            <strong>🎯 配信推奨時間:</strong> ${result.targetTime}<br>
-            <strong>🔊 AI生成スクリプト:</strong> 「${result.voiceScript}」<br>
-            <br>※キャンペーン一覧に「審査中(REVIEWING)」として追加されました。
+            <strong>📊 AI分析結果</strong><br>${result.analysis}<br><br>
+            <strong>🎯 配信推奨時間</strong><br>${result.targetTime}<br><br>
+            <strong>🔊 AI生成スクリプト</strong><br>「${result.voiceScript}」<br><br>
+            ※キャンペーン一覧に「審査中(REVIEWING)」として追加されました。
         `;
 
         res.json({ success: true, plan: result, message: responseHtml });
@@ -3901,10 +3901,10 @@ Return ONLY a JSON object:
 
         const responseHtmlFallback = `
             <strong><i class="fas fa-check-circle" style="color:var(--primary);"></i> キャンペーンの自動設定が完了しました！(デモ用フォールバック動作)</strong><br><br>
-            <strong>📊 AI分析結果:</strong> ${fallbackResult.analysis}<br>
-            <strong>🎯 配信推奨時間:</strong> ${fallbackResult.targetTime}<br>
-            <strong>🔊 AI生成スクリプト:</strong> 「${fallbackResult.voiceScript}」<br>
-            <br>※キャンペーン一覧に「審査中(REVIEWING)」として追加されました。
+            <strong>📊 AI分析結果</strong><br>${fallbackResult.analysis}<br><br>
+            <strong>🎯 配信推奨時間</strong><br>${fallbackResult.targetTime}<br><br>
+            <strong>🔊 AI生成スクリプト</strong><br>「${fallbackResult.voiceScript}」<br><br>
+            ※キャンペーン一覧に「審査中(REVIEWING)」として追加されました。
         `;
         res.json({ success: true, plan: fallbackResult, message: responseHtmlFallback, fallback: true });
     }
