@@ -566,12 +566,62 @@
         ? 'http://localhost:3000'
         : 'https://nsg3hyme2k.us-east-1.awsapprunner.com';
     </script>
+
+    <style>
+    .agent-chat-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin: 20px 0 30px 0;
+        border: 2px solid #ef4444;
+        overflow: hidden;
+    }
+    .agent-header {
+        padding: 10px 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .agent-body {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .agent-body textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .agent-body button {
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .agent-body button:hover {
+        opacity: 0.9;
+    }
+    .agent-result {
+        padding: 15px;
+        margin: 0 15px 15px 15px;
+        border-radius: 8px;
+        font-size: 0.95em;
+        white-space: pre-wrap;
+    }
+    </style>
 </head>
 
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
         <div class="logo">
             <span class="icon">🏪</span> リテアド(リテール×アドバタイジング)
         </div>
@@ -601,6 +651,20 @@
         <!-- Revenue Panel -->
         <div id="panel-revenue" class="panel active">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px;"><h2 style="margin:0;">📊 売上センター (Revenue Center)</h2><button onclick="openProfileModal(false)" class="btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:8px 12px; font-weight:bold; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-user-pen"></i> 組織/メール設定</button></div>
+
+            <!-- === AI Agent Chat UI (競合分析・経営支援エージェント) === -->
+            <div class="agent-chat-container">
+                <div class="agent-header" style="background: #ef4444; color: white;">
+                    <i class="fas fa-chart-line"></i> 競合分析・経営支援エージェント
+                </div>
+                <div class="agent-body">
+                    <textarea id="aiAgentInput" placeholder="例: 近隣の他店舗で今売れている商品を教えて。自店ではどう配置すべき？" rows="2" style="border: 1px solid #ef4444;"></textarea>
+                    <button onclick="runStoreAgent()" id="aiAgentBtn" style="background: #ef4444; color: white;">
+                        <i class="fas fa-search-dollar"></i> 分析を開始
+                    </button>
+                </div>
+                <div id="aiAgentResult" class="agent-result" style="display:none; border-left: 4px solid #ef4444; background: #fef2f2;"></div>
+            </div>
 
             <script>
                 async function loadPosData() {
@@ -2318,6 +2382,41 @@
     }
 </script>
 
+
+    <script>
+    async function runStoreAgent() {
+        const input = document.getElementById('aiAgentInput').value;
+        const btn = document.getElementById('aiAgentBtn');
+        const resultDiv = document.getElementById('aiAgentResult');
+        
+        if(!input) return alert("相談内容を入力してください");
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIがネットワーク全体のデータを分析中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+        
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/agent/store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input, storeId: 'current_store' })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                resultDiv.innerHTML = data.message;
+                resultDiv.style.display = 'block';
+            } else {
+                alert("エラー: " + data.error);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e.message);
+        }
+        
+        btn.innerHTML = '<i class="fas fa-search-dollar"></i> 分析を開始';
+        btn.disabled = false;
+    }
+    </script>
 </body>
 
 </html>
