@@ -453,7 +453,7 @@ app.post('/api/review/unlock', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         
         if (GEMINI_API_KEY) {
-            const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
             const promptText = `あなたはリテールメディアプラットフォームの不正検知（KYC）AIアシスタントです。
 以下の申請情報から、このユーザーがスパム、過去のBAN回避、または悪意のあるボットである可能性（リスクスコア）を0〜100の数値で判定し、その理由を簡潔に回答してください。
 （0=極めて安全、100=極めて危険なスパム/違反者）
@@ -2643,7 +2643,7 @@ app.post('/api/manualhelp/pdf-to-steps', express.json({limit: '50mb'}), async (r
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const promptText = "あなたはプロの資料管理者です。添付されたPDF文書の「目次（または見出しの構造）」を解析し、マニュアルとしてシステムに登録するための分類データを作成してください。\n" +
             "以下のJSONフォーマットを厳守して出力してください:\n" +
@@ -2708,7 +2708,7 @@ app.post('/api/manualhelp/video-to-steps', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
         const promptText = "あなたはプロのマニュアル作成者です。添付された動画の内容を解析し、具体的な作業手順をステップごとに分けてJSON形式の配列で出力してください。\n" + 
                            "出力フォーマットは以下を厳守してください:\n" + 
@@ -3383,7 +3383,7 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
             method: 'POST',
@@ -3466,7 +3466,7 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
             method: 'POST',
@@ -3525,7 +3525,7 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
             method: 'POST',
@@ -3582,7 +3582,7 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
             method: 'POST',
@@ -3653,7 +3653,7 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
             method: 'POST',
@@ -3759,7 +3759,7 @@ Return ONLY a JSON object (no markdown) with the following format:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
@@ -3840,7 +3840,7 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         const fetch = (await import('node-fetch')).default;
         const geminiRes = await fetch(FIXED_URL, {
             method: 'POST',
