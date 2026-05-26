@@ -1033,6 +1033,9 @@ app.post('/api/auth/2fa/verify', (req, res) => {
         if (users[email] && users[email].twoFactorSecret) {
             const verified = speakeasy.totp.verify({ secret: users[email].twoFactorSecret, encoding: 'base32', token: token, window: 1 });
             if (verified) {
+                const user = users[email];
+                const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
+                res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
                 res.json({ success: true });
             } else {
                 res.json({ success: false, error: "コードが違います" });
@@ -1053,6 +1056,9 @@ app.post('/api/auth/2fa/enable', (req, res) => {
         if (verified && users[email]) {
             users[email].twoFactorSecret = secret;
             if (typeof saveDatabase === 'function') saveDatabase();
+            const user = users[email];
+            const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
+            res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
             res.json({ success: true });
         } else {
             res.json({ success: false, error: "無効なコードです" });
