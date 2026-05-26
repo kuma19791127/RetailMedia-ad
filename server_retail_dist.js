@@ -3383,20 +3383,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) throw new Error('Gemini API Error');
-        const data = await geminiRes.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await callGeminiAPI(prompt, "application/json");
+        const result = JSON.parse(responseText);
 
         // Auto-register the promotional video into the base_loop_videos array (self-distribution)
         // Note: For demonstration, we add it to the generic videos list, but tagged as a base loop.
@@ -3466,20 +3454,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) throw new Error('Gemini API Error');
-        const data = await geminiRes.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await callGeminiAPI(prompt, "application/json");
+        const result = JSON.parse(responseText);
 
         const responseHtml = `
             <strong><i class="fas fa-magic" style="color:#eab308;"></i> ${result.friendlyMessage}</strong><br><br>
@@ -3525,20 +3501,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) throw new Error('Gemini API Error');
-        const data = await geminiRes.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await callGeminiAPI(prompt, "application/json");
+        const result = JSON.parse(responseText);
 
         const responseHtml = `
             <strong><i class="fas fa-lightbulb" style="color:#a855f7;"></i> AIアシスタントからのアドバイス</strong><br><br>
@@ -3554,6 +3518,58 @@ Return ONLY a JSON object:
     }
 });
 
+
+
+// --- Dynamic Gemini API Model Selection & Fallback Helper ---
+const GEMINI_MODELS_PRIORITY = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-pro'
+];
+
+async function callGeminiAPI(prompt, responseMimeType = null) {
+    const rawKey = process.env.GEMINI_API_KEY || '';
+    const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+    if (!GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY not configured');
+    }
+
+    const fetch = (await import('node-fetch')).default;
+    let lastError = null;
+
+    for (const model of GEMINI_MODELS_PRIORITY) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+            const reqBody = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+            if (responseMimeType) {
+                reqBody.generationConfig = { response_mime_type: responseMimeType };
+            }
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reqBody)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            }
+            
+            const errText = await res.text();
+            console.warn(`Gemini Model ${model} failed: ${res.status} - ${errText}`);
+            lastError = new Error(`Gemini API Error (${model}): ${res.status} - ${errText}`);
+        } catch (err) {
+            console.warn(`Gemini Model ${model} error:`, err);
+            lastError = err;
+        }
+    }
+
+    throw lastError || new Error('All Gemini models failed');
+}
 
 // --- 5. Store Owner Agent (店舗オーナー向け 競合分析・経営支援エージェント) ---
 app.post('/api/agent/store', async (req, res) => {
@@ -3582,20 +3598,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) throw new Error('Gemini API Error');
-        const data = await geminiRes.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await callGeminiAPI(prompt, "application/json");
+        const result = JSON.parse(responseText);
 
         const responseHtml = `
             <strong><i class="fas fa-chart-line" style="color:#ef4444;"></i> AI経営アドバイス</strong><br><br>
@@ -3653,20 +3657,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) throw new Error('Gemini API Error');
-        const data = await geminiRes.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await callGeminiAPI(prompt, "application/json");
+        const result = JSON.parse(responseText);
 
         // Auto-register the campaign into the database
         const newCampaign = {
@@ -3759,25 +3751,7 @@ Return ONLY a JSON object (no markdown) with the following format:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) {
-            const err = await geminiRes.text();
-            throw new Error('Gemini API Error: ' + err);
-        }
-
-        const data = await geminiRes.json();
-        const responseText = data.candidates[0].content.parts[0].text;
+        const responseText = await callGeminiAPI(prompt, "application/json");
         const result = JSON.parse(responseText);
 
         // Here we would normally execute the tools (create video, schedule campaign)
@@ -3840,20 +3814,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        const fetch = (await import('node-fetch')).default;
-        const geminiRes = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!geminiRes.ok) throw new Error('Gemini API Error');
-        const data = await geminiRes.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await callGeminiAPI(prompt, "application/json");
+        const result = JSON.parse(responseText);
 
         // Add to notifications
         if (!database.notifications) database.notifications = [];
