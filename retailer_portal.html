@@ -270,28 +270,128 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-password').value;
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-password').value.trim();
             
-            // Temporary simple validation until API is fully wired
-            if(email.includes('@') && pass.length > 3) {
-                currentEmail = email;
-                // Extract retailer prefix from email (e.g. info@life.co.jp -> LIFE)
-                // Use the full email address instead of domain prefix
-                currentPrefix = email;
-                document.getElementById('retailer-prefix').value = currentPrefix;
-                if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: pass
+            if(!email || !pass) {
+                document.getElementById('login-error').innerText = "メールアドレスとパスワードを入力してください。";
+                document.getElementById('login-error').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: pass, role: 'store' })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.require2FA) {
+                        const { value: totpCode } = await Swal.fire({
+                            title: '🔑 2段階認証コード',
+                            text: '認証アプリに表示されている6桁のコードを入力してください。',
+                            input: 'text',
+                            inputPlaceholder: '6桁のコードを入力',
+                            showCancelButton: true,
+                            confirmButtonText: '認証',
+                            cancelButtonText: 'キャンセル',
+                            inputValidator: (value) => {
+                                if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                            }
                         });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+
+                        if (!totpCode) return;
+
+                        Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        
+                        const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, token: totpCode })
+                        });
+                        const verifyData = await verifyRes.json();
+                        
+                        if (verifyData.success) {
+                            Swal.close();
+                            loginSuccess(email, pass);
+                        } else {
+                            Swal.fire('認証エラー', verifyData.error || '認証コードが違います。', 'error');
+                        }
+                        return;
                     }
-                document.getElementById('login-overlay').style.display = 'none';
-                loadVideos();
-            } else {
+
+                    if (data.require2FASetup) {
+                        Swal.fire({ title: '2FA初期設定中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                        });
+                        const setupData = await setupRes.json();
+
+                        const { value: totpCode } = await Swal.fire({
+                            title: '🔑 2段階認証の有効化',
+                            html: `
+                                <p style="font-size:0.9rem;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
+                                <img src="${setupData.qrcode}" style="margin: 15px auto; display:block; max-width:180px;">
+                                <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${setupData.secret}</code></p>
+                            `,
+                            input: 'text',
+                            inputPlaceholder: '6桁のコード',
+                            showCancelButton: true,
+                            confirmButtonText: '有効化する',
+                            cancelButtonText: 'キャンセル',
+                            inputValidator: (value) => {
+                                if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                            }
+                        });
+
+                        if (!totpCode) return;
+
+                        Swal.fire({ title: '設定検証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret })
+                        });
+                        const verifyData = await verifyRes.json();
+
+                        if (verifyData.success) {
+                            Swal.close();
+                            loginSuccess(email, pass);
+                        } else {
+                            Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
+                        }
+                        return;
+                    }
+
+                    loginSuccess(email, pass);
+                } else {
+                    document.getElementById('login-error').innerText = data.error || "認証に失敗しました";
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('login-error').innerText = "接続エラーが発生しました。";
                 document.getElementById('login-error').style.display = 'block';
             }
+        }
+
+        function loginSuccess(email, pass) {
+            currentEmail = email;
+            currentPrefix = email;
+            document.getElementById('retailer-prefix').value = currentPrefix;
+            if (window.PasswordCredential) {
+                const cred = new PasswordCredential({
+                    id: email,
+                    password: pass
+                });
+                navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+            }
+            document.getElementById('login-overlay').style.display = 'none';
+            loadVideos();
         }
 
         function logout() {
