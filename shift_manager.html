@@ -1069,7 +1069,14 @@ TYPE html>
                 if (!data.success && !email.includes('demo')) {
                     return Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
                 }
-                sessionStorage.setItem('retailMediaAuth', 'true');
+                if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                    sessionStorage.setItem('retailMediaAuth', 'true');
             } catch(e) {}
             
             await fetchShiftState();

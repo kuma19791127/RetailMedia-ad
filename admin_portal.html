@@ -1616,6 +1616,13 @@
                 }
 
                 if (data.success) {
+                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: user,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     document.getElementById('login-overlay').style.display = 'none';
                     document.getElementById('main-app').style.display = 'flex';

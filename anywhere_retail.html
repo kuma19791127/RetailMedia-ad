@@ -287,6 +287,13 @@
             const data = await res.json();
             
             if (data.success || email.includes('demo.com')) {
+                if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                 document.getElementById('page-login').style.display = 'none';
                 document.getElementById('page-portal').style.display = 'block';
                 document.getElementById('user-email-display').innerText = email;
@@ -296,7 +303,14 @@
             }
         } catch(e) {
             console.error("Login Error", e);
-            document.getElementById('page-login').style.display = 'none';
+            if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                document.getElementById('page-login').style.display = 'none';
             document.getElementById('page-portal').style.display = 'block';
             document.getElementById('user-email-display').innerText = email;
         }

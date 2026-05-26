@@ -728,6 +728,13 @@
                 });
                 const data = await response.json();
                 if (data.success) {
+                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     const realName = data.user && data.user.name ? data.user.name : name;
                     const realOrg = data.user && data.user.org ? data.user.org : org;

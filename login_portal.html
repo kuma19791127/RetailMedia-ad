@@ -554,7 +554,35 @@
                             const verifyData = await verifyRes.json();
                             if (verifyData.success) {
                                 Swal.fire('完了', '二段階認証を設定しました！', 'success').then(() => {
-                                    window.location.href = data.redirect || 'store_portal.html';
+                                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                        if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                        window.location.href = data.redirect || 'store_portal.html';
                                 });
                             } else {
                                 Swal.fire('エラー', verifyData.error, 'error');
@@ -586,6 +614,13 @@
                             const loginData = await loginRes.json();
                             if (loginData.success) {
                                 btn.innerText = 'Redirecting...';
+                                if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                                 window.location.href = loginData.redirect || 'store_portal.html';
                             } else {
                                 btn.innerText = 'Login';
@@ -594,6 +629,34 @@
                         }
                     } else {
                         btn.innerText = 'Redirecting...';
+                        if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                        if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
+                                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                         window.location.href = data.redirect || 'store_portal.html';
                     }
                 } else {
@@ -609,6 +672,13 @@
                 if (email.includes('agency')) redirect = 'agency_portal.html';
                 if (email.includes('creator')) redirect = 'creator_portal.html';
 
+                if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                 window.location.href = redirect;
             }
         }

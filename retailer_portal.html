@@ -58,28 +58,9 @@
 </head>
 <body>
 
-    <!-- Login Overlay -->
-    <div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-base, #f8fafc); z-index:9999; display:flex; justify-content:center; align-items:center;">
-        <div style="background:white; padding:40px; border-radius:12px; width:350px; text-align:center; box-shadow:0 15px 30px rgba(0,0,0,0.1); border:1px solid #e2e8f0;">
-            <h2 style="margin-bottom:20px; color:var(--primary, #6366f1);">ログイン</h2>
-            <form action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(handleLogin, 10); return true;" style="display:flex; flex-direction:column; gap:15px;">
-                <input type="email" id="login-email" required placeholder="メールアドレス" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="username">
-                <input type="password" id="login-pass" required placeholder="パスワード" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="current-password">
-                <button type="submit" style="background:var(--primary, #6366f1); color:white; border:none; padding:12px; border-radius:5px; font-size:16px; cursor:pointer; font-weight:bold;">ログイン</button>
-            </form>
-            <iframe name="dummyframe_login" style="display:none;"></iframe>
-        </div>
-    </div>
+    <!-- Cleaned Bad Overlay -->
 
-    <!-- Inline 2FA Form (Hidden initially) -->
-    <div id="inline-2fa-section" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-base, #f8fafc); z-index:10000; justify-content:center; align-items:center;">
-        <div style="background:white; padding:40px; border-radius:12px; width:350px; text-align:center; box-shadow:0 15px 30px rgba(0,0,0,0.1); border:1px solid #e2e8f0;">
-            <h2 style="color:var(--primary);">二段階認証</h2>
-            <p>Authenticatorアプリの6桁のコードを入力してください。</p>
-            <input type="text" id="inline-2fa-code" placeholder="000000" maxlength="6" style="width:100%; padding:10px; font-size:20px; text-align:center; letter-spacing:5px; border:1px solid #ccc; border-radius:5px; margin-bottom:15px;">
-            <button onclick="submitInline2FAVerify()" style="background:var(--primary); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer;">認証する</button>
-        </div>
-    </div>
+    <!-- Cleaned Bad 2FA Section -->
 
         <!-- === AI Agent Chat UI (Top Center) === -->
         <div class="agent-chat-container">
@@ -299,6 +280,13 @@
                 // Use the full email address instead of domain prefix
                 currentPrefix = email;
                 document.getElementById('retailer-prefix').value = currentPrefix;
+                if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                 document.getElementById('login-overlay').style.display = 'none';
                 loadVideos();
             } else {
@@ -507,20 +495,7 @@ function showAdPolicy() {
     </script>
 
     <script>
-        function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            if (!email.includes('@')) {
-                alert('有効なメールアドレスを入力してください。');
-                return;
-            }
-            if (pass.length < 1) {
-                alert('パスワードを入力してください。');
-                return;
-            }
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('inline-2fa-section').style.display = 'flex';
-        }
+        /* Cleaned duplicate handleLogin */
         function submitInline2FAVerify() {
             const code = document.getElementById('inline-2fa-code').value;
             if (code.length !== 6) {

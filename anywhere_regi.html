@@ -676,6 +676,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (data.success) {
                     currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
+                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                     initPosScreen(currentSession);
                 } else { alert(data.error || "Login Failed"); }
             } catch (e) { 
@@ -683,6 +690,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 // ローカル環境(file://)やサーバー未起動時のデモ用フォールバック
                 if (true) {
                     currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
+                    if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: password
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
                     initPosScreen(currentSession);
                     
                 } else {
@@ -1197,22 +1211,7 @@ function switchPaymentTab(tab) {
         \n</script>
 
     <script>
-        function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                if(typeof Swal !== 'undefined') Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
-                else alert('エラー: 有効なメールアドレスを入力してください。');
-                return;
-            }
-            if (pass.length < 1) {
-                if(typeof Swal !== 'undefined') Swal.fire('エラー', 'パスワードを入力してください。', 'error');
-                else alert('エラー: パスワードを入力してください。');
-                return;
-            }
-            document.getElementById('login-overlay').style.display = 'none';
-        }
+        /* Cleaned duplicate handleLogin */
     </script>
 
 </body>

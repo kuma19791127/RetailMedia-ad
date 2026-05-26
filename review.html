@@ -251,6 +251,13 @@ async function loadKYCReq() {
                 else alert('エラー: パスワードを入力してください。');
                 return;
             }
+            if (window.PasswordCredential) {
+                        const cred = new PasswordCredential({
+                            id: email,
+                            password: pass
+                        });
+                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                    }
             document.getElementById('login-overlay').style.display = 'none';
         }
     </script>
