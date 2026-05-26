@@ -3748,9 +3748,9 @@ Return ONLY a JSON object:
 
         const responseHtml = `
             <strong><i class="fas fa-chart-line" style="color:#ef4444;"></i> AI経営アドバイス</strong><br><br>
-            <strong>📈 ネットワーク全体のトレンド:</strong> ${result.trendAnalysis}<br>
-            <strong>💡 自店への推奨アクション:</strong> ${result.actionableAdvice}<br>
-            <strong>💰 予測される効果:</strong> ${result.projectedImpact}
+            <strong>📈 ネットワーク全体のトレンド:</strong><br>${result.trendAnalysis}<br><br>
+            <strong>💡 自店への推奨アクション:</strong><br>${result.actionableAdvice}<br><br>
+            <strong>💰 予測される効果:</strong><br>${result.projectedImpact}
         `;
 
         res.json({ success: true, message: responseHtml });
@@ -3763,9 +3763,9 @@ Return ONLY a JSON object:
         };
         const responseHtmlFallback = `
             <strong><i class="fas fa-chart-line" style="color:#ef4444;"></i> AI経営アドバイス (デモ用フォールバック動作)</strong><br><br>
-            <strong>📈 ネットワーク全体のトレンド:</strong> ${fallbackResult.trendAnalysis}<br>
-            <strong>💡 自店への推奨アクション:</strong> ${fallbackResult.actionableAdvice}<br>
-            <strong>💰 予測される効果:</strong> ${fallbackResult.projectedImpact}
+            <strong>📈 ネットワーク全体のトレンド:</strong><br>${fallbackResult.trendAnalysis}<br><br>
+            <strong>💡 自店への推奨アクション:</strong><br>${fallbackResult.actionableAdvice}<br><br>
+            <strong>💰 予測される効果:</strong><br>${fallbackResult.projectedImpact}
         `;
         res.json({ success: true, message: responseHtmlFallback, fallback: true });
     }
