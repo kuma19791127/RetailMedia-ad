@@ -109,7 +109,7 @@
     <!-- 小売店向けPOS連携モジュール -->
     <div style="background:#fff; border-left:5px solid #3b82f6; padding:15px; margin:20px; border-radius:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
         <h4 style="margin:0; font-size:1.1rem; color:#1e40af;">💳 どこでもレジ (Square) 売上連携</h4>
-        <p style="margin:5px 0 10px 0; color:#475569; font-size:0.9rem;">当日のSquare決済売上から、リテアド利用手数料（1.2%）を控除した金額を自動計算し、会計システムへ送信します。</p>
+        <p style="margin:5px 0 10px 0; color:#475569; font-size:0.9rem;">当日のSquare決済売上から、リテアド利用手数料（0.4%）を控除した金額を自動計算し、会計システムへ送信します。</p>
         <button onclick="syncPosToFreee()" style="background:#3b82f6; color:#fff; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-weight:bold;">🔄 本日の売上をfreeeへ同期</button>
     </div>
     
@@ -613,7 +613,7 @@ function copyQrUrl() {
             try {
                 // スクエアのダミー売上（実際はSquare APIから取得）
                 const posSales = 100000; 
-                const retailFeeRate = 0.012; // 1.2%
+                const retailFeeRate = 0.004; // 0.4%
                 const feeAmount = Math.floor(posSales * retailFeeRate);
                 const netSales = posSales - feeAmount;
 
@@ -621,7 +621,7 @@ function copyQrUrl() {
                     title: 'POS売上同期の確認',
                     html: `<div style="text-align:left; font-size:0.95rem;">
                         本日のSquare決済総額: <b>${posSales.toLocaleString()}円</b><br>
-                        リテアド利用手数料(1.2%): <b style="color:red;">-${feeAmount.toLocaleString()}円</b><br>
+                        リテアド利用手数料(0.4%): <b style="color:red;">-${feeAmount.toLocaleString()}円</b><br>
                         --------------------------------<br>
                         差引売上(freee記帳額): <b style="color:green;">${netSales.toLocaleString()}円</b>
                         </div><br>実行するには <b>承認</b> と入力してください。`,

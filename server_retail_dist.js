@@ -2496,10 +2496,9 @@ app.get('/api/admin/dashboard', async (req, res) => {
         
         for (const s of rows) {
             if (s.id === "default_store") continue;
-            const displayPosSales = s.total_pos_sales || 0;
-            const billingAmount = Math.floor(displayPosSales * 0.012);
+            const billingAmount = Math.floor(displayPosSales * 0.004);
             if (billingAmount > 0) {
-                billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_1_2_percent: billingAmount, email: s.billing_email, status: "未請求" });
+                billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_0_4_percent: billingAmount, email: s.billing_email, status: "未請求" });
             }
             const storeAdRevenue = s.total_ad_revenue || 0;
             const creatorReward = Math.floor(storeAdRevenue * 0.1);
@@ -2571,10 +2570,10 @@ app.post('/api/admin/billing/send-email', async (req, res) => {
     
     // Calculate values cleanly
     const systemFee = Number(amount);
-    const posSales = Math.round(systemFee / 0.012);
+    const posSales = Math.round(systemFee / 0.004);
 
     const subject = `[どこでもレジシステム] システム利用料金 請求書 (${dateStr})`;
-    const body = `${to} 様\n\n今月のシステム利用明細をお送りします。\n--------------------------------\n[計算ロジック]\n当月POS決済総額: ￥${posSales.toLocaleString()}\nシステム利用料率: 1.2%\n--------------------------------\nご請求金額: ￥${systemFee.toLocaleString()}\n\nよろしくお願いいたします。`;
+    const body = `${to} 様\n\n今月のシステム利用明細をお送りします。\n--------------------------------\n[計算ロジック]\n当月POS決済総額: ￥${posSales.toLocaleString()}\nシステム利用料率: 0.4%\n--------------------------------\nご請求金額: ￥${systemFee.toLocaleString()}\n\nよろしくお願いいたします。`;
 
     await sendSESEmail(to, subject, body);
     res.json({ success: true, message: "Email triggered successfully" });
@@ -2627,7 +2626,7 @@ app.get('/api/admin/system/validate-square', (req, res) => {
 app.get('/api/admin/invoice/excel', (req, res) => {
     const s = storeData["default_store"];
     const sales = s.total_pos_sales || 0;
-    const fee = Math.floor(sales * 0.012);
+    const fee = Math.floor(sales * 0.004);
     const tax = Math.floor(fee * 0.1);
 
     // Create Worksheet Data
@@ -2639,8 +2638,8 @@ app.get('/api/admin/invoice/excel', (req, res) => {
         ["Date:", new Date().toLocaleDateString()],
         [""],
         ["Description", "Amount"],
-        ["Store Sales (1.2% Fee Base)", `¥${sales.toLocaleString()}`],
-        ["System Usage Fee (1.2%)", `¥${fee.toLocaleString()}`],
+        ["Store Sales (0.4% Fee Base)", `¥${sales.toLocaleString()}`],
+        ["System Usage Fee (0.4%)", `¥${fee.toLocaleString()}`],
         ["Tax (10%)", `¥${tax.toLocaleString()}`],
         ["TOTAL DUE", `¥${(fee + tax).toLocaleString()}`],
     ];
@@ -3557,12 +3556,15 @@ app.post('/api/agent/retailer', async (req, res) => {
         if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
 
         // Store-specific POS Data simulation (Using cached morning data to save costs)
-        const posDataContext = "Store Morning Cache: Today's excess inventory includes 'Summer Vegetables' and 'Energy Drinks'. Peak store traffic expected around 17:00-19:00.";
+        const posDataContext = "本日のPOS特売・お買い得食材リスト: '夏野菜 (Summer Vegetables)', 'エナジードリンク (Energy Drinks)'";
 
         const systemInstruction = `
 You are a Retailer In-Store Marketing AI Agent.
 You must analyze this request using the cached morning POS data and generate an in-store promotion plan.
-POS Cache: ${posDataContext}
+本日のPOS特売・お買い得食材: ${posDataContext}
+
+【重要な推論ルール】
+ユーザーの入力から「安さ」「節約」「お得」「家計のピンチ」などの意図（ニュアンス）を汲み取った場合は、上記「本日のPOS特売・お買い得食材」を主役に据えた、最もコストパフォーマンスの高い（安上がりな）販促プラン・レシピを提案してください。
 
 Return ONLY a JSON object:
 {
@@ -3624,7 +3626,7 @@ app.post('/api/agent/regi', async (req, res) => {
         if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
 
         // Store-specific POS Data simulation (Morning Cache)
-        const posDataContext = "Store Morning Cache: Today's special items are 'Pork Belly (豚バラ肉)' and 'Cabbage (キャベツ)'.";
+        const posDataContext = "本日のPOS特売・お買い得食材リスト: '豚バラ肉 (Pork Belly)', 'キャベツ (Cabbage)'";
         
         let itemsContext = "No items scanned yet.";
         if (scannedItems && scannedItems.length > 0) {
@@ -3634,8 +3636,11 @@ app.post('/api/agent/regi', async (req, res) => {
         const systemInstruction = `
 You are a friendly Supermarket AI Assistant helping a customer at the register.
 You must analyze this request using the store's current specials and the customer's cart.
-Specials: ${posDataContext}
+本日のPOS特売・お買い得食材: ${posDataContext}
 Cart: ${itemsContext}
+
+【重要な推論ルール】
+ユーザーの入力から「安さ」「節約」「お得」「家計のピンチ」などの意図（ニュアンス）を汲み取った場合は、上記「本日のPOS特売・お買い得食材」を主役に据えた、最もコストパフォーマンスの高い（安上がりな）レシピを提案してください。
 
 Return ONLY a JSON object:
 {

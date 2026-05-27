@@ -629,7 +629,7 @@
             <div class="header">
                 <div>
                     <h1>📱 どこでもレジ管理者</h1>
-                    <p style="color:#7f8c8d; margin-top:5px;">請求管理ダッシュボード: 店舗売上の監視・手数料 (1.2%) 徴収</p>
+                    <p style="color:#7f8c8d; margin-top:5px;">請求管理ダッシュボード: 店舗売上の監視・手数料 (0.4%) 徴収</p>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button onclick="sendAllInvoices()" class="btn-action" style="background:#e67e22;">🚀
@@ -662,7 +662,7 @@
                             <th>店舗名</th>
                             <th>POS総売上</th>
                             <th>手数料率</th>
-                            <th>請求額 (1.2%)</th>
+                            <th>請求額 (0.4%)</th>
                             <th>請求先メール</th>
                             <th>ステータス</th>
                             <th>操作</th>
@@ -677,7 +677,7 @@
             <div class="card" style="background:#fff3cd; border-left:4px solid #f1c40f;">
                 <h4 style="margin-top:0; color:#856404;">💡 経理メモ</h4>
                 <p style="font-size:13px; color:#856404; margin:0; line-height:1.6;">
-                    店舗への請求額計算式: <code>POS総売上 × 1.2% (システム利用手数料)</code><br>
+                    店舗への請求額計算式: <code>POS総売上 × 0.4% (システム利用手数料)</code><br>
                     ※「請求書一括自動送信」を実行すると、各店舗が「どこでもレジ（Forgot
                     Password）」などから登録した請求先メールアドレス宛に、当月のシステム利用料の請求書と内訳（POSデータ連携レポート）が自動送信されます。期日までの入金が確認でき次第、ステータスを「支払済」に変更してください。
                 </p>
@@ -1310,12 +1310,12 @@
                 < tr >
                     <td><b>${store.name}</b><br><span style="font-size:11px; color:#aaa;">${store.id}</span></td>
                     <td>¥${store.sales.toLocaleString()}</td>
-                    <td><span class="badge badge-pending">1.2%</span></td>
-                    <td class="highlight-value billing-highlight">¥${store.fee_1_2_percent.toLocaleString()}</td>
+                    <td><span class="badge badge-pending">0.4%</span></td>
+                    <td class="highlight-value billing-highlight">¥${store.fee_0_4_percent.toLocaleString()}</td>
                     <td>${store.email || '<span style="color:red">未設定</span>'}</td>
                     <td><span class="badge badge-pending">${store.status}</span></td>
                     <td>
-                        <button onclick="sendInvoice('${store.email}', ${store.fee_1_2_percent}, this)" class="btn-action" ${!store.email ? 'disabled' : ''}>📧 請求書送信</button>
+                        <button onclick="sendInvoice('${store.email}', ${store.fee_0_4_percent}, this)" class="btn-action" ${!store.email ? 'disabled' : ''}>📧 請求書送信</button>
                     </td>
                 </tr >
                 `).join('');
