@@ -2801,11 +2801,13 @@ app.post('/api/manualhelp/pdf-to-steps', express.json({limit: '50mb'}), async (r
             "}";
 
         const body = {
+            systemInstruction: {
+                parts: [{ text: promptText }]
+            },
             contents: [{
                 role: 'user',
                 parts: [
-                    { inlineData: { mimeType: 'application/pdf', data: pdfData } },
-                    { text: promptText }
+                    { inlineData: { mimeType: 'application/pdf', data: pdfData } }
                 ]
             }],
             generationConfig: {
@@ -3545,8 +3547,9 @@ app.get('/api/pos/transactions', (req, res) => {
 
 // --- 2. Retailer Marketing Agent (小売マーケティング向け 自社販促エージェント) ---
 app.post('/api/agent/retailer', async (req, res) => {
-    const { message, storeId } = req.body;
-    if (!message) return res.status(400).json({ error: 'Message is required' });
+    if (detectPromptInjection(message)) {
+        return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
+    }
 
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -3556,10 +3559,8 @@ app.post('/api/agent/retailer', async (req, res) => {
         // Store-specific POS Data simulation (Using cached morning data to save costs)
         const posDataContext = "Store Morning Cache: Today's excess inventory includes 'Summer Vegetables' and 'Energy Drinks'. Peak store traffic expected around 17:00-19:00.";
 
-        const prompt = `
+        const systemInstruction = `
 You are a Retailer In-Store Marketing AI Agent.
-The store marketing manager requested: "${message}"
-
 You must analyze this request using the cached morning POS data and generate an in-store promotion plan.
 POS Cache: ${posDataContext}
 
@@ -3572,8 +3573,9 @@ Return ONLY a JSON object:
     "status": "AUTO-ADDED TO BASE LOOP"
 }
 `;
+        const userInput = `The store marketing manager requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
         const result = JSON.parse(responseText);
 
         // Auto-register the promotional video into the base_loop_videos array (self-distribution)
@@ -3612,7 +3614,9 @@ Return ONLY a JSON object:
 
 // --- 3. Anywhere Register Customer Agent (レジ顧客向け レシピ＆提案エージェント) ---
 app.post('/api/agent/regi', async (req, res) => {
-    const { message, scannedItems } = req.body;
+    if (detectPromptInjection(message)) {
+        return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
+    }
 
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -3627,10 +3631,8 @@ app.post('/api/agent/regi', async (req, res) => {
             itemsContext = "Items currently in cart: " + scannedItems.map(i => i.name || i).join(', ');
         }
 
-        const prompt = `
+        const systemInstruction = `
 You are a friendly Supermarket AI Assistant helping a customer at the register.
-The customer requested: "${message}"
-
 You must analyze this request using the store's current specials and the customer's cart.
 Specials: ${posDataContext}
 Cart: ${itemsContext}
@@ -3643,8 +3645,9 @@ Return ONLY a JSON object:
     "friendlyMessage": "A warm greeting and summary (Japanese)"
 }
 `;
+        const userInput = `The customer requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
         const result = JSON.parse(responseText);
 
         const responseHtml = `
@@ -3666,7 +3669,9 @@ Return ONLY a JSON object:
 
 // --- 4. Creator Assistant Agent (クリエイター向け 制作アシスタント) ---
 app.post('/api/agent/creator', async (req, res) => {
-    const { message, creatorId } = req.body;
+    if (detectPromptInjection(message)) {
+        return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
+    }
 
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -3676,10 +3681,8 @@ app.post('/api/agent/creator', async (req, res) => {
         // Analytics Context Simulation
         const reviewContext = "Recent Network Trend: Videos with fast-paced cuts in the first 3 seconds and clear, large text overlays have a 40% higher approval and engagement rate. Rejected reasons often include: 'Text too small for signage', 'Low contrast'.";
 
-        const prompt = `
+        const systemInstruction = `
 You are a Creator Assistant AI Agent for a Retail Media Signage Network.
-The creator asked: "${message}"
-
 You must analyze this request using the network trend and review context.
 Context: ${reviewContext}
 
@@ -3690,8 +3693,9 @@ Return ONLY a JSON object:
     "encouragement": "A supportive closing message to motivate the creator (Japanese)"
 }
 `;
+        const userInput = `The creator asked: "${message}"`;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
         const result = JSON.parse(responseText);
 
         const responseHtml = `
@@ -3710,6 +3714,24 @@ Return ONLY a JSON object:
 
 
 
+// --- Prompt Injection Detector ---
+function detectPromptInjection(text) {
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    const blacklist = [
+        "指示を無視",
+        "指示を上書き",
+        "命令を無視",
+        "設定を出力",
+        "プロンプトを表示",
+        "ignore instructions",
+        "ignore the above",
+        "system prompt",
+        "override prompt"
+    ];
+    return blacklist.some(word => lower.includes(word));
+}
+
 // --- Dynamic Gemini API Model Selection & Fallback Helper ---
 const GEMINI_MODELS_PRIORITY = [
     'gemini-2.5-flash',
@@ -3718,7 +3740,7 @@ const GEMINI_MODELS_PRIORITY = [
     'gemini-1.5-pro'
 ];
 
-async function callGeminiAPI(prompt, responseMimeType = null) {
+async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction = null) {
     const rawKey = process.env.GEMINI_API_KEY || '';
     const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
     if (!GEMINI_API_KEY) {
@@ -3736,6 +3758,11 @@ async function callGeminiAPI(prompt, responseMimeType = null) {
             };
             if (responseMimeType) {
                 reqBody.generationConfig = { response_mime_type: responseMimeType };
+            }
+            if (systemInstruction) {
+                reqBody.systemInstruction = {
+                    parts: [{ text: systemInstruction }]
+                };
             }
 
             const res = await fetch(url, {
@@ -3763,7 +3790,9 @@ async function callGeminiAPI(prompt, responseMimeType = null) {
 
 // --- 5. Store Owner Agent (店舗オーナー向け 競合分析・経営支援エージェント) ---
 app.post('/api/agent/store', async (req, res) => {
-    const { message, storeId } = req.body;
+    if (detectPromptInjection(message)) {
+        return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
+    }
 
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -3773,10 +3802,8 @@ app.post('/api/agent/store', async (req, res) => {
         // Network trend simulation
         const networkContext = "Network Trend: High demand for 'Ice Cream' and 'Sunscreen' in the region. Rival stores are currently heavily promoting these on their front entrance signage.";
 
-        const prompt = `
+        const systemInstruction = `
 You are a Store Owner Advisory AI Agent.
-The store owner asked: "${message}"
-
 You must analyze this request using the network trend data.
 Trend Data: ${networkContext}
 
@@ -3787,8 +3814,9 @@ Return ONLY a JSON object:
     "projectedImpact": "Estimated impact on sales if the advice is followed (Japanese)"
 }
 `;
+        const userInput = `The store owner asked: "${message}"`;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
         const result = JSON.parse(responseText);
 
         const responseHtml = `
@@ -3818,8 +3846,9 @@ Return ONLY a JSON object:
 
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
-    const { message, email } = req.body;
-    if (!message) return res.status(400).json({ error: 'Message is required' });
+    if (detectPromptInjection(message)) {
+        return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
+    }
 
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -3829,10 +3858,8 @@ app.post('/api/agent/advertiser', async (req, res) => {
         // POS Data simulation (In a real scenario, query DynamoDB)
         const posDataContext = "POS Data Analytics (Network-wide): Peak sales for beverages are 13:00 - 15:00. High conversion for video ads with energetic AI voice.";
 
-        const prompt = `
+        const systemInstruction = `
 You are an Advertiser Operations AI Agent.
-The advertiser requested: "${message}"
-
 You must analyze this request using the POS data context and generate a complete campaign plan.
 POS Context: ${posDataContext}
 
@@ -3846,8 +3873,9 @@ Return ONLY a JSON object:
     "status": "DRAFT"
 }
 `;
+        const userInput = `The advertiser requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
         const result = JSON.parse(responseText);
 
         // Auto-register the campaign into the database
@@ -3912,8 +3940,9 @@ Return ONLY a JSON object:
 
 // --- 1. Ad Operations Agent ---
 app.post('/api/agent/ad-ops', async (req, res) => {
-    const { message, storeId } = req.body;
-    if (!message) return res.status(400).json({ error: 'Message is required' });
+    if (detectPromptInjection(message)) {
+        return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
+    }
 
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -3923,10 +3952,8 @@ app.post('/api/agent/ad-ops', async (req, res) => {
         // Fake POS Data for context
         const posDataContext = "POS Data Analysis: Peak sales hours are 14:00 - 16:00. Target demographic: 20s-30s. Top selling categories: Summer drinks, ice cream.";
 
-        const prompt = `
+        const systemInstruction = `
 You are an autonomous AI Ad Operations Agent for a retail store.
-The user requested: "${message}"
-
 Your task is to analyze the request and generate a structured JSON execution plan.
 You have access to the following context:
 ${posDataContext}
@@ -3940,8 +3967,9 @@ Return ONLY a JSON object (no markdown) with the following format:
     "budget": "Extracted or suggested budget in JPY"
 }
 `;
+        const userInput = `The user requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
         const result = JSON.parse(responseText);
 
         // Here we would normally execute the tools (create video, schedule campaign)
