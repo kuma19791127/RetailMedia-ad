@@ -19,23 +19,26 @@ def check_syntax():
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 text = f.read()
-            scripts = re.findall(r'<script[^>]*>(.*?)</script>', text, re.DOTALL | re.IGNORECASE)
-            for i, script in enumerate(scripts):
+            # Find script tags along with their opening tag attributes
+            scripts = re.findall(r'(<script[^>]*>)(.*?)</script>', text, re.DOTALL | re.IGNORECASE)
+            for i, (open_tag, script) in enumerate(scripts):
                 if script.strip() == "": continue
+                if 'application/ld+json' in open_tag: continue
                 temp_file = f"temp_script_{i}.js"
                 with open(temp_file, 'w', encoding='utf-8') as tf:
                     tf.write(script)
                 res = subprocess.run(["node", "-c", temp_file], capture_output=True, text=True)
                 if res.returncode != 0:
-                    errors.append(f"Error in {filepath} (script #{i+1}):\n{res.stderr}")
+                    preview = script.strip()[:150].replace('\n', ' ')
+                    errors.append(f"Error in {filepath} (script #{i+1}, preview: '{preview}...'):\n{res.stderr}")
                 os.remove(temp_file)
         except Exception as e:
             errors.append(f"Could not process {filepath}: {e}")
 
     if not errors:
-        print("✅ No syntax errors found in any JS or HTML files.")
+        print("[OK] No syntax errors found in any JS or HTML files.")
     else:
-        print(f"❌ Found {len(errors)} syntax errors:")
+        print(f"[ERROR] Found {len(errors)} syntax errors:")
         for e in errors:
             print(e)
             print("-" * 40)

@@ -864,7 +864,7 @@
                         <div style="font-size: 13px; font-weight: bold; color: #2c3e50;" id="swal-filename">クリックまたはドラッグ＆ドロップでアップロード</div>
                         <div style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">※ .mp4 / .mov / 画像ファイル (最大120秒)</div>
                     </div>
-                    <input type="file" id="cp-file" accept="video/mp4,video/webm,video/quicktime,image/*" style="display:none;" required onchange="document.getElementById('swal-filename').innerText = this.files[0] ? this.files[0].name : 'クリックまたはドラッグ＆ドロップでアップロード'">
+                    <input type="file" id="cp-file" accept="video/mp4,video/webm,video/quicktime,image/*" style="display:none;" onchange="document.getElementById('swal-filename').innerText = this.files[0] ? this.files[0].name : 'クリックまたはドラッグ＆ドロップでアップロード'">
 
                     <div class="form-actions">
                         <button type="button" onclick="closeModal()" class="btn-secondary">キャンセル</button>
@@ -1141,6 +1141,12 @@
                 }
             }
             // ==============================
+            
+            const fileInput = document.getElementById('cp-file');
+            if (fileInput.files.length === 0) {
+                Swal.fire('エラー', '動画または画像ファイルをアップロードしてください。', 'warning');
+                return;
+            }
 
             const name = document.getElementById('cp-name').value;
             const start = document.getElementById('cp-start').value || '2026/05/01';
@@ -1168,7 +1174,6 @@
             // File to Base64 (Data Compression for Local storage)
             let fileUrl = null;
             let fileName = null;
-            const fileInput = document.getElementById('cp-file');
             if (fileInput.files.length > 0) {
                 try {
                     const file = fileInput.files[0];
