@@ -462,11 +462,12 @@
             <!-- Login Form -->
             <div>
                 <form action="javascript:void(0);" onsubmit="handleLogin();" class="space-y-4">
-                <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID" required autocomplete="username">
-                <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password" required autocomplete="current-password">
-                <button type="submit" class="login-btn">ログイン</button>
-            </form></form>
-            <p id="native-2fa-error" style="color:#e74c3c; font-size:14px; margin-top:10px; display:none;">コードが間違っています</p>
+                    <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID" required autocomplete="username">
+                    <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password" required autocomplete="current-password">
+                    <button type="submit" class="login-btn">ログイン</button>
+                </form>
+                <p id="native-2fa-error" style="color:#e74c3c; font-size:14px; margin-top:10px; display:none;">コードが間違っています</p>
+            </div>
         </div>
     </div>
     
@@ -1904,3 +1905,27 @@
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
                 
+                let csvContent = "取引日,勘定科目,補助科目,品名,部門,メモ,金額\r\n";
+                pendingPayouts.forEach(p => {
+                    const date = p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                    csvContent += `${date},売掛金,,${p.store_name || '店舗'},,店舗への支払(出金),${p.amount}\r\n`;
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `freee_journal_${Date.now()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                Swal.fire('出力完了', 'freee用の仕訳CSVファイルをダウンロードしました。', 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('エラー', 'CSVの生成に失敗しました。', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
