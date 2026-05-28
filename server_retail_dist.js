@@ -3062,6 +3062,7 @@ function loadLocalDatabase() {
                 CREATOR_STATE = parsed.CREATOR_STATE;
             }
             console.log('[System] Successfully loaded local database.json');
+            syncMemoryToDB();
         }
     } catch (e) {
         console.error('[System] Failed to load local database.json:', e);
@@ -3144,6 +3145,7 @@ async function pullFromS3() {
         const crypto = require('crypto');
         fs.writeFileSync(require('path').join(__dirname, 'database.json'), str, 'utf8');
         console.log('[S3] Successfully pulled database.json from cloud!');
+        await syncMemoryToDB();
     } catch (e) {
         console.log('[S3] Notice: No existing database found on S3, starting fresh or using local.');
         loadLocalDatabase();
@@ -3162,6 +3164,74 @@ async function pushToS3(dataStr) {
         console.log('[S3] Uploaded latest database.json to cloud');
     } catch(e) {
         console.error('[S3] Sync failed:', e.message);
+    }
+}
+
+async function syncMemoryToDB() {
+    try {
+        const userCountRes = await dbHelper.query.get('SELECT COUNT(*) as count FROM users');
+        const count = userCountRes ? parseInt(userCountRes.count) : 0;
+        
+        if (count === 0) {
+            console.log('[DB Sync] PostgreSQL is empty. Populating from Memory/S3 backup...');
+            
+            // 1. Users
+            if (typeof users !== 'undefined' && users) {
+                for (const [email, u] of Object.entries(users)) {
+                    await dbHelper.query.run(
+                        'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
+                        [email, u.password || '', u.role || 'store', u.name || null, u.org || null, u.twoFactorSecret || null]
+                    );
+                }
+            }
+            
+            // 2. Stores
+            if (typeof storeData !== 'undefined' && storeData) {
+                for (const [storeId, s] of Object.entries(storeData)) {
+                    const bank = s.bank_info || {};
+                    await dbHelper.query.run(
+                        'INSERT INTO stores (id, name, billing_email, bank_name, branch_name, account_number, account_holder, total_pos_sales, total_ad_revenue) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                        [
+                            s.id || storeId,
+                            s.name || 'Demo Store',
+                            s.billing_email || '',
+                            bank.bank_name || '',
+                            bank.branch_name || '',
+                            bank.account_number || '',
+                            bank.account_holder || '',
+                            s.total_pos_sales || 0.0,
+                            s.total_ad_revenue || 0.0
+                        ]
+                    );
+                }
+            }
+
+            // 3. Campaigns
+            if (typeof campaigns !== 'undefined' && Array.isArray(campaigns)) {
+                for (const c of campaigns) {
+                    await dbHelper.query.run(
+                        'INSERT INTO campaigns (id, name, start_date, end_date, budget, spend, impressions, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                        [c.id, c.name || '', c.start || '', c.end || '', c.budget || 0.0, c.spend || 0.0, c.imp || 0, c.status || 'pending']
+                    );
+                }
+            }
+            
+            // 4. POS Transactions
+            if (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) {
+                for (const tx of posTransactions) {
+                    await dbHelper.query.run(
+                        'INSERT INTO pos_transactions (store_id, timestamp, total_amount) VALUES (?, ?, ?)',
+                        [tx.storeId || 'STORE_001', tx.timestamp || new Date().toISOString(), tx.amount || 0.0]
+                    );
+                }
+            }
+            
+            console.log('[DB Sync] Populating database completed successfully.');
+        } else {
+            console.log(`[DB Sync] PostgreSQL already has ${count} users. Skipping initial sync.`);
+        }
+    } catch (err) {
+        console.error('[DB Sync] Failed to sync memory data to DB:', err.message);
     }
 }
 
