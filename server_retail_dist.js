@@ -1028,12 +1028,25 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // --- 2FA Setup ---
-app.post('/api/auth/2fa/setup', (req, res) => {
+app.post('/api/auth/2fa/setup', async (req, res) => {
     const { email } = req.body;
     try {
         const speakeasy = require('speakeasy');
         const qrcode = require('qrcode');
-        const secret = speakeasy.generateSecret({ name: `RetailMedia (${email})` });
+        
+        let label = `RetailMedia (${email})`;
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        if (user) {
+            if (user.role === 'admin') {
+                label = `RetailMedia (Admin: ${email})`;
+            } else if (user.role === 'review') {
+                label = `RetailMedia (Review: ${email})`;
+            } else {
+                label = `RetailMedia (${user.role.charAt(0).toUpperCase() + user.role.slice(1)}: ${email})`;
+            }
+        }
+        
+        const secret = speakeasy.generateSecret({ name: label });
         qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
             if (err) return res.status(500).json({ error: "QRコード生成失敗" });
             res.json({ secret: secret.base32, qrcode: data_url });
