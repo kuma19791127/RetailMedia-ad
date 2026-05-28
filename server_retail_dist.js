@@ -3278,8 +3278,8 @@ setInterval(async () => {
 
         if (dataStr !== lastDBString && lastDBString !== "") {
             pushToS3(dataStr);
-            // Sync with remote Postgres if defined
-            if (pool) {
+            // Sync with remote Postgres if defined (Skipped in production where PostgreSQL is the primary database)
+            if (pool && !process.env.DATABASE_URL) {
                 try {
                     for (const email in mappedUsers) {
                         const u = mappedUsers[email];

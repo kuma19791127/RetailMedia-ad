@@ -16,34 +16,48 @@ if (process.env.DATABASE_URL) {
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS users (
                     email VARCHAR(255) PRIMARY KEY,
-                    password VARCHAR(255),
-                    role VARCHAR(50),
+                    password TEXT NOT NULL,
+                    role VARCHAR(50) NOT NULL,
                     name VARCHAR(255),
                     org VARCHAR(255),
-                    two_factor_secret VARCHAR(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    two_factor_secret VARCHAR(255)
                 );
                 
-                CREATE TABLE IF NOT EXISTS transactions (
+                CREATE TABLE IF NOT EXISTS campaigns (
                     id SERIAL PRIMARY KEY,
-                    transaction_id VARCHAR(255) UNIQUE,
-                    amount INT,
-                    store_id VARCHAR(255),
-                    items JSONB,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    name VARCHAR(255) NOT NULL,
+                    start_date VARCHAR(100),
+                    end_date VARCHAR(100),
+                    budget DOUBLE PRECISION DEFAULT 0.0,
+                    spend DOUBLE PRECISION DEFAULT 0.0,
+                    impressions INT DEFAULT 0,
+                    status VARCHAR(50) DEFAULT 'pending'
                 );
 
-                CREATE TABLE IF NOT EXISTS campaigns (
+                CREATE TABLE IF NOT EXISTS stores (
                     id VARCHAR(255) PRIMARY KEY,
-                    url VARCHAR(1000),
-                    youtube_url VARCHAR(1000),
-                    advertiser VARCHAR(255),
-                    budget INT,
-                    daily_limit INT,
-                    spent INT DEFAULT 0,
-                    target_stores JSONB,
-                    status VARCHAR(50),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    name VARCHAR(255) NOT NULL,
+                    billing_email VARCHAR(255),
+                    bank_name VARCHAR(255),
+                    branch_name VARCHAR(255),
+                    account_number VARCHAR(255),
+                    account_holder VARCHAR(255),
+                    total_pos_sales DOUBLE PRECISION DEFAULT 0.0,
+                    total_ad_revenue DOUBLE PRECISION DEFAULT 0.0
+                );
+
+                CREATE TABLE IF NOT EXISTS pos_transactions (
+                    id SERIAL PRIMARY KEY,
+                    store_id VARCHAR(255) REFERENCES stores(id) ON DELETE SET NULL,
+                    timestamp VARCHAR(100),
+                    total_amount DOUBLE PRECISION
+                );
+
+                CREATE TABLE IF NOT EXISTS sensor_logs (
+                    id SERIAL PRIMARY KEY,
+                    timestamp VARCHAR(100),
+                    metric_name VARCHAR(255),
+                    metric_value DOUBLE PRECISION
                 );
             `);
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
