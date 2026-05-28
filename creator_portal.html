@@ -436,6 +436,21 @@ h2 {
 
     <div class="main-content">
         <div class="page-logo">retail-ad Creator</div>
+
+        <!-- === AI Agent Chat UI (Top Center) === -->
+        <div class="agent-chat-container" style="margin: 0 0 20px 0;">
+            <div class="agent-header" style="background: #a855f7; color: white;">
+                <i class="fas fa-magic"></i> 制作アシスタントエージェント <a href="creator_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #fff; text-decoration: underline;">[機能の詳細を見る]</a>
+            </div>
+            <div class="agent-body">
+                <textarea id="aiAgentInput" placeholder="例: 過去の動画が審査落ちした理由を教えて。もっと注目される構成案を出して。" rows="2" style="border: 1px solid #a855f7;"></textarea>
+                <button onclick="runCreatorAgent()" id="aiAgentBtn" style="background: #a855f7; color: white;">
+                    <i class="fas fa-lightbulb"></i> アドバイスをもらう
+                </button>
+            </div>
+            <div id="aiAgentResult" class="agent-result" style="display:none; border-left: 4px solid #a855f7; background: #faf5ff;"></div>
+        </div>
+
         <h2>クリエイター実績 (全国スーパーサイネージ) <a href="javascript:void(0)" onclick="openGenericProfile()" style="margin-left:15px; color:var(--primary); text-decoration:none; font-size:14px; font-weight:bold;">[ プロフィール設定 ]</a></h2>
 
         <div class="grid-top">
