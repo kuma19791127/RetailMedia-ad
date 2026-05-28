@@ -1113,6 +1113,10 @@ TYPE html>
             }
             saveStaffDB();
 
+            localStorage.setItem('last_active_service', 'shift_manager.html');
+            localStorage.setItem('last_email', currentUser.email);
+            localStorage.setItem('last_password', pass);
+
             localStorage.setItem('shift_last_email', currentUser.email);
             localStorage.setItem(`shift_org_${currentUser.email}`, currentUser.org);
             localStorage.setItem(`shift_name_${currentUser.email}`, currentUser.name);
@@ -1159,12 +1163,16 @@ TYPE html>
 }
 
         function logout() {
-            localStorage.removeItem('last_active_service');
             document.getElementById('login-overlay').style.display = 'flex';
             document.getElementById('main-app').style.display = 'none';
         }
         document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('last_active_service', 'shift_manager.html');
+            const savedEmail = localStorage.getItem('last_email');
+            const savedPass = localStorage.getItem('last_password');
+            if (savedEmail) document.getElementById('login-email').value = savedEmail;
+            const passEl = document.getElementById('login-password') || document.getElementById('login-pass');
+            if (savedPass && passEl) passEl.value = savedPass;
         });
 
         // --- CALENDAR LOGIC ---

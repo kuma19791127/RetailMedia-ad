@@ -178,6 +178,9 @@
             const data = await res.json();
             
             if (data.success || email.includes('demo.com')) {
+                localStorage.setItem('last_active_service', 'anywhere_retail.html');
+                localStorage.setItem('last_email', email);
+                localStorage.setItem('last_password', pass);
                 if (window.PasswordCredential) {
                         const cred = new PasswordCredential({
                             id: email,
@@ -194,6 +197,9 @@
             }
         } catch(e) {
             console.error("Login Error", e);
+            localStorage.setItem('last_active_service', 'anywhere_retail.html');
+            localStorage.setItem('last_email', email);
+            localStorage.setItem('last_password', pass);
             if (window.PasswordCredential) {
                         const cred = new PasswordCredential({
                             id: email,
@@ -207,13 +213,16 @@
         }
     }
     function doLogout() {
-        localStorage.removeItem('last_active_service');
         document.getElementById('page-login').style.display = 'block';
         document.getElementById('page-portal').style.display = 'none';
         document.getElementById('input-pass').value = '';
     }
     document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('last_active_service', 'anywhere_retail.html');
+        const savedEmail = localStorage.getItem('last_email');
+        const savedPass = localStorage.getItem('last_password');
+        if (savedEmail) document.getElementById('input-email').value = savedEmail;
+        if (savedPass) document.getElementById('input-pass').value = savedPass;
     });
 </script>
 

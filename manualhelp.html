@@ -657,6 +657,11 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('last_active_service', 'manualhelp.html');
+            const savedEmail = localStorage.getItem('last_email');
+            const savedPass = localStorage.getItem('last_password');
+            if (savedEmail) document.getElementById('login-email').value = savedEmail;
+            const passEl = document.getElementById('login-pass');
+            if (savedPass && passEl) passEl.value = savedPass;
         });
 
         // --- Login & Routing Logic ---
@@ -676,7 +681,6 @@
                 document.getElementById('login-view').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
                 localStorage.removeItem('ag_user');
-                localStorage.removeItem('last_active_service');
                 currentUser = null;
                 return;
             }
@@ -840,6 +844,9 @@
         }
 
         function loginSuccess(email, pass, name, org, role, serverUser) {
+            localStorage.setItem('last_active_service', 'manualhelp.html');
+            localStorage.setItem('last_email', email);
+            localStorage.setItem('last_password', pass);
             if (window.PasswordCredential) {
                 const cred = new PasswordCredential({
                     id: email,
