@@ -340,6 +340,7 @@
                 <option value="employee">従業員 (学習・タスク実行)</option>
                 <option value="admin">履歴管理 (Admin)</option>
             </select>
+            <label style="font-size: 0.85rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 10px; cursor: pointer; text-align: left;"><input type="checkbox" id="remember-me" checked> ログイン状態と遷移を維持する</label>
             <button type="submit" class="btn" style="width:100%; margin-top:10px;"><i class="fa-solid fa-right-to-bracket"></i> ログイン</button>
         </form>
             <div id="demo-account-box" style="margin-top: 15px; padding: 10px; background: rgba(34, 197, 94, 0.15); border: 1px dashed #22c55e; border-radius: 8px; cursor: pointer; text-align: left;" onclick="fillDemoManualHelp()">
@@ -844,9 +845,16 @@
         }
 
         function loginSuccess(email, pass, name, org, role, serverUser) {
-            localStorage.setItem('last_active_service', 'manualhelp.html');
-            localStorage.setItem('last_email', email);
-            localStorage.setItem('last_password', pass);
+            const rememberMe = document.getElementById('remember-me');
+            if (rememberMe && rememberMe.checked) {
+                localStorage.setItem('last_active_service', 'manualhelp.html');
+                localStorage.setItem('last_email', email);
+                localStorage.setItem('last_password', pass);
+            } else {
+                localStorage.removeItem('last_active_service');
+                localStorage.removeItem('last_email');
+                localStorage.removeItem('last_password');
+            }
             if (window.PasswordCredential) {
                 const cred = new PasswordCredential({
                     id: email,
