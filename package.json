@@ -31,7 +31,7 @@
     "pptxgenjs": "^4.0.1",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
-    "sqlite3": "^6.0.1",
+    "sqlite3": "^5.1.7",
     "square": "^44.0.1",
     "xlsx": "^0.18.5"
   },
