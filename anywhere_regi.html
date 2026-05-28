@@ -849,6 +849,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         function loginSuccess(email, password, orgName) {
             currentSession = { email: email, role: 'store', storeName: orgName, sessionToken: "mock_token_" + Date.now() };
+            localStorage.setItem('last_active_service', 'anywhere_regi.html');
             if (window.PasswordCredential) {
                 const cred = new PasswordCredential({
                     id: email,
@@ -876,6 +877,11 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch (e) { alert("Error"); }
         }
 
+        document.addEventListener('DOMContentLoaded', () => {
+            // URLパラメータを保持したい場合はここでも設定
+            localStorage.setItem('last_active_service', 'anywhere_regi.html');
+        });
+
         function initPosScreen(session) {
             document.getElementById('page-login').classList.remove('active');
             document.getElementById('page-pos').classList.add('active');
@@ -894,6 +900,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         function logout() {
             currentSession = null;
+            localStorage.removeItem('last_active_service');
             document.getElementById('page-pos').classList.remove('active');
             document.getElementById('page-login').classList.add('active');
             document.getElementById('input-pass').value = '';

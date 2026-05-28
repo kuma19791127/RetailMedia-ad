@@ -207,10 +207,14 @@
         }
     }
     function doLogout() {
+        localStorage.removeItem('last_active_service');
         document.getElementById('page-login').style.display = 'block';
         document.getElementById('page-portal').style.display = 'none';
         document.getElementById('input-pass').value = '';
     }
+    document.addEventListener('DOMContentLoaded', () => {
+        localStorage.setItem('last_active_service', 'anywhere_retail.html');
+    });
 </script>
 
 <!-- Context-Agnostic Profile Edit Modal -->

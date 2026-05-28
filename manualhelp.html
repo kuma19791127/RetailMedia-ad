@@ -655,6 +655,10 @@
         const SQUARE_APP_ID = "sq0idp-dEBc0wMfUZp6crtfka8HeQ"; 
         const SQUARE_LOCATION_ID = "LZYJ3X6XZQ8ZN";
 
+        document.addEventListener('DOMContentLoaded', () => {
+            localStorage.setItem('last_active_service', 'manualhelp.html');
+        });
+
         // --- Login & Routing Logic ---
         function checkRoute() {
             const hash = window.location.hash || '#login';
@@ -672,6 +676,7 @@
                 document.getElementById('login-view').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
                 localStorage.removeItem('ag_user');
+                localStorage.removeItem('last_active_service');
                 currentUser = null;
                 return;
             }
