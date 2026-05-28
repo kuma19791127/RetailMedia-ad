@@ -1,32 +1,4 @@
-<!DOC
-    <div style="margin: 20px; padding: 15px; background: rgba(0,255,136,0.1); border: 1px solid var(--primary); border-radius: 8px;">
-        <h3 style="margin-top:0;">🤖 AI エージェント（シフト・マニュアル連動テスト） <a href="shift_manager_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #3b82f6; text-decoration: underline;">[機能の詳細を見る]</a></h3>
-        <p style="font-size: 0.9em; margin-bottom: 15px;">明日のシフトに新人がいるか判定し、最適なマニュアルを通知します。</p>
-        <button class="primary-btn" onclick="runShiftAgent()" style="width:100%;"><i class="fas fa-magic"></i> マニュアル自律配信を実行</button>
-    </div>
-    <script>
-    async function runShiftAgent() {
-        try {
-            const btn = event.currentTarget;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIが分析中...';
-            btn.disabled = true;
-            
-            const res = await fetch(window.API_BASE_URL + '/api/agent/shift-manual-sync', { method: 'POST' });
-            const data = await res.json();
-            
-            if(data.success) {
-                alert("【通知完了】\nAIがマニュアルを選択しました！\nマニュアル: " + data.result.recommendedManualId + "\n理由: " + data.result.reason);
-            } else {
-                alert("エラー: " + data.error);
-            }
-            btn.innerHTML = '<i class="fas fa-magic"></i> マニュアル自律配信を実行';
-            btn.disabled = false;
-        } catch(e) {
-            alert("通信エラー");
-        }
-    }
-    </script>
-TYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -890,6 +862,35 @@ TYPE html>
 
         <!-- RIGHT: Manager Dashboard -->
         <div class="board-panel">
+            <!-- === Shift Agent UI === -->
+            <div style="margin: 20px; padding: 15px; background: rgba(0,255,136,0.1); border: 1px solid var(--primary); border-radius: 8px;">
+                <h3 style="margin-top:0; color: var(--dark);">🤖 AI エージェント（シフト・マニュアル連動テスト） <a href="shift_manager_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #3b82f6; text-decoration: underline;">[機能の詳細を見る]</a></h3>
+                <p style="font-size: 0.9em; margin-bottom: 15px;">明日のシフトに新人がいるか判定し、最適なマニュアルを通知します。</p>
+                <button class="primary-btn" onclick="runShiftAgent()" style="width:100%;"><i class="fas fa-magic"></i> マニュアル自律配信を実行</button>
+            </div>
+            <script>
+            async function runShiftAgent() {
+                try {
+                    const btn = event.currentTarget;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIが分析中...';
+                    btn.disabled = true;
+                    
+                    const res = await fetch(window.API_BASE_URL + '/api/agent/shift-manual-sync', { method: 'POST' });
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        alert("【通知完了】\nAIがマニュアルを選択しました！\nマニュアル: " + data.result.recommendedManualId + "\n理由: " + data.result.reason);
+                    } else {
+                        alert("エラー: " + data.error);
+                    }
+                    btn.innerHTML = '<i class="fas fa-magic"></i> マニュアル自律配信を実行';
+                    btn.disabled = false;
+                } catch(e) {
+                    alert("通信エラー");
+                }
+            }
+            </script>
+
             <div class="board-header">
                 <div>
                     <h1 id="desktop-board-title" style="margin:0; font-size:1.3rem; color:var(--dark);">🗓️ 部門別シフト表

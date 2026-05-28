@@ -62,19 +62,7 @@
 
     <!-- Cleaned Bad 2FA Section -->
 
-        <!-- === AI Agent Chat UI (Top Center) === -->
-        <div class="agent-chat-container">
-            <div class="agent-header">
-                <i class="fas fa-robot"></i> 自社販促エージェント（マーケティング部向け） <a href="business_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #2563eb; text-decoration: underline;">[機能の詳細を見る]</a>
-            </div>
-            <div class="agent-body">
-                <textarea id="aiAgentInput" placeholder="例: 今日の特売品の動画を作ってベースループ（自社枠）に追加して" rows="2"></textarea>
-                <button onclick="runRetailerAgent()" id="aiAgentBtn">
-                    <i class="fas fa-paper-plane"></i> 販促を指示
-                </button>
-            </div>
-            <div id="aiAgentResult" class="agent-result" style="display:none;"></div>
-        </div>
+
 
     <!-- Login Overlay -->
     <div id="login-overlay">
@@ -118,6 +106,21 @@
         <!-- Dashboard Tab -->
         <div id="tab-dashboard">
             <h1>法人専用ポータルへようこそ</h1>
+
+            <!-- === AI Agent Chat UI (Top Center) === -->
+            <div class="agent-chat-container" style="margin: 0 0 20px 0;">
+                <div class="agent-header">
+                    <i class="fas fa-robot"></i> 自社販促エージェント（マーケティング部向け） <a href="business_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #2563eb; text-decoration: underline;">[機能の詳細を見る]</a>
+                </div>
+                <div class="agent-body">
+                    <textarea id="aiAgentInput" placeholder="例: 今日の特売品の動画を作ってベースループ（自社枠）に追加して" rows="2"></textarea>
+                    <button onclick="runRetailerAgent()" id="aiAgentBtn">
+                        <i class="fas fa-paper-plane"></i> 販促を指示
+                    </button>
+                </div>
+                <div id="aiAgentResult" class="agent-result" style="display:none;"></div>
+            </div>
+
             <div class="card">
                 <h3 style="color:#1e40af; border-left:4px solid #3b82f6; padding-left:10px;">このポータルでできること</h3>
                 <p style="line-height:1.8; color:#334155;">
