@@ -366,14 +366,7 @@
 
         <select id="store-select" onchange="changeStore()" style="display:none;"></select>
 
-        <!-- 小売店向けPOS連携モジュール -->
-        <div style="background:#fff; border-left:5px solid #3b82f6; padding:15px; margin:15px 0; border-radius:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-            <h4 style="margin:0; font-size:1.1rem; color:#1e40af;">💳 どこでもレジ (Square) 売上連携</h4>
-            <p style="margin:5px 0 10px 0; color:#475569; font-size:0.9rem;">当日のSquare決済売上から、リテアド利用手数料（0.4%）を控除した金額を自動計算し、会計システムへ送信します。</p>
-            <button onclick="syncPosToFreee()" style="background:#3b82f6; color:#fff; border:none; padding:8px 16px; border-radius:5px; cursor:pointer; font-weight:bold;">🔄 本日の売上をfreeeへ同期</button>
-        </div>
-
-        <!-- === AI Agent Chat UI (Top Center) === -->
+        <!-- === AI Agent Chat UI (Top Center, moved to POS sync area) === -->
         <div class="agent-chat-container">
             <div class="agent-header" style="background: #eab308; color: #000;">
                 <i class="fas fa-magic"></i> 今日のお買い得＆物価高対策AIレシピ提案 <a href="anywhere_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #1d4ed8; text-decoration: underline;">[機能の詳細を見る]</a>
@@ -1325,62 +1318,6 @@ function switchPaymentTab(tab) {
         btn.innerHTML = '<i class="fas fa-utensils"></i> AIにレシピを聞く';
         btn.disabled = false;
     }
-    
-        async function syncPosToFreee() {
-            try {
-                // スクエアのダミー売上（実際はSquare APIから取得）
-                const posSales = 100000; 
-                const retailFeeRate = 0.004; // 0.4%
-                const feeAmount = Math.floor(posSales * retailFeeRate);
-                const netSales = posSales - feeAmount;
-
-                const { value: confirmText } = await Swal.fire({
-                    title: 'POS売上同期の確認',
-                    html: `<div style="text-align:left; font-size:0.95rem;">
-                        本日のSquare決済総額: <b>${posSales.toLocaleString()}円</b><br>
-                        リテアド利用手数料(0.4%): <b style="color:red;">-${feeAmount.toLocaleString()}円</b><br>
-                        --------------------------------<br>
-                        差引売上(freee記帳額): <b style="color:green;">${netSales.toLocaleString()}円</b>
-                        </div><br>実行するには <b>承認</b> と入力してください。`,
-                    input: 'text',
-                    inputPlaceholder: '承認 と入力',
-                    showCancelButton: true,
-                    confirmButtonText: '同期する',
-                    cancelButtonText: 'キャンセル',
-                    inputValidator: (value) => {
-                        if (value !== '承認') return '「承認」と入力してください';
-                    }
-                });
-
-                if (!confirmText) return;
-
-                Swal.fire({
-                    title: '同期中...',
-                    text: 'freee会計へ仕訳データを送信しています',
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); }
-                });
-
-                const payload = { 
-                    amount: netSales, 
-                    description: 'どこでもレジ（Square）売上 (手数料控除後)' 
-                };
-
-                const res = await fetch((window.API_BASE_URL || 'http://localhost:3000') + '/api/freee/sales', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-
-                Swal.fire('同期完了', 'freee会計へ売上の自動記帳が完了しました。', 'success');
-            } catch (e) {
-                console.error(e);
-                Swal.fire('エラー', '連携に失敗しました: ' + e.message, 'error');
-            }
-        }
         </script>
 
     <script>
