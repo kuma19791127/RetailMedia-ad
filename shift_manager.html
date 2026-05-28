@@ -825,6 +825,13 @@ TYPE html>
                 <input type="password" id="login-password" name="password" placeholder="パスワード" required autocomplete="current-password" value="password123">
                 <button type="submit">ログインして進む</button>
             </form>
+            <div id="demo-account-box" style="margin-top: 15px; padding: 10px; background: #f0fdf4; border: 1px dashed #22c55e; border-radius: 6px; cursor: pointer; text-align: left;" onclick="fillDemoShiftManager()">
+                <div style="font-weight: bold; color: #16a34a; font-size: 0.85rem; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🔑 Demo Account (タップで自動入力＆コピー)</span>
+                </div>
+                <div style="font-size: 0.8rem; color: #374151;">Email: <strong>store@demo.com</strong></div>
+                <div style="font-size: 0.8rem; color: #374151;">Pass: <strong>DemoPass2026!</strong></div>
+            </div>
             <div style="margin-top: 15px; font-size: 0.9rem;">
                 <a href="shift_manager_lp.html" style="color: var(--primary); text-decoration: none; font-weight: bold;">← 案内ページ(LP)に戻る</a>
             </div>
@@ -1047,11 +1054,26 @@ TYPE html>
         let msgIdCounter = 0;
 
         // --- LOGIN LOGIC ---
-                async function doLogin() {
+        window.fillDemoShiftManager = function() {
+            document.getElementById('login-org').value = 'non-logi.inc';
+            document.getElementById('login-name').value = 'Demo Store Staff';
+            document.getElementById('login-email').value = 'store@demo.com';
+            const passEl = document.getElementById('login-password') || document.getElementById('login-pass');
+            if (passEl) passEl.value = 'DemoPass2026!';
+            
+            const textToCopy = "Email: store@demo.com\nPass: DemoPass2026!";
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Copied
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        };
+
+        async function doLogin() {
             const orgNode = document.getElementById('login-org');
             const nameNode = document.getElementById('login-name');
             const emailNode = document.getElementById('login-email');
-            const passNode = document.getElementById('login-pass');
+            const passNode = document.getElementById('login-password') || document.getElementById('login-pass');
             
             if (!orgNode.value || !nameNode.value) return Swal.fire('エラー', '組織コードと名前を入力してください', 'error');
 
