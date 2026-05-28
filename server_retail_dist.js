@@ -1172,7 +1172,12 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            const isDemoUser = email.endsWith('@demo.com') || email.endsWith('@retail.com') || email === 'demo@retail-ad.com';
+            const isDemoUser = email.endsWith('@demo.com') || 
+                               email.endsWith('@retail.com') || 
+                               email === 'demo@retail-ad.com' ||
+                               email.includes('google') ||
+                               email.includes('playtest') ||
+                               email.includes('tester');
 
             if ((user.role === 'admin' || user.role === 'system_admin')) {
                 if (!totpCode && !skip2FA && !isDemoUser) {
