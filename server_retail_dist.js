@@ -1,5 +1,5 @@
-const pool = require('./db_connector');
-const dbHelper = require('./db');
+const dbHelper = require('./db_connector');
+const pool = dbHelper.pool;
 const express = require('express');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');

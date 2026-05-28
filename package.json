@@ -5,8 +5,7 @@
   "main": "server_retail_dist.js",
   "scripts": {
     "start": "node server_retail_dist.js",
-    "dev": "nodemon server_retail_dist.js",
-    "prestart": "npm rebuild sqlite3 --build-from-source"
+    "dev": "nodemon server_retail_dist.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1045.0",
