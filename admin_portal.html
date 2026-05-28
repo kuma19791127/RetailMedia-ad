@@ -464,6 +464,7 @@
                 <form action="javascript:void(0);" onsubmit="handleLogin();" class="space-y-4">
                     <input type="text" id="admin-user" name="username" class="login-input" placeholder="Admin ID" required autocomplete="username">
                     <input type="password" id="admin-pass" name="password" class="login-input" placeholder="Password" required autocomplete="current-password">
+                    <label style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 15px; cursor: pointer; text-align: left;"><input type="checkbox" id="remember-me"> ログイン状態と遷移を維持する</label>
                     <button type="submit" class="login-btn">ログイン</button>
                 </form>
                 <p id="native-2fa-error" style="color:#e74c3c; font-size:14px; margin-top:10px; display:none;">コードが間違っています</p>
@@ -1617,6 +1618,17 @@
                 }
 
                 if (data.success) {
+                    const rememberMe = document.getElementById('remember-me').checked;
+                    if (rememberMe) {
+                        localStorage.setItem('admin_last_email', user);
+                        localStorage.setItem('admin_last_password', pass);
+                        localStorage.setItem('admin_last_active_service', window.location.href);
+                    } else {
+                        localStorage.removeItem('admin_last_email');
+                        localStorage.removeItem('admin_last_password');
+                        localStorage.removeItem('admin_last_active_service');
+                    }
+
                     if (window.PasswordCredential) {
                         const cred = new PasswordCredential({
                             id: user,
@@ -1626,6 +1638,9 @@
                     }
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     document.getElementById('login-overlay').style.display = 'none';
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
                     document.getElementById('main-app').style.display = 'flex';
                     window.dispatchEvent(new Event('resize'));
                     loadData();
@@ -1906,6 +1921,20 @@
                 Swal.fire('エラー', 'CSVの生成に失敗しました。', 'error');
             }
         }
+
+
+        // Auto-fill admin login credentials if stored in LocalStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('admin_last_email');
+            const savedPass = localStorage.getItem('admin_last_password');
+            if (savedEmail) {
+                document.getElementById('admin-user').value = savedEmail;
+                document.getElementById('remember-me').checked = true;
+            }
+            if (savedPass) {
+                document.getElementById('admin-pass').value = savedPass;
+            }
+        });
     </script>
 </body>
 </html>

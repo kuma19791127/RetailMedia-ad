@@ -73,8 +73,10 @@
             <form id="login-form" onsubmit="handleLogin(event)">
                 <input type="email" id="login-email" class="login-input" placeholder="メールアドレス (法人ID)" required autocomplete="username">
                 <input type="password" id="login-password" class="login-input" placeholder="パスワード" required autocomplete="current-password">
+                <label style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 15px; cursor: pointer; text-align: left;"><input type="checkbox" id="remember-me"> ログイン状態と遷移を維持する</label>
                 <button type="submit" class="login-btn">ログイン</button>
             </form>
+
             <p id="login-error" style="color:red; font-size:14px; display:none; margin-top:10px;">認証に失敗しました</p>
             <div id="inline-2fa-section" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
                 <h3 style="color:#2563eb; margin-top:0; font-size:1.1rem;">二段階認証 (2FA)</h3>
@@ -386,6 +388,18 @@
             currentEmail = email;
             currentPrefix = email;
             document.getElementById('retailer-prefix').value = currentPrefix;
+            
+            const rememberMe = document.getElementById('remember-me').checked;
+            if (rememberMe) {
+                localStorage.setItem('last_email', email);
+                localStorage.setItem('last_password', pass);
+                localStorage.setItem('last_active_service', window.location.href);
+            } else {
+                localStorage.removeItem('last_email');
+                localStorage.removeItem('last_password');
+                localStorage.removeItem('last_active_service');
+            }
+
             if (window.PasswordCredential) {
                 const cred = new PasswordCredential({
                     id: email,
@@ -394,6 +408,9 @@
                 navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
             }
             document.getElementById('login-overlay').style.display = 'none';
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
             loadVideos();
         }
 
@@ -607,6 +624,19 @@ function showAdPolicy() {
             }
             document.getElementById('inline-2fa-section').style.display = 'none';
         }
+
+        // Auto-fill login credentials if stored in LocalStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('last_email');
+            const savedPass = localStorage.getItem('last_password');
+            if (savedEmail) {
+                document.getElementById('login-email').value = savedEmail;
+                document.getElementById('remember-me').checked = true;
+            }
+            if (savedPass) {
+                document.getElementById('login-password').value = savedPass;
+            }
+        });
     </script>
 </body>
 </html>
