@@ -9,43 +9,109 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>小売り向け設定パネル</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <title>小売り向け設定パネル | Retailer Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --accent-color: #F59E0B;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #1F2937;
+            --text-sub: #6B7280;
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
         body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: #F8FAFC;
-            color: #1E293B;
+            font-family: 'Poppins', 'Noto Sans JP', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
             margin: 0; padding: 20px;
             box-sizing: border-box;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
+
+        /* Container */
         .container {
             max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .login-container {
-            max-width: 350px;
             width: 100%;
-            margin: 0 auto;
+            margin: 20px auto;
             background: white;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: var(--shadow-lg);
             box-sizing: border-box;
         }
-        h2 { text-align: center; color: #10B981; }
-        
-        /* 16文字程度での改行を促すための幅制限と文字組み */
+
+        /* Login Card (Regi Style) */
+        #page-login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--text-main);
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            box-sizing: border-box;
+            text-align: left;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .login-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
         .desc-text {
             font-size: 14px;
             line-height: 1.6;
@@ -53,9 +119,9 @@
             color: #64748B;
             word-break: keep-all;
             overflow-wrap: break-word;
-            padding: 10px;
+            padding: 15px;
             background: #F1F5F9;
-            border-radius: 8px;
+            border-radius: 12px;
         }
 
         .menu-btn {
@@ -66,39 +132,18 @@
             width: 100%;
             padding: 15px;
             margin-bottom: 10px;
-            border-radius: 8px;
+            border-radius: 12px;
             border: none;
             color: white;
             font-weight: bold;
             font-size: 16px;
-            text-align: center;
-            text-decoration: none;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: opacity 0.2s;
         }
-
-        .login-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            box-sizing: border-box;
-            background: white;
-            font-size: 16px;
+        .menu-btn:hover {
+            opacity: 0.9;
         }
-        .btn-primary {
-            width: 100%;
-            padding: 12px;
-            background: #6366f1;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -108,30 +153,41 @@
 </head>
 <body>
     <!-- Login Screen -->
-    <div id="page-login" class="login-container" style="text-align: center;">
-        <h2 style="margin-bottom:20px; color:#6366f1; font-weight:bold;">ログイン</h2>
-        
-        <form onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:0; padding:0; display:flex; flex-direction:column; gap:15px;">
-            <input type="email" id="input-email" class="login-input" placeholder="メールアドレス" required autocomplete="username" style="margin-bottom:0;">
-            <input type="password" id="input-pass" class="login-input" placeholder="パスワード" required autocomplete="current-password" style="margin-bottom:0;">
-            <label style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 5px; cursor: pointer; text-align: left;"><input type="checkbox" id="remember-me"> ログイン状態と遷移を維持する</label>
-            <button type="submit" class="btn-primary">ログイン</button>
-        </form>
+    <div id="page-login" style="text-align: center;">
+        <div class="header-logo" style="margin-bottom: 30px; font-size:28px; justify-content: center; width: 100%; color: var(--primary-color); font-weight: bold;">どこでもレジ</div>
+        <div class="login-card">
+            <div style="font-size: 48px; margin-bottom: 20px;">👔</div>
+            <h2 class="login-title">小売り向けログイン</h2>
+            
+            <form onsubmit="event.preventDefault(); doLogin();" style="width:100%; margin:0; padding:0; display:flex; flex-direction:column; gap:5px;">
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">メールアドレス</div>
+                <input type="email" id="input-email" class="login-input" placeholder="store@demo.com" required autocomplete="username">
+                
+                <div style="text-align:left; margin-bottom:5px; font-size:12px; color:#6B7280;">パスワード</div>
+                <input type="password" id="input-pass" class="login-input" placeholder="Password" required autocomplete="current-password">
+                
+                <label style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 15px; cursor: pointer; text-align: left;"><input type="checkbox" id="remember-me"> ログイン状態と遷移を維持する</label>
+                <button type="submit" class="btn-primary">ログインして開始</button>
+            </form>
 
-        <div style="margin-top:15px; font-size:12px;">
-            <a href="#" style="color:#2563EB;">Forgot Password?</a>
-        </div>
+            <div style="margin-top:15px; font-size:12px;">
+                <a href="#" style="color:#2563EB;">Forgot Password?</a>
+            </div>
 
-        <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
-            <b style="color:#1F2937; margin-bottom:5px; display:inline-block;">Demo Account (タップで自動入力＆コピー)</b><br>
-            Email: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; margin-bottom:5px;" onclick="document.getElementById('input-email').value='store@demo.com'">store@demo.com</span><br>
-            Pass: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block;" onclick="document.getElementById('input-pass').value='DemoPass2026!'">DemoPass2026!</span>
+            <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
+                <b style="color:#1F2937; margin-bottom:5px; display:inline-block;">Demo Account (タップで自動入力＆コピー)</b><br>
+                Email: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; margin-bottom:5px; transition:0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'" onclick="document.getElementById('input-email').value='store@demo.com'; navigator.clipboard.writeText('store@demo.com'); Swal.fire({toast:true, position:'top-end', icon:'success', title:'Emailをコピー＆入力しました', showConfirmButton:false, timer:2000});">store@demo.com</span><br>
+                Pass: <span style="cursor:pointer; color:#2563EB; font-weight:bold; padding:3px 8px; background:#EFF6FF; border-radius:4px; display:inline-block; transition:0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'" onclick="document.getElementById('input-pass').value='DemoPass2026!'; navigator.clipboard.writeText('DemoPass2026!'); Swal.fire({toast:true, position:'top-end', icon:'success', title:'Passwordをコピー＆入力しました', showConfirmButton:false, timer:2000});">DemoPass2026!</span>
+            </div>
+            
+            <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
+                <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
+            </div>
+            
+            <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
+                <a href="anywhere_regi.html" style="color:#2563EB; font-weight:bold; text-decoration:underline;">🛒 一般のお買い物客向けレジはこちら</a>
+            </div>
         </div>
-        <div style="margin-top:15px; font-size:12px; border-top: 1px solid #eee; padding-top: 15px;">
-            <a href="anywhere_lp.html" target="_blank" style="color:#10B981; font-weight:bold; text-decoration:none;">📖 どこでもレジ サービス詳細 (LP) を見る</a>
-        </div>
-        
-        <a href="anywhere_regi.html" style="display:block; margin-top:20px; font-size:12px; text-decoration:underline;">一般のお買い物客向けログインはこちら</a>
     </div>
 
     <!-- Management Portal (Hidden by default) -->
