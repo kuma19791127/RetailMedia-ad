@@ -889,6 +889,31 @@ window.addEventListener('DOMContentLoaded', () => {
             if (savedPass) document.getElementById('input-pass').value = savedPass;
         });
 
+        async function syncMasterFromServer() {
+            try {
+                logDebug("🔄 [朝一マスタ同期] サーバーから最新の商品価格マスタを取得中...");
+                const res = await fetch(`${API_URL}/api/products/master`);
+                const data = await res.json();
+                if (data.success && data.master) {
+                    const productsToInsert = [];
+                    for (const [code, info] of Object.entries(data.master)) {
+                        productsToInsert.push({
+                            janCode: code,
+                            name: info.name,
+                            price: parseInt(info.price, 10) || 0,
+                            category: info.category || "一般"
+                        });
+                    }
+                    await db.products.bulkPut(productsToInsert);
+                    const count = await db.products.count();
+                    logDebug(`✅ [朝一マスタ同期] 完了。全 ${productsToInsert.length} 件をローカルDBに同期しました。現在の総商品数: ${count} 件`);
+                }
+            } catch (e) {
+                console.error("Master sync failed:", e);
+                logDebug(`⚠️ [朝一マスタ同期] 失敗: ${e.message} (キャッシュデータで稼働します)`);
+            }
+        }
+
         function initPosScreen(session) {
             document.getElementById('page-login').classList.remove('active');
             document.getElementById('page-pos').classList.add('active');
@@ -901,6 +926,9 @@ window.addEventListener('DOMContentLoaded', () => {
             select.appendChild(opt);
             changeStore();
             initApp();
+            
+            // ログイン/起動時に自動で最新マスタを同期
+            syncMasterFromServer();
         }
 
         function changeStore() { console.log(`Store changed`); }

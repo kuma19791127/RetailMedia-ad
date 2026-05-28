@@ -30,3 +30,8 @@ const productMaster = {
     // --- その他（エクセルから追加しやすいように枠を用意） ---
     // "JANコード": { name: "商品名", price: 0, category: "カテゴリー" },
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = productMaster;
+}
+

@@ -88,6 +88,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// --- Product Master API ---
+app.get('/api/products/master', (req, res) => {
+    try {
+        const productMaster = require('./products');
+        res.json({ success: true, master: productMaster });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // --- Profile Management ---
 app.post('/api/profile', async (req, res) => {
     const { email, org, name, type } = req.body;
