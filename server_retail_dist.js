@@ -89,10 +89,18 @@ app.use((req, res, next) => {
 });
 
 // --- Product Master API ---
-app.get('/api/products/master', (req, res) => {
+app.get('/api/products/master', async (req, res) => {
     try {
-        const productMaster = require('./products');
-        res.json({ success: true, master: productMaster });
+        const rows = await dbHelper.query.all('SELECT * FROM products');
+        const master = {};
+        rows.forEach(row => {
+            master[row.jan_code] = {
+                name: row.name,
+                price: row.price,
+                category: row.category
+            };
+        });
+        res.json({ success: true, master });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, error: err.message });

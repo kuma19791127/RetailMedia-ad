@@ -31,7 +31,3 @@ const productMaster = {
     // "JANコード": { name: "商品名", price: 0, category: "カテゴリー" },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = productMaster;
-}
-
