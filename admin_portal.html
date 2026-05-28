@@ -1806,21 +1806,14 @@
                 const payouts = await res.json();
                 
                 const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                const agencyResTmp = await fetch(window.API_BASE_URL + '/api/admin/agency');
-                const localAgencies = await localAgencyRes.json();
-                const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 // 代理店の未払い報酬（ステータスが verified のもの）も取得
-                agencyResTmp = await fetch(window.API_BASE_URL + '/api/admin/agency');
-                const localAgencies = await localAgencyRes.json();
+                const agencyRes = await fetch(window.API_BASE_URL + '/api/admin/agency');
+                const agencies = await agencyRes.json();
                 const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
                 if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
                     Swal.fire('データなし', '現在、処理待ちの出金申請や代理店報酬はありません。', 'info');
-                    return;
-                }
-                if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
-                    Swal.fire('データなし', '現在、承認待ちの出金申請はありません。', 'info');
                     return;
                 }
 
@@ -1862,19 +1855,6 @@
                         const branchCode = "000"; 
                         const accountType = "1"; 
                         const accountNum = "9999999"; // 要確認
-                        const holderName = a.agency_name ? a.agency_name.replace(/ /g, '') : "ダイリテン";
-                        
-                        csvContent += `${bankCode},${branchCode},${accountType},${accountNum},${holderName},${finalAmount}\r\n`;
-                    });
-                    
-                    // 代理店データをGMO CSVに追加
-                    pendingAgencies.forEach(a => {
-                        const amount = a.price || 0;
-                        const finalAmount = amount - 145; // 振込手数料
-                        const bankCode = "0000"; 
-                        const branchCode = "000"; 
-                        const accountType = "1"; 
-                        const accountNum = "9999999"; // 仮
                         const holderName = a.agency_name ? a.agency_name.replace(/ /g, '') : "ダイリテン";
                         
                         csvContent += `${bankCode},${branchCode},${accountType},${accountNum},${holderName},${finalAmount}\r\n`;
