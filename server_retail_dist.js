@@ -3649,6 +3649,7 @@ app.get('/api/pos/transactions', (req, res) => {
 
 // --- 2. Retailer Marketing Agent (小売マーケティング向け 自社販促エージェント) ---
 app.post('/api/agent/retailer', async (req, res) => {
+    const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -3719,6 +3720,7 @@ Return ONLY a JSON object:
 
 // --- 3. Anywhere Register Customer Agent (レジ顧客向け レシピ＆提案エージェント) ---
 app.post('/api/agent/regi', async (req, res) => {
+    const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -3777,6 +3779,7 @@ Return ONLY a JSON object:
 
 // --- 4. Creator Assistant Agent (クリエイター向け 制作アシスタント) ---
 app.post('/api/agent/creator', async (req, res) => {
+    const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -3898,6 +3901,7 @@ async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction 
 
 // --- 5. Store Owner Agent (店舗オーナー向け 競合分析・経営支援エージェント) ---
 app.post('/api/agent/store', async (req, res) => {
+    const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -3954,6 +3958,7 @@ Return ONLY a JSON object:
 
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
+    const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -4048,6 +4053,7 @@ Return ONLY a JSON object:
 
 // --- 1. Ad Operations Agent ---
 app.post('/api/agent/ad-ops', async (req, res) => {
+    const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
