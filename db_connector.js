@@ -15,12 +15,13 @@ if (process.env.DATABASE_URL) {
         try {
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS users (
-                    email VARCHAR(255) PRIMARY KEY,
+                    email VARCHAR(255),
                     password TEXT NOT NULL,
                     role VARCHAR(50) NOT NULL,
                     name VARCHAR(255),
                     org VARCHAR(255),
-                    two_factor_secret VARCHAR(255)
+                    two_factor_secret VARCHAR(255),
+                    PRIMARY KEY (email, role)
                 );
                 
                 CREATE TABLE IF NOT EXISTS campaigns (
@@ -68,6 +69,17 @@ if (process.env.DATABASE_URL) {
                 );
             `);
 
+            // Migration path: Drop existing primary key constraint and recreate as composite if not already done
+            try {
+                await pool.query(`
+                    ALTER TABLE users DROP CONSTRAINT IF EXISTS users_pkey;
+                    ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (email, role);
+                `);
+                console.log('[DB] ✅ Users constraint migrated to composite primary key (email, role).');
+            } catch (e) {
+                // If migration fails because it is already composite, ignore
+            }
+
             // 初期データの投入 (空の場合のみ)
             const countRes = await pool.query('SELECT COUNT(*) FROM products');
             if (parseInt(countRes.rows[0].count, 10) === 0) {
@@ -104,17 +116,23 @@ if (process.env.DATABASE_URL) {
                 try {
                     const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
                     if (data.users) {
-                        for (const [email, userDetails] of Object.entries(data.users)) {
+                        for (const [key, userDetails] of Object.entries(data.users)) {
+                            let email = key;
+                            let role = userDetails.role;
+                            if (key.includes(':')) {
+                                const parts = key.split(':');
+                                email = parts[0];
+                                role = parts[1];
+                            }
                             await pool.query(
                                 `INSERT INTO users (email, password, role, name, org, two_factor_secret) 
                                  VALUES ($1, $2, $3, $4, $5, $6) 
-                                 ON CONFLICT (email) DO UPDATE 
+                                 ON CONFLICT (email, role) DO UPDATE 
                                  SET password = EXCLUDED.password, 
-                                     role = EXCLUDED.role,
                                      name = EXCLUDED.name,
                                      org = EXCLUDED.org,
                                      two_factor_secret = EXCLUDED.two_factor_secret`,
-                                [email, userDetails.password, userDetails.role, userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
+                                [email, userDetails.password, role, userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
                             );
                         }
                         console.log('[DB] ✅ Users synchronized from database.json to PostgreSQL.');
@@ -180,14 +198,17 @@ if (process.env.DATABASE_URL) {
                     )
                 `);
 
+                // Recreate users table to apply schema change dynamically
+                sqliteDb.run("DROP TABLE IF EXISTS users");
                 sqliteDb.run(`
                     CREATE TABLE IF NOT EXISTS users (
-                        email TEXT PRIMARY KEY,
+                        email TEXT,
                         password TEXT NOT NULL,
                         role TEXT NOT NULL,
                         name TEXT,
                         org TEXT,
-                        two_factor_secret TEXT
+                        two_factor_secret TEXT,
+                        PRIMARY KEY (email, role)
                     )
                 `);
 
@@ -228,11 +249,18 @@ if (process.env.DATABASE_URL) {
                                 INSERT OR REPLACE INTO users (email, password, role, name, org, two_factor_secret) 
                                 VALUES (?, ?, ?, ?, ?, ?)
                             `);
-                            for (const [email, userDetails] of Object.entries(data.users)) {
+                            for (const [key, userDetails] of Object.entries(data.users)) {
+                                let email = key;
+                                let role = userDetails.role;
+                                if (key.includes(':')) {
+                                    const parts = key.split(':');
+                                    email = parts[0];
+                                    role = parts[1];
+                                }
                                 stmt.run([
                                     email, 
                                     userDetails.password, 
-                                    userDetails.role, 
+                                    role, 
                                     userDetails.name || null, 
                                     userDetails.org || null, 
                                     userDetails.twoFactorSecret || null

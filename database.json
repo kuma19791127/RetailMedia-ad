@@ -129,10 +129,17 @@
       "twoFactorSecret": null
     },
     "buzzkun0807@gmail.com": {
-      "password": "ea8cc3e72cc7a7dac576c5d934c79945:0a0ad6ba03b79ef3e3b2f18ee4cf73a789c7dcb04cd9daddb70a064849664ca91397648d4178cf14d2b32e235b92b594926c694784cb97cbc6d461161cf00388",
+      "password": "a050ee2086c4c784632355e9c9d14907:3dc4b2001a680ca373e113b2317a9a1687b0e6617cd4700eceb0ff5a9a70ee5faf6bd64078d20a9c46f81aac871d7894d0c8fcf909a872229ed4c2246cd9794c",
       "role": "store",
-      "name": null,
-      "org": null,
+      "name": "熊澤",
+      "org": "Demo Corp",
+      "twoFactorSecret": null
+    },
+    "buzzkun0807@gmail.com:admin": {
+      "password": "c6bfc81c2ce446773b917da25cf0db80:610d427bde15aab78bfd275d2063430504801beec77cf5629c7b0ad071b5468847ee8812f764f2c9d8fb2078875115491784a32a221fb1e88b8838679e78cb12",
+      "role": "admin",
+      "name": "熊澤 (管理者)",
+      "org": "Demo Corp",
       "twoFactorSecret": null
     }
   },

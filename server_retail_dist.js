@@ -1134,7 +1134,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     try {
-        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, role || 'store']);
 
         // Auto-Register if user does not exist (to keep the ease of demo but persist data)
         if (!user) {
@@ -1276,19 +1276,21 @@ app.get('/api/auth/users', async (req, res) => {
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     try {
         const hashedPassword = hashPassword(password);
+        const targetRole = role || 'store';
         await dbHelper.query.run(
-            'UPDATE users SET password = ? WHERE email = ?',
-            [hashedPassword, email]
+            'UPDATE users SET password = ? WHERE email = ? AND role = ?',
+            [hashedPassword, email, targetRole]
         );
-        if (typeof users !== 'undefined' && users[email]) {
-            users[email].password = hashedPassword;
+        const key = targetRole === 'store' ? email : `${email}:${targetRole}`;
+        if (typeof users !== 'undefined' && users[key]) {
+            users[key].password = hashedPassword;
         }
-        console.log(`[Auth] 🔑 Password Reset: ${email} inside Database`);
+        console.log(`[Auth] 🔑 Password Reset: ${email} (${targetRole}) inside Database`);
         res.json({ success: true });
     } catch (e) {
         console.error(e);
