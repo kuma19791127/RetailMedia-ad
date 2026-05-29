@@ -129,11 +129,11 @@
       "twoFactorSecret": null
     },
     "buzzkun0807@gmail.com": {
-      "password": "00eeb903f1ffeda1663749429e2b5ecf:024667c2629c0feaefb5c7837f4592c279cd9e475baa0e81298de6b8aec58edfeb1a22a767a5f14b2a180c544bae619a2c4de5d9ae151539265ce5758f3ad713",
+      "password": "ea8cc3e72cc7a7dac576c5d934c79945:0a0ad6ba03b79ef3e3b2f18ee4cf73a789c7dcb04cd9daddb70a064849664ca91397648d4178cf14d2b32e235b92b594926c694784cb97cbc6d461161cf00388",
       "role": "store",
       "name": null,
       "org": null,
-      "twoFactorSecret": "ONSFEU3WOVZVIOLPFIUT66ZQIM4VMTCBNNAWYWBPKI2G6TJMKJWA"
+      "twoFactorSecret": null
     }
   },
   "posTransactions": [],

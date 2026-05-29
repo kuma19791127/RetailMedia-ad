@@ -1296,6 +1296,23 @@ app.post('/api/auth/reset-password', async (req, res) => {
     }
 });
 
+app.post('/api/auth/reset-2fa', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email required" });
+
+    try {
+        await dbHelper.query.run(
+            'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
+            [email]
+        );
+        res.json({ success: true });
+        console.log(`[Auth] 🔐 2FA Secret Reset for: ${email}`);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.get('/api/user/me', (req, res) => {
     const token = req.cookies.token;
     if (token) {

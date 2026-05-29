@@ -304,6 +304,33 @@
                             cancelButtonText: 'キャンセル',
                             inputValidator: (value) => {
                                 if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                            },
+                            footer: '<a href="javascript:void(0)" id="reset-2fa-link" style="color:#d33; font-weight:bold; font-size:12px;">QRコードを再スキャンする（2FAを再設定）</a>',
+                            didOpen: () => {
+                                document.getElementById('reset-2fa-link').onclick = async () => {
+                                    Swal.close();
+                                    const confirmReset = await Swal.fire({
+                                        title: '2FAの再設定',
+                                        text: '現在の二段階認証設定を削除し、新しいQRコードを発行しますか？',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'はい、再設定する',
+                                        cancelButtonText: 'キャンセル'
+                                    });
+                                    if (confirmReset.isConfirmed) {
+                                        const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email })
+                                        });
+                                        const resetData = await resetRes.json();
+                                        if (resetData.success) {
+                                            Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
+                                        } else {
+                                            Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                                        }
+                                    }
+                                };
                             }
                         });
 
@@ -322,7 +349,29 @@
                             Swal.close();
                             loginSuccess(email, pass);
                         } else {
-                            Swal.fire('認証エラー', verifyData.error || '認証コードが違います。', 'error');
+                            Swal.fire({
+                                title: '認証エラー',
+                                text: verifyData.error || '認証コードが違います。',
+                                icon: 'error',
+                                showCancelButton: true,
+                                confirmButtonText: '閉じる',
+                                cancelButtonText: '2FAを再設定する',
+                                cancelButtonColor: '#d33'
+                            }).then(async (result) => {
+                                if (result.dismiss === Swal.DismissReason.cancel) {
+                                    const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email })
+                                    });
+                                    const resetData = await resetRes.json();
+                                    if (resetData.success) {
+                                        Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
+                                    } else {
+                                        Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                                    }
+                                }
+                            });
                         }
                         return;
                     }
