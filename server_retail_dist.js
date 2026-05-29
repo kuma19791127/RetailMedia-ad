@@ -1275,16 +1275,24 @@ app.get('/api/auth/users', async (req, res) => {
     }
 });
 
-app.post('/api/auth/reset-password', (req, res) => {
+app.post('/api/auth/reset-password', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
-    if (users[email]) {
-        users[email].password = hashPassword(password);
-        console.log(`[Auth] 🔑 Password Reset: ${email}`);
+    try {
+        const hashedPassword = hashPassword(password);
+        await dbHelper.query.run(
+            'UPDATE users SET password = ? WHERE email = ?',
+            [hashedPassword, email]
+        );
+        if (typeof users !== 'undefined' && users[email]) {
+            users[email].password = hashedPassword;
+        }
+        console.log(`[Auth] 🔑 Password Reset: ${email} inside Database`);
         res.json({ success: true });
-    } else {
-        res.json({ success: false, error: "User not found" });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
     }
 });
 
