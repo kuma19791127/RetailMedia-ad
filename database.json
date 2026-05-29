@@ -46,7 +46,7 @@
   ],
   "clients": [],
   "storeData": {
-    "default_store": {
+    "STORE_001": {
       "id": "STORE_001",
       "name": "retail-ad Demo Store",
       "billing_email": "store@example.com",
@@ -102,19 +102,38 @@
   "users": {
     "advertiser@demo.com": {
       "password": "DemoPass2026!",
-      "role": "advertiser"
+      "role": "advertiser",
+      "name": null,
+      "org": null,
+      "twoFactorSecret": null
     },
     "store@demo.com": {
       "password": "DemoPass2026!",
-      "role": "store"
+      "role": "store",
+      "name": null,
+      "org": null,
+      "twoFactorSecret": null
     },
     "agency@demo.com": {
       "password": "DemoPass2026!",
-      "role": "agency"
+      "role": "agency",
+      "name": null,
+      "org": null,
+      "twoFactorSecret": null
     },
     "creator@demo.com": {
       "password": "DemoPass2026!",
-      "role": "creator"
+      "role": "creator",
+      "name": null,
+      "org": null,
+      "twoFactorSecret": null
+    },
+    "buzzkun0807@gmail.com": {
+      "password": "740832accfa1f79a64d6637b8834bd75:89359e2710884ecf488289dd8966425b2c14b4f91ccbbf8639aa009a1e27afd3498530da41b57b091cad898301a8b3276b5fd12cd8e0aed35d469a063669136e",
+      "role": "store",
+      "name": null,
+      "org": null,
+      "twoFactorSecret": "ONSFEU3WOVZVIOLPFIUT66ZQIM4VMTCBNNAWYWBPKI2G6TJMKJWA"
     }
   },
   "posTransactions": [],
