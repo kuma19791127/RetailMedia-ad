@@ -96,6 +96,34 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ 初期商品マスタの登録が完了しました。');
             }
 
+            // ユーザーデータの同期 (database.json のユーザー情報を PostgreSQL の users テーブルにインポート)
+            const fs = require('fs');
+            const path = require('path');
+            const jsonPath = path.resolve(__dirname, 'database.json');
+            if (fs.existsSync(jsonPath)) {
+                try {
+                    const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                    if (data.users) {
+                        for (const [email, userDetails] of Object.entries(data.users)) {
+                            await pool.query(
+                                `INSERT INTO users (email, password, role, name, org, two_factor_secret) 
+                                 VALUES ($1, $2, $3, $4, $5, $6) 
+                                 ON CONFLICT (email) DO UPDATE 
+                                 SET password = EXCLUDED.password, 
+                                     role = EXCLUDED.role,
+                                     name = EXCLUDED.name,
+                                     org = EXCLUDED.org,
+                                     two_factor_secret = EXCLUDED.two_factor_secret`,
+                                [email, userDetails.password, userDetails.role, userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
+                            );
+                        }
+                        console.log('[DB] ✅ Users synchronized from database.json to PostgreSQL.');
+                    }
+                } catch (e) {
+                    console.error('[DB] ❌ Users synchronization error:', e);
+                }
+            }
+
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
         } catch (e) {
             console.error('[DB] ❌ テーブル作成エラー:', e);
@@ -152,6 +180,17 @@ if (process.env.DATABASE_URL) {
                     )
                 `);
 
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS users (
+                        email TEXT PRIMARY KEY,
+                        password TEXT NOT NULL,
+                        role TEXT NOT NULL,
+                        name TEXT,
+                        org TEXT,
+                        two_factor_secret TEXT
+                    )
+                `);
+
                 sqliteDb.get("SELECT COUNT(*) as count FROM products", (err, row) => {
                     if (row && row.count === 0) {
                         const defaultProducts = [
@@ -176,6 +215,36 @@ if (process.env.DATABASE_URL) {
                         console.log('[Database] ✅ SQLite 初期商品マスタの登録が完了しました。');
                     }
                 });
+
+                // database.json からユーザー情報を SQLite の users テーブルに同期
+                const fs = require('fs');
+                const path = require('path');
+                const jsonPath = path.resolve(__dirname, 'database.json');
+                if (fs.existsSync(jsonPath)) {
+                    try {
+                        const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                        if (data.users) {
+                            const stmt = sqliteDb.prepare(`
+                                INSERT OR REPLACE INTO users (email, password, role, name, org, two_factor_secret) 
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            `);
+                            for (const [email, userDetails] of Object.entries(data.users)) {
+                                stmt.run([
+                                    email, 
+                                    userDetails.password, 
+                                    userDetails.role, 
+                                    userDetails.name || null, 
+                                    userDetails.org || null, 
+                                    userDetails.twoFactorSecret || null
+                                ]);
+                            }
+                            stmt.finalize();
+                            console.log('[Database] ✅ Users synchronized from database.json to SQLite.');
+                        }
+                    } catch (e) {
+                        console.error('[Database] ❌ SQLite Users synchronization error:', e);
+                    }
+                }
             });
         }
     });
