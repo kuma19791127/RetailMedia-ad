@@ -1316,13 +1316,7 @@ app.post('/api/auth/logout', (req, res) => {
     res.json({ success: true });
 });
 
-app.post('/api/auth/reset-password', (req, res) => {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
 
-    console.log(`[Auth] 📧 Password Reset Link Sent to: ${email}`);
-    res.json({ success: true });
-});
 
 function getRedirectUrl(role) {
     if (role === 'advertiser') return '/ad_dashboard.html';
