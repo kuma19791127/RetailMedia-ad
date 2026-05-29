@@ -321,7 +321,7 @@
                                         const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email })
+                                            body: JSON.stringify({ email, role: 'store' })
                                         });
                                         const resetData = await resetRes.json();
                                         if (resetData.success) {
@@ -341,7 +341,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode })
+                            body: JSON.stringify({ email, token: totpCode, role: 'store' })
                         });
                         const verifyData = await verifyRes.json();
                         
@@ -362,7 +362,7 @@
                                     const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email })
+                                        body: JSON.stringify({ email, role: 'store' })
                                     });
                                     const resetData = await resetRes.json();
                                     if (resetData.success) {
@@ -381,7 +381,7 @@
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
+                            body: JSON.stringify({ email, role: 'store' })
                         });
                         const setupData = await setupRes.json();
 
@@ -408,7 +408,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret })
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'store' })
                         });
                         const verifyData = await verifyRes.json();
 

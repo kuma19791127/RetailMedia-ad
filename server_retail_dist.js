@@ -1077,10 +1077,11 @@ app.post('/api/auth/2fa/setup', async (req, res) => {
 
 
 app.post('/api/auth/2fa/verify', async (req, res) => {
-    const { email, token } = req.body;
+    const { email, token, role } = req.body;
     try {
         const speakeasy = require('speakeasy');
-        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        const targetRole = role || 'store';
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
         
         if (user && user.two_factor_secret) {
             const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 1 });
@@ -1105,14 +1106,15 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
 });
 
 app.post('/api/auth/2fa/enable', async (req, res) => {
-    const { email, secret, token } = req.body;
+    const { email, secret, token, role } = req.body;
     try {
         const speakeasy = require('speakeasy');
+        const targetRole = role || 'store';
         const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
-        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
 
         if (verified && user) {
-            await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ?', [secret, email]);
+            await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [secret, email, targetRole]);
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
 
@@ -1299,16 +1301,35 @@ app.post('/api/auth/reset-password', async (req, res) => {
 });
 
 app.post('/api/auth/reset-2fa', async (req, res) => {
-    const { email } = req.body;
+    const { email, role } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
 
     try {
-        await dbHelper.query.run(
-            'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
-            [email]
-        );
+        if (role) {
+            await dbHelper.query.run(
+                'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
+                [email, role]
+            );
+            const key = role === 'store' ? email : `${email}:${role}`;
+            if (typeof users !== 'undefined' && users[key]) {
+                users[key].twoFactorSecret = null;
+            }
+            console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${role})`);
+        } else {
+            await dbHelper.query.run(
+                'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
+                [email]
+            );
+            if (typeof users !== 'undefined') {
+                for (const key of Object.keys(users)) {
+                    if (key === email || key.startsWith(email + ':')) {
+                        users[key].twoFactorSecret = null;
+                    }
+                }
+            }
+            console.log(`[Auth] 🔐 2FA Secret Reset for all roles of: ${email}`);
+        }
         res.json({ success: true });
-        console.log(`[Auth] 🔐 2FA Secret Reset for: ${email}`);
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: e.message });

@@ -1554,7 +1554,7 @@
                 
                 if (data.require2FASetup) {
                     // --- NATIVE HTML 2FA (NO SWEETALERT) ---
-                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user})});
+                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, role: 'admin'})});
                     const qrData = await qrRes.json();
                     
                     document.getElementById('native-2fa-qr').src = qrData.qrcode;
@@ -1569,7 +1569,7 @@
                             const code = document.getElementById('native-2fa-code').value.trim();
                             if(!code) return;
                             
-                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, secret: qrData.secret})});
+                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, secret: qrData.secret, role: 'admin'})});
                             const vData = await vRes.json();
                             
                             if(vData.success) {
@@ -1626,7 +1626,7 @@
                             const code = document.getElementById('native-2fa-verify-code').value.trim();
                             if(!code) return;
                             
-                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code})});
+                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, role: 'admin'})});
                             const vData = await vRes.json();
                             
                             if(vData.success) {

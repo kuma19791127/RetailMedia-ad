@@ -781,7 +781,7 @@ window.addEventListener('DOMContentLoaded', () => {
                                         const resetRes = await fetch(`${API_URL}/api/auth/reset-2fa`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email })
+                                            body: JSON.stringify({ email, role: 'store' })
                                         });
                                         const resetData = await resetRes.json();
                                         if (resetData.success) {
@@ -801,7 +801,7 @@ window.addEventListener('DOMContentLoaded', () => {
                         const verifyRes = await fetch(`${API_URL}/api/auth/2fa/verify`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode })
+                            body: JSON.stringify({ email, token: totpCode, role: 'store' })
                         });
                         const verifyData = await verifyRes.json();
                         
@@ -822,7 +822,7 @@ window.addEventListener('DOMContentLoaded', () => {
                                     const resetRes = await fetch(`${API_URL}/api/auth/reset-2fa`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email })
+                                        body: JSON.stringify({ email, role: 'store' })
                                     });
                                     const resetData = await resetRes.json();
                                     if (resetData.success) {
