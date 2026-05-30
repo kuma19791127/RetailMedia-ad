@@ -32,7 +32,7 @@ app.use(cookieParser());
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
 const getDatabaseRole = (role) => {
-    if (['store', 'advertiser', 'agency', 'creator'].includes(role)) {
+    if (['store', 'advertiser', 'agency', 'creator', 'retailer'].includes(role)) {
         return 'store';
     }
     return role;
@@ -1186,16 +1186,17 @@ app.post('/api/auth/login', async (req, res) => {
                 user.org = org;
                 updated = true;
             }
-            if (role && user.role !== role && !email.includes('@demo.com')) {
+            const targetRoleToUpdate = getDatabaseRole(role);
+            if (role && user.role !== targetRoleToUpdate && !email.includes('@demo.com')) {
                 updateSql += 'role = ?, ';
-                updateParams.push(role);
-                user.role = role;
+                updateParams.push(targetRoleToUpdate);
+                user.role = targetRoleToUpdate;
                 updated = true;
             }
             
             if (updated) {
-                updateSql = updateSql.slice(0, -2) + ' WHERE email = ?';
-                updateParams.push(email);
+                updateSql = updateSql.slice(0, -2) + ' WHERE email = ? AND role = ?';
+                updateParams.push(email, dbRole);
                 await dbHelper.query.run(updateSql, updateParams);
             }
         }
