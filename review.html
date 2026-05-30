@@ -312,6 +312,8 @@ async function loadKYCReq() {
                         const setupData = await setupRes.json();
                         console.log("[Auth] 2FA setup response:", setupData);
 
+                        Swal.close(); // Close the loading modal first to prevent Swal deadlock
+
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証の有効化',
                             html: `
