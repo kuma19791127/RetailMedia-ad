@@ -129,16 +129,23 @@
       "twoFactorSecret": null
     },
     "buzzkun0807@gmail.com": {
-      "password": "a050ee2086c4c784632355e9c9d14907:3dc4b2001a680ca373e113b2317a9a1687b0e6617cd4700eceb0ff5a9a70ee5faf6bd64078d20a9c46f81aac871d7894d0c8fcf909a872229ed4c2246cd9794c",
+      "password": "7239b59b231a1d4eb7ff5e4814eda97e:97c02e36cb889f77a7c21ff8f4f0aba81de49d43b3af6a31ee0fb787428881307097c9862dfc6b21186802ecded5e0138d59fb6f4f45abfaa18bd37abd1be25b",
       "role": "store",
       "name": "熊澤",
       "org": "Demo Corp",
       "twoFactorSecret": null
     },
     "buzzkun0807@gmail.com:admin": {
-      "password": "c6bfc81c2ce446773b917da25cf0db80:610d427bde15aab78bfd275d2063430504801beec77cf5629c7b0ad071b5468847ee8812f764f2c9d8fb2078875115491784a32a221fb1e88b8838679e78cb12",
+      "password": "e17ba7fd151cc30a97e21f8120fe5b48:aeac2f5f11990ef724aabb53513c3e021f23fb36b629d32059caa8e516eadabec94b4886b1948cfbc6173e5bb75e11b16ea2597f016279c2f2eab7dcb7a526cc",
       "role": "admin",
       "name": "熊澤 (管理者)",
+      "org": "Demo Corp",
+      "twoFactorSecret": null
+    },
+    "buzzkun0807@gmail.com:review": {
+      "password": "9e6b6953f512cba600f5ffce2fd3b9ee:da924fdcfa5f7145c1063165080b004929125048eb44d8d6aa1f4b91fc8717c1eaedac13c75e6e2d7ca9f368154c2dfb9689babf4e8652172dc2dcc10d79f59d",
+      "role": "review",
+      "name": "熊澤 (審査員)",
       "org": "Demo Corp",
       "twoFactorSecret": null
     }

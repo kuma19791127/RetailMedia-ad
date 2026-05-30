@@ -256,7 +256,7 @@ async function loadKYCReq() {
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: pass, role: 'admin' })
+                    body: JSON.stringify({ email: email, password: pass, role: 'review' })
                 });
                 const data = await response.json();
                 
@@ -282,7 +282,7 @@ async function loadKYCReq() {
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode })
+                            body: JSON.stringify({ email, token: totpCode, role: 'review' })
                         });
                         const verifyData = await verifyRes.json();
                         
@@ -300,7 +300,7 @@ async function loadKYCReq() {
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
+                            body: JSON.stringify({ email, role: 'review' })
                         });
                         const setupData = await setupRes.json();
 
@@ -327,7 +327,7 @@ async function loadKYCReq() {
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret })
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'review' })
                         });
                         const verifyData = await verifyRes.json();
 

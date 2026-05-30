@@ -31,6 +31,13 @@ app.use(cookieParser());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
+const getDatabaseRole = (role) => {
+    if (['store', 'advertiser', 'agency', 'creator'].includes(role)) {
+        return 'store';
+    }
+    return role;
+};
+
 // Password Hashing Utility (scryptSync)
 const hashPassword = (password) => {
     const salt = crypto.randomBytes(16).toString('hex');
@@ -1048,13 +1055,14 @@ app.post('/api/auth/register', async (req, res) => {
 
 // --- 2FA Setup ---
 app.post('/api/auth/2fa/setup', async (req, res) => {
-    const { email } = req.body;
+    const { email, role } = req.body;
     try {
         const speakeasy = require('speakeasy');
         const qrcode = require('qrcode');
+        const targetRole = getDatabaseRole(role || 'store');
         
         let label = `RetailMedia (${email})`;
-        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
         if (user) {
             if (user.role === 'admin') {
                 label = `RetailMedia (Admin: ${email})`;
@@ -1080,7 +1088,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
     const { email, token, role } = req.body;
     try {
         const speakeasy = require('speakeasy');
-        const targetRole = role || 'store';
+        const targetRole = getDatabaseRole(role || 'store');
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
         
         if (user && user.two_factor_secret) {
@@ -1109,7 +1117,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
     const { email, secret, token, role } = req.body;
     try {
         const speakeasy = require('speakeasy');
-        const targetRole = role || 'store';
+        const targetRole = getDatabaseRole(role || 'store');
         const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
 
@@ -1136,18 +1144,18 @@ app.post('/api/auth/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     try {
-        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, role || 'store']);
+        const dbRole = getDatabaseRole(role || 'store');
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
 
         // Auto-Register if user does not exist (to keep the ease of demo but persist data)
         if (!user) {
-            const defaultRole = role || "store";
             const hashedPassword = hashPassword(password);
             await dbHelper.query.run(
                 'INSERT INTO users (email, password, role, name, org) VALUES (?, ?, ?, ?, ?)',
-                [email, hashedPassword, defaultRole, name || null, org || null]
+                [email, hashedPassword, dbRole, name || null, org || null]
             );
-            user = { email, password: hashedPassword, role: defaultRole, name, org, two_factor_secret: null };
-            console.log(`[Auth] 🆕 Auto-Registered: ${email} (${defaultRole})`);
+            user = { email, password: hashedPassword, role: dbRole, name, org, two_factor_secret: null };
+            console.log(`[Auth] 🆕 Auto-Registered: ${email} (${dbRole})`);
         } else {
             // デモアカウント用のパスワード整合性救済措置
             // もし入力されたのがデモ用の正しいパスワード（demo1234!! または DemoPass2026!）で、DBのパスワードと一致しない場合、
