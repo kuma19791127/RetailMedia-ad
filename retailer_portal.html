@@ -284,16 +284,21 @@
                 return;
             }
 
+            console.log("[Auth] Form submitted. Email:", email, "Role: store");
             try {
+                console.log("[Auth] Sending login request to:", window.API_BASE_URL + '/api/auth/login');
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email, password: pass, role: 'store' })
                 });
+                console.log("[Auth] Response status:", response.status);
                 const data = await response.json();
+                console.log("[Auth] Response data:", data);
                 
                 if (data.success) {
                     if (data.require2FA) {
+                        console.log("[Auth] Require 2FA verification");
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証コード',
                             text: '認証アプリに表示されている6桁のコードを入力してください。',
@@ -377,13 +382,16 @@
                     }
 
                     if (data.require2FASetup) {
+                        console.log("[Auth] Require 2FA Setup");
                         Swal.fire({ title: '2FA初期設定中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        console.log("[Auth] Requesting 2FA setup details...");
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, role: 'store' })
                         });
                         const setupData = await setupRes.json();
+                        console.log("[Auth] 2FA setup response:", setupData);
 
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証の有効化',

@@ -1544,18 +1544,25 @@
             }
             const pass = document.getElementById('admin-pass').value.trim();
 
+            console.log("[Auth] Form submitted. Email:", user, "Role: admin");
             try {
+                console.log("[Auth] Sending login request to:", window.API_BASE_URL + '/api/auth/login');
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: user, password: pass, role: 'admin' })
                 });
+                console.log("[Auth] Response status:", response.status);
                 const data = await response.json();
+                console.log("[Auth] Response data:", data);
                 
                 if (data.require2FASetup) {
+                    console.log("[Auth] Require 2FA Setup");
                     // --- NATIVE HTML 2FA (NO SWEETALERT) ---
+                    console.log("[Auth] Requesting 2FA setup details...");
                     const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, role: 'admin'})});
                     const qrData = await qrRes.json();
+                    console.log("[Auth] 2FA setup response:", qrData);
                     
                     document.getElementById('native-2fa-qr').src = qrData.qrcode;
                     document.getElementById('native-2fa-overlay').style.display = 'flex';
@@ -1589,6 +1596,7 @@
                 }
 
                 if (data.require2FA) {
+                    console.log("[Auth] Require 2FA verification");
                     document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
                     
                     const verificationSuccess = await new Promise((resolve) => {
