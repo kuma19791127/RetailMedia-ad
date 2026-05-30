@@ -1297,10 +1297,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
             'UPDATE users SET password = ? WHERE email = ? AND role = ?',
             [hashedPassword, email, targetRole]
         );
-        const key = targetRole === 'store' ? email : `${email}:${targetRole}`;
-        if (typeof users !== 'undefined' && users[key]) {
-            users[key].password = hashedPassword;
-        }
         console.log(`[Auth] 🔑 Password Reset: ${email} (${targetRole}) inside Database`);
         res.json({ success: true });
     } catch (e) {
@@ -1319,23 +1315,12 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
                 [email, role]
             );
-            const key = role === 'store' ? email : `${email}:${role}`;
-            if (typeof users !== 'undefined' && users[key]) {
-                users[key].twoFactorSecret = null;
-            }
             console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${role})`);
         } else {
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
                 [email]
             );
-            if (typeof users !== 'undefined') {
-                for (const key of Object.keys(users)) {
-                    if (key === email || key.startsWith(email + ':')) {
-                        users[key].twoFactorSecret = null;
-                    }
-                }
-            }
             console.log(`[Auth] 🔐 2FA Secret Reset for all roles of: ${email}`);
         }
         res.json({ success: true });
