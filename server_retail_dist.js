@@ -29,6 +29,35 @@ const cookieParser = require('cookie-parser');
 const app = express();
 app.use(cookieParser());
 
+// Global CORS & Credentials config (applied before any route definition)
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        callback(null, true); // Allow any origin dynamically with credentials
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true
+}));
+
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+// Global Body Parser config (applied before any route definition)
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
 const getDatabaseRole = (role) => {
@@ -78,29 +107,6 @@ app.get('/api/db-status', async (req, res) => {
 
 const PORT = 3000;
 
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-        callback(null, true); // Allow any origin dynamically with credentials
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    credentials: true
-}));
-
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
 
 // --- Product Master API ---
 app.get('/api/products/master', async (req, res) => {
@@ -223,8 +229,6 @@ app.post('/api/signage/schedule_voice', (req, res) => {
     res.json({ success: true, message: "サイネージへ即時配信しました" });
 });
 
-app.use(express.json({ limit: '500mb' })); // Allow large file uploads (Base64)
-app.use(express.urlencoded({ limit: '500mb', extended: true }));
 express.static.mime.define({ 'video/quicktime': ['mov'] });
 app.use(express.static(__dirname, { dotfiles: 'allow' })); // Serve root files
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
