@@ -489,9 +489,7 @@
                         const setupData = await setupRes.json();
                         console.log("[Auth] 2FA setup response:", setupData);
                         
-                        console.log("[Auth] Calling Swal.close() to dismiss loading spinner...");
-                        Swal.close(); // Close the loading modal first to prevent Swal deadlock
-                        console.log("[Auth] Swal.close() finished. Opening 2FA setup modal...");
+                        console.log("[Auth] Opening 2FA setup modal directly (replacing loading spinner)...");
 
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証の有効化',
