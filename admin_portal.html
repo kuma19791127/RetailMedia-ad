@@ -1565,8 +1565,14 @@
                     const qrData = await qrRes.json();
                     console.log("[Auth] 2FA setup response:", qrData);
                     
-                    document.getElementById('native-2fa-qr').src = qrData.qrcode;
-                    document.getElementById('native-2fa-overlay').style.display = 'flex';
+                    console.log("[Auth] Updating native 2FA elements... QR Code length:", qrData.qrcode ? qrData.qrcode.length : 0);
+                    const qrElem = document.getElementById('native-2fa-qr');
+                    const overlayElem = document.getElementById('native-2fa-overlay');
+                    console.log("[Auth] Native elements check:", { qrElem: !!qrElem, overlayElem: !!overlayElem });
+                    
+                    if (qrElem) qrElem.src = qrData.qrcode;
+                    if (overlayElem) overlayElem.style.display = 'flex';
+                    console.log("[Auth] Native overlay visibility set to flex");
                     
                     // Return a Promise that waits for the user to submit the form
                     const verificationSuccess = await new Promise((resolve) => {
