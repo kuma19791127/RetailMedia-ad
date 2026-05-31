@@ -1134,6 +1134,15 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
 
         if (verified && user) {
             await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [secret, email, targetRole]);
+            
+            // メモリ上のusers変数も同期
+            const userKey = `${email}:${targetRole}`;
+            if (typeof users !== 'undefined' && users && users[userKey]) {
+                users[userKey].twoFactorSecret = secret;
+            } else if (typeof users !== 'undefined' && users && users[email]) {
+                users[email].twoFactorSecret = secret;
+            }
+
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
 
@@ -1303,12 +1312,28 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
                 [email, role]
             );
+            
+            // メモリ同期
+            const userKey = `${email}:${role}`;
+            if (typeof users !== 'undefined' && users && users[userKey]) {
+                users[userKey].twoFactorSecret = null;
+            } else if (typeof users !== 'undefined' && users && users[email]) {
+                users[email].twoFactorSecret = null;
+            }
             console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${role})`);
         } else {
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
                 [email]
             );
+            // メモリ同期
+            if (typeof users !== 'undefined' && users) {
+                for (const key in users) {
+                    if (key === email || key.startsWith(email + ':')) {
+                        users[key].twoFactorSecret = null;
+                    }
+                }
+            }
             console.log(`[Auth] 🔐 2FA Secret Reset for all roles of: ${email}`);
         }
         res.json({ success: true });
