@@ -3751,6 +3751,16 @@ Return ONLY a JSON object:
             agentData: result
         };
 
+        // RDS/SQLiteデータベースに直接保存
+        try {
+            await dbHelper.query.run(
+                'INSERT INTO campaigns (id, name, budget, status) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                [newPromo.id, newPromo.name, 0.0, newPromo.status]
+            );
+        } catch (dbErr) {
+            console.error('[DB Error] Failed to insert campaign from retailer agent:', dbErr.message);
+        }
+
         if (!database.campaigns) database.campaigns = [];
         database.campaigns.push(newPromo);
         saveDatabase(); 
