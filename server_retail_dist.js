@@ -1103,7 +1103,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
         
         if (user && user.two_factor_secret) {
-            const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 1 });
+            const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 2 });
             if (verified) {
                 const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
                 res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
@@ -1129,7 +1129,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
     try {
         const speakeasy = require('speakeasy');
         const targetRole = getDatabaseRole(role || 'store');
-        const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 1 });
+        const verified = speakeasy.totp.verify({ secret: secret, encoding: 'base32', token: token, window: 2 });
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
 
         if (verified && user) {
@@ -1246,7 +1246,7 @@ app.post('/api/auth/login', async (req, res) => {
                         return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
                     } else if (totpCode) {
                         const speakeasy = require('speakeasy');
-                        const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 1 });
+                        const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 2 });
                         if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
 
                         // 2FA検証に成功したのでスキップクッキーを更新/発行
@@ -2792,6 +2792,7 @@ app.get('/api/agency/dashboard', (req, res) => {
 
 // --- CAMPAIGN MANAGEMENT API (Real-time Persistence) ---
 // In-Memory Database for Campaigns
+let users = {};
 let campaigns = [
     { id: 1, name: "Spring Sale 2026 (A/B Test)", start: "2026-03-01", end: "2026-03-31", budget: 10000, spend: 2500, imp: 2459, status: "active" },
     { id: 2, name: "New Product Launch Video", start: "2026-04-01", end: "2026-04-15", budget: 15000, spend: 0, imp: 0, status: "pending" }
