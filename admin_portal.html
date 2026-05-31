@@ -430,18 +430,7 @@
 </head>
 
 <body>
-        <!-- 外部API連携モジュール (Global) -->
-        <div style="background:#fff; border-left:5px solid #10b981; padding:15px; margin:20px; border-radius:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center; z-index: 1000; position: relative;">
-            <div>
-                <h4 style="margin:0; font-size:1.2rem; color:#2c3e50;">🔌 外部システム API自動連携</h4>
-                <p style="margin:5px 0 0 0; color:#666; font-size:0.9rem;">APIキーを使用して「振込」や「仕訳」を自動化します。</p>
-            </div>
-            <div>
-                <!-- 記帳は手動ボタンを残すか、anywhere_retailからの自動通信に任せるか。今回はUIとして残す -->
-                <button onclick="syncFreeeApi()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; margin-right:10px; box-shadow:0 2px 4px rgba(16,185,129,0.3);">☁️ freee 自動記帳</button>
-                <button onclick="syncGmoApi()" style="background:#14b8a6; color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(20,184,166,0.3);">🏦 GMO銀行 自動振込</button>
-            </div>
-        </div>
+
     
 
     <!-- Login Overlay -->
@@ -517,7 +506,15 @@
             <div class="nav-item" id="nav-aml" onclick="switchTab('aml')">
                 🚨 AML・不正取引監視
             </div>
-<div style="margin-top: auto; padding: 20px;">
+<div style="margin-top: auto; padding: 20px; border-top: 1px solid #34495e;">
+                <div style="margin-bottom: 15px; padding: 12px; background: #2c3e50; border-radius: 6px; text-align: left;">
+                    <h4 style="margin:0; font-size:0.9rem; color:#fff; display: flex; align-items: center; gap: 4px;">🔌 外部システム連携</h4>
+                    <p style="margin:4px 0 8px 0; color:#bdc3c7; font-size:0.75rem; line-height: 1.35;">APIキーを使用して「振込」や「仕訳」を自動化します。</p>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button onclick="syncFreeeApi()" style="background:#10b981; color:#fff; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(16,185,129,0.2);">☁️ freee 自動記帳</button>
+                        <button onclick="syncGmoApi()" style="background:#14b8a6; color:#fff; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(20,184,166,0.2);">🏦 GMO銀行 自動振込</button>
+                    </div>
+                </div>
                 <button onclick="logoutAdmin()" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;">
                     🚪 ログアウト
                 </button>
