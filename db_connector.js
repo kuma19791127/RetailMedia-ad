@@ -131,7 +131,7 @@ if (process.env.DATABASE_URL) {
                                  SET password = EXCLUDED.password, 
                                      name = EXCLUDED.name,
                                      org = EXCLUDED.org,
-                                     two_factor_secret = EXCLUDED.two_factor_secret`,
+                                     two_factor_secret = COALESCE(users.two_factor_secret, EXCLUDED.two_factor_secret)`,
                                 [email, userDetails.password, role, userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
                             );
                         }
@@ -246,8 +246,13 @@ if (process.env.DATABASE_URL) {
                         const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
                         if (data.users) {
                             const stmt = sqliteDb.prepare(`
-                                INSERT OR REPLACE INTO users (email, password, role, name, org, two_factor_secret) 
+                                INSERT INTO users (email, password, role, name, org, two_factor_secret) 
                                 VALUES (?, ?, ?, ?, ?, ?)
+                                ON CONFLICT(email, role) DO UPDATE SET
+                                    password = EXCLUDED.password,
+                                    name = EXCLUDED.name,
+                                    org = EXCLUDED.org,
+                                    two_factor_secret = COALESCE(users.two_factor_secret, EXCLUDED.two_factor_secret)
                             `);
                             for (const [key, userDetails] of Object.entries(data.users)) {
                                 let email = key;
