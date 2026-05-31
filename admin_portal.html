@@ -1561,9 +1561,7 @@
                     const qrData = await qrRes.json();
                     console.log("[Auth] 2FA setup response:", qrData);
                     
-                    console.log("[Auth] Calling Swal.close() to dismiss loading spinner...");
-                    Swal.close();
-                    console.log("[Auth] Swal.close() finished. Opening 2FA setup modal...");
+                    console.log("[Auth] Opening 2FA setup modal directly (replacing loading spinner)...");
 
                     const { value: totpCode } = await Swal.fire({
                         title: '🔑 2段階認証の有効化',
@@ -1754,8 +1752,7 @@
                 });
                 const qrData = await qrRes.json();
                 
-                Swal.close();
-
+                // Directly call Swal.fire to replace the loader to avoid modal race condition
                 const { value: totpCode } = await Swal.fire({
                     title: '🔑 2段階認証の有効化',
                     html: `
