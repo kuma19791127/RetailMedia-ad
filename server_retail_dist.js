@@ -3265,7 +3265,7 @@ async function syncMemoryToDB() {
             if (typeof users !== 'undefined' && users) {
                 for (const [email, u] of Object.entries(users)) {
                     await dbHelper.query.run(
-                        'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
+                        'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email, role) DO NOTHING',
                         [email, u.password || '', u.role || 'store', u.name || null, u.org || null, u.twoFactorSecret || null]
                     );
                 }
@@ -3440,7 +3440,7 @@ setInterval(async () => {
                     for (const email in mappedUsers) {
                         const u = mappedUsers[email];
                         await pool.query(
-                            'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
+                            'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (email, role) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name, org = EXCLUDED.org, two_factor_secret = EXCLUDED.two_factor_secret',
                             [email, u.password, u.role, u.name, u.org, u.twoFactorSecret]
                         );
                     }
