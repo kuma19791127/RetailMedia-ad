@@ -1559,104 +1559,117 @@
                 
                 if (data.require2FASetup) {
                     console.log("[Auth] Require 2FA Setup");
-                    // --- NATIVE HTML 2FA (NO SWEETALERT) ---
+                    Swal.fire({ title: '2FA初期設定中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     console.log("[Auth] Requesting 2FA setup details...");
-                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, role: 'admin'})});
+                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { 
+                        method: 'POST', 
+                        headers: {'Content-Type':'application/json'}, 
+                        body: JSON.stringify({email: user, role: 'admin'})
+                    });
                     const qrData = await qrRes.json();
                     console.log("[Auth] 2FA setup response:", qrData);
                     
-                    console.log("[Auth] Updating native 2FA elements... QR Code length:", qrData.qrcode ? qrData.qrcode.length : 0);
-                    const qrElem = document.getElementById('native-2fa-qr');
-                    const overlayElem = document.getElementById('native-2fa-overlay');
-                    console.log("[Auth] Native elements check:", { qrElem: !!qrElem, overlayElem: !!overlayElem });
-                    
-                    if (qrElem) qrElem.src = qrData.qrcode;
-                    if (overlayElem) overlayElem.style.display = 'flex';
-                    console.log("[Auth] Native overlay visibility set to flex");
-                    
-                    // Return a Promise that waits for the user to submit the form
-                    const verificationSuccess = await new Promise((resolve) => {
-                        const submitBtn = document.getElementById('native-2fa-submit');
-                        const errorMsg = document.getElementById('native-2fa-error');
-                        
-                        submitBtn.onclick = async () => {
-                            const code = document.getElementById('native-2fa-code').value.trim();
-                            if(!code) return;
-                            
-                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, secret: qrData.secret, role: 'admin'})});
-                            const vData = await vRes.json();
-                            
-                            if(vData.success) {
-                                document.getElementById('native-2fa-overlay').style.display = 'none';
-                                resolve(true);
-                            } else {
-                                errorMsg.style.display = 'block';
-                            }
-                        };
+                    console.log("[Auth] Calling Swal.close() to dismiss loading spinner...");
+                    Swal.close();
+                    console.log("[Auth] Swal.close() finished. Opening 2FA setup modal...");
+
+                    const { value: totpCode } = await Swal.fire({
+                        title: '🔑 2段階認証の有効化',
+                        html: `
+                            <p style="font-size:0.9rem;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
+                            <img src="${qrData.qrcode}" style="margin: 15px auto; display:block; max-width:180px;">
+                            <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${qrData.secret}</code></p>
+                        `,
+                        input: 'text',
+                        inputPlaceholder: '6桁のコード',
+                        showCancelButton: true,
+                        confirmButtonText: '有効化する',
+                        cancelButtonText: 'キャンセル',
+                        inputValidator: (value) => {
+                            if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                        }
                     });
-                    
-                    if(verificationSuccess) {
-                        data.success = true; // Proceed to login
+
+                    if (!totpCode) return;
+
+                    Swal.fire({ title: '設定検証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { 
+                        method: 'POST', 
+                        headers: {'Content-Type':'application/json'}, 
+                        body: JSON.stringify({email: user, token: totpCode, secret: qrData.secret, role: 'admin'})
+                    });
+                    const verifyData = await verifyRes.json();
+
+                    if (verifyData.success) {
+                        Swal.close();
+                        data.success = true;
                     } else {
-                        return; // Abort
+                        Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
+                        return;
                     }
                 }
 
                 if (data.require2FA) {
                     console.log("[Auth] Require 2FA verification");
-                    document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
                     
-                    const verificationSuccess = await new Promise((resolve) => {
-                        const submitBtn = document.getElementById('native-2fa-verify-submit');
-                        const errorMsg = document.getElementById('native-2fa-verify-error');
-                        const resetBtn = document.getElementById('native-2fa-verify-reset');
-                        
-                        resetBtn.onclick = async () => {
-                            const confirmReset = await Swal.fire({
-                                title: '2FAの再設定',
-                                text: '現在の二段階認証設定を削除し、新しいQRコードを発行しますか？',
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonText: 'はい、再設定する',
-                                cancelButtonText: 'キャンセル'
-                            });
-                            if (confirmReset.isConfirmed) {
-                                document.getElementById('native-2fa-verify-overlay').style.display = 'none';
-                                const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ email: user })
-                                });
-                                const resetData = await resetRes.json();
-                                if (resetData.success) {
-                                    Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
-                                    resolve(false);
-                                } else {
-                                    Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
-                                }
-                            }
-                        };
-
-                        submitBtn.onclick = async () => {
-                            const code = document.getElementById('native-2fa-verify-code').value.trim();
-                            if(!code) return;
-                            
-                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: user, token: code, role: 'admin'})});
-                            const vData = await vRes.json();
-                            
-                            if(vData.success) {
-                                document.getElementById('native-2fa-verify-overlay').style.display = 'none';
-                                resolve(true);
-                            } else {
-                                errorMsg.style.display = 'block';
-                            }
-                        };
+                    const result = await Swal.fire({
+                        title: '🔑 2段階認証コード入力',
+                        text: '6桁の認証コードを入力してください。',
+                        input: 'text',
+                        inputPlaceholder: '6桁のコード',
+                        showCancelButton: true,
+                        confirmButtonText: '検証する',
+                        cancelButtonText: 'キャンセル',
+                        showDenyButton: true,
+                        denyButtonText: '2FAを再設定する',
+                        denyButtonColor: '#d33',
+                        inputValidator: (value) => {
+                            if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                        }
                     });
-                    
-                    if(verificationSuccess) {
-                        data.success = true;
-                    } else {
+
+                    if (result.isConfirmed) {
+                        const totpCode = result.value;
+                        Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: user, token: totpCode, role: 'admin' })
+                        });
+                        const verifyData = await verifyRes.json();
+                        
+                        if (verifyData.success) {
+                            Swal.close();
+                            data.success = true;
+                        } else {
+                            Swal.fire('認証エラー', verifyData.error || '認証コードが違います。', 'error');
+                            return;
+                        }
+                    } else if (result.isDenied) {
+                        const confirmReset = await Swal.fire({
+                            title: '2FAの再設定',
+                            text: '現在の二段階認証設定を削除し、新しいQRコードを発行しますか？',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'はい、再設定する',
+                            cancelButtonText: 'キャンセル'
+                        });
+                        if (confirmReset.isConfirmed) {
+                            const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: user, role: 'admin' })
+                            });
+                            const resetData = await resetRes.json();
+                            if (resetData.success) {
+                                Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
+                            } else {
+                                Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                            }
+                        }
                         return;
+                    } else {
+                        return; // Cancelled
                     }
                 }
 
