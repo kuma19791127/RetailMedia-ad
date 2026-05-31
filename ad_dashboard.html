@@ -1072,7 +1072,10 @@
                         <i class="fas fa-robot"></i> 広告主向け 自動運用エージェント <a href="ad_dashboard-LP.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #fff; text-decoration: underline;">[機能の詳細を見る]</a>
                     </div>
                     <div class="agent-body">
-                        <textarea id="aiAgentInput" placeholder="例: 来週の火曜日から夏物飲料のキャンペーンを予算5万円でやりたい" rows="2"></textarea>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <textarea id="aiAgentInput" placeholder="例: 来週の火曜日から夏物飲料のキャンペーンを予算5万円でやりたい" rows="2"></textarea>
+                            <span style="font-size: 0.75rem; color: #64748b;">※チャット履歴は保存されません（リロードや画面遷移でクリアされます）</span>
+                        </div>
                         <button onclick="runAdvertiserAgent()" id="aiAgentBtn">
                             <i class="fas fa-paper-plane"></i> 指示を送信
                         </button>
