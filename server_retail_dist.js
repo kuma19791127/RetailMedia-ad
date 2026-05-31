@@ -3240,10 +3240,17 @@ async function syncMemoryToDB() {
             
             // 1. Users
             if (typeof users !== 'undefined' && users) {
-                for (const [email, u] of Object.entries(users)) {
+                for (const [key, u] of Object.entries(users)) {
+                    let email = key;
+                    let role = u.role || 'store';
+                    if (key.includes(':')) {
+                        const parts = key.split(':');
+                        email = parts[0];
+                        role = parts[1];
+                    }
                     await dbHelper.query.run(
                         'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email, role) DO NOTHING',
-                        [email, u.password || '', u.role || 'store', u.name || null, u.org || null, u.twoFactorSecret || null]
+                        [email, u.password || '', role, u.name || null, u.org || null, u.twoFactorSecret || null]
                     );
                 }
             }
@@ -3342,7 +3349,8 @@ setInterval(async () => {
         // Map SQLite rows to database.json schema format
         const mappedUsers = {};
         dbUsers.forEach(u => {
-            mappedUsers[u.email] = {
+            const key = `${u.email}:${u.role}`;
+            mappedUsers[key] = {
                 password: u.password,
                 role: u.role,
                 name: u.name,
