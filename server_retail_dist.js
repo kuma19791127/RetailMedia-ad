@@ -1367,6 +1367,8 @@ function getRedirectUrl(role) {
     if (role === 'advertiser') return '/ad_dashboard.html';
     if (role === 'agency') return '/agency_portal.html';
     if (role === 'creator') return '/creator_portal.html';
+    if (role === 'admin') return '/admin_portal.html';
+    if (role === 'review') return '/review.html';
     return '/store_portal.html'; // Default
 }
 
