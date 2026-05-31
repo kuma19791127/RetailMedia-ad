@@ -1158,88 +1158,58 @@ app.post('/api/auth/login', async (req, res) => {
         const dbRole = getDatabaseRole(role || 'store');
         let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
 
-        // Auto-Register if user does not exist (to keep the ease of demo but persist data)
         if (!user) {
-            const hashedPassword = hashPassword(password);
-            await dbHelper.query.run(
-                'INSERT INTO users (email, password, role, name, org) VALUES (?, ?, ?, ?, ?)',
-                [email, hashedPassword, dbRole, name || null, org || null]
-            );
-            user = { email, password: hashedPassword, role: dbRole, name, org, two_factor_secret: null };
-            console.log(`[Auth] 🆕 Auto-Registered: ${email} (${dbRole})`);
-        } else {
-            // デモアカウント用のパスワード整合性救済措置
-            // もし入力されたのがデモ用の正しいパスワード（demo1234!! または DemoPass2026!）で、DBのパスワードと一致しない場合、
-            // DB側のパスワードを現在の入力パスワードで上書き・更新してログインを許可する。
-            const isDemoAccount = email.endsWith('@retail.com') || email.endsWith('@demo.com') || email === 'demo@retail-ad.com';
-            const isDemoPassword = password === 'demo1234!!' || password === 'DemoPass2026!';
-            if (isDemoAccount && isDemoPassword && !verifyPassword(password, user.password)) {
-                const hashedPassword = hashPassword(password);
-                await dbHelper.query.run('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
-                user.password = hashedPassword;
-                console.log(`[Auth] 🔄 Demo Password Auto-Reset for: ${email}`);
-            }
-
-            // Update name, org, and role if provided and different
-            let updated = false;
-            let updateSql = 'UPDATE users SET ';
-            const updateParams = [];
-            
-            if (name && user.name !== name) {
-                updateSql += 'name = ?, ';
-                updateParams.push(name);
-                user.name = name;
-                updated = true;
-            }
-            if (org && user.org !== org) {
-                updateSql += 'org = ?, ';
-                updateParams.push(org);
-                user.org = org;
-                updated = true;
-            }
-            const targetRoleToUpdate = getDatabaseRole(role);
-            if (role && user.role !== targetRoleToUpdate && !email.includes('@demo.com')) {
-                updateSql += 'role = ?, ';
-                updateParams.push(targetRoleToUpdate);
-                user.role = targetRoleToUpdate;
-                updated = true;
-            }
-            
-            if (updated) {
-                updateSql = updateSql.slice(0, -2) + ' WHERE email = ? AND role = ?';
-                updateParams.push(email, dbRole);
-                await dbHelper.query.run(updateSql, updateParams);
-            }
+            console.log(`[Auth] ❌ Login Failed: Email not registered: ${email} (${dbRole})`);
+            return res.json({ success: false, error: "メールアドレスが登録されていません。" });
         }
 
-        if (user && verifyPassword(password, user.password)) {
-            // 2FAスキップクッキーの検証
-            let skip2FA = false;
-            if (req.cookies && req.cookies['2fa_skip']) {
-                try {
-                    const decoded = jwt.verify(req.cookies['2fa_skip'], JWT_SECRET);
-                    if (decoded && decoded.email === email && decoded.skip2FA) {
-                        skip2FA = true;
-                    }
-                } catch (err) {
-                    // クッキーが無効または期限切れ
-                }
-            }
+        // デモアカウント用のパスワード整合性救済措置
+        const isDemoAccount = email.endsWith('@retail.com') || email.endsWith('@demo.com') || email === 'demo@retail-ad.com';
+        const isDemoPassword = password === 'demo1234!!' || password === 'DemoPass2026!';
+        if (isDemoAccount && isDemoPassword && !verifyPassword(password, user.password)) {
+            const hashedPassword = hashPassword(password);
+            await dbHelper.query.run('UPDATE users SET password = ? WHERE email = ? AND role = ?', [hashedPassword, email, dbRole]);
+            user.password = hashedPassword;
+            console.log(`[Auth] 🔄 Demo Password Auto-Reset for: ${email}`);
+        }
 
-            const isDemoUser = email.endsWith('@demo.com') || 
-                               email.endsWith('@retail.com') || 
-                               email === 'demo@retail-ad.com' ||
-                               email.includes('google') ||
-                               email.includes('playtest') ||
-                               email.includes('tester');
+        // Update name, org, and role if provided and different
+        let updated = false;
+        let updateSql = 'UPDATE users SET ';
+        const updateParams = [];
+        
+        if (name && user.name !== name) {
+            updateSql += 'name = ?, ';
+            updateParams.push(name);
+            user.name = name;
+            updated = true;
+        }
+        if (org && user.org !== org) {
+            updateSql += 'org = ?, ';
+            updateParams.push(org);
+            user.org = org;
+            updated = true;
+        }
+        const targetRoleToUpdate = getDatabaseRole(role);
+        if (role && user.role !== targetRoleToUpdate && !email.includes('@demo.com')) {
+            updateSql += 'role = ?, ';
+            updateParams.push(targetRoleToUpdate);
+            user.role = targetRoleToUpdate;
+            updated = true;
+        }
+        
+        if (updated) {
+            updateSql = updateSql.slice(0, -2) + ' WHERE email = ? AND role = ?';
+            updateParams.push(email, dbRole);
+            await dbHelper.query.run(updateSql, updateParams);
+        }
 
-
-
+        if (verifyPassword(password, user.password)) {
             currentUser = { email, role: user.role }; // Set Session
             res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
         } else {
-            console.log(`[Auth] ❌ Login Failed: ${email}`);
-            res.json({ success: false, error: "Invalid Email or Password" });
+            console.log(`[Auth] ❌ Login Failed: Password incorrect for: ${email}`);
+            res.json({ success: false, error: "パスワードが間違っています。" });
         }
     } catch (e) {
         console.error("[Auth Login Error]", e);
