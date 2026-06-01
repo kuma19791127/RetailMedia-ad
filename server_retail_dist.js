@@ -105,17 +105,6 @@ app.get('/api/db-status', async (req, res) => {
     }
 });
 
-app.get('/api/debug/outbound-ip', async (req, res) => {
-    try {
-        const fetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: f}) => f(...args)));
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        res.json({ success: true, ip: data.ip });
-    } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
-
 const PORT = 3000;
 
 
