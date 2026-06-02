@@ -48,14 +48,16 @@
                 <input type="password" id="login-pass" required placeholder="パスワード" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="current-password">
                 <button type="submit" style="background:#6366f1; color:white; border:none; padding:12px; border-radius:5px; font-size:16px; cursor:pointer; font-weight:bold;">ログイン</button>
             </form>
-        </div>
     </div>
 
 
 <div class="container">
     <h1>
         <span>🛡️ 広告主審査 (KYC) ダッシュボード</span>
-        <button class="btn-refresh" onclick="loadKYCReq()">🔄 データ更新</button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn-refresh" onclick="loadKYCReq()">🔄 データ更新</button>
+            <button onclick="logout()" style="background: #64748b; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">🚪 ログアウト</button>
+        </div>
     </h1>
     <p style="color:#64748b; font-size:14px;">広告主（ad_dashboard）から送信された「法人審査リクエスト」がここにリアルタイムで着信します。</p>
 
@@ -373,6 +375,21 @@ async function loadKYCReq() {
                 navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
             }
             document.getElementById('login-overlay').style.display = 'none';
+        }
+
+        function logout() {
+            document.getElementById('login-pass').value = '';
+            document.getElementById('login-overlay').style.display = 'flex';
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'ログアウトしました',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
         }
     </script>
 
