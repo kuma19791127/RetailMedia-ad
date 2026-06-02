@@ -46,8 +46,12 @@
             <form onsubmit="handleLogin(event);" style="display:flex; flex-direction:column; gap:15px;">
                 <input type="email" id="login-email" required placeholder="メールアドレス" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="username">
                 <input type="password" id="login-pass" required placeholder="パスワード" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; font-size:16px;" autocomplete="current-password">
+                <label style="display:flex; align-items:center; gap:6px; font-size:14px; color:#64748b; cursor:pointer; text-align:left; user-select:none;">
+                    <input type="checkbox" id="remember-me" checked style="cursor:pointer;"> ログイン情報を保存する
+                </label>
                 <button type="submit" style="background:#6366f1; color:white; border:none; padding:12px; border-radius:5px; font-size:16px; cursor:pointer; font-weight:bold;">ログイン</button>
             </form>
+        </div>
     </div>
 
 
@@ -367,6 +371,16 @@ async function loadKYCReq() {
         }
 
         function loginSuccess(email, pass) {
+            // Save or clear in LocalStorage depending on remember-me check
+            const remember = document.getElementById('remember-me').checked;
+            if (remember) {
+                localStorage.setItem('last_email', email);
+                localStorage.setItem('last_password', pass);
+            } else {
+                localStorage.removeItem('last_email');
+                localStorage.removeItem('last_password');
+            }
+
             if (window.PasswordCredential) {
                 const cred = new PasswordCredential({
                     id: email,
@@ -391,6 +405,19 @@ async function loadKYCReq() {
                 });
             }
         }
+
+        // Auto-fill login credentials if stored in LocalStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('last_email');
+            const savedPass = localStorage.getItem('last_password');
+            if (savedEmail) {
+                document.getElementById('login-email').value = savedEmail;
+                document.getElementById('remember-me').checked = true;
+            }
+            if (savedPass) {
+                document.getElementById('login-pass').value = savedPass;
+            }
+        });
     </script>
 
 </body>
