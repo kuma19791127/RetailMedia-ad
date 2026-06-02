@@ -49,6 +49,7 @@
                 <label style="display:flex; align-items:center; gap:6px; font-size:14px; color:#64748b; cursor:pointer; text-align:left; user-select:none;">
                     <input type="checkbox" id="remember-me" checked style="cursor:pointer;"> ログイン情報を保存する
                 </label>
+                <div id="login-error" style="color: #b91c1c; font-size: 14px; display: none; text-align: left; background: #fee2e2; border: 1px solid #fca5a5; padding: 10px; border-radius: 5px; margin-top: 5px; box-sizing: border-box;"></div>
                 <button type="submit" style="background:#6366f1; color:white; border:none; padding:12px; border-radius:5px; font-size:16px; cursor:pointer; font-weight:bold;">ログイン</button>
             </form>
         </div>
@@ -248,18 +249,22 @@ async function loadKYCReq() {
     <script>
         async function handleLogin(e) {
             if (e) e.preventDefault();
+            const errDiv = document.getElementById('login-error');
+            errDiv.style.display = 'none';
+
             console.log("[Auth] Form submitted. Email:", document.getElementById('login-email').value.trim(), "Role: review");
             const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
             if (!emailRegex.test(email)) {
-                if(typeof Swal !== 'undefined') Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
-                else alert('エラー: 有効なメールアドレスを入力してください。');
+                errDiv.textContent = '有効なメールアドレスを入力してください。';
+                errDiv.style.display = 'block';
                 return;
             }
             if (pass.length < 1) {
-                if(typeof Swal !== 'undefined') Swal.fire('エラー', 'パスワードを入力してください。', 'error');
-                else alert('エラー: パスワードを入力してください。');
+                errDiv.textContent = 'パスワードを入力してください。';
+                errDiv.style.display = 'block';
                 return;
             }
 
@@ -281,7 +286,7 @@ async function loadKYCReq() {
                             title: '🔑 2段階認証コード',
                             text: '認証アプリに表示されている6桁のコードを入力してください。',
                             input: 'text',
-                            inputPlaceholder: '6桁 of コードを入力',
+                            inputPlaceholder: '6桁のコードを入力',
                             showCancelButton: true,
                             confirmButtonText: '認証',
                             cancelButtonText: 'キャンセル',
@@ -362,11 +367,13 @@ async function loadKYCReq() {
 
                     loginSuccess(email, pass);
                 } else {
-                    Swal.fire('認証失敗', data.error || '認証に失敗しました。', 'error');
+                    errDiv.textContent = data.error || '認証に失敗しました。';
+                    errDiv.style.display = 'block';
                 }
             } catch (e) {
                 console.error(e);
-                Swal.fire('接続エラー', 'サーバーに接続できませんでした。', 'error');
+                errDiv.textContent = '接続エラーが発生しました。';
+                errDiv.style.display = 'block';
             }
         }
 
