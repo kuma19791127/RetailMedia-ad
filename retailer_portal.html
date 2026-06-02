@@ -328,22 +328,39 @@
                     </div>
                     <div>
                         <strong style="color:#10b981; display:block; margin-bottom:10px; font-size:0.95rem; border-bottom:2px solid #dcfce7; padding-bottom:4px;">🏪 現場（各店舗スタッフ）の作業ステップ</strong>
+                        <p style="font-size:0.8rem; color:#64748b; margin-top:0; margin-bottom:10px; line-height:1.4;">
+                            店舗に導入されているサイネージ設備の環境に合わせて、フォルダ内のファイルまたは手順を選択して設定します。
+                        </p>
                         <ol style="font-size:0.875rem; color:#475569; padding-left:20px; line-height:1.7; margin:0;">
                             <li style="margin-bottom:8px;">
                                 <b>設定用メールの受信（またはフォルダの解凍）：</b><br>
                                 本部から届いたメール、または配布された店舗用フォルダを開きます。
                             </li>
                             <li style="margin-bottom:8px;">
-                                <b>デバイスに合わせたファイルの選択：</b><br>
-                                フォルダ内からご利用になるデバイス（Android または Windows）用のファイルを選択します。
+                                <b>導入環境に合わせたファイルの選択：</b><br>
+                                以下の4つの導入環境パターンから、店舗のサイネージ機器に該当する手順を選択します。
                                 <ul style="padding-left:15px; margin-top:5px; margin-bottom:5px; list-style-type:circle;">
-                                    <li><b>Androidアプリ端末の場合（推奨・LEDフィルム等）：</b> フォルダ内の <code>android_instructions_店舗ID.txt</code> を開き、記載されている店舗IDをアプリの初期設定画面に入力します。</li>
-                                    <li><b>Windows PC端末の場合：</b> フォルダ内の <code>setup_店舗ID.bat</code> を右クリックして<b>「管理者として実行」</b>します。</li>
+                                    <li style="margin-bottom:6px;">
+                                        <b>1. リテアド LEDフィルムサイネージをご利用の場合：</b><br>
+                                        フォルダ内の <code>android_instructions_店舗ID.txt</code> を開き、記載されている店舗IDをLEDフィルム用コントローラーのアプリ初期設定画面に入力します。
+                                    </li>
+                                    <li style="margin-bottom:6px;">
+                                        <b>2. Androidサイネージパネル（リテアドアプリ）をご利用の場合：</b><br>
+                                        フォルダ内の <code>android_instructions_店舗ID.txt</code> を開き、アプリ起動時の設定画面で店舗IDを入力します。
+                                    </li>
+                                    <li style="margin-bottom:6px;">
+                                        <b>3. Windows PC端末（セキュリティパッチを自動適用する）をご利用の場合：</b><br>
+                                        フォルダ内の <code>setup_店舗ID.bat</code> を右クリックして<b>「管理者として実行」</b>します。IDの保存、USB無効化、自動キオスク起動設定が全自動で完了します。
+                                    </li>
+                                    <li style="margin-bottom:0;">
+                                        <b>4. セキュリティパッチを利用しない場合（初期設定や制限変更ができない既存サイネージパネル等）：</b><br>
+                                        フォルダ内の <code>simple_start_店舗ID.txt</code> を開き、記載されているサイネージ表示用URLをブラウザで開いてブックマーク登録、または自動起動設定を行わずにアプリへ店舗IDのみを設定して起動します。
+                                    </li>
                                 </ul>
                             </li>
                             <li style="margin-bottom:0;">
                                 <b>設定完了の確認：</b><br>
-                                IDの適用とセキュリティ設定が自動完了し、サイネージ広告の自動再生が開始されます。
+                                設定完了後、自動的に広告動画の同期とループ再生が開始されます。
                             </li>
                         </ol>
                     </div>
@@ -381,6 +398,7 @@
                         <button onclick="downloadSingleBat('android')" style="background:#2563eb; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(37,99,235,0.2);">🤖 Android設定手順をDL</button>
                         <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ WindowsセットアップバッチをDL</button>
                         <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除ツールをDL</button>
+                        <button onclick="downloadSingleBat('simple')" style="background:#64748b; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(100,116,139,0.2);">📄 簡易スタートガイドをDL</button>
                     </div>
                 </div>
             </div>
@@ -899,6 +917,41 @@ function getAndroidInstructionsContent(storeId) {
 `;
 }
 
+function getSimpleStartInstructionsContent(storeId) {
+    return `=========================================================
+リテアド・サイネージ 簡易スタートガイド（セキュリティ制限なし）
+=========================================================
+
+このファイルは、店舗の既存サイネージシステムにおいて、
+OSの設定変更（管理者制限やUSB無効化など）を行わずに、
+リテアド・サイネージの表示のみを開始するための手順書です。
+
+【店舗設定ID情報】
+店舗固有ID: ${storeId}
+
+【サイネージプレイヤー起動用URL】
+https://retail-ad.com/signage_player.html?storeId=${storeId}
+
+---------------------------------------------------------
+■ セットアップ手順（Windows / Android 共通）
+---------------------------------------------------------
+1. サイネージ表示用に使用する端末（PCまたはスマートモニター）でブラウザ（Google Chrome推奨）を起動します。
+
+2. 上記の【サイネージプレイヤー起動用URL】をアドレスバーに入力して開きます。
+
+3. 画面が表示されたら、ブラウザの「ブックマーク（お気に入り）」に登録します。
+   （※PCの場合は、ブラウザの全画面表示モード「F11キー」を押すことで、サイネージとしてフルスクリーン表示が可能です）
+
+4. Androidや既存のスマートパネルでアプリを使用する場合は、アプリを起動し、初期起動時の店舗ID入力欄に上記の【店舗ID: ${storeId}】を登録して起動してください。
+
+---------------------------------------------------------
+■ 注意事項
+---------------------------------------------------------
+・本手順では、USBポートの制限や、端末起動時の全自動キオスク起動設定などは行われません。
+・電源投入時の自動起動を行いたい場合は、各デバイスのOS標準設定（スタートアップ登録など）を用いて、手動で上記のURLまたはアプリを起動対象に登録してください。
+`;
+}
+
 function downloadSingleBat(type) {
     const suffix = document.getElementById('store-suffix').value.trim();
     if(!suffix) {
@@ -906,6 +959,19 @@ function downloadSingleBat(type) {
         return;
     }
     const storeId = `${currentPrefix}_${suffix}`;
+
+    if (type === 'simple') {
+        const textContent = getSimpleStartInstructionsContent(storeId);
+        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `simple_start_${storeId}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Swal.fire("発行完了", `「simple_start_${storeId}.txt」をダウンロードしました。`, "success");
+        return;
+    }
 
     if (type === 'android') {
         const textContent = getAndroidInstructionsContent(storeId);
@@ -1038,7 +1104,11 @@ async function downloadBulkZip() {
             const androidInstructions = getAndroidInstructionsContent(storeId);
             storeFolder.file(`android_instructions_${storeId}.txt`, androidInstructions);
 
-            // 3. Remove batch
+            // 3. Simple start instructions (no security patch)
+            const simpleInstructions = getSimpleStartInstructionsContent(storeId);
+            storeFolder.file(`simple_start_${storeId}.txt`, simpleInstructions);
+
+            // 4. Remove batch
             if (includeRemove) {
                 const removeContent = getRemoveBatContent();
                 storeFolder.file('remove_retail_signage.bat', removeContent);

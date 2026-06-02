@@ -1772,11 +1772,45 @@ pause
 ・インターネット接続が常時確保されていることをご確認ください。
 `;
 
+            // Generate customized Simple start instructions (no security patch)
+            const simpleInstructions = `=========================================================
+リテアド・サイネージ 簡易スタートガイド（セキュリティ制限なし）
+=========================================================
+
+このファイルは、店舗の既存サイネージシステムにおいて、
+OSの設定変更（管理者制限やUSB無効化など）を行わずに、
+リテアド・サイネージの表示のみを開始するための手順書です。
+
+【店舗設定ID情報】
+店舗固有ID: ${storeId}
+
+【サイネージプレイヤー起動用URL】
+https://retail-ad.com/signage_player.html?storeId=${storeId}
+
+---------------------------------------------------------
+■ セットアップ手順（Windows / Android 共通）
+---------------------------------------------------------
+1. サイネージ表示用に使用する端末（PCまたはスマートモニター）でブラウザ（Google Chrome推奨）を起動します。
+
+2. 上記の【サイネージプレイヤー起動用URL】をアドレスバーに入力して開きます。
+
+3. 画面が表示されたら、ブラウザの「ブックマーク（お気に入り）」に登録します。
+   （※PCの場合は、ブラウザの全画面表示モード「F11キー」を押すことで、サイネージとしてフルスクリーン表示が可能です）
+
+4. Androidや既存のスマートパネルでアプリを使用する場合は、アプリを起動し、初期起動時の店舗ID入力欄に上記の【店舗ID: ${storeId}】を登録して起動してください。
+
+---------------------------------------------------------
+■ 注意事項
+---------------------------------------------------------
+・本手順では、USBポートの制限や、端末起動時の全自動キオスク起動設定などは行われません。
+・電源投入時の自動起動を行いたい場合は、各デバイスのOS標準設定（スタートアップ登録など）を用いて、手動で上記のURLまたはアプリを起動対象に登録してください。
+`;
+
             const mailOptions = {
                 from: smtpUser || '"RetailMedia Portal" <noreply@retail-ad.com>',
                 to: targetEmail,
                 subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
-                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の初期設定資材を送付いたします。\n\nご利用のデバイスに合わせて、添付されているファイルを選択して設定を行ってください。\n\n・Android端末の場合（推奨）：\n  添付されている「android_instructions_${storeId}.txt」を開き、記載の手順に沿ってアプリに店舗IDを設定してください。\n\n・Windows PC端末の場合：\n  添付されている「setup_${storeId}.bat」をPCに保存し、右クリックして「管理者として実行」してください。\n\nよろしくお願いいたします。`,
+                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の初期設定資材を送付いたします。\n\nご利用のサイネージ機器の環境・デバイスに合わせて、添付されているファイルを選択して設定を行ってください。\n\n1. Android端末（LEDフィルム含む）の場合：\n  添付されている「android_instructions_${storeId}.txt」を開き、記載の手順に沿って店舗IDを登録してください。\n\n2. Windows PC（セキュリティ設定を全自動適用する場合）の場合：\n  添付されている「setup_${storeId}.bat」をPCに保存し、右クリックして「管理者として実行」してください。\n\n3. セキュリティ設定を行わない場合（制限変更ができない既存パネルなど）：\n  添付されている「simple_start_${storeId}.txt」を開き、記載されているURLをブラウザで開くか、アプリに店舗IDのみを入力して起動してください。\n\nよろしくお願いいたします。`,
                 attachments: [
                     {
                         filename: `setup_${storeId}.bat`,
@@ -1785,6 +1819,10 @@ pause
                     {
                         filename: `android_instructions_${storeId}.txt`,
                         content: androidInstructions
+                    },
+                    {
+                        filename: `simple_start_${storeId}.txt`,
+                        content: simpleInstructions
                     }
                 ]
             };
@@ -1798,6 +1836,7 @@ pause
                 console.log(`- Subject: ${mailOptions.subject}`);
                 console.log(`- Attachment: setup_${storeId}.bat (Content generated successfully)`);
                 console.log(`- Attachment: android_instructions_${storeId}.txt (Content generated successfully)`);
+                console.log(`- Attachment: simple_start_${storeId}.txt (Content generated successfully)`);
             }
         }
 
