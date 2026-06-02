@@ -206,58 +206,46 @@
         <div id="tab-dashboard">
             <h1>法人専用ポータルへようこそ</h1>
 
-            <!-- === AI Agent Chat UI (Top Center) === -->
-            <div class="agent-chat-container" style="margin: 0 0 20px 0;">
-                <div class="agent-header">
-                    <i class="fas fa-robot"></i> 自社販促エージェント（マーケティング部向け） <a href="business_lp.html#retailer-ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #2563eb; text-decoration: underline;">[機能の詳細を見る]</a>
+            <!-- === AI Agent / Gemini Omni Section === -->
+            <div class="agent-chat-container" style="margin: 0 0 20px 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden;">
+                <div class="agent-header" style="background: #2563eb; color: white; padding: 15px 20px; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fas fa-robot"></i> 次世代自社販促エージェント (Gemini Omni)</span>
+                    <a href="https://gemini.google/jp/overview/video-generation/?hl=ja" target="_blank" style="font-size: 0.85rem; color: #ffffff; text-decoration: underline; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;">
+                        Google 動画生成機能について <i class="fas fa-external-link-alt"></i>
+                    </a>
                 </div>
-                <div class="agent-body" style="display: flex; flex-direction: column; gap: 10px;">
-                    <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                            <textarea id="aiAgentInput" placeholder="例: 今日の特売品の動画を作ってベースループ（自社枠）に追加して" rows="2" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; box-sizing: border-box;"></textarea>
+                <div class="agent-body" style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Gemini Omni Explanation -->
+                    <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 0 8px 8px 0; font-size: 0.95rem; line-height: 1.7; color: #334155;">
+                        <h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 1.1rem;"><i class="fas fa-brain" style="color:#2563eb;"></i> Googleのネイティブ・マルチモーダルAI「Gemini Omni」</h4>
+                        <p style="margin: 0;">
+                            Googleの最新AIモデル「Gemini Omni（ジェミニ オムニ）」に関する情報です。テキスト、画像、音声、動画を横断して理解・処理できるGoogle of Native Multimodal AIモデルです。特に、多様な入力から会話形式で自然かつ高品質な動画を作成・編集できる機能に優れています。
+                        </p>
+                    </div>
+
+                    <!-- Video Examples Section -->
+                    <div>
+                        <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-file-video" style="color: #ef4444;"></i> 生成動画の例（店舗サイネージ配信用）
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Video 1 -->
+                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
+                                <video src="/assets/サイネージ広告の日本が変なので　頑張った自分　頑張ったね　と.mp4" controls style="width: 100%; border-radius: 6px; aspect-ratio: 16/9; object-fit: cover; background: #000;"></video>
+                                <div style="font-weight: bold; margin-top: 8px; color: #1e293b; font-size: 0.9rem;">
+                                    「頑張った自分 頑張ったね」（サイネージ広告例）
+                                </div>
+                            </div>
+                            <!-- Video 2 -->
+                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
+                                <video src="/assets/犬のパグが躍る動画.mp4" controls style="width: 100%; border-radius: 6px; aspect-ratio: 16/9; object-fit: cover; background: #000;"></video>
+                                <div style="font-weight: bold; margin-top: 8px; color: #1e293b; font-size: 0.9rem;">
+                                    「犬のパグが躍る動画」（マスコットキャラクター演出例）
+                                </div>
+                            </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <input type="file" id="aiAgentImageInput" accept="image/*" style="display: none;" onchange="previewAgentImage(event)">
-                            <button onclick="document.getElementById('aiAgentImageInput').click()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; white-space: nowrap;">
-                                <i class="fas fa-image"></i> 画像添付
-                            </button>
-                            <button onclick="runRetailerAgent()" id="aiAgentBtn" style="background: #2563eb; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; white-space: nowrap;">
-                                <i class="fas fa-paper-plane"></i> 販促を指示
-                            </button>
-                        </div>
                     </div>
-                    <!-- Veo Generation Settings -->
-                    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;">
-                        <span style="font-weight: bold; color: #475569;"><i class="fas fa-sliders-h"></i> Google Veo 設定:</span>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
-                            <input type="radio" name="veoModel" value="standard" checked>
-                            Veo標準 (高品質: $0.50/秒)
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
-                            <input type="radio" name="veoModel" value="fast">
-                            Veo Fast (高速/軽量: $0.10/秒)
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
-                            <input type="radio" name="veoModel" value="lite">
-                            Veo Lite (低コスト: $0.03/秒)
-                        </label>
-                        <div style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 5px;"></div>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
-                            <input type="checkbox" id="veoAudioEnabled" checked>
-                            音声＋BGMを追加 (+$0.25/秒)
-                        </label>
-                    </div>
-                    <!-- Image Preview Area -->
-                    <div id="aiAgentImagePreviewContainer" style="display: none; align-items: center; gap: 10px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                        <img id="aiAgentImagePreview" style="max-height: 50px; border-radius: 4px; border: 1px solid #cbd5e1;">
-                        <span id="aiAgentImageName" style="font-size: 0.8rem; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
-                        <button onclick="clearAgentImage()" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem; margin-left: auto;">
-                            <i class="fas fa-times-circle"></i>
-                        </button>
-                    </div>
-                    <span style="font-size: 0.75rem; color: #64748b;">※チャット履歴は保存されません（リロードや画面遷移でクリアされます）。自社マスコットキャラクター等の参考画像を添付して、動画に登場させることができます。</span>
                 </div>
-                <div id="aiAgentResult" class="agent-result" style="display:none;"></div>
             </div>
 
             <div class="card">
@@ -775,74 +763,6 @@ function showAdPolicy() {
         confirmButtonColor: '#3b82f6'
     });
 }
-    let selectedAgentImageBase64 = null;
-    function previewAgentImage(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        document.getElementById('aiAgentImageName').textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            selectedAgentImageBase64 = e.target.result; // Data URL
-            document.getElementById('aiAgentImagePreview').src = e.target.result;
-            document.getElementById('aiAgentImagePreviewContainer').style.display = 'flex';
-        };
-        reader.readAsDataURL(file);
-    }
-    
-    function clearAgentImage() {
-        selectedAgentImageBase64 = null;
-        document.getElementById('aiAgentImageInput').value = '';
-        document.getElementById('aiAgentImagePreviewContainer').style.display = 'none';
-        document.getElementById('aiAgentImagePreview').src = '';
-        document.getElementById('aiAgentImageName').textContent = '';
-    }
-
-    async function runRetailerAgent() {
-        const input = document.getElementById('aiAgentInput').value;
-        const btn = document.getElementById('aiAgentBtn');
-        const resultDiv = document.getElementById('aiAgentResult');
-        
-        if(!input) return alert("指示を入力してください");
-        
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> エージェントが分析・実行中...';
-        btn.disabled = true;
-        resultDiv.style.display = 'none';
-        
-        try {
-            const veoModel = document.querySelector('input[name="veoModel"]:checked').value;
-            const veoAudio = document.getElementById('veoAudioEnabled').checked;
-            const bodyData = { 
-                message: input, 
-                storeId: 'current_store',
-                veoModel: veoModel,
-                veoAudio: veoAudio
-            };
-            if (selectedAgentImageBase64) {
-                bodyData.image = selectedAgentImageBase64;
-            }
-            const res = await fetch(window.API_BASE_URL + '/api/agent/retailer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyData)
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                resultDiv.innerHTML = data.message;
-                resultDiv.style.display = 'block';
-                if(typeof loadVideos === 'function') loadVideos();
-                clearAgentImage(); // Clear image preview after successful run
-            } else {
-                alert("エラー: " + data.error);
-            }
-        } catch(e) {
-            alert("通信エラー: " + e.message);
-        }
-        
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> 販促を指示';
-        btn.disabled = false;
-    }
     </script>
 
     <script>
