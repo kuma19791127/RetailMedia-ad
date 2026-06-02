@@ -13,6 +13,10 @@
             background: linear-gradient(135deg, #1e3a8a, #3b82f6);
             z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
+        /* Ensure SweetAlert2 is displayed above login overlay */
+        .swal2-container {
+            z-index: 10005 !important;
+        }
         .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 350px; text-align: center; }
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .login-btn { background: #1e3a8a; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold; }
