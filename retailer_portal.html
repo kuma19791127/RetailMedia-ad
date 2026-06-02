@@ -209,16 +209,32 @@
             <!-- === AI Agent Chat UI (Top Center) === -->
             <div class="agent-chat-container" style="margin: 0 0 20px 0;">
                 <div class="agent-header">
-                    <i class="fas fa-robot"></i> 自社販促エージェント（マーケティング部向け） <a href="business_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #2563eb; text-decoration: underline;">[機能の詳細を見る]</a>
+                    <i class="fas fa-robot"></i> 自社販促エージェント（マーケティング部向け） <a href="business_lp.html#retailer-ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #2563eb; text-decoration: underline;">[機能の詳細を見る]</a>
                 </div>
-                <div class="agent-body">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <textarea id="aiAgentInput" placeholder="例: 今日の特売品の動画を作ってベースループ（自社枠）に追加して" rows="2"></textarea>
-                        <span style="font-size: 0.75rem; color: #64748b;">※チャット履歴は保存されません（リロードや画面遷移でクリアされます）</span>
+                <div class="agent-body" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <textarea id="aiAgentInput" placeholder="例: 今日の特売品の動画を作ってベースループ（自社枠）に追加して" rows="2" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; box-sizing: border-box;"></textarea>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="file" id="aiAgentImageInput" accept="image/*" style="display: none;" onchange="previewAgentImage(event)">
+                            <button onclick="document.getElementById('aiAgentImageInput').click()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; white-space: nowrap;">
+                                <i class="fas fa-image"></i> 画像添付
+                            </button>
+                            <button onclick="runRetailerAgent()" id="aiAgentBtn" style="background: #2563eb; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; white-space: nowrap;">
+                                <i class="fas fa-paper-plane"></i> 販促を指示
+                            </button>
+                        </div>
                     </div>
-                    <button onclick="runRetailerAgent()" id="aiAgentBtn">
-                        <i class="fas fa-paper-plane"></i> 販促を指示
-                    </button>
+                    <!-- Image Preview Area -->
+                    <div id="aiAgentImagePreviewContainer" style="display: none; align-items: center; gap: 10px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                        <img id="aiAgentImagePreview" style="max-height: 50px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                        <span id="aiAgentImageName" style="font-size: 0.8rem; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
+                        <button onclick="clearAgentImage()" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem; margin-left: auto;">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b;">※チャット履歴は保存されません（リロードや画面遷移でクリアされます）。自社マスコットキャラクター等の参考画像を添付して、動画に登場させることができます。</span>
                 </div>
                 <div id="aiAgentResult" class="agent-result" style="display:none;"></div>
             </div>
@@ -738,6 +754,29 @@ function showAdPolicy() {
         confirmButtonColor: '#3b82f6'
     });
 }
+    let selectedAgentImageBase64 = null;
+    function previewAgentImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        document.getElementById('aiAgentImageName').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            selectedAgentImageBase64 = e.target.result; // Data URL
+            document.getElementById('aiAgentImagePreview').src = e.target.result;
+            document.getElementById('aiAgentImagePreviewContainer').style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    function clearAgentImage() {
+        selectedAgentImageBase64 = null;
+        document.getElementById('aiAgentImageInput').value = '';
+        document.getElementById('aiAgentImagePreviewContainer').style.display = 'none';
+        document.getElementById('aiAgentImagePreview').src = '';
+        document.getElementById('aiAgentImageName').textContent = '';
+    }
+
     async function runRetailerAgent() {
         const input = document.getElementById('aiAgentInput').value;
         const btn = document.getElementById('aiAgentBtn');
@@ -750,10 +789,14 @@ function showAdPolicy() {
         resultDiv.style.display = 'none';
         
         try {
+            const bodyData = { message: input, storeId: 'current_store' };
+            if (selectedAgentImageBase64) {
+                bodyData.image = selectedAgentImageBase64;
+            }
             const res = await fetch(window.API_BASE_URL + '/api/agent/retailer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input, storeId: 'current_store' })
+                body: JSON.stringify(bodyData)
             });
             const data = await res.json();
             
@@ -761,6 +804,7 @@ function showAdPolicy() {
                 resultDiv.innerHTML = data.message;
                 resultDiv.style.display = 'block';
                 if(typeof loadVideos === 'function') loadVideos();
+                clearAgentImage(); // Clear image preview after successful run
             } else {
                 alert("エラー: " + data.error);
             }

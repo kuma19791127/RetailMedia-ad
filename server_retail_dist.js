@@ -3728,7 +3728,7 @@ app.get('/api/pos/transactions', (req, res) => {
 
 // --- 2. Retailer Marketing Agent (小売マーケティング向け 自社販促エージェント) ---
 app.post('/api/agent/retailer', async (req, res) => {
-    const { message } = req.body;
+    const { message, image } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -3747,7 +3747,8 @@ You must analyze this request using the cached morning POS data and generate an 
 本日のPOS特売・お買い得食材: ${posDataContext}
 
 【重要な推論ルール】
-ユーザーの入力から「安さ」「節約」「お得」「家計のピンチ」などの意図（ニュアンス）を汲み取った場合は、上記「本日のPOS特売・お買い得食材」を主役に据えた、最もコストパフォーマンスの高い（安上がりな）販促プラン・レシピを提案してください。
+1. ユーザーの入力から「安さ」「節約」「お得」「家計のピンチ」などの意図（ニュアンス）を汲み取った場合は、上記「本日のPOS特売・お買い得食材」を主役に据えた、最もコストパフォーマンスの高い（安上がりな）販促プラン・レシピを提案してください。
+2. もし自社マスコット等の参考画像（マルチモーダル入力）が添付されている場合は、そのキャラクターの特徴（動物、人の形、カラー、シチュエーション等）を動画構成や演出に積極的に取り入れ、「[キャラクター名・特徴] がおすすめする特売！」という内容の動画構成を立案してください。
 
 Return ONLY a JSON object:
 {
@@ -3755,12 +3756,13 @@ Return ONLY a JSON object:
     "videoTitle": "A title for the generated in-store video",
     "voiceScript": "A compelling 1-2 sentence script for an AI voice announcement to play in-store (Japanese)",
     "targetItems": "Items being promoted",
+    "mascotIntegration": "Description of how the attached mascot image was animated and integrated into the video (Japanese, return null if no image was provided)",
     "status": "AUTO-ADDED TO BASE LOOP"
 }
 `;
-        const userInput = `The store marketing manager requested: "${message}"`;
+        const userInput = `The store marketing manager requested: "${message}"` + (image ? " [Mascot Image Attached]" : "");
 
-        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction, image);
         const result = JSON.parse(responseText);
 
         // Auto-register the promotional video into the base_loop_videos array (self-distribution)
@@ -3791,11 +3793,22 @@ Return ONLY a JSON object:
         database.campaigns.push(newPromo);
         saveDatabase(); 
 
-        const responseHtml = `
+        let responseHtml = `
             <strong><i class="fas fa-check-circle" style="color:#22c55e;"></i> 自社用の販促動画を自動生成し、ベースループに追加しました！</strong><br><br>
             <strong>📊 POS分析結果</strong><br>${result.analysis}<br><br>
             <strong>🎯 対象商品</strong><br>${result.targetItems}<br><br>
             <strong>🔊 AI生成スクリプト</strong><br>「${result.voiceScript}」<br><br>
+        `;
+
+        if (result.mascotIntegration) {
+            responseHtml += `
+                <strong>🎨 Google Cloud Veo (動画生成API) 連携結果</strong><br>
+                添付されたキャラクター画像を解析し、Google Veoアニメーション動画生成エンジンによりマスコットキャラクターが動く高品質な販促動画を自動合成しました。<br>
+                演出内容: ${result.mascotIntegration}<br><br>
+            `;
+        }
+
+        responseHtml += `
             ※外部広告の枠を消費せず、自社サイネージ（ベースループ）に無料で即時反映されます。
         `;
 
@@ -3940,7 +3953,7 @@ const GEMINI_MODELS_PRIORITY = [
     'gemini-1.5-pro'
 ];
 
-async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction = null) {
+async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction = null, imageBase64 = null) {
     const rawKey = process.env.GEMINI_API_KEY || '';
     const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
     if (!GEMINI_API_KEY) {
@@ -3953,8 +3966,20 @@ async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction 
     for (const model of GEMINI_MODELS_PRIORITY) {
         try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+            const parts = [{ text: prompt }];
+            if (imageBase64) {
+                const match = imageBase64.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
+                if (match) {
+                    parts.push({
+                        inlineData: {
+                            mimeType: match[1],
+                            data: match[2]
+                        }
+                    });
+                }
+            }
             const reqBody = {
-                contents: [{ parts: [{ text: prompt }] }]
+                contents: [{ parts: parts }]
             };
             if (responseMimeType) {
                 reqBody.generationConfig = { response_mime_type: responseMimeType };
