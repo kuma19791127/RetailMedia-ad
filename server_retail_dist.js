@@ -1737,15 +1737,53 @@ echo [OK] セットアップが完了しました！
 pause
 `;
 
+            // Generate customized Android instruction content
+            const androidInstructions = `=========================================================
+リテアド・サイネージ Androidアプリ用初期設定ガイド
+=========================================================
+
+このファイルは、Android OS搭載のサイネージパネルまたはLEDフィルムの
+スマートコントローラーで「リテアドアプリ」をセットアップするための手順書です。
+
+【店舗設定ID情報】
+店舗固有ID: ${storeId}
+
+---------------------------------------------------------
+■ セットアップ手順
+---------------------------------------------------------
+1. サイネージ用Android端末のブラウザ等から、リテアド・サイネージプレイヤー
+   アプリ (APKファイル) をダウンロード・インストールします。
+   （※事前に本部から案内された専用URL、または公式ストアからインストールしてください）
+
+2. インストールしたアプリを起動します。
+
+3. 初回起動時に表示される「店舗ID入力画面」において、
+   上記の店舗固有ID【 ${storeId} 】を入力してください。
+
+4. 「保存」または「接続」ボタンをタップすると、サーバーから最新の広告・動画
+   プレイリストが同期され、自動的にフルスクリーン再生が開始されます。
+
+---------------------------------------------------------
+■ 注意事項
+---------------------------------------------------------
+・端末の電源を入れた際、自動的にリテアドアプリが起動する「自動起動（Auto Start）設定」を
+  Android端末本体の設定メニュー等で有効にしておくことを推奨します。
+・インターネット接続が常時確保されていることをご確認ください。
+`;
+
             const mailOptions = {
                 from: smtpUser || '"RetailMedia Portal" <noreply@retail-ad.com>',
                 to: targetEmail,
                 subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
-                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の設定ファイル（バッチファイル）および解除ツールを送付いたします。\n\n添付のバッチファイル「setup_${storeId}.bat」をサイネージPCへダウンロードし、ダブルクリックして起動することで設定が全自動で完了いたします。\n\nよろしくお願いいたします。`,
+                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の初期設定資材を送付いたします。\n\nご利用のデバイスに合わせて、添付されているファイルを選択して設定を行ってください。\n\n・Android端末の場合（推奨）：\n  添付されている「android_instructions_${storeId}.txt」を開き、記載の手順に沿ってアプリに店舗IDを設定してください。\n\n・Windows PC端末の場合：\n  添付されている「setup_${storeId}.bat」をPCに保存し、右クリックして「管理者として実行」してください。\n\nよろしくお願いいたします。`,
                 attachments: [
                     {
                         filename: `setup_${storeId}.bat`,
                         content: batContent
+                    },
+                    {
+                        filename: `android_instructions_${storeId}.txt`,
+                        content: androidInstructions
                     }
                 ]
             };
@@ -1758,6 +1796,7 @@ pause
                 console.log(`[Bulk Email] [SIMULATION MODE] Target: ${targetEmail}`);
                 console.log(`- Subject: ${mailOptions.subject}`);
                 console.log(`- Attachment: setup_${storeId}.bat (Content generated successfully)`);
+                console.log(`- Attachment: android_instructions_${storeId}.txt (Content generated successfully)`);
             }
         }
 

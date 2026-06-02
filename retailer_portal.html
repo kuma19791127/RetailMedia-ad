@@ -329,16 +329,20 @@
                         <strong style="color:#10b981; display:block; margin-bottom:10px; font-size:0.95rem; border-bottom:2px solid #dcfce7; padding-bottom:4px;">🏪 現場（各店舗スタッフ）の作業ステップ</strong>
                         <ol style="font-size:0.875rem; color:#475569; padding-left:20px; line-height:1.7; margin:0;">
                             <li style="margin-bottom:8px;">
-                                <b>設定用メールの受信確認：</b><br>
-                                本部から届いた「【自動配信】店舗サイネージ初期設定のお知らせ」メールを開きます。
+                                <b>設定用メールの受信（またはフォルダの解凍）：</b><br>
+                                本部から届いたメール、または配布された店舗用フォルダを開きます。
                             </li>
                             <li style="margin-bottom:8px;">
-                                <b>Androidアプリ端末の場合（推奨）：</b><br>
-                                届いたメールに添付されている設定用QRコード画像を初期化状態の端末で読み込ませるだけで全自動セットアップされます。（※初期化できない端末の場合はアプリをインストールして店舗IDを手動入力します）
+                                <b>デバイスに合わせたファイルの選択：</b><br>
+                                フォルダ内からご利用になるデバイス（Android または Windows）用のファイルを選択します。
+                                <ul style="padding-left:15px; margin-top:5px; margin-bottom:5px; list-style-type:circle;">
+                                    <li><b>Androidアプリ端末の場合（推奨）：</b> フォルダ内の <code>android_instructions_店舗ID.txt</code> を開き、記載されている店舗IDをアプリの初期設定画面に入力します。</li>
+                                    <li><b>Windows PC端末の場合：</b> フォルダ内の <code>setup_店舗ID.bat</code> を右クリックして<b>「管理者として実行」</b>します。</li>
+                                </ul>
                             </li>
                             <li style="margin-bottom:0;">
-                                <b>Windows PC端末の場合：</b><br>
-                                添付されている <code>setup_店舗ID.bat</code> を保存し、右クリックから<b>「管理者として実行」</b>します。店舗固有IDの適用、セキュリティ制限（USBポート無効化、自動キオスク起動設定）が全自動で行われます。
+                                <b>設定完了の確認：</b><br>
+                                IDの適用とセキュリティ設定が自動完了し、サイネージ広告の自動再生が開始されます。
                             </li>
                         </ol>
                     </div>
@@ -371,10 +375,11 @@
                 </div>
 
                 <div style="margin-bottom:20px;">
-                    <label style="display:block; margin-bottom:10px; font-weight:bold;">3. 発行するセットアップバッチのダウンロード</label>
+                    <label style="display:block; margin-bottom:10px; font-weight:bold;">3. 発行するセットアップ資材のダウンロード</label>
                     <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                        <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ セットアップバッチをDL</button>
-                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ 設定解除ツールをDL</button>
+                        <button onclick="downloadSingleBat('android')" style="background:#2563eb; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(37,99,235,0.2);">🤖 Android設定手順をDL</button>
+                        <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ WindowsセットアップバッチをDL</button>
+                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除ツールをDL</button>
                     </div>
                 </div>
             </div>
@@ -857,7 +862,62 @@ pause
 `;
 }
 
+function getAndroidInstructionsContent(storeId) {
+    return `=========================================================
+リテアド・サイネージ Androidアプリ用初期設定ガイド
+=========================================================
+
+このファイルは、Android OS搭載のサイネージパネルまたはLEDフィルムの
+スマートコントローラーで「リテアドアプリ」をセットアップするための手順書です。
+
+【店舗設定ID情報】
+店舗固有ID: ${storeId}
+
+---------------------------------------------------------
+■ セットアップ手順
+---------------------------------------------------------
+1. サイネージ用Android端末のブラウザ等から、リテアド・サイネージプレイヤー
+   アプリ (APKファイル) をダウンロード・インストールします。
+   （※事前に本部から案内された専用URL、または公式ストアからインストールしてください）
+
+2. インストールしたアプリを起動します。
+
+3. 初回起動時に表示される「店舗ID入力画面」において、
+   上記の店舗固有ID【 ${storeId} 】を入力してください。
+
+4. 「保存」または「接続」ボタンをタップすると、サーバーから最新の広告・動画
+   プレイリストが同期され、自動的にフルスクリーン再生が開始されます。
+
+---------------------------------------------------------
+■ 注意事項
+---------------------------------------------------------
+・端末の電源を入れた際、自動的にリテアドアプリが起動する「自動起動（Auto Start）設定」を
+  Android端末本体の設定メニュー等で有効にしておくことを推奨します。
+・インターネット接続が常時確保されていることをご確認ください。
+`;
+}
+
 function downloadSingleBat(type) {
+    const suffix = document.getElementById('store-suffix').value.trim();
+    if(!suffix) {
+        Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error");
+        return;
+    }
+    const storeId = `${currentPrefix}_${suffix}`;
+
+    if (type === 'android') {
+        const textContent = getAndroidInstructionsContent(storeId);
+        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `android_instructions_${storeId}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Swal.fire("発行完了", `「android_instructions_${storeId}.txt」をダウンロードしました。`, "success");
+        return;
+    }
+
     if (type === 'remove') {
         const batContent = getRemoveBatContent();
         const blob = new Blob([batContent], { type: 'application/x-bat' });
@@ -871,13 +931,6 @@ function downloadSingleBat(type) {
         return;
     }
 
-    const suffix = document.getElementById('store-suffix').value.trim();
-    if(!suffix) {
-        Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error");
-        return;
-    }
-
-    const storeId = `${currentPrefix}_${suffix}`;
     const batContent = getBatFileContent(storeId);
     const blob = new Blob([batContent], { type: 'application/x-bat' });
     const url = URL.createObjectURL(blob);
@@ -979,7 +1032,11 @@ async function downloadBulkZip() {
             const setupContent = getBatFileContent(storeId);
             storeFolder.file(`setup_${storeId}.bat`, setupContent);
 
-            // 2. Remove batch
+            // 2. Android instructions
+            const androidInstructions = getAndroidInstructionsContent(storeId);
+            storeFolder.file(`android_instructions_${storeId}.txt`, androidInstructions);
+
+            // 3. Remove batch
             if (includeRemove) {
                 const removeContent = getRemoveBatContent();
                 storeFolder.file('remove_retail_signage.bat', removeContent);
