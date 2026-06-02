@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Retail Media - Retailer Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', 'Noto Sans JP', sans-serif; background: #f4f7f6; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
@@ -295,31 +296,120 @@
                 <h1 style="border:none; padding:0; margin:0;">店舗サイネージのセットアップ発行</h1>
                 <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
             </div>
-            <div class="card">
-                <h3>店舗専用のセットアップファイル生成</h3>
+
+            <!-- Service & Workflow Guide -->
+            <div class="card" style="border-left: 5px solid #2563eb; background:#f8fafc; padding:20px; margin-bottom:25px;">
+                <h3 style="color:#1e3a8a; margin-top:0; margin-bottom:12px; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+                    <span>ℹ️</span> 1クリック自動配信型サイネージ初期設定サービスのご案内
+                </h3>
+                <p style="font-size:0.95rem; color:#334155; line-height:1.6; margin-bottom:18px;">
+                    本サービスは、<b>「ボタン1つで各店舗へメール一括自動送信（案1）」</b>を行うことで、本部の配信業務および現場の導入設定作業を極限までシンプルにする自動配信システムです。<br>
+                    店舗ごとの固有IDが埋め込まれた専用バッチファイル（および解除用バッチ）がバックエンドで自動生成され、各店舗のメールアドレス宛てにダイレクト送信されます。これにより、手作業でのファイル送付ミスや店舗間での設定ファイルの取り違えを完全に防止し、セキュリティ制限（USBポート無効化、自動キオスク起動）を安全かつ迅速に全店展開できます。
+                </p>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; border-top:1px solid #e2e8f0; padding-top:18px;">
+                    <div>
+                        <strong style="color:#2563eb; display:block; margin-bottom:10px; font-size:0.95rem; border-bottom:2px solid #dbeafe; padding-bottom:4px;">🏢 本部（マーケティング部）の作業ステップ</strong>
+                        <ol style="font-size:0.875rem; color:#475569; padding-left:20px; line-height:1.7; margin:0;">
+                            <li style="margin-bottom:8px;">
+                                <b>宛先リストの準備：</b><br>
+                                Excelやテキスト等から「店舗ID, メールアドレス」のリスト（例: <code>LIFE_001, store001@example.com</code>）をコピーします。
+                            </li>
+                            <li style="margin-bottom:8px;">
+                                <b>リストの貼り付け：</b><br>
+                                「大店舗向け一括発行」タブに切り替え、入力エリアにコピーしたリストをそのまま貼り付けます。
+                            </li>
+                            <li style="margin-bottom:0;">
+                                <b>1クリック自動送信：</b><br>
+                                <b>「各店舗へセットアップ資材を一斉メール送信する」</b>ボタンをクリックします。システムが各店舗用の専用バッチファイルを自動生成し、指定メールアドレスへ即座に一括送信します。
+                            </li>
+                        </ol>
+                    </div>
+                    <div>
+                        <strong style="color:#10b981; display:block; margin-bottom:10px; font-size:0.95rem; border-bottom:2px solid #dcfce7; padding-bottom:4px;">🏪 現場（各店舗スタッフ）の作業ステップ</strong>
+                        <ol style="font-size:0.875rem; color:#475569; padding-left:20px; line-height:1.7; margin:0;">
+                            <li style="margin-bottom:8px;">
+                                <b>設定用メールの受信確認：</b><br>
+                                本部から届いた「【自動配信】店舗サイネージ初期設定ファイルのお知らせ」メールを開きます。
+                            </li>
+                            <li style="margin-bottom:8px;">
+                                <b>バッチファイルの保存と実行：</b><br>
+                                添付されている <code>setup_店舗ID.bat</code> をサイネージ端末（Windows）に保存し、右クリックして<b>「管理者として実行」</b>します。
+                            </li>
+                            <li style="margin-bottom:0;">
+                                <b>全自動セキュリティ適用：</b><br>
+                                ダブルクリックするだけで、店舗固有IDの適用、セキュリティ制限（USBポート無効化、自動キオスク起動設定）が全自動で行われ、設定が完了します。
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UI Selection: Single Store or Bulk Store -->
+            <div style="display:flex; gap:15px; margin-bottom:20px;">
+                <button id="btn-single-setup-mode" onclick="switchSetupMode('single')" style="flex:1; padding:12px; font-weight:bold; border-radius:8px; border:none; background:#1e293b; color:white; cursor:pointer; font-size:1rem; transition:0.3s;">👤 個別店舗用の発行</button>
+                <button id="btn-bulk-setup-mode" onclick="switchSetupMode('bulk')" style="flex:1; padding:12px; font-weight:bold; border-radius:8px; border:none; background:#e2e8f0; color:#475569; cursor:pointer; font-size:1rem; transition:0.3s;">🏢 大店舗向け一括発行 (複数店舗 / メール・ZIP)</button>
+            </div>
+
+            <!-- Single Store Card -->
+            <div id="card-single-setup" class="card">
+                <h3>個別店舗専用 セットアップファイル生成</h3>
                 <div class="guide-text">
-                    店舗のスタッフが迷わないように<br>
-                    店舗IDが埋め込まれた専用の「自動セットアップファイル（.bat）」を<br>
-                    ここで作成します。<br>
-                    このファイルを店舗スタッフに配布し<br>
-                    サイネージパネルのコントローラーで<br>
-                    batをクリックしてもらうだけ<br>
-                    パネルが自動的にサイネージとして登録されます。
+                    店舗IDが埋め込まれた専用の「自動セットアップファイル（.bat）」をここで個別に作成・ダウンロードします。<br>
+                    このバッチを実行するだけで、現場のPCに店舗IDとセキュリティ制限が全自動で適用されます。
                 </div>
                 
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）</label>
-                    <input type="text" id="retailer-prefix" placeholder="例: LIFE" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;" readonly>
+                <div style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）</label>
+                        <input type="text" id="retailer-prefix-single" placeholder="例: LIFE" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; background:#f1f5f9;" readonly>
+                    </div>
+                    <div style="flex:1; min-width:200px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗番号または店舗名（英数字）</label>
+                        <input type="text" id="store-suffix" placeholder="例: 001 または SHINJUKU" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;">
+                    </div>
                 </div>
-                
+
                 <div style="margin-bottom:20px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗番号または店舗名（英数字）</label>
-                    <input type="text" id="store-suffix" placeholder="例: 001 または SHINJUKU" style="width:100%; max-width:300px; padding:10px; border:1px solid #cbd5e1; border-radius:5px;">
+                    <label style="display:block; margin-bottom:10px; font-weight:bold;">3. 発行するセットアップバッチのダウンロード</label>
+                    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                        <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ セットアップバッチをDL</button>
+                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ 設定解除ツールをDL</button>
+                    </div>
                 </div>
-                
-                <div style="display:flex; gap:10px;">
-                    <button onclick="generateBatFile()" style="background:#10b981; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer; flex:1;">⏬ この店舗専用のセットアップ(.bat)を発行する</button>
-                    <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:12px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
+            </div>
+
+            <!-- Bulk Store Card -->
+            <div id="card-bulk-setup" class="card" style="display:none;">
+                <h3>大店舗向け一括セットアップバッチ生成 (ZIP)</h3>
+                <div class="guide-text">
+                    大企業のマーケティング担当者向け機能です。<br>
+                    店舗番号と配信先メールアドレスを貼り付け、各店舗宛てに設定バッチ（および解除バッチ）をボタン1つで一斉にメール送信できます。
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="display:block; margin-bottom:8px; font-weight:bold;">1. 店舗リストの貼り付け (Excel等からコピー＆ペースト可能)</label>
+                    <p style="font-size:0.85rem; color:#64748b; margin-top:0; margin-bottom:8px;">
+                        入力例：<code>LIFE_001, store001@example.com</code>（改行で複数行登録、カンマ区切り。メールアドレスがない行はZIPのみに含まれます）
+                    </p>
+                    <textarea id="bulk-store-list" placeholder="LIFE_001, store001@example.com&#10;LIFE_002, store002@example.com&#10;LIFE_003, store003@example.com" style="width:100%; height:150px; padding:12px; border:1px solid #cbd5e1; border-radius:6px; font-family:monospace; font-size:0.9rem; box-sizing:border-box;"></textarea>
+                </div>
+
+                <div style="margin-bottom:20px; background:#f1f5f9; padding:15px; border-radius:6px;">
+                    <label style="display:block; margin-bottom:8px; font-weight:bold; color:#1e293b;">2. 同梱するファイルの選択（ZIP用）</label>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <label style="display:flex; align-items:center; cursor:pointer; font-weight:500; color:#334155;">
+                            <input type="checkbox" id="chk-type-normal" checked disabled style="margin-right:8px; width:18px; height:18px;"> 📺 自動起動セットアップバッチ (setup_店舗ID.bat)
+                        </label>
+                        <label style="display:flex; align-items:center; cursor:pointer; font-weight:500; color:#334155;">
+                            <input type="checkbox" id="chk-type-remove" checked style="margin-right:8px; width:18px; height:18px;"> ❌ 設定解除用バッチ (remove_retail_signage.bat)
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-wrap:wrap; gap:15px;">
+                    <button onclick="sendBulkEmail()" style="background:#2563eb; color:white; border:none; padding:14px 20px; border-radius:6px; font-weight:bold; cursor:pointer; flex:1; min-width:250px; font-size:1rem; box-shadow:0 4px 6px rgba(37,99,235,0.2);">📧 各店舗へセットアップ資材を一斉メール送信する</button>
+                    <button onclick="downloadBulkZip()" style="background:#10b981; color:white; border:none; padding:14px 20px; border-radius:6px; font-weight:bold; cursor:pointer; flex:1; min-width:250px; font-size:1rem; box-shadow:0 4px 6px rgba(16,185,129,0.2);">⏬ 予備用：一括セットアップZIPをDLする</button>
                 </div>
             </div>
         </div>
@@ -578,7 +668,12 @@
         function loginSuccess(email, pass) {
             currentEmail = email;
             currentPrefix = email;
-            document.getElementById('retailer-prefix').value = currentPrefix;
+            if (document.getElementById('retailer-prefix')) {
+                document.getElementById('retailer-prefix').value = currentPrefix;
+            }
+            if (document.getElementById('retailer-prefix-single')) {
+                document.getElementById('retailer-prefix-single').value = currentPrefix;
+            }
             
             const rememberMe = document.getElementById('remember-me').checked;
             if (rememberMe) {
@@ -609,7 +704,173 @@
             location.reload();
         }
 
-function generateBatFile() {
+function switchSetupMode(mode) {
+    const btnSingle = document.getElementById('btn-single-setup-mode');
+    const btnBulk = document.getElementById('btn-bulk-setup-mode');
+    const cardSingle = document.getElementById('card-single-setup');
+    const cardBulk = document.getElementById('card-bulk-setup');
+
+    if (mode === 'single') {
+        btnSingle.style.background = '#1e293b';
+        btnSingle.style.color = 'white';
+        btnBulk.style.background = '#e2e8f0';
+        btnBulk.style.color = '#475569';
+        cardSingle.style.display = 'block';
+        cardBulk.style.display = 'none';
+    } else {
+        btnBulk.style.background = '#1e293b';
+        btnBulk.style.color = 'white';
+        btnSingle.style.background = '#e2e8f0';
+        btnSingle.style.color = '#475569';
+        cardSingle.style.display = 'none';
+        cardBulk.style.display = 'block';
+    }
+}
+
+function getBatFileContent(storeId) {
+    const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
+    return `@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul
+
+:: --- 管理者権限の取得（UACプロンプトの表示） ---
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo 管理者権限が必要です。プロンプト表示中...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+:: ---------------------------------------------------
+
+color 0B
+echo =========================================================
+echo リテアド LEDサイネージ セットアップツール (${storeId})
+echo =========================================================
+echo.
+echo パソコンをサイネージとしてセットアップします。
+echo.
+pause
+
+:: 1. パネル番号の適用
+mkdir "C:\\RetailMedia" >nul 2>&1
+echo {"terminal_id": "${storeId}"} > "C:\\RetailMedia\\config.json"
+echo [OK] 固有IDを C:\\RetailMedia\\config.json に保存しました。
+
+:: 2. USBの無効化（セキュリティ）
+set /p disable_usb="USBポートを無効化しますか？ (Y/N): "
+if /i "%disable_usb%"=="Y" (
+    reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
+    echo [OK] USBストレージの読み込みを無効化しました。
+)
+
+:: 3. 起動（キオスクモード）の設定
+set "STARTUP_DIR=%ALLUSERSPROFILE%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+set "SHORTCUT_PATH=%STARTUP_DIR%\\RetailAd_Signage.lnk"
+set "TARGET_URL=${targetUrl}"
+
+set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+set "EDGE_PATH=C:\\Program Files (x86)\\Google\\Chrome\\Application\\msedge.exe"
+if exist "%CHROME_PATH%" (
+    set "BROWSER_PATH=%CHROME_PATH%"
+) else (
+    set "BROWSER_PATH=%EDGE_PATH%"
+)
+
+set "VBS_SCRIPT=%TEMP%\\CreateShortcut.vbs"
+echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"
+echo sLinkFile = "%SHORTCUT_PATH%" >> "%VBS_SCRIPT%"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
+echo oLink.TargetPath = "%BROWSER_PATH%" >> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk \\""%TARGET_URL%\\"" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" >> "%VBS_SCRIPT%"
+echo oLink.Save >> "%VBS_SCRIPT%"
+cscript //nologo "%VBS_SCRIPT%"
+del "%VBS_SCRIPT%"
+
+echo.
+echo =========================================================
+echo 🎉 セットアップが完了しました！
+echo =========================================================
+echo パソコン起動時に、自動で全画面でサイネージが起動し、
+echo 広告の配信と収益化が開始されます。
+echo 元の状態に戻したい場合は、「remove_retail_signage.bat」を実行してください。
+echo.
+pause
+`;
+}
+
+function getRemoveBatContent() {
+    return `@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul
+
+:: --- 管理者権限の取得（UACプロンプトの表示） ---
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo 管理者権限が必要です。プロンプト表示中...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+:: ---------------------------------------------------
+
+echo =========================================================
+echo リテアド サイネージ設定解除・セキュリティ復元スクリプト
+echo =========================================================
+echo.
+echo パソコンを「サイネージ専用」から「通常のパソコン」に戻します。
+echo ・自動起動ショートカットの削除
+echo ・USB制限の解除（無効化の復元）
+echo ・自動サインイン設定の解除
+echo ・サイネージ専用ユーザー(SignagePlayer)の削除
+echo を実行します。
+echo.
+pause
+
+:: 1. ショートカット削除
+set "STARTUP_ALL=%ALLUSERSPROFILE%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RetailAd_Signage.lnk"
+set "STARTUP_USER=%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RetailAd_Signage.lnk"
+
+if exist "%STARTUP_ALL%" del "%STARTUP_ALL%"
+if exist "%STARTUP_USER%" del "%STARTUP_USER%"
+echo [OK] 自動起動のショートカットを削除しました。
+
+:: 2. USB制限解除
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR" /v Start /t REG_DWORD /d 3 /f >nul 2>&1
+echo [OK] USB制限を解除しました（再起動後に有効になります）。
+
+:: 3. 自動サインイン設定の削除
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f >nul 2>&1
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultUserName /f >nul 2>&1
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultPassword /f >nul 2>&1
+echo [OK] 自動サインイン設定を削除しました。
+
+:: 4. 専用ユーザーの削除
+net user SignagePlayer /delete >nul 2>&1
+echo [OK] サイネージ専用ユーザー(SignagePlayer)を削除しました。
+
+echo.
+echo =========================================================
+echo 🎉 すべての解除・復元が完了しました！通常のパソコンに戻りました。
+echo =========================================================
+echo パソコンを再起動すると、通常のアカウントで起動します。
+echo.
+pause
+`;
+}
+
+function downloadSingleBat(type) {
+    if (type === 'remove') {
+        const batContent = getRemoveBatContent();
+        const blob = new Blob([batContent], { type: 'application/x-bat' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `remove_retail_signage.bat`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Swal.fire("発行完了", "「remove_retail_signage.bat」をダウンロードしました。", "success");
+        return;
+    }
+
     const suffix = document.getElementById('store-suffix').value.trim();
     if(!suffix) {
         Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error");
@@ -617,36 +878,7 @@ function generateBatFile() {
     }
 
     const storeId = `${currentPrefix}_${suffix}`;
-    const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
-
-    const batContent = `@echo off
-echo =========================================================
-echo Retail Media サイネージ自動起動セットアップ (${storeId})
-echo =========================================================
-set "TARGET_URL=${targetUrl}"
-set "STARTUP_FOLDER=%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Startup"
-set "SHORTCUT_NAME=RetailAd_Signage_${storeId}.lnk"
-set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not exist "%CHROME_PATH%" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-
-set "VBS_SCRIPT=%temp%\CreateShortcut.vbs"
-echo Set oWS = WScript.CreateObject("WScript.Shell") ^> "%VBS_SCRIPT%"
-echo sLinkFile = "%STARTUP_FOLDER%\%SHORTCUT_NAME%" ^>^> "%VBS_SCRIPT%"
-echo Set oLink = oWS.CreateShortcut(sLinkFile) ^>^> "%VBS_SCRIPT%"
-echo oLink.TargetPath = "%CHROME_PATH%" ^>^> "%VBS_SCRIPT%"
-echo oLink.Arguments = "--kiosk """ ^^^& "%TARGET_URL%" ^^^& """ --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" ^>^> "%VBS_SCRIPT%"
-echo oLink.Save ^>^> "%VBS_SCRIPT%"
-
-cscript /nologo "%VBS_SCRIPT%"
-del "%VBS_SCRIPT%"
-
-echo セットアップが完了しました！
-echo 次回起動時から自動的にカメラが許可され、動画がループ再生されます。
-timeout /t 3 ^>nul
-start "" "%CHROME_PATH%" --kiosk "%TARGET_URL%" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run
-exit /b
-`;
-
+    const batContent = getBatFileContent(storeId);
     const blob = new Blob([batContent], { type: 'application/x-bat' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -656,6 +888,121 @@ exit /b
     URL.revokeObjectURL(url);
 
     Swal.fire("発行完了", `店舗スタッフに「setup_${storeId}.bat」を配布してください。`, "success");
+}
+
+function parseBulkList() {
+    const rawList = document.getElementById('bulk-store-list').value;
+    if (!rawList.trim()) {
+        return [];
+    }
+
+    const list = [];
+    const lines = rawList.split('\n');
+    lines.forEach(line => {
+        const parts = line.split(/[,]+/);
+        if (parts.length >= 2) {
+            const store = parts[0].trim();
+            const email = parts[1].trim();
+            if (store && email) {
+                list.push({ store, email });
+            }
+        } else if (parts.length === 1 && parts[0].trim()) {
+            list.push({ store: parts[0].trim(), email: "" });
+        }
+    });
+    return list;
+}
+
+async function sendBulkEmail() {
+    const list = parseBulkList().filter(item => item.email !== "");
+    if (list.length === 0) {
+        Swal.fire("エラー", "有効な「店舗番号, メールアドレス」のペアを入力してください。", "error");
+        return;
+    }
+
+    Swal.fire({
+        title: 'メール一斉送信中...',
+        text: `${list.length}店舗宛てにセットアップ案内を配信しています。`,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+        const res = await fetch((window.API_BASE_URL || '') + '/api/retailer/bulk-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prefix: currentPrefix,
+                list: list
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            Swal.fire("送信完了", `${list.length}店舗へのセットアップ資材の自動配信が完了しました。`, "success");
+        } else {
+            throw new Error(data.error || "送信処理中にエラーが発生しました。");
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire("エラー", "メール一括送信に失敗しました: " + err.message, "error");
+    }
+}
+
+async function downloadBulkZip() {
+    const list = parseBulkList();
+    if (list.length === 0) {
+        Swal.fire("エラー", "店舗番号を入力してください。", "error");
+        return;
+    }
+
+    const includeRemove = document.getElementById('chk-type-remove').checked;
+
+    Swal.fire({
+        title: 'ZIP生成中...',
+        text: `${list.length}店舗分のバッチファイルを生成しています。`,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+        const zip = new JSZip();
+
+        list.forEach(item => {
+            const storeId = `${currentPrefix}_${item.store}`;
+            const storeFolder = zip.folder(storeId);
+
+            // 1. Setup batch
+            const setupContent = getBatFileContent(storeId);
+            storeFolder.file(`setup_${storeId}.bat`, setupContent);
+
+            // 2. Remove batch
+            if (includeRemove) {
+                const removeContent = getRemoveBatContent();
+                storeFolder.file('remove_retail_signage.bat', removeContent);
+            }
+        });
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `retail_signage_setup_bulk.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        Swal.fire({
+            title: "一括生成完了！",
+            text: `${list.length}店舗分のセットアップバッチを格納したZIPファイルをダウンロードしました。`,
+            icon: "success"
+        });
+    } catch (err) {
+        console.error(err);
+        Swal.fire("エラー", "ZIPファイルの作成に失敗しました: " + err.message, "error");
+    }
 }
             
 

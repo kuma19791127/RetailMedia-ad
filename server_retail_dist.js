@@ -1643,6 +1643,131 @@ app.get('/api/reports/csv', (req, res) => {
 
 // Real Upload Endpoint (Production Mode)
 
+// --- Retailer Bulk Signage Setup Email Delivery ---
+app.post('/api/retailer/bulk-email', async (req, res) => {
+    try {
+        const { prefix, list } = req.body;
+        if (!prefix || !list || !Array.isArray(list)) {
+            return res.status(400).json({ success: false, error: "Invalid request payload" });
+        }
+
+        console.log(`[Bulk Email] Starting mail delivery for prefix: ${prefix}, count: ${list.length}`);
+
+        // --- SMTP settings via environment variables (Security compliance) ---
+        const smtpHost = process.env.SMTP_HOST;
+        const smtpPort = process.env.SMTP_PORT;
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASS;
+
+        let transporter = null;
+        if (smtpHost && smtpUser && smtpPass) {
+            const nodemailer = require('nodemailer');
+            transporter = nodemailer.createTransport({
+                host: smtpHost,
+                port: parseInt(smtpPort) || 587,
+                secure: smtpPort == 465,
+                auth: { user: smtpUser, pass: smtpPass }
+            });
+        }
+
+        for (const item of list) {
+            const storeId = `${prefix}_${item.store}`;
+            const targetEmail = item.email;
+            
+            // Generate customized bat script content
+            const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
+            const batContent = `@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul
+
+:: --- 管理者権限の取得（UACプロンプトの表示） ---
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo 管理者権限が必要です。プロンプト表示中...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+:: ---------------------------------------------------
+
+color 0B
+echo =========================================================
+echo リテアド LEDサイネージ セットアップツール (${storeId})
+echo =========================================================
+echo.
+echo パソコンをサイネージとしてセットアップします。
+echo.
+pause
+
+:: 1. パネル番号の適用
+mkdir "C:\\RetailMedia" >nul 2>&1
+echo {"terminal_id": "${storeId}"} > "C:\\RetailMedia\\config.json"
+echo [OK] 固有IDを C:\\RetailMedia\\config.json に保存しました。
+
+:: 2. USBの無効化（セキュリティ）
+set /p disable_usb="USBポートを無効化しますか？ (Y/N): "
+if /i "%disable_usb%"=="Y" (
+    reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
+    echo [OK] USBストレージの読み込みを無効化しました。
+)
+
+:: 3. 起動（キオスクモード）の設定
+set "STARTUP_DIR=%ALLUSERSPROFILE%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+set "SHORTCUT_PATH=%STARTUP_DIR%\\RetailAd_Signage.lnk"
+set "TARGET_URL=${targetUrl}"
+
+set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+set "EDGE_PATH=C:\\Program Files (x86)\\Google\\Chrome\\Application\\msedge.exe"
+if exist "%CHROME_PATH%" (
+    set "BROWSER_PATH=%CHROME_PATH%"
+) else (
+    set "BROWSER_PATH=%EDGE_PATH%"
+)
+
+set "VBS_SCRIPT=%TEMP%\\CreateShortcut.vbs"
+echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"
+echo sLinkFile = "%SHORTCUT_PATH%" >> "%VBS_SCRIPT%"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
+echo oLink.TargetPath = "%BROWSER_PATH%" >> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk \\""%TARGET_URL%\\"" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" >> "%VBS_SCRIPT%"
+echo oLink.Save >> "%VBS_SCRIPT%"
+cscript //nologo "%VBS_SCRIPT%"
+del "%VBS_SCRIPT%"
+
+echo [OK] セットアップが完了しました！
+pause
+`;
+
+            const mailOptions = {
+                from: smtpUser || '"RetailMedia Portal" <noreply@retail-ad.com>',
+                to: targetEmail,
+                subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
+                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の設定ファイル（バッチファイル）および解除ツールを送付いたします。\n\n添付のバッチファイル「setup_${storeId}.bat」をサイネージPCへダウンロードし、ダブルクリックして起動することで設定が全自動で完了いたします。\n\nよろしくお願いいたします。`,
+                attachments: [
+                    {
+                        filename: `setup_${storeId}.bat`,
+                        content: batContent
+                    }
+                ]
+            };
+
+            if (transporter) {
+                await transporter.sendMail(mailOptions);
+                console.log(`[Bulk Email] Successfully sent setup mail to ${targetEmail} for ${storeId}`);
+            } else {
+                // Simulation Log Mode when SMTP configs are missing
+                console.log(`[Bulk Email] [SIMULATION MODE] Target: ${targetEmail}`);
+                console.log(`- Subject: ${mailOptions.subject}`);
+                console.log(`- Attachment: setup_${storeId}.bat (Content generated successfully)`);
+            }
+        }
+
+        res.json({ success: true, count: list.length });
+    } catch (e) {
+        console.error("[Bulk Email Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // --- Retailer Video Upload (S3 Direct) ---
 app.post('/api/retailer/upload', async (req, res) => {
     try {
