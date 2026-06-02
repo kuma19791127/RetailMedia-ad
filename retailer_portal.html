@@ -349,12 +349,12 @@
                                         フォルダ内の <code>android_instructions_店舗ID.txt</code> を開き、アプリ起動時の設定画面で店舗IDを入力します。
                                     </li>
                                     <li style="margin-bottom:6px;">
-                                        <b>3. Windows PC端末（セキュリティパッチを自動適用する）をご利用の場合：</b><br>
-                                        フォルダ内の <code>setup_店舗ID.bat</code> を右クリックして<b>「管理者として実行」</b>します。IDの保存、USB無効化、自動キオスク起動設定が全自動で完了します。
+                                        <b>3. セキュリティパッチを利用しない場合（初期設定や制限変更ができない既存サイネージパネル等）：</b><br>
+                                        フォルダ内の <code>simple_start_店舗ID.txt</code> を開き、記載されているサイネージ表示用URLをブラウザで開いてブックマーク登録、または自動起動設定を行わずにアプリへ店舗IDのみを設定して起動します。
                                     </li>
                                     <li style="margin-bottom:0;">
-                                        <b>4. セキュリティパッチを利用しない場合（初期設定や制限変更ができない既存サイネージパネル等）：</b><br>
-                                        フォルダ内の <code>simple_start_店舗ID.txt</code> を開き、記載されているサイネージ表示用URLをブラウザで開いてブックマーク登録、または自動起動設定を行わずにアプリへ店舗IDのみを設定して起動します。
+                                        <b>4. Windows PC端末（セキュリティパッチを自動適用する）をご利用の場合：</b><br>
+                                        フォルダ内の <code>setup_店舗ID.bat</code> を右クリックして<b>「管理者として実行」</b>します。IDの保存、USB無効化、自動キオスク起動設定が全自動で完了します。
                                     </li>
                                 </ul>
                             </li>
@@ -396,6 +396,7 @@
                     <label style="display:block; margin-bottom:10px; font-weight:bold;">3. 発行するセットアップ資材のダウンロード</label>
                     <div style="display:flex; flex-wrap:wrap; gap:10px;">
                         <button onclick="downloadSingleBat('android')" style="background:#2563eb; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(37,99,235,0.2);">🤖 Android設定手順をDL</button>
+                        <button onclick="downloadSingleBat('remove_android')" style="background:#f97316; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(249,115,22,0.2);">🤖 Android設定解除手順をDL</button>
                         <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ WindowsセットアップバッチをDL</button>
                         <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除ツールをDL</button>
                         <button onclick="downloadSingleBat('simple')" style="background:#64748b; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(100,116,139,0.2);">📄 簡易スタートガイドをDL</button>
@@ -951,6 +952,34 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
 `;
 }
 
+function getAndroidRemoveInstructionsContent(storeId) {
+    return `=========================================================
+リテアド・サイネージ Androidアプリ設定解除・初期化ガイド
+=========================================================
+
+このファイルは、Android端末から「リテアド・サイネージ」の店舗ID設定を
+解除し、アプリを初期状態に戻す、あるいは削除するための手順書です。
+
+【対象の店舗固有ID】
+店舗固有ID: ${storeId}
+
+---------------------------------------------------------
+■ 解除・初期化手順
+---------------------------------------------------------
+1. サイネージ用Android端末の画面上で起動している「リテアド・サイネージプレイヤー」
+   アプリの再生を終了します。
+   （※画面を終了するか、設定ボタン等から管理メニューを開きます）
+
+2. アプリ内の「設定画面」または「管理メニュー」を開きます。
+
+3. 「店舗IDの削除」または「登録解除（クリア）」ボタンをタップし、
+   現在紐付けられている店舗ID【 ${storeId} 】を削除します。
+
+4. 今後サイネージとして一切使用しない場合は、Android端末標準の設定アプリ
+   （アプリ管理など）から「アンインストール」を実行してください。
+`;
+}
+
 function downloadSingleBat(type) {
     const suffix = document.getElementById('store-suffix').value.trim();
     if(!suffix) {
@@ -958,6 +987,19 @@ function downloadSingleBat(type) {
         return;
     }
     const storeId = `${currentPrefix}_${suffix}`;
+
+    if (type === 'remove_android') {
+        const textContent = getAndroidRemoveInstructionsContent(storeId);
+        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `remove_android_signage_${storeId}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Swal.fire("発行完了", `「remove_android_signage_${storeId}.txt」をダウンロードしました。`, "success");
+        return;
+    }
 
     if (type === 'simple') {
         const textContent = getSimpleStartInstructionsContent(storeId);
@@ -1111,6 +1153,9 @@ async function downloadBulkZip() {
             if (includeRemove) {
                 const removeContent = getRemoveBatContent();
                 storeFolder.file('remove_retail_signage.bat', removeContent);
+
+                const removeAndroidContent = getAndroidRemoveInstructionsContent(storeId);
+                storeFolder.file(`remove_android_signage_${storeId}.txt`, removeAndroidContent);
             }
         });
 

@@ -1805,11 +1805,38 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
 ・電源投入時の自動起動を行いたい場合は、各デバイスのOS標準設定（スタートアップ登録など）を用いて、手動で上記のURLまたはアプリを起動対象に登録してください。
 `;
 
+            // Generate customized Android remove instructions content
+            const removeAndroidInstructions = `=========================================================
+リテアド・サイネージ Androidアプリ設定解除・初期化ガイド
+=========================================================
+
+このファイルは、Android端末から「リテアド・サイネージ」の店舗ID設定を
+解除し、アプリを初期状態に戻す、あるいは削除するための手順書です。
+
+【対象の店舗固有ID】
+店舗固有ID: ${storeId}
+
+---------------------------------------------------------
+■ 解除・初期化手順
+---------------------------------------------------------
+1. サイネージ用Android端末の画面上で起動している「リテアド・サイネージプレイヤー」
+   アプリの再生を終了します。
+   （※画面を終了するか、設定ボタン等から管理メニューを開きます）
+
+2. アプリ内の「設定画面」または「管理メニュー」を開きます。
+
+3. 「店舗IDの削除」または「登録解除（クリア）」ボタンをタップし、
+   現在紐付けられている店舗ID【 ${storeId} 】を削除します。
+
+4. 今後サイネージとして一切使用しない場合は、Android端末標準の設定アプリ
+   （アプリ管理など）から「アンインストール」を実行してください。
+`;
+
             const mailOptions = {
                 from: smtpUser || '"RetailMedia Portal" <noreply@retail-ad.com>',
                 to: targetEmail,
                 subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
-                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の初期設定資材を送付いたします。\n\nご利用のサイネージ機器の環境・デバイスに合わせて、添付されているファイルを選択して設定を行ってください。\n\n1. Android端末（LEDフィルム含む）の場合：\n  添付されている「android_instructions_${storeId}.txt」を開き、記載の手順に沿って店舗IDを登録してください。\n\n2. Windows PC（セキュリティ設定を全自動適用する場合）の場合：\n  添付されている「setup_${storeId}.bat」をPCに保存し、右クリックして「管理者として実行」してください。\n\n3. セキュリティ設定を行わない場合（制限変更ができない既存パネルなど）：\n  添付されている「simple_start_${storeId}.txt」を開き、記載されているURLをブラウザで開くか、アプリに店舗IDのみを入力して起動してください。\n\nよろしくお願いいたします。`,
+                text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の初期設定資材を送付いたします。\n\nご利用 of サイネージ機器の環境・デバイスに合わせて、添付されているファイルを選択して設定を行ってください。\n\n1. Android端末（既存Androidパネル等）の場合：\n  添付されている「android_instructions_${storeId}.txt」を開き、記載の手順に沿って店舗IDを登録してください。\n\n2. セキュリティ設定を行わない場合（制限変更ができない既存パネルなど）：\n  添付されている「simple_start_${storeId}.txt」を開き、記載されているURLをブラウザで開くか、アプリに店舗IDのみを入力して起動してください。\n\n3. Windows PC（セキュリティ設定を全自動適用する場合）の場合：\n  添付されている「setup_${storeId}.bat」をPCに保存し、右クリックして「管理者として実行」してください。\n\n---------------------------------------------------------\n■ 設定を解除・復元する場合\n---------------------------------------------------------\n・Android端末の場合：\n  添付されている「remove_android_signage_${storeId}.txt」を開き、記載の手順に沿ってアプリの設定を解除してください。\n\n・Windows PCの場合：\n  添付されている「remove_retail_signage.bat」（※ZIPダウンロード、または本部から配布された資材に含まれます）を起動するか、本手順で復元設定を行ってください。\n\nよろしくお願いいたします。`,
                 attachments: [
                     {
                         filename: `setup_${storeId}.bat`,
@@ -1822,6 +1849,10 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
                     {
                         filename: `simple_start_${storeId}.txt`,
                         content: simpleInstructions
+                    },
+                    {
+                        filename: `remove_android_signage_${storeId}.txt`,
+                        content: removeAndroidInstructions
                     }
                 ]
             };
@@ -1836,6 +1867,7 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
                 console.log(`- Attachment: setup_${storeId}.bat (Content generated successfully)`);
                 console.log(`- Attachment: android_instructions_${storeId}.txt (Content generated successfully)`);
                 console.log(`- Attachment: simple_start_${storeId}.txt (Content generated successfully)`);
+                console.log(`- Attachment: remove_android_signage_${storeId}.txt (Content generated successfully)`);
             }
         }
 
