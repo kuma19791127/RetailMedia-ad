@@ -226,6 +226,27 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Veo Generation Settings -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;">
+                        <span style="font-weight: bold; color: #475569;"><i class="fas fa-sliders-h"></i> Google Veo 設定:</span>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
+                            <input type="radio" name="veoModel" value="standard" checked>
+                            Veo標準 (高品質: $0.50/秒)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
+                            <input type="radio" name="veoModel" value="fast">
+                            Veo Fast (高速/軽量: $0.10/秒)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
+                            <input type="radio" name="veoModel" value="lite">
+                            Veo Lite (低コスト: $0.03/秒)
+                        </label>
+                        <div style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 5px;"></div>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; color: #334155;">
+                            <input type="checkbox" id="veoAudioEnabled" checked>
+                            音声＋BGMを追加 (+$0.25/秒)
+                        </label>
+                    </div>
                     <!-- Image Preview Area -->
                     <div id="aiAgentImagePreviewContainer" style="display: none; align-items: center; gap: 10px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px dashed #cbd5e1;">
                         <img id="aiAgentImagePreview" style="max-height: 50px; border-radius: 4px; border: 1px solid #cbd5e1;">
@@ -789,7 +810,14 @@ function showAdPolicy() {
         resultDiv.style.display = 'none';
         
         try {
-            const bodyData = { message: input, storeId: 'current_store' };
+            const veoModel = document.querySelector('input[name="veoModel"]:checked').value;
+            const veoAudio = document.getElementById('veoAudioEnabled').checked;
+            const bodyData = { 
+                message: input, 
+                storeId: 'current_store',
+                veoModel: veoModel,
+                veoAudio: veoAudio
+            };
             if (selectedAgentImageBase64) {
                 bodyData.image = selectedAgentImageBase64;
             }

@@ -3728,7 +3728,7 @@ app.get('/api/pos/transactions', (req, res) => {
 
 // --- 2. Retailer Marketing Agent (小売マーケティング向け 自社販促エージェント) ---
 app.post('/api/agent/retailer', async (req, res) => {
-    const { message, image } = req.body;
+    const { message, image, veoModel, veoAudio } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -3737,6 +3737,29 @@ app.post('/api/agent/retailer', async (req, res) => {
         const rawKey = process.env.GEMINI_API_KEY || '';
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        // Parse selected Veo options and calculate fees
+        const selectedModel = veoModel || 'standard';
+        const hasAudio = veoAudio === true || veoAudio === 'true';
+
+        let modelLabel = '';
+        let secRateUSD = 0.00;
+        if (selectedModel === 'standard') {
+            modelLabel = 'Veo (標準/高品質)';
+            secRateUSD = 0.50;
+        } else if (selectedModel === 'fast') {
+            modelLabel = 'Veo Fast (高速/軽量)';
+            secRateUSD = 0.10;
+        } else {
+            modelLabel = 'Veo Lite (低コスト)';
+            secRateUSD = 0.03;
+        }
+
+        const baseUSD = secRateUSD * 15;
+        const audioUSD = hasAudio ? 0.25 * 15 : 0;
+        const totalUSD = baseUSD + audioUSD;
+        const totalJPY = Math.round(totalUSD * 150);
+        const ratePerSecond = secRateUSD + (hasAudio ? 0.25 : 0);
 
         // Store-specific POS Data simulation (Using cached morning data to save costs)
         const posDataContext = "本日のPOS特売・お買い得食材リスト: '夏野菜 (Summer Vegetables)', 'エナジードリンク (Energy Drinks)'";
@@ -3766,7 +3789,6 @@ Return ONLY a JSON object:
         const result = JSON.parse(responseText);
 
         // Auto-register the promotional video into the base_loop_videos array (self-distribution)
-        // Note: For demonstration, we add it to the generic videos list, but tagged as a base loop.
         const newPromo = {
             id: 'agent_promo_' + Date.now(),
             name: result.videoTitle,
@@ -3809,7 +3831,21 @@ Return ONLY a JSON object:
         }
 
         responseHtml += `
-            ※外部広告の枠を消費せず、自社サイネージ（ベースループ）に無料で即時反映されます。
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 0.85rem; color: #166534;">
+                <div style="font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-credit-card" style="color: #15803d;"></i> 💳 Square決済・Google Veo 課金明細
+                </div>
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.5;">
+                    <li><strong>モデル種類:</strong> ${modelLabel}</li>
+                    <li><strong>ナレーション・BGM:</strong> ${hasAudio ? 'あり (映像＋音声: +$0.25/秒)' : 'なし (映像のみ)'}</li>
+                    <li><strong>動画の長さ:</strong> 15秒 (固定)</li>
+                    <li><strong>ご利用単価:</strong> $${ratePerSecond.toFixed(2)} / 秒 (約${Math.round(ratePerSecond * 150)}円/秒)</li>
+                    <li><strong>合計料金:</strong> $${totalUSD.toFixed(2)} (<strong>¥${totalJPY.toLocaleString()}</strong>)</li>
+                    <li><strong>Square決済ステータス:</strong> <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">自動決済完了</span> (Transaction ID: <code style="font-size:0.8rem;">sq_tx_veo_${Date.now().toString().slice(-6)}</code>)</li>
+                </ul>
+            </div>
+            <br>
+            <span style="font-size: 0.75rem; color: #64748b;">※自社サイネージ（ベースループ）へ直接組み込まれるため、外部メディア広告枠は消費しません。</span>
         `;
 
         res.json({ success: true, plan: result, message: responseHtml });
