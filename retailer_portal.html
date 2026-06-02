@@ -139,7 +139,9 @@
             border-radius: 4px 8px 8px 4px;
             color: #1e3a8a;
             font-size: 0.95rem;
-            line-height: 1.6;
+        }
+        @media (max-width: 768px) {
+            .pc-only-br { display: none; }
         }
     </style>
 
@@ -302,16 +304,24 @@
                 <h3 style="color:#1e3a8a; margin-top:0; margin-bottom:12px; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
                     <span>ℹ️</span> 1クリック自動配信型サイネージ初期設定サービスのご案内
                 </h3>
-                <p style="font-size:0.95rem; color:#334155; line-height:1.7; margin-bottom:18px;">
-                    本サービスは、<b>「ボタン1つで各店舗へメール一括自動送信（案1）」</b>を行うことで、<br>
-                    本部の配信業務および現場の導入設定作業を極限までシンプルにする自動配信システムです。<br><br>
-                    通常の液晶モニターサイネージだけでなく、ガラス面等に貼付する透過型LEDの<br>
-                    <b>「リテアド LEDフィルムサイネージ（Androidスマートコントローラー／Windows等）」の初期セットアップにも完全対応</b>しています。<br><br>
-                    店舗ごとの固有IDが埋め込まれた専用バッチファイル（および解除用バッチ）がバックエンドで自動生成され、<br>
-                    各店舗のメールアドレス宛てにダイレクト送信されます。<br><br>
-                    これにより、手作業でのファイル送付ミスや店舗間での設定ファイルの取り違えを完全に防止し、<br>
-                    セキュリティ制限（USBポート無効化、自動キオスク起動）を安全かつ迅速に全店展開できます。
-                </p>
+                <div style="font-size:0.95rem; color:#334155; line-height:1.7; margin-bottom:18px;">
+                    <p style="margin-top:0; margin-bottom:15px;">
+                        本サービスは、<b>「ボタン1つで各店舗へメール一括自動送信（案1）」</b>を行うことで、<br class="pc-only-br">
+                        本部の配信業務および現場の導入設定作業を極限までシンプルにする自動配信システムです。
+                    </p>
+                    <p style="margin-top:0; margin-bottom:15px;">
+                        通常の液晶モニターサイネージだけでなく、ガラス面等に貼付する透過型LEDの<br class="pc-only-br">
+                        <b>「リテアド LEDフィルムサイネージ（Androidスマートコントローラー／Windows等）」の初期セットアップにも完全対応</b>しています。
+                    </p>
+                    <p style="margin-top:0; margin-bottom:15px;">
+                        店舗ごとの固有IDが埋め込まれた専用バッチファイル（および解除用バッチ）がバックエンドで自動生成され、<br class="pc-only-br">
+                        各店舗のメールアドレス宛てにダイレクト送信されます。
+                    </p>
+                    <p style="margin-top:0; margin-bottom:0;">
+                        これにより、手作業でのファイル送付ミスや店舗間での設定ファイルの取り違えを完全に防止し、<br class="pc-only-br">
+                        セキュリティ制限（USBポート無効化、自動キオスク起動）を安全かつ迅速に全店展開できます。
+                    </p>
+                </div>
                 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; border-top:1px solid #e2e8f0; padding-top:18px;">
                     <div>
