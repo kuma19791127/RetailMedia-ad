@@ -123,10 +123,10 @@ const newContent = `
         <p class="text-body" style="max-width: 600px; margin: 0 auto 30px;">
             リテアドの無料導入、店舗のDX化についてのご相談・お問い合わせはこちらから。
         </p>
-        <a href="mailto:info@retail-ad.awsapps.com" style="display:inline-block; background:var(--primary); color:white; padding:15px 40px; border-radius:30px; font-weight:bold; text-decoration:none; font-size:1.1rem;">
+        <a href="mailto:info@retail-ad.com" style="display:inline-block; background:var(--primary); color:white; padding:15px 40px; border-radius:30px; font-weight:bold; text-decoration:none; font-size:1.1rem;">
             ✉️ 担当者へメールで問い合わせる
         </a>
-        <p style="margin-top:15px; font-size:0.9rem; color:var(--gray);">info@retail-ad.awsapps.com</p>
+        <p style="margin-top:15px; font-size:0.9rem; color:var(--gray);">info@retail-ad.com</p>
     </div>
 
     <footer>
