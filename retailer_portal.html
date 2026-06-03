@@ -142,6 +142,67 @@
         }
         @media (max-width: 768px) {
             .pc-only-br { display: none; }
+            body {
+                flex-direction: column !important;
+                height: 100vh !important;
+                overflow: hidden !important;
+            }
+            .sidebar {
+                width: 100% !important;
+                height: 60px !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                z-index: 9999 !important;
+                flex-direction: row !important;
+                justify-content: space-around !important;
+                align-items: center !important;
+                padding-top: 0 !important;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+            }
+            .sidebar h2 {
+                display: none !important;
+            }
+            .sidebar > div:last-child {
+                margin-top: 0 !important;
+                padding: 0 10px !important;
+            }
+            .sidebar > div:last-child button {
+                padding: 6px 12px !important;
+                font-size: 0.8rem !important;
+                margin-top: 0 !important;
+            }
+            .nav-item {
+                padding: 10px 5px !important;
+                font-size: 0.85rem !important;
+                text-align: center !important;
+                flex: 1 !important;
+                border-left: none !important;
+                border-bottom: 3px solid transparent !important;
+            }
+            .nav-item:hover, .nav-item.active {
+                border-left: none !important;
+                border-bottom: 3px solid #3b82f6 !important;
+                background: #334155 !important;
+            }
+            .main-content {
+                padding: 15px !important;
+                padding-bottom: 80px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                flex: 1 !important;
+                overflow-y: auto !important;
+            }
+            .agent-body {
+                flex-direction: column !important;
+                gap: 15px !important;
+            }
+            .agent-body div[style*="display: grid"] {
+                grid-template-columns: 1fr !important;
+            }
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
         }
     </style>
 
@@ -222,7 +283,11 @@
                     <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 0 8px 8px 0; font-size: 0.95rem; line-height: 1.7; color: #334155;">
                         <h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 1.1rem;"><i class="fas fa-brain" style="color:#2563eb;"></i> Googleのネイティブ・マルチモーダルAI「Gemini Omni」</h4>
                         <p style="margin: 0;">
-                            Googleの最新AIモデル「Gemini Omni（ジェミニ オムニ）」に関する情報です。テキスト、画像、音声、動画を横断して理解・処理できるGoogle of Native Multimodal AIモデルです。特に、多様な入力から会話形式で自然かつ高品質な動画を作成・編集できる機能に優れています。
+                            小売企業の本部（マーケティング部等）が<br>
+                            自社店舗のサイネージパネルを一括管理し<br>
+                            店舗の雰囲気作りに貢献する独自動画<br>
+                            （社長挨拶、PB商品の宣伝など）を配信する<br>
+                            専用システムです。
                         </p>
                     </div>
 
