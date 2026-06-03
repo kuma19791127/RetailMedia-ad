@@ -2767,7 +2767,7 @@ let storeData = {
 };
 
 let adminSettings = {
-    accounting_email: "info@retail-ad.awsapps.com"
+    accounting_email: "info@retail-ad.com"
 };
 
 // Admin Portal Route
@@ -2889,7 +2889,7 @@ async function sendSESEmail(toAddress, subject, bodyText) {
             Body: { Text: { Data: bodyText } },
             Subject: { Data: subject }
         },
-        Source: process.env.SES_SENDER_EMAIL || "info@retail-ad.awsapps.com" 
+        Source: process.env.SES_SENDER_EMAIL || "info@retail-ad.com" 
     };
     try {
         await sesClient.send(new SendEmailCommand(params));
