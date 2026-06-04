@@ -528,7 +528,9 @@
                                 <b>導入環境に合わせたファイルの選択：</b><br>
                                 以下の4つの導入環境パターンから<br>
                                 店舗のサイネージ機器に該当する<br>
-                                手順を選択します
+                                手順を選択します<br>
+                                ※サービスを利用できるのは<br>
+                                web接続できるサイネージパネルのみ
                                 <ul style="padding-left:15px; margin-top:5px; margin-bottom:5px; list-style-type:circle;">
                                     <li style="margin-bottom:6px;">
                                         <b>1. リテアド LEDフィルムサイネージをご利用の場合：</b><br>
@@ -580,8 +582,8 @@
 
             <!-- UI Selection: Single Store or Bulk Store -->
             <div class="setup-tab-buttons" style="display:flex; gap:15px; margin-bottom:20px;">
-                <button id="btn-single-setup-mode" onclick="switchSetupMode('single')" style="flex:1; padding:12px; font-weight:bold; border-radius:8px; border:none; background:#1e293b; color:white; cursor:pointer; font-size:1rem; transition:0.3s;">👤 個別店舗用の発行</button>
-                <button id="btn-bulk-setup-mode" onclick="switchSetupMode('bulk')" style="flex:1; padding:12px; font-weight:bold; border-radius:8px; border:none; background:#e2e8f0; color:#475569; cursor:pointer; font-size:1rem; transition:0.3s;">🏢 大店舗向け一括発行 (複数店舗 / メール・ZIP)</button>
+                <button id="btn-single-setup-mode" onclick="switchSetupMode('single')" style="flex:1; padding:12px; font-weight:bold; border-radius:8px; border:none; background:#1e293b; color:white; cursor:pointer; font-size:1rem; transition:0.3s;">👤 個別店舗用の<br>発行</button>
+                <button id="btn-bulk-setup-mode" onclick="switchSetupMode('bulk')" style="flex:1; padding:12px; font-weight:bold; border-radius:8px; border:none; background:#e2e8f0; color:#475569; cursor:pointer; font-size:1rem; transition:0.3s;">🏢 大店舗向け一括発行<br>(複数店舗 / メール・ZIP)</button>
             </div>
 
             <!-- Single Store Card -->
@@ -594,28 +596,29 @@
                     ダウンロードします<br>
                     このバッチを実行するだけで<br>
                     現場のPCに店舗IDとセキュリティ制限が<br>
-                    全自動で適用されます
+                    全自動で適用されます<br>
+                    ※pcでセキュリティーtest出来ます
                 </div>
                 
                 <div class="single-setup-form-inputs" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
                     <div style="flex:1; min-width:200px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）</label>
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）<br>貴社mail</label>
                         <input type="text" id="retailer-prefix-single" placeholder="例: LIFE" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; background:#f1f5f9;" readonly>
                     </div>
                     <div style="flex:1; min-width:200px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗番号または店舗名（英数字）</label>
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗番号または店舗名（英数字）<br>例: 001 または SHINJUKU</label>
                         <input type="text" id="store-suffix" placeholder="例: 001 または SHINJUKU" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;">
                     </div>
                 </div>
 
                 <div style="margin-bottom:20px;">
-                    <label style="display:block; margin-bottom:10px; font-weight:bold;">3. 発行するセットアップ資材のダウンロード</label>
+                    <label style="display:block; margin-bottom:10px; font-weight:bold;">3. 発行するセットアップ資材の<br>ダウンロード</label>
                     <div class="single-setup-buttons-list" style="display:flex; flex-wrap:wrap; gap:10px;">
-                        <button onclick="downloadSingleBat('android')" style="background:#2563eb; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(37,99,235,0.2);">🤖 Android設定手順をDL</button>
-                        <button onclick="downloadSingleBat('remove_android')" style="background:#f97316; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(249,115,22,0.2);">🤖 Android設定解除手順をDL</button>
-                        <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ WindowsセットアップバッチをDL</button>
-                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除ツールをDL</button>
-                        <button onclick="downloadSingleBat('simple')" style="background:#64748b; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(100,116,139,0.2);">📄 簡易スタートガイドをDL</button>
+                        <button onclick="downloadSingleBat('android')" style="background:#2563eb; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(37,99,235,0.2);">🤖 Android設定手順を<br>DL</button>
+                        <button onclick="downloadSingleBat('remove_android')" style="background:#f97316; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(249,115,22,0.2);">🤖 Android設定解除手順を<br>DL</button>
+                        <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ Windowsセットアップバッチを<br>DL</button>
+                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除ツールを<br>DL</button>
+                        <button onclick="downloadSingleBat('simple')" style="background:#64748b; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(100,116,139,0.2);">📄 簡易スタートガイドを<br>DL</button>
                     </div>
                 </div>
             </div>
