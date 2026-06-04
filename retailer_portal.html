@@ -34,7 +34,7 @@
         /* Dashboard Layout */
         .sidebar { width: 250px; background: #1e293b; color: white; display: flex; flex-direction: column; padding-top: 20px; }
         .sidebar h2 { text-align: center; margin-bottom: 30px; font-size: 1.2rem; border-bottom: 1px solid #334155; padding-bottom: 20px; }
-        .nav-item { padding: 15px 25px; cursor: pointer; transition: 0.2s; color: #cbd5e1; }
+        .nav-item { padding: 15px 25px; cursor: pointer; transition: 0.2s; color: #cbd5e1; display: flex; align-items: center; gap: 10px; }
         .nav-item:hover, .nav-item.active { background: #334155; color: white; border-left: 4px solid #3b82f6; }
         
         .main-content { flex: 1; padding: 40px; overflow-y: auto; }
@@ -156,34 +156,70 @@
                 z-index: 9999 !important;
                 flex-direction: row !important;
                 justify-content: space-around !important;
-                align-items: center !important;
+                align-items: stretch !important;
                 padding-top: 0 !important;
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+                background: #1e293b !important;
             }
             .sidebar h2 {
                 display: none !important;
             }
             .sidebar > div:last-child {
                 margin-top: 0 !important;
-                padding: 0 10px !important;
+                padding: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                flex: 1 !important;
             }
             .sidebar > div:last-child button {
-                padding: 6px 12px !important;
-                font-size: 0.8rem !important;
-                margin-top: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: transparent !important;
+                color: #cbd5e1 !important;
+                border: none !important;
+                border-radius: 0 !important;
+                font-size: 0.65rem !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                cursor: pointer;
+            }
+            .sidebar > div:last-child button::before {
+                content: "🚪";
+                font-size: 1.1rem;
+                margin-bottom: 2px;
             }
             .nav-item {
-                padding: 10px 5px !important;
-                font-size: 0.85rem !important;
+                padding: 0 !important;
+                font-size: 0.65rem !important;
                 text-align: center !important;
                 flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
                 border-left: none !important;
-                border-bottom: 3px solid transparent !important;
+                border-bottom: none !important;
+                border-top: 3px solid transparent !important;
+                color: #cbd5e1 !important;
+                line-height: 1.2 !important;
+                gap: 2px !important;
+            }
+            .nav-icon {
+                font-size: 1.1rem !important;
+            }
+            .nav-text {
+                font-size: 0.65rem !important;
             }
             .nav-item:hover, .nav-item.active {
                 border-left: none !important;
-                border-bottom: 3px solid #3b82f6 !important;
+                border-top: 3px solid #3b82f6 !important;
+                border-bottom: none !important;
                 background: #334155 !important;
+                color: white !important;
             }
             .main-content {
                 padding: 15px !important;
@@ -273,9 +309,9 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <h2>Retail Media<br><span style="font-size:0.9rem; color:#94a3b8;">Retailer Portal</span></h2>
-        <div class="nav-item active" onclick="switchTab('dashboard')">🏠 ダッシュボード</div>
-        <div class="nav-item" onclick="switchTab('store-setup')">🏬 店舗サイネージ設定</div>
-        <div class="nav-item" onclick="switchTab('video-upload')">📤 ベース動画の配信</div>
+        <div class="nav-item active" onclick="switchTab('dashboard')"><span class="nav-icon">🏠</span><span class="nav-text">ダッシュボード</span></div>
+        <div class="nav-item" onclick="switchTab('store-setup')"><span class="nav-icon">🏬</span><span class="nav-text">店舗サイネージ設定</span></div>
+        <div class="nav-item" onclick="switchTab('video-upload')"><span class="nav-icon">📤</span><span class="nav-text">ベース動画の配信</span></div>
         <div style="margin-top:auto; padding:20px;">
             <button onclick="logout()" style="width:100%; padding:10px; background:#475569; color:white; border:none; border-radius:5px; cursor:pointer;">ログアウト</button>
         </div>
@@ -299,7 +335,7 @@
                 <div class="agent-body" style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
                     <!-- Gemini Omni Explanation -->
                     <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 0 8px 8px 0; font-size: 0.95rem; line-height: 1.7; color: #334155;">
-                        <h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 1.1rem;"><i class="fas fa-brain" style="color:#2563eb;"></i> Googleのネイティブ・マルチモーダルAI「Gemini Omni」</h4>
+                        <h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 1.1rem;"><i class="fas fa-brain" style="color:#2563eb;"></i> Googleの最新AIモデル<br>「Gemini Omni（ジェミニ オムニ）」に<br>関する情報です。</h4>
                         <p style="margin: 0;">
                             Googleの最新AIモデル<br>
                             「Gemini Omni（ジェミニ オムニ）」に関する情報です。<br>
@@ -355,11 +391,16 @@
                         <div>
                             <strong style="color:#2563eb; font-size:1.1rem;">ステップ1：「店舗サイネージ設定」</strong><br>
                             <span style="color:#475569; line-height:1.6; display:block; margin-top:5px;">
-                                左メニューの「店舗サイネージ設定」から、各店舗のパネルに設定するための<br>
-                                <b>「専用セットアップファイル（.bat）」</b>を発行します。<br><br>
-                                このファイルを店舗スタッフに配布し、<br>
-                                <span style="background:#fef3c7; padding:2px 5px; border-radius:4px; font-weight:bold; color:#b45309;">サイネージパネルのコントローラーでbatをクリックしてもらうだけで、</span><br>
-                                その端末が自動的にサイネージとして登録されます。
+                                左メニューの「店舗サイネージ設定」から<br>
+                                各店舗のパネルに設定するための<br>
+                                「専用セットアップファイル（.bat）」を<br>
+                                発行します。<br>
+                                <br>
+                                このファイルを店舗スタッフに配布し<br>
+                                サイネージパネルのコントローラーでbatを<br>
+                                クリックしてもらうだけで<br>
+                                その端末が自動的に<br>
+                                サイネージとして登録されます。
                             </span>
                         </div>
                     </div>
@@ -369,9 +410,14 @@
                         <div>
                             <strong style="color:#10b981; font-size:1.1rem;">ステップ2：「ベース動画の配信」</strong><br>
                             <span style="color:#475569; line-height:1.6; display:block; margin-top:5px;">
-                                左メニューの「ベース動画の配信」から、お店でループ再生させたいCM動画をアップロードします。<br><br>
-                                アップロードされた動画は、高画質のまま<b>自動でクラウド（S3）へ保存</b>され、<br>
-                                <span style="background:#ecfdf5; padding:2px 5px; border-radius:4px; font-weight:bold; color:#047857;">全国の指定した店舗のサイネージで数秒以内に自動配信がスタート</span>します。
+                                左メニューの「ベース動画の配信」から<br>
+                                お店でループ再生させたい<br>
+                                CM動画をアップロードします<br>
+                                <br>
+                                アップロードされた動画は<br>
+                                自動でクラウド（S3）へ保存され<br>
+                                全国の設定した店舗の<br>
+                                サイネージで自社広告を自動配信
                             </span>
                         </div>
                     </div>
