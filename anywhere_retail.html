@@ -211,7 +211,7 @@
         <input type="file" id="excel-master-upload" accept=".xlsx, .csv, .js" style="display:none;" onchange="uploadProductData(this)">
         <button onclick="fetchScanHistory()" class="menu-btn" style="background:#f59e0b;">🛠 スキャン履歴</button>
         <button onclick="openStaffScanner()" class="menu-btn" style="background:#ec4899;">🛒 商品を店員が読む</button>
-    <button onclick="generateQR()" class="menu-btn" style="background:#14b8a6;">📷 顧客用スマホレジQR発行</button>
+        <button onclick="approveCancelRequest()" class="menu-btn" style="background:#14b8a6;">↩️ キャンセル承認 (1タップ承認)</button>
         <button onclick="window.open('business_lp.html', '_blank')" class="menu-btn" style="background:#8b5cf6;">📺 サイネージ広告</button>
         
         <button class="menu-btn" style="background:#ef4444; margin-top:20px;" onclick="doLogout()">ログアウト</button>
@@ -414,6 +414,67 @@ function copyQrUrl() {
     navigator.clipboard.writeText(urlInput.value);
     Swal.fire({toast:true, position:'top-end', icon:'success', title:'URLをコピーしました！<br>LINE等で送信できます', showConfirmButton:false, timer:3000});
 }
+
+    async function approveCancelRequest() {
+        const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value || 'store@demo.com';
+        try {
+            Swal.fire({title: '通信中...', text: 'キャンセル申請データを取得しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            
+            // サーバーから対象店舗のトランザクション履歴（およびキャンセル対象）を取得
+            const res = await fetch(window.API_BASE_URL + `/api/retailer/dashboard?store_id=${email}`);
+            const data = await res.json();
+            
+            if(!data.transactions || data.transactions.length === 0) {
+                Swal.fire('情報', '現在、承認待ちのキャンセル申請はありません。', 'info');
+                return;
+            }
+            
+            // 最新のトランザクションをキャンセル対象候補として表示
+            const latestTx = data.transactions[0];
+            const d = new Date(parseInt(latestTx.timestamp)).toLocaleString('ja-JP');
+            
+            Swal.fire({
+                title: 'キャンセル申請の承認',
+                html: `<div style="text-align:left; font-size:14px;">
+                    以下の決済に対するキャンセル申請を承認（返金）しますか？<br><br>
+                    <b>日時:</b> ${d}<br>
+                    <b>金額:</b> <strong style="color:#ef4444;">¥${latestTx.total_amount || latestTx.totalAmount || 0}</strong><br>
+                    <b>決済ID:</b> ${latestTx.transaction_id || latestTx.id || 'N/A'}
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#d33',
+                confirmButtonText: '1タップで承認・返金する',
+                cancelButtonText: '閉じる'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({title: '処理中...', text: '返金処理を実行しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+                    
+                    // Square/GMOへのキャンセル・返金API（モック含む）をコール
+                    const refundRes = await fetch(window.API_BASE_URL + '/api/payment/square-refund', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            transactionId: latestTx.transaction_id || latestTx.id,
+                            amount: latestTx.total_amount || latestTx.totalAmount || 0,
+                            store_id: email
+                        })
+                    });
+                    const refundData = await refundRes.json();
+                    
+                    if(refundData.success) {
+                        Swal.fire('承認完了', 'キャンセルの承認および返金処理が完了しました。', 'success');
+                    } else {
+                        Swal.fire('エラー', refundData.error || '返金処理に失敗しました。', 'error');
+                    }
+                }
+            });
+        } catch(e) {
+            console.error("Cancel approval error:", e);
+            Swal.fire('エラー', '通信に失敗しました', 'error');
+        }
+    }
 
     // --- Real Server Connections ---
     async function fetchSalesData() {

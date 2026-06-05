@@ -942,6 +942,67 @@ app.post('/api/payment/square-charge', async (req, res) => {
 });
 
 
+app.post('/api/payment/square-refund', async (req, res) => {
+    const { transactionId, amount, store_id } = req.body;
+    console.log(`[Refund Request] 💳 Processing refund for txn: ${transactionId}, amount: ¥${amount}, store: ${store_id}`);
+    
+    if (!transactionId) {
+        return res.status(400).json({ success: false, error: 'transactionId is required' });
+    }
+
+    // デモトランザクション ID の場合は、即座に成功を返す
+    if (transactionId.startsWith('demo_tx_') || transactionId.startsWith('tx_')) {
+        console.log(`[Refund API] Demo transaction refund bypassed.`);
+        
+        // 登録されている売上総額から引く
+        if (typeof storeData !== 'undefined' && storeData["default_store"]) {
+            storeData["default_store"].total_pos_sales = Math.max(0, storeData["default_store"].total_pos_sales - Number(amount));
+        }
+        return res.json({ success: true, refundId: `demo_ref_${Date.now()}` });
+    }
+
+    try {
+        const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
+        const crypto = require('crypto');
+        
+        // Square Refund API をコール
+        const idempotencyKey = crypto.randomUUID();
+        const requestBody = {
+            payment_id: transactionId,
+            idempotency_key: idempotencyKey,
+            amount_money: { amount: Number(amount), currency: 'JPY' },
+            reason: '顧客によるキャンセル申請承認'
+        };
+
+        const refundRes = await customFetch('https://connect.squareup.com/v2/refunds', {
+            method: 'POST',
+            headers: {
+                'Square-Version': '2024-03-20',
+                'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || ''}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const refundData = await refundRes.json();
+        
+        if (!refundRes.ok || refundData.errors) {
+            console.error(`[Square Refund API Error]`, refundData.errors);
+            return res.status(400).json({ success: false, error: 'Squareでの返金処理に失敗しました。' });
+        }
+
+        // 売上総額から控除
+        if (typeof storeData !== 'undefined' && storeData["default_store"]) {
+            storeData["default_store"].total_pos_sales = Math.max(0, storeData["default_store"].total_pos_sales - Number(amount));
+        }
+
+        res.json({ success: true, refundId: refundData.refund.id });
+    } catch (e) {
+        console.error("Square refund request failed:", e);
+        res.status(500).json({ success: false, error: '返金処理の通信エラーが発生しました' });
+    }
+});
+
 // --- RETAILER DASHBOARD APIs ---
 app.get('/api/retailer/dashboard', async (req, res) => {
     const storeId = req.query.store_id || "default_store";
@@ -3320,6 +3381,9 @@ app.post('/api/voice/synthesize', async (req, res) => {
 
 const s3Client = new S3Client({ region: process.env.AWS_DEFAULT_REGION || "us-east-1" });
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
+
+const ddbClient = new DynamoDBClient({ region: process.env.AWS_DEFAULT_REGION || "us-east-1" });
+const docClient = DynamoDBDocumentClient.from(ddbClient);
 
 function loadLocalDatabase() {
     try {
