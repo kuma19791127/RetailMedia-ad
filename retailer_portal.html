@@ -374,7 +374,7 @@
             <div id="inline-2fa-section" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
                 <h3 style="color:#2563eb; margin-top:0; font-size:1.1rem;">二段階認証 (2FA)</h3>
                 <p style="color:#64748b; font-size:13px; margin-bottom:10px;">認証アプリに表示される<br>6桁のコードを入力してください</p>
-                <p style="color:#e11d48; font-size:12px; margin-top:-5px; margin-bottom:15px; font-weight:bold;">ストア 広告主 クリエイターの2faと共通</p>
+                <p style="color:#e11d48; font-size:12px; margin-top:-5px; margin-bottom:15px; font-weight:bold;">最初にログインしたstore or retailerと共通</p>
                 <input type="text" id="inline-verify-2fa-code" class="login-input" placeholder="123456" autocomplete="off" style="text-align:center; font-size:1.2rem; letter-spacing:2px;" maxlength="6">
                 <button onclick="submitInline2FAVerify()" class="login-btn">認証する</button>
                 <p id="inline-verify-2fa-error" style="color:#e74c3c; font-size:14px; display:none; margin-top:10px;">コードが正しくありません</p>
@@ -845,7 +845,7 @@
                         console.log("[Auth] Require 2FA verification");
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証コード',
-                            html: '認証アプリに表示される<br>6桁のコードを入力してください<br>ストア 広告主 クリエイターの2faと共通',
+                            html: '認証アプリに表示される<br>6桁のコードを入力してください<br>最初にログインしたstore or retailerと共通',
                             input: 'text',
                             inputPlaceholder: '6桁のコードを入力',
                             showCancelButton: true,
