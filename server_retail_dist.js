@@ -1294,6 +1294,7 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         if (verifyPassword(password, user.password)) {
+            const targetRole = role || user.role;
             const isDemoUser = email.endsWith('@demo.com') || 
                                email.endsWith('@retail.com') || 
                                email === 'demo@retail-ad.com' ||
@@ -1318,12 +1319,12 @@ app.post('/api/auth/login', async (req, res) => {
             if (!isDemoUser) {
                 // If 2FA is not setup, require setup (QR Code display)
                 if (!user.two_factor_secret) {
-                    return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(user.role), role: user.role });
+                    return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(targetRole), role: targetRole });
                 }
                 // If 2FA is enabled, require code verification
                 if (user.two_factor_secret) {
                     if (!totpCode && !skip2FA) {
-                        return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(user.role) });
+                        return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(targetRole) });
                     } else if (totpCode) {
                         const speakeasy = require('speakeasy');
                         const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 2 });
@@ -1336,8 +1337,12 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            currentUser = { email, role: user.role }; // Set Session
-            res.json({ success: true, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
+            // ログイン成功時にJWTトークンを発行してCookieにセット
+            const jwtToken = jwt.sign({ email, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
+            res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
+
+            currentUser = { email, role: targetRole }; // Set Session
+            res.json({ success: true, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
         } else {
             console.log(`[Auth] ❌ Login Failed: Password incorrect for: ${email}`);
             res.json({ success: false, error: "パスワードが間違っています。" });
