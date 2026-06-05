@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retail Media - Retailer Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -18,7 +19,7 @@
         .swal2-container {
             z-index: 10005 !important;
         }
-        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 350px; text-align: center; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 90%; max-width: 350px; text-align: center; box-sizing: border-box; }
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .login-btn { background: #1e3a8a; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold; }
         .login-btn:hover { background: #1e40af; }
@@ -215,7 +216,16 @@
             body {
                 height: 100vh !important;
                 overflow: hidden !important;
+                font-size: 14px !important;
             }
+            /* headings & texts */
+            h1 { font-size: 1.4rem !important; padding-bottom: 10px !important; }
+            h2 { font-size: 1.25rem !important; }
+            h3 { font-size: 1.1rem !important; }
+            h4 { font-size: 1.0rem !important; }
+            p, span, li, label, strong { font-size: 0.85rem !important; line-height: 1.5 !important; }
+            .guide-text { font-size: 0.85rem !important; padding: 12px !important; }
+
             .sidebar > div:last-child button {
                 font-size: 0.65rem !important;
             }
@@ -235,12 +245,14 @@
             .agent-body {
                 flex-direction: column !important;
                 gap: 15px !important;
+                padding: 12px !important;
             }
             .agent-body div[style*="display: grid"] {
                 grid-template-columns: 1fr !important;
             }
             .video-gallery-grid {
                 grid-template-columns: 1fr !important;
+                gap: 15px !important;
             }
             .setup-steps-grid {
                 grid-template-columns: 1fr !important;
@@ -250,6 +262,7 @@
                 flex-direction: column !important;
                 align-items: center !important;
                 text-align: center;
+                padding: 12px !important;
             }
             .flow-step-box > div:first-child {
                 margin-right: 0 !important;
@@ -274,6 +287,30 @@
                 width: 100% !important;
                 margin-right: 0 !important;
                 text-align: center !important;
+                font-size: 0.9rem !important;
+            }
+            /* SweetAlert2 Mobile Font and Size */
+            .swal2-popup {
+                font-size: 0.85rem !important;
+                width: 90% !important;
+                padding: 15px 10px !important;
+            }
+            .swal2-title {
+                font-size: 1.25rem !important;
+            }
+            .swal2-html-container {
+                font-size: 0.85rem !important;
+                line-height: 1.4 !important;
+            }
+            .swal2-input {
+                font-size: 1.1rem !important;
+                height: 40px !important;
+                margin: 10px auto !important;
+                width: 80% !important;
+            }
+            .swal2-actions button {
+                font-size: 0.85rem !important;
+                padding: 8px 16px !important;
             }
         }
     </style>
