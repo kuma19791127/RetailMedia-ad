@@ -3380,9 +3380,11 @@ app.post('/api/voice/synthesize', async (req, res) => {
 
 
 const s3Client = new S3Client({ region: process.env.AWS_DEFAULT_REGION || "us-east-1" });
-const bucketName = process.env.AWS_S3_BUCKET_NAME;
+const bucketName = process.env.AWS_S3_BUCKET_NAME || 'retail-media-db-2026';
+const S3_BUCKET_NAME = bucketName;
+const AWS_REGION = process.env.AWS_DEFAULT_REGION || 'us-east-1';
 
-const ddbClient = new DynamoDBClient({ region: process.env.AWS_DEFAULT_REGION || "us-east-1" });
+const ddbClient = new DynamoDBClient({ region: AWS_REGION });
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 
 function loadLocalDatabase() {
