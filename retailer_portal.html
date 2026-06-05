@@ -276,21 +276,41 @@
                 gap: 10px !important;
             }
             .single-setup-form-inputs {
+                display: flex !important;
                 flex-direction: column !important;
                 gap: 10px !important;
             }
             .single-setup-form-inputs > div {
                 width: 100% !important;
+                flex: none !important;
+                min-width: 0 !important;
             }
             .single-setup-buttons-list {
+                display: flex !important;
                 flex-direction: column !important;
                 gap: 8px !important;
             }
             .single-setup-buttons-list button {
                 width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
                 margin-right: 0 !important;
                 text-align: center !important;
                 font-size: 0.9rem !important;
+            }
+            /* List and blue border card mobile adjustment */
+            ol, ul {
+                padding-left: 20px !important;
+            }
+            ol li, ul li {
+                margin-left: 0 !important;
+            }
+            .card {
+                padding: 15px !important;
+            }
+            .card[style*="border-left"] {
+                border-left-width: 4px !important;
+                padding-left: 20px !important;
             }
             /* SweetAlert2 Mobile Font and Size */
             .swal2-popup {
@@ -778,8 +798,23 @@
         function switchTab(tabId) {
             document.querySelectorAll('.main-content > div').forEach(div => div.style.display = 'none');
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.getElementById('tab-' + tabId).style.display = 'block';
-            event.target.classList.add('active');
+            
+            const targetDiv = document.getElementById('tab-' + tabId);
+            if (targetDiv) {
+                targetDiv.style.display = 'block';
+            }
+            
+            const navItems = document.querySelectorAll('.sidebar .nav-item');
+            navItems.forEach(item => {
+                if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(tabId)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollTop = 0;
+            }
         }
 
         async function handleLogin(e) {
@@ -985,6 +1020,7 @@
                 document.activeElement.blur();
             }
             loadVideos();
+            switchTab('video-upload');
         }
 
         function logout() {
