@@ -1029,9 +1029,56 @@
 
                 // ... event listeners ...
 
+                // Account freeze check on page load
+                if (localStorage.getItem('account_frozen') === 'true') {
+                    window.location.href = 'index.html';
+                }
+
+                function showVoiceUsagePolicy() {
+                    Swal.fire({
+                        title: '🚨 AIボイススタジオ利用基準',
+                        html: `<div style="text-align:left; font-size:14px; line-height:1.6;">
+                            <p style="color:#e74c3c; font-weight:bold; font-size:16px;">詐欺・暴力に利用するとアカウントは凍結されます。</p>
+                            <p>本機能は小売店舗内での正常な販促活動（セール案内や商品宣伝等）を目的として提供されています。</p>
+                            <p>以下の行為・テキスト入力は固く禁止されており、検知された場合は<b>即座にシステムのアカウントが自動的に凍結（無効化）</b>されます：</p>
+                            <ul style="margin-top:10px; padding-left:20px; color:#c0392b; font-weight:bold;">
+                                <li>オレオレ詐欺・還付金詐欺などのなりすましや不正請求テキストの入力</li>
+                                <li>暗証番号・口座情報・身代金の要求などの詐欺文脈</li>
+                                <li>暴力、脅迫、公序良俗に反するテキストの入力</li>
+                                <li>闇バイト等の違法取引への誘導</li>
+                            </ul>
+                        </div>`,
+                        icon: 'warning',
+                        confirmButtonText: '承諾して閉じる'
+                    });
+                }
 
                 async function speakText(text, type, forcePreview) {
                     if (!text) return;
+
+                    // AI Content Moderation - Expanded with fraud context patterns
+                    const bannedWords = [
+                        "必ず儲かる", "投資で稼ぐ", "続きはLINEで", "LINE登録はこちら",
+                        "還付金", "ATMで手続き", "キャッシュカードを預", "キャッシュカードをお預",
+                        "暗証番号を教", "口座情報", "銀行の窓口", "振り込んで", "振込詐欺",
+                        "未払い金", "法的措置", "差押", "差し押さえ", "身代金",
+                        "事故を起こした", "会社のお金を使い込", "至急お金が必要", "誰にも言わないで",
+                        "名義を貸して", "闇バイト", "受け子", "出し子", "高額報酬", "簡単な仕事"
+                    ];
+                    for (let word of bannedWords) {
+                        if (text.includes(word)) {
+                            Swal.fire({
+                                title: '【警告】利用規約違反',
+                                html: `不適切なコンテンツ（禁止ワード: <b>${word}</b>）が検出されました。<br>公序良俗に反する内容やスパム誘導は禁止されています。<br><br><span style="color:red; font-weight:bold;">システムによりアカウントが自動凍結されました。</span>`,
+                                icon: 'error',
+                                confirmButtonText: '閉じる'
+                            }).then(() => {
+                                localStorage.setItem('account_frozen', 'true');
+                                window.location.href = 'index.html';
+                            });
+                            return;
+                        }
+                    }
                     
                     const manualSelection = document.getElementById('voice-engine');
                     const isGemini = manualSelection && manualSelection.value.startsWith('gemini_');
@@ -1405,7 +1452,10 @@
                     </div>
 
                     <div class="input-group">
-                        <label>Campaign Text (放送原稿)</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <label style="margin-bottom:0; font-weight:bold;">Campaign Text (放送原稿)</label>
+                            <a href="javascript:void(0)" onclick="showVoiceUsagePolicy()" style="font-size:0.85rem; color:#3498db; text-decoration:underline; font-weight:bold;">🔗利用基準</a>
+                        </div>
                         <textarea id="ad-text" rows="16"
                             style="width:100%; box-sizing:border-box; padding:10px; background:black; color:white; border:1px solid #555; font-size:16px; margin-top:5px;"
                             placeholder="Today's Special! Tomato 98 yen!">本日の特売 トマト 98 円!</textarea>
