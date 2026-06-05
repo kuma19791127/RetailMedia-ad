@@ -385,16 +385,30 @@ app.get('/uploads/:filename', async (req, res) => {
         return res.sendFile(localPath);
     }
     
-    // S3 Fetch
+    // S3 Fetch with Range request handling to support iOS/Safari video streaming
     if (s3Client && bucketName) {
         try {
             const { GetObjectCommand } = require('@aws-sdk/client-s3');
-            const data = await s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: 'uploads/' + filename }));
+            const range = req.headers.range;
+            const s3Params = { Bucket: bucketName, Key: 'uploads/' + filename };
+            if (range) {
+                s3Params.Range = range;
+            }
+            const data = await s3Client.send(new GetObjectCommand(s3Params));
+            
+            if (range && data.ContentRange) {
+                res.status(206);
+                res.setHeader('Content-Range', data.ContentRange);
+                res.setHeader('Accept-Ranges', 'bytes');
+            }
             res.setHeader('Content-Type', data.ContentType || 'video/mp4');
+            if (data.ContentLength) {
+                res.setHeader('Content-Length', data.ContentLength);
+            }
             data.Body.pipe(res);
             return;
         } catch (e) {
-            console.log('[S3] Video not found:', filename);
+            console.log('[S3] Video not found or streaming error:', filename, e.message);
         }
     }
     res.status(404).send('Not Found');
