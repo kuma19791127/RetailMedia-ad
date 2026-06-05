@@ -8,6 +8,25 @@ async function initializeSquarePayment(amount, containerId, onSuccess) {
         return;
     }
 
+    // 動的に入力欄を挿入
+    const container = document.getElementById(containerId);
+    if (container && !document.getElementById('sq-buyer-email')) {
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '15px';
+        wrapper.style.textAlign = 'left';
+        wrapper.innerHTML = `
+            <div style="margin-bottom:10px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px; color:#475569;">領収書送信先メールアドレス</label>
+                <input type="email" id="sq-buyer-email" placeholder="customer@example.com" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-size:14px; background:#fff; color:#333;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px; color:#475569;">お名前（顧客名 / 企業名）</label>
+                <input type="text" id="sq-buyer-name" placeholder="山田 太郎" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-size:14px; background:#fff; color:#333;">
+            </div>
+        `;
+        container.parentNode.insertBefore(wrapper, container);
+    }
+
     try {
         const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOC_ID);
         
@@ -32,7 +51,9 @@ async function initializeSquarePayment(amount, containerId, onSuccess) {
                 try {
                     const result = await applePay.tokenize();
                     if (result.status === 'OK') {
-                        await processSquarePayment(result.token, amount, onSuccess);
+                        const email = document.getElementById('sq-buyer-email') ? document.getElementById('sq-buyer-email').value.trim() : '';
+                        const name = document.getElementById('sq-buyer-name') ? document.getElementById('sq-buyer-name').value.trim() : '';
+                        await processSquarePayment(result.token, amount, onSuccess, email, name);
                     } else {
                         statusContainer.innerText = "Apple Pay エラー: " + (result.errors?.[0]?.message || "キャンセルされました");
                     }
@@ -53,7 +74,9 @@ async function initializeSquarePayment(amount, containerId, onSuccess) {
                 try {
                     const result = await googlePay.tokenize();
                     if (result.status === 'OK') {
-                        await processSquarePayment(result.token, amount, onSuccess);
+                        const email = document.getElementById('sq-buyer-email') ? document.getElementById('sq-buyer-email').value.trim() : '';
+                        const name = document.getElementById('sq-buyer-name') ? document.getElementById('sq-buyer-name').value.trim() : '';
+                        await processSquarePayment(result.token, amount, onSuccess, email, name);
                     } else {
                         statusContainer.innerText = "Google Pay エラー: " + (result.errors?.[0]?.message || "キャンセルされました");
                     }
@@ -71,7 +94,9 @@ async function initializeSquarePayment(amount, containerId, onSuccess) {
                 if (!card) throw new Error("Card NOT init");
                 const result = await card.tokenize();
                 if (result.status === 'OK') {
-                    await processSquarePayment(result.token, amount, onSuccess);
+                    const email = document.getElementById('sq-buyer-email') ? document.getElementById('sq-buyer-email').value.trim() : '';
+                    const name = document.getElementById('sq-buyer-name') ? document.getElementById('sq-buyer-name').value.trim() : '';
+                    await processSquarePayment(result.token, amount, onSuccess, email, name);
                 } else {
                     statusContainer.innerText = "エラー: " + result.errors[0].message;
                 }
@@ -86,7 +111,7 @@ async function initializeSquarePayment(amount, containerId, onSuccess) {
     }
 }
 
-async function processSquarePayment(token, amount, onSuccess) {
+async function processSquarePayment(token, amount, onSuccess, email = '', buyerName = '') {
     const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') ? 'http://localhost:3000' : '';
     try {
         // Send data to backend hook (admin_portal sync)
@@ -102,7 +127,14 @@ async function processSquarePayment(token, amount, onSuccess) {
         const res = await fetch(API_URL + '/api/payment/square-charge', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token, amount: amount, source: window.location.pathname, store_id: storeRef })
+            body: JSON.stringify({ 
+                token: token, 
+                amount: amount, 
+                source: window.location.pathname, 
+                store_id: storeRef,
+                email: email,
+                buyer_name: buyerName
+            })
         });
         
         if (res.ok) {

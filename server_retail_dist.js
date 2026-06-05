@@ -879,8 +879,8 @@ app.post('/api/creator/upload', (req, res) => {
 
 // --- SQUARE PAYMENT API (Sync to Admin Portal) ---
 app.post('/api/payment/square-charge', async (req, res) => {
-    const { token, amount, source } = req.body;
-    console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}`);
+    const { token, amount, source, email, buyer_name } = req.body;
+    console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}. Email: ${email || 'none'}, Name: ${buyer_name || 'none'}`);
     
     // デモ決済用のトークンが送られてきた場合は、本番のSquareAPIを叩かずに成功扱いにする
     if (token === 'demo-applepay' || token === 'demo-local-token' || token === 'demo-error-token') {
@@ -896,6 +896,15 @@ app.post('/api/payment/square-charge', async (req, res) => {
         
         // Execute Actual Production Charge via Square API
         const idempotencyKey = crypto.randomUUID();
+        const requestBody = {
+            source_id: token,
+            idempotency_key: idempotencyKey,
+            amount_money: { amount: Number(amount), currency: 'JPY' }
+        };
+        
+        if (email) requestBody.buyer_email_address = email;
+        if (buyer_name) requestBody.note = `顧客名: ${buyer_name}`;
+
         const squareRes = await customFetch('https://connect.squareup.com/v2/payments', {
             method: 'POST',
             headers: {
@@ -903,11 +912,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
                 'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || ''}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                source_id: token,
-                idempotency_key: idempotencyKey,
-                amount_money: { amount: Number(amount), currency: 'JPY' }
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const squareData = await squareRes.json();

@@ -514,6 +514,9 @@
             <input type="text" id="native-2fa-verify-code" placeholder="6桁のコード" style="width:100%; padding:14px; margin-top:20px; margin-bottom:15px; border:2px solid #cbd5e1; border-radius:8px; font-size:1.2rem; text-align:center; letter-spacing:4px;" autocomplete="off">
             <button id="native-2fa-verify-submit" style="background:#2563eb; color:white; border:none; padding:14px 20px; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; width:100%; transition:0.2s;">認証してログイン</button>
             <p id="native-2fa-verify-error" style="color:#e74c3c; font-size:14px; margin-top:15px; display:none; font-weight:bold;">コードが間違っています</p>
+            <div style="margin-top:20px; border-top:1px solid #cbd5e1; padding-top:15px;">
+                <a href="javascript:void(0)" onclick="resetCurrent2FA()" style="color:#e11d48; font-size:13px; font-weight:bold; text-decoration:underline;">🔑 2段階認証を再設定する (QRコードの再スキャン)</a>
+            </div>
         </div>
     </div>
 
@@ -798,6 +801,51 @@
             } catch (err) {
                 btn.innerText = '新規登録またはメールアドレスでログイン';
                 Swal.fire('エラー', 'サーバー通信に失敗しました。', 'error');
+            }
+        }
+
+        async function resetCurrent2FA() {
+            const email = document.getElementById('email').value.trim();
+            const role = document.getElementById('login-role').value;
+            
+            if (!email) {
+                Swal.fire('エラー', '先にメールアドレスを入力してください。', 'warning');
+                return;
+            }
+            if (!role) {
+                Swal.fire('エラー', '先に役割（ロール）を選択してください。', 'warning');
+                return;
+            }
+
+            const confirmReset = await Swal.fire({
+                title: '2FAの再設定',
+                text: '現在の二段階認証設定を削除し、新しいQRコードを発行しますか？',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'はい、再設定する',
+                cancelButtonText: 'キャンセル'
+            });
+
+            if (confirmReset.isConfirmed) {
+                try {
+                    const res = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, role })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire('リセット完了', '再度ログインボタンを押して、表示される新しいQRコードをスキャンしてください。', 'success').then(() => {
+                            document.getElementById('native-2fa-verify-overlay').style.display = 'none';
+                            const btn = document.querySelector('.btn-primary');
+                            if(btn) btn.innerText = '新規登録またはメールアドレスでログイン';
+                        });
+                    } else {
+                        Swal.fire('エラー', 'リセットに失敗しました。', 'error');
+                    }
+                } catch(e) {
+                    Swal.fire('エラー', 'サーバーに接続できません', 'error');
+                }
             }
         }
     </script>
