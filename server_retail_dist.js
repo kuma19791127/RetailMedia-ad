@@ -3596,7 +3596,7 @@ async function syncMemoryToDB() {
                     }
                     await dbHelper.query.run(
                         'INSERT INTO users (email, password, role, name, org, two_factor_secret) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email, role) DO NOTHING',
-                        [email, u.password || '', role, u.name || null, u.org || null, u.twoFactorSecret || null]
+                        [email, u.password || '', getDatabaseRole(role), u.name || null, u.org || null, u.twoFactorSecret || null]
                     );
                 }
             }

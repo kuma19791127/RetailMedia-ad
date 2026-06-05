@@ -1,5 +1,12 @@
 const { Pool } = require('pg');
 
+const getDatabaseRole = (role) => {
+    if (['store', 'advertiser', 'agency', 'creator', 'retailer'].includes(role)) {
+        return 'store';
+    }
+    return role;
+};
+
 let pool = null;
 let dbWrapper = null;
 
@@ -80,6 +87,14 @@ if (process.env.DATABASE_URL) {
                 // If migration fails because it is already composite, ignore
             }
 
+            // Migration path: Normalize advertiser/agency/creator/retailer roles to store role
+            try {
+                await pool.query("UPDATE users SET role = 'store' WHERE role IN ('advertiser', 'agency', 'creator', 'retailer')");
+                console.log('[DB] ✅ Users roles migrated (normalized to store).');
+            } catch (e) {
+                console.error('[DB] ❌ Users roles migration failed:', e.message);
+            }
+
             // 初期データの投入 (空の場合のみ)
             const countRes = await pool.query('SELECT COUNT(*) FROM products');
             if (parseInt(countRes.rows[0].count, 10) === 0) {
@@ -132,7 +147,7 @@ if (process.env.DATABASE_URL) {
                                      name = EXCLUDED.name,
                                      org = EXCLUDED.org,
                                      two_factor_secret = COALESCE(users.two_factor_secret, EXCLUDED.two_factor_secret)`,
-                                [email, userDetails.password, role, userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
+                                [email, userDetails.password, getDatabaseRole(role), userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
                             );
                         }
                         console.log('[DB] ✅ Users synchronized from database.json to PostgreSQL.');
@@ -237,6 +252,9 @@ if (process.env.DATABASE_URL) {
                     }
                 });
 
+                // SQLite Migration: Normalize advertiser/agency/creator/retailer roles to store role
+                sqliteDb.run("UPDATE users SET role = 'store' WHERE role IN ('advertiser', 'agency', 'creator', 'retailer')");
+
                 // database.json からユーザー情報を SQLite の users テーブルに同期
                 const fs = require('fs');
                 const path = require('path');
@@ -265,7 +283,7 @@ if (process.env.DATABASE_URL) {
                                 stmt.run([
                                     email, 
                                     userDetails.password, 
-                                    role, 
+                                    getDatabaseRole(role), 
                                     userDetails.name || null, 
                                     userDetails.org || null, 
                                     userDetails.twoFactorSecret || null
