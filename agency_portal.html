@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
@@ -700,7 +700,7 @@
 let current2FASecret = "";
 async function open2FASetup() {
     const email = sessionStorage.getItem("retailUserEmail");
-    const qrRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/setup", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email})});
+    const qrRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/setup", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, role: "agency"})});
     const qrData = await qrRes.json();
     current2FASecret = qrData.secret;
     document.getElementById("native-2fa-qr").src = qrData.qrcode;
@@ -713,7 +713,7 @@ async function submit2FASetup() {
     const email = sessionStorage.getItem("retailUserEmail");
     const code = document.getElementById("native-2fa-code").value.trim();
     if(!code) return;
-    const vRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/enable", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, token: code, secret: current2FASecret})});
+    const vRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/enable", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, token: code, secret: current2FASecret, role: "agency"})});
     const vData = await vRes.json();
     if(vData.success) {
         Swal.fire("成功", "二段階認証を有効化しました。", "success");

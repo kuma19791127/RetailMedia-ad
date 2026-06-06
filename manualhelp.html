@@ -769,7 +769,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode })
+                            body: JSON.stringify({ email, token: totpCode, role: role })
                         });
                         const verifyData = await verifyRes.json();
                         
@@ -788,7 +788,7 @@
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
+                            body: JSON.stringify({ email, role: role })
                         });
                         const setupData = await setupRes.json();
 
@@ -800,7 +800,7 @@
                                 <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${setupData.secret}</code></p>
                             `,
                             input: 'text',
-                            inputPlaceholder: '6桁のコード',
+                            inputPlaceholder: '6桁 of codes',
                             showCancelButton: true,
                             confirmButtonText: '有効化する',
                             cancelButtonText: 'キャンセル',
@@ -816,7 +816,7 @@
                         const enableRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret })
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: role })
                         });
                         const enableData = await enableRes.json();
 
