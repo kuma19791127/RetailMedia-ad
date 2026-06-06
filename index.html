@@ -659,17 +659,21 @@
         async function handleLogin(e) {
             if (e) e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const role = document.getElementById('login-role').value;
 
+            console.log("[F12 Debug] handleLogin started. Email:", email, "Role:", role);
+
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
+                console.warn("[F12 Debug] Invalid email format:", email);
                 Swal.fire('エラー', '有効なメールアドレスを入力してください。', 'error');
                 return;
             }
 
             if (!role) {
+                console.warn("[F12 Debug] Role is not selected");
                 Swal.fire('エラー', 'ログインする「役割（ロール）」を選択してください。', 'warning');
                 return;
             }
@@ -679,6 +683,7 @@
             
             // 【セキュリティ】 ログイン成功の通行証（セッション）を発行
             try {
+                console.log("[F12 Debug] Sending login request to backend...");
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -686,11 +691,22 @@
                 });
                 
                 const data = await response.json();
+                console.log("[F12 Debug] Login response received:", data);
                 
-                // 2FA Flow
+                // 2FA Setup Flow
                 if (data.require2FASetup || data.suggest2FASetup) {
-                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: email})});
+                    console.log("[F12 Debug] 2FA Setup is required/suggested. Calling setup API with role:", role);
+                    const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { 
+                        method: 'POST', 
+                        headers: {'Content-Type':'application/json'}, 
+                        body: JSON.stringify({ email: email, role: role }) // roleを含める！
+                    });
                     const qrData = await qrRes.json();
+                    console.log("[F12 Debug] 2FA Setup response:", qrData);
+                    
+                    if (!qrData.qrcode) {
+                        console.error("[F12 Debug] Failed to obtain QR Code URL from setup API");
+                    }
                     
                     document.getElementById('native-2fa-qr').src = qrData.qrcode;
                     
@@ -711,21 +727,30 @@
                         
                         submitBtn.onclick = async () => {
                             const code = document.getElementById('native-2fa-code').value.trim();
+                            console.log("[F12 Debug] Submitting setup verification. Code:", code);
                             if(!code) return;
                             
-                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: email, token: code, secret: qrData.secret})});
+                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { 
+                                method: 'POST', 
+                                headers: {'Content-Type':'application/json'}, 
+                                body: JSON.stringify({ email: email, token: code, secret: qrData.secret, role: role }) // roleを含める！
+                            });
                             const vData = await vRes.json();
+                            console.log("[F12 Debug] Setup verification response:", vData);
                             
                             if(vData.success) {
+                                console.log("[F12 Debug] 2FA Setup success!");
                                 submitBtn.innerText = '認証成功！画面遷移中...';
                                 submitBtn.style.background = '#10b981';
                                 resolve(true);
                             } else {
+                                console.warn("[F12 Debug] 2FA Setup code verification failed:", vData.error);
                                 errorMsg.style.display = 'block';
                             }
                         };
 
                         skipBtn.onclick = () => {
+                            console.log("[F12 Debug] User skipped 2FA setup suggestion");
                             skipBtn.innerText = 'スキップして画面遷移中...';
                             resolve(true); // Treat skip as success to let them proceed
                         };
@@ -739,7 +764,9 @@
                     }
                 }
 
+                // 2FA Verification Flow
                 if (data.require2FA) {
+                    console.log("[F12 Debug] 2FA Verification is required. Showing verify modal...");
                     document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
                     
                     const verifyResult = await new Promise((resolve) => {
@@ -748,16 +775,24 @@
                         
                         submitBtn.onclick = async () => {
                             const code = document.getElementById('native-2fa-verify-code').value.trim();
+                            console.log("[F12 Debug] Submitting verification token:", code);
                             if(!code) return;
                             
-                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email: email, token: code})});
+                            const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { 
+                                method: 'POST', 
+                                headers: {'Content-Type':'application/json'}, 
+                                body: JSON.stringify({ email: email, token: code, role: role }) // roleを含める！
+                            });
                             const vData = await vRes.json();
+                            console.log("[F12 Debug] Verification response:", vData);
                             
                             if(vData.success) {
+                                console.log("[F12 Debug] 2FA Verification success!");
                                 submitBtn.innerText = '認証成功！画面遷移中...';
                                 submitBtn.style.background = '#10b981';
                                 resolve(true);
                             } else {
+                                console.warn("[F12 Debug] 2FA Verification failed:", vData.error);
                                 errorMsg.style.display = 'block';
                             }
                         };
@@ -772,6 +807,7 @@
                 }
 
                 if (data.success) {
+                    console.log("[F12 Debug] Login process completed successfully. Redirecting to:", data.redirect);
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     sessionStorage.setItem('retailUserEmail', email);
                     if (document.getElementById('remember') && document.getElementById('remember').checked) {
@@ -798,10 +834,12 @@
                     }
                     window.location.href = data.redirect;
                 } else {
+                    console.warn("[F12 Debug] Login failed on backend side:", data.error);
                     btn.innerText = '新規登録またはメールアドレスでログイン';
                     Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
                 }
             } catch (err) {
+                console.error("[F12 Debug] Catch error during login:", err);
                 btn.innerText = '新規登録またはメールアドレスでログイン';
                 Swal.fire('エラー', 'サーバー通信に失敗しました。', 'error');
             }
@@ -811,6 +849,8 @@
             const email = document.getElementById('email').value.trim();
             const role = document.getElementById('login-role').value;
             
+            console.log("[F12 Debug] resetCurrent2FA triggered. Email:", email, "Role:", role);
+
             if (!email) {
                 Swal.fire('エラー', '先にメールアドレスを入力してください。', 'warning');
                 return;
@@ -831,22 +871,31 @@
 
             if (confirmReset.isConfirmed) {
                 try {
+                    console.log("[F12 Debug] Resetting 2FA for:", email, "with role:", role);
+                    // Swal.fire表示の前に黒背景のモーダルを隠して、ダイアログが絶対に裏に隠れないようにする！
+                    document.getElementById('native-2fa-verify-overlay').style.display = 'none';
+
                     const res = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, role })
                     });
                     const data = await res.json();
+                    console.log("[F12 Debug] 2FA Reset response:", data);
+
                     if (data.success) {
                         Swal.fire('リセット完了', '再度ログインボタンを押して、表示される新しいQRコードをスキャンしてください。', 'success').then(() => {
-                            document.getElementById('native-2fa-verify-overlay').style.display = 'none';
                             const btn = document.querySelector('.btn-primary');
                             if(btn) btn.innerText = '新規登録またはメールアドレスでログイン';
                         });
                     } else {
+                        // エラーの場合はモーダルを再表示させる
+                        document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
                         Swal.fire('エラー', 'リセットに失敗しました。', 'error');
                     }
                 } catch(e) {
+                    console.error("[F12 Debug] Error in resetCurrent2FA:", e);
+                    document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
                     Swal.fire('エラー', 'サーバーに接続できません', 'error');
                 }
             }
