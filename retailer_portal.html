@@ -387,7 +387,7 @@
 
     <!-- Sidebar -->
     <div class="sidebar">
-        <h2>Retail Media<br><span style="font-size:0.9rem; color:#94a3b8;">Retailer Portal</span></h2>
+        <h2>Retail Media<br><span style="font-size:0.8rem; color:#94a3b8;">Retailer Portal</span></h2>
         <div class="nav-item active" onclick="switchTab('dashboard')"><span class="nav-icon">🏠</span><span class="nav-text">ダッシュボード</span></div>
         <div class="nav-item" onclick="switchTab('store-setup')"><span class="nav-icon">🏬</span><span class="nav-text">店舗サイネージ設定</span></div>
         <div class="nav-item" onclick="switchTab('video-upload')"><span class="nav-icon">📤</span><span class="nav-text">ベース動画の配信</span></div>
@@ -715,7 +715,7 @@
                 </div>
 
                 <div style="display:flex; flex-wrap:wrap; gap:15px;">
-                    <button onclick="sendBulkEmail()" style="background:#2563eb; color:white; border:none; padding:14px 20px; border-radius:6px; font-weight:bold; cursor:pointer; flex:1; min-width:250px; font-size:1rem; box-shadow:0 4px 6px rgba(37,99,235,0.2);">📧 各店舗へセットアップ資材を一斉メール送信する</button>
+                    <button onclick="sendBulkEmail()" style="background:#2563eb; color:white; border:none; padding:14px 20px; border-radius:6px; font-weight:bold; cursor:pointer; flex:1; min-width:250px; font-size:1rem; box-shadow:0 4px 6px rgba(37,99,235,0.2);">📧 各店舗へセットアップ資材を<br>一斉メール送信する</button>
                     <button onclick="downloadBulkZip()" style="background:#10b981; color:white; border:none; padding:14px 20px; border-radius:6px; font-weight:bold; cursor:pointer; flex:1; min-width:250px; font-size:1rem; box-shadow:0 4px 6px rgba(16,185,129,0.2);">⏬ 予備用：一括セットアップZIPをDLする</button>
                 </div>
             </div>
@@ -728,7 +728,7 @@
                 <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
             </div>
             <div class="card">
-                <h3>お店の雰囲気を作る独自動画のアップロード</h3>
+                <h3>お店の雰囲気を作る<br>独自動画のアップロード</h3>
                 <div class="guide-text">
                     動画を入れると、サーバー側で自動的に最適な形式（H.264/MP4）に圧縮処理が行われ<br>
                     安全なクラウドストレージ（AWS S3）にダイレクト保存されます。<br>
@@ -1020,7 +1020,7 @@
                 document.activeElement.blur();
             }
             loadVideos();
-            switchTab('video-upload');
+            switchTab('dashboard');
         }
 
         function logout() {
