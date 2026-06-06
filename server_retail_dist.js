@@ -230,7 +230,14 @@ app.post('/api/signage/schedule_voice', (req, res) => {
 });
 
 express.static.mime.define({ 'video/quicktime': ['mov'] });
-app.use(express.static(__dirname, { dotfiles: 'allow' })); // Serve root files
+app.use(express.static(__dirname, {
+    dotfiles: 'allow',
+    setHeaders: (res, filepath) => {
+        if (filepath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        }
+    }
+})); // Serve root files
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 
