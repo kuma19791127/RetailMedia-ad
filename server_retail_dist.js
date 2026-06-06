@@ -422,13 +422,12 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // State
-const LOCAL_MEDIA_PATH = path.join(os.homedir(), 'Desktop', 'aaa');
-if (require('fs').existsSync(LOCAL_MEDIA_PATH)) {
-app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
-    console.log(`[System] Serving Local Media from: ${LOCAL_MEDIA_PATH}`);
-} else {
-    console.log(`[System] Local Media folder not found at: ${LOCAL_MEDIA_PATH}`);
+const LOCAL_MEDIA_PATH = path.join(os.tmpdir(), 'retail-media-temp');
+if (!require('fs').existsSync(LOCAL_MEDIA_PATH)) {
+    require('fs').mkdirSync(LOCAL_MEDIA_PATH, { recursive: true });
 }
+app.use('/local-media', express.static(LOCAL_MEDIA_PATH));
+console.log(`[System] Local Media temporary folder initialized at: ${LOCAL_MEDIA_PATH}`);
 
 // Ensure the base loop folder is served correctly
 app.use('/desktop_shorts', express.static(path.join(__dirname, 'base_loop_videos')));
