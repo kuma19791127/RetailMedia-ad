@@ -860,6 +860,12 @@
                 return;
             }
 
+            // 【z-index競合対策】最初の確認ダイアログを表示する前に黒背景のモーダルを隠す
+            const verifyOverlay = document.getElementById('native-2fa-verify-overlay');
+            if (verifyOverlay) {
+                verifyOverlay.style.display = 'none';
+            }
+
             const confirmReset = await Swal.fire({
                 title: '2FAの再設定',
                 text: '現在の二段階認証設定を削除し、新しいQRコードを発行しますか？',
@@ -872,9 +878,6 @@
             if (confirmReset.isConfirmed) {
                 try {
                     console.log("[F12 Debug] Resetting 2FA for:", email, "with role:", role);
-                    // Swal.fire表示の前に黒背景のモーダルを隠して、ダイアログが絶対に裏に隠れないようにする！
-                    document.getElementById('native-2fa-verify-overlay').style.display = 'none';
-
                     const res = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -890,13 +893,18 @@
                         });
                     } else {
                         // エラーの場合はモーダルを再表示させる
-                        document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
+                        if (verifyOverlay) verifyOverlay.style.display = 'flex';
                         Swal.fire('エラー', 'リセットに失敗しました。', 'error');
                     }
                 } catch(e) {
                     console.error("[F12 Debug] Error in resetCurrent2FA:", e);
-                    document.getElementById('native-2fa-verify-overlay').style.display = 'flex';
+                    if (verifyOverlay) verifyOverlay.style.display = 'flex';
                     Swal.fire('エラー', 'サーバーに接続できません', 'error');
+                }
+            } else {
+                // キャンセルされた場合はモーダルを元に戻す
+                if (verifyOverlay) {
+                    verifyOverlay.style.display = 'flex';
                 }
             }
         }
