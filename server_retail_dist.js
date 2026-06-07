@@ -1399,19 +1399,20 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
 
     try {
         if (role) {
+            const targetRole = getDatabaseRole(role);
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
-                [email, role]
+                [email, targetRole]
             );
             
             // メモリ同期
-            const userKey = `${email}:${role}`;
+            const userKey = `${email}:${targetRole}`;
             if (typeof users !== 'undefined' && users && users[userKey]) {
                 users[userKey].twoFactorSecret = null;
             } else if (typeof users !== 'undefined' && users && users[email]) {
                 users[email].twoFactorSecret = null;
             }
-            console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${role})`);
+            console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${targetRole})`);
         } else {
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
