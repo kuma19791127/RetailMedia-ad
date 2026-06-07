@@ -61,13 +61,8 @@ app.use(express.urlencoded({ limit: '500mb', extended: true }));
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
 const getDatabaseRole = (role) => {
-    if (['store', 'advertiser', 'agency', 'creator', 'retailer'].includes(role)) {
-        return 'store';
-    }
-    return role;
+    return role || 'store';
 };
-
-// Password Hashing Utility (scryptSync)
 const hashPassword = (password) => {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(password, salt, 64).toString('hex');
