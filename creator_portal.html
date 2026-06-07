@@ -1028,6 +1028,48 @@ h2 {
     }
 </script>
 
+<script>
+async function open2FASetup() {
+    const email = sessionStorage.getItem("retailUserEmail");
+    Swal.fire({ title: '取得中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        const qrRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/setup", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, role: "creator"})});
+        const qrData = await qrRes.json();
+        Swal.close();
+
+        const { value: totpCode } = await Swal.fire({
+            title: '🔑 二段階認証の設定',
+            html: `
+                <p style="font-size:0.9rem; line-height:1.5;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
+                <img src="${qrData.qrcode}" style="margin: 15px auto; display:block; max-width:180px; border: 1px solid #cbd5e1; border-radius:8px; padding:10px;">
+                <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${qrData.secret}</code></p>
+            `,
+            input: 'text',
+            inputPlaceholder: '6桁のコード',
+            showCancelButton: true,
+            confirmButtonText: '有効化する',
+            cancelButtonText: 'キャンセル',
+            inputValidator: (value) => {
+                if (!value || value.length !== 6) return '6桁の数字を入力してください';
+            }
+        });
+
+        if (!totpCode) return;
+
+        Swal.fire({ title: '有効化中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const vRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/enable", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, token: totpCode, secret: qrData.secret, role: "creator"})});
+        const vData = await vRes.json();
+        if(vData.success) {
+            Swal.fire("成功", "二段階認証を有効化しました。", "success");
+        } else {
+            Swal.fire("エラー", vData.error || "認証に失敗しました。二段階認証を有効化できません。", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        Swal.fire("エラー", "通信に失敗しました。", "error");
+    }
+}
+</script>
 
     <!-- AI Moderation Policy Script -->
     <script>
@@ -1075,18 +1117,7 @@ h2 {
         };
     </script>
 
-    <!-- Native 2FA Setup/Manage Overlays -->
-    <div id="native-2fa-setup-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10015; justify-content:center; align-items:center; font-family:'Noto Sans JP', sans-serif;">
-        <div style="background:#fff; padding:30px; border-radius:12px; text-align:center; max-width:420px; width:90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
-            <h2 style="margin-top:0; color:#2563eb; font-size:1.5rem;">二段階認証の設定</h2>
-            <p style="color:#64748b; font-size:14px; margin-top:10px;">アプリでQRコードを読み取り、表示された6桁のコードを入力してください。</p>
-            <img id="native-2fa-qr" src="" style="margin:20px auto; max-width:200px; display:block; border: 1px solid #cbd5e1; border-radius:8px; padding:10px;">
-            <input type="text" id="native-2fa-code" placeholder="6桁のコード" style="width:100%; padding:14px; margin-bottom:15px; border:2px solid #cbd5e1; border-radius:8px; font-size:1.2rem; text-align:center;" autocomplete="off">
-            <button onclick="submit2FASetup()" style="background:#2563eb; color:white; border:none; padding:14px 20px; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; width:100%;">有効化する</button>
-            <button onclick="document.getElementById('native-2fa-setup-overlay').style.display='none'" style="background:transparent; color:#94a3b8; border:none; padding:10px; margin-top:10px; cursor:pointer; width:100%;">キャンセル</button>
-            <p id="native-2fa-error" style="color:#e74c3c; font-size:14px; margin-top:15px; display:none;">コードが間違っています</p>
-        </div>
-    </div>
+    <!-- Native 2FA Setup/Manage Overlays (Removed) -->
 \n<script>
 let current2FASecret = "";
 async function open2FASetup() {
