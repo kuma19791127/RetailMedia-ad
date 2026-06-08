@@ -328,3 +328,15 @@ AIは、記述されているプログラムコードが「正しく動いてい
 - これを一律のロールに集約するいかなる処理も、ユーザーの「データ分別」の意図を破壊するバグであると定義する。
 
 
+
+---
+
+## 🚨 必須ルール20: ルール化指示時のダブルアップデート規約 (Double Rule Synchronization Policy)
+
+ユーザーから「ルール化して」「ルールに追加して」などの指示や要求があった場合は、最優先で [BACKEND_RULES.md](file:///c:/Users/one/.gemini/antigravity/playground/twilight-parsec/BACKEND_RULES.md) に明文化して追記する（必須ルール11）と同時に、**直ちにホームディレクトリの `GEMINI.md` (`C:\Users\one\.gemini\GEMINI.md`) に対しても [BACKEND_RULES.md](file:///c:/Users/one/.gemini/antigravity/playground/twilight-parsec/BACKEND_RULES.md) の最新の全内容を丸ごとコピーして上書き同期すること**を義務付けます。
+
+これにより、AIが認識するシステムプロンプトの `RULE[user_global]` と、開発環境の `BACKEND_RULES.md` との間にルール的な乖離や競合、時間差が発生することを未然に防止します。
+※同期処理後は、必須ルール11に従って必ずGit（`origin main`）へのプッシュを完了させてください。
+
+
+
