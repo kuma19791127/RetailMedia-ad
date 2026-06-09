@@ -2573,6 +2573,9 @@
                     // Try to get logged in user's email
                     let adEmail = "client@example.com"; 
                     try {
+                        const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+                        adEmail = checkUser.email || sessionStorage.getItem('retailUserEmail') || adEmail;
+
                         const meRes = await fetch(`${API_URL}/api/user/me`);
                         const meData = await meRes.json();
                         if (meData && meData.user && meData.user.email) {

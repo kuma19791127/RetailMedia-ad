@@ -1204,6 +1204,9 @@
                 }
             }
 
+            const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+            const loggedInEmail = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'Guest';
+
             try {
                 const res = await fetch(API_URL + '/api/campaigns', {
                     method: 'POST',
@@ -1215,7 +1218,8 @@
                         target_imp: (currentPlan === 'impression') ? parseInt(targetImp) : null,
                         bid_max: (currentPlan === 'rtb') ? parseFloat(bidMax) : null,
                         url: fileUrl,
-                        filename: fileName
+                        filename: fileName,
+                        ad_email: loggedInEmail
                     })
                 });
                 if (res.ok) {
