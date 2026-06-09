@@ -1092,7 +1092,7 @@ document.body.addEventListener('click', () => {
         async function initMediaPipe() {
             try {
                 // ESM 形式の CDN から動的にモジュールをインポートする
-                const moduleUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.js";
+                const moduleUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.mjs";
                 const mp = await import(moduleUrl);
                 const resolver = mp.FilesetResolver;
                 const detectorClass = mp.FaceDetector;
