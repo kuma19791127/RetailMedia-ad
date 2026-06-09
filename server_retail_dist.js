@@ -476,7 +476,10 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 // 2. Dashboards
 app.get('/advertiser', (req, res) => res.sendFile(path.join(__dirname, 'ad_dashboard.html')));
 app.get('/store-portal', (req, res) => res.sendFile(path.join(__dirname, 'store_portal.html')));
-app.get('/player', (req, res) => res.sendFile(path.join(__dirname, 'signage_player.html')));
+app.get('/player', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.sendFile(path.join(__dirname, 'signage_player.html'));
+});
 app.get('/anywhere-regi', (req, res) => res.sendFile(path.join(__dirname, 'anywhere_regi.html')));
 app.get('/creator-portal', (req, res) => res.sendFile(path.join(__dirname, 'creator_portal.html')));
 app.get('/retailer-portal', (req, res) => res.sendFile(path.join(__dirname, 'retailer_portal.html')));
