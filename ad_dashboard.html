@@ -1923,7 +1923,20 @@
         async function simulateUpload(aspectRatio, ytUrl = null, variant = null, ingredients = null, isImage = false) {
             Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             try {
-                const reviewRes = await fetch(window.API_BASE_URL + '/api/creator/review-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ video_base64: 'data:video/mp4;base64,' + 'A'.repeat(500) }) });
+                const reqBody = {
+                    title: ytUrl ? "YouTube Video" : "Campaign Video",
+                    email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth') || 'Guest'
+                };
+                if (ytUrl) {
+                    reqBody.ytUrl = ytUrl;
+                } else {
+                    reqBody.video_base64 = 'data:video/mp4;base64,' + 'A'.repeat(500);
+                }
+                const reviewRes = await fetch(window.API_BASE_URL + '/api/creator/review-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqBody)
+                });
                 const reviewData = await reviewRes.json();
                 if (!reviewData.safe) {
                     Swal.fire({ title: '❌ 審査不合格 (アカウント制限)', html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>', icon: 'error' });
