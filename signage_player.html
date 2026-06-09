@@ -797,7 +797,7 @@ document.body.addEventListener('click', () => {
             }
 
             // Reset AI Tracking for new content
-            currentAdStats = { durationMs: 0, faceTimeMs: 0, startTime: Date.now(), lastFaceTick: 0 };
+            currentAdStats = { durationMs: 0, faceTimeMs: 0, startTime: Date.now(), lastFaceTick: 0, faceImages: [] };
 
             
             // TikTok Overlay Logic
@@ -926,7 +926,7 @@ document.body.addEventListener('click', () => {
         };
 
         // AI Synergy Tracking State
-        let currentAdStats = { durationMs: 0, faceTimeMs: 0, startTime: 0, lastFaceTick: 0 };
+        let currentAdStats = { durationMs: 0, faceTimeMs: 0, startTime: 0, lastFaceTick: 0, faceImages: [] };
 
         function sendBeacon(adId) {
             console.log(`[Beacon] Sending Impression for Ad: ${adId}`);
@@ -960,6 +960,31 @@ document.body.addEventListener('click', () => {
             fetch(window.API_BASE_URL + `/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}`).then(r => {
                 if(!r.ok) console.error(`[Analytics API] Beacon Failed! Status: ${r.status}`);
             }).catch(err => console.error(`[Analytics API] Network Error on endpoint /api/analytics/track! Error: ${err.message}`));
+
+            // 送信用ペイロードの作成
+            const sensorPayload = {
+                adId: adId,
+                images: currentAdStats.faceImages || []
+            };
+
+            // カメラがオフ、または顔が一切検知されなかった場合はシミュレーション用に手動の仮値を渡す
+            if (sensorPayload.images.length === 0 && !isRealAI) {
+                sensorPayload.gender = Math.random() < 0.5 ? 'male' : 'female';
+                sensorPayload.age = Math.floor(Math.random() * 40) + 15;
+            }
+
+            console.log(`[Sensor API] Sending face detection data for Ad: ${adId}`);
+            fetch(window.API_BASE_URL + '/api/sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sensorPayload)
+            }).then(() => {
+                // 送信完了後、バッファを即座に破棄してメモリリークを防ぐ
+                currentAdStats.faceImages = [];
+            }).catch(e => {
+                console.error("[Sensor API] Send Error:", e);
+                currentAdStats.faceImages = [];
+            });
         }
 
         function playNext() {
@@ -1051,129 +1076,143 @@ document.body.addEventListener('click', () => {
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        /* --- CAMERA & AI LOGIC (Real + Simulation Fallback) --- */
+        /* --- CAMERA & AI LOGIC (MediaPipe Face Detection + Cloud Gemini Fallback) --- */
         let cameraStream = null;
         let analysisInterval = null;
         let isRealAI = false;
-        // Use a maintained mirror for face-api weights that supports reliable CORS loading
-        const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
+        let faceDetector = null;
 
-        // Load face-api.js dynamically
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
-        script.onload = () => { console.log("Face-API loaded"); };
-        document.head.appendChild(script);
+        // Load MediaPipe dynamically
+        const mpScript = document.createElement('script');
+        mpScript.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/vision_bundle.js';
+        mpScript.onload = () => {
+            console.log("MediaPipe vision loaded. Initializing FaceDetector...");
+            initMediaPipe();
+        };
+        document.head.appendChild(mpScript);
+
+        async function initMediaPipe() {
+            try {
+                const visionNamespace = window.vision || window.mpVision || {};
+                const resolver = visionNamespace.FilesetResolver || window.FilesetResolver;
+                const detectorClass = visionNamespace.FaceDetector || window.FaceDetector;
+
+                if (!resolver || !detectorClass) {
+                    throw new Error("MediaPipe components missing from global scope");
+                }
+
+                const vision = await resolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm"
+                );
+                
+                faceDetector = await detectorClass.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+                        delegate: "GPU"
+                    },
+                    runningMode: "VIDEO"
+                });
+                isRealAI = true;
+                console.log("MediaPipe FaceDetector successfully loaded");
+            } catch (e) {
+                console.warn("MediaPipe failed to load, using simulation:", e);
+                isRealAI = false;
+            }
+        }
 
         async function toggleCamera() {
-            const btn = document.getElementById('camera-btn');
             const container = document.getElementById('camera-container');
             const videoEl = document.getElementById('camera-feed');
 
             if (cameraStream) {
-                // Stop
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraStream = null;
                 clearInterval(analysisInterval);
                 container.style.display = 'none';
             } else {
-                // Start
                 try {
-
-                    // Try Loading Models
-                    if (typeof faceapi !== 'undefined' && !isRealAI) {
-                        try {
-                            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                            await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
-                            isRealAI = true;
-                            console.log("Real AI Models Loaded");
-                        } catch (e) {
-                            console.warn("AI Model Load Failed, using Simulation:", e);
-                        }
-                    }
-
                     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                        throw new Error("カメラへのアクセスが制限されています (localhost または HTTPS接続が必要です)");
+                        throw new Error("Camera API not supported on this browser/environment");
                     }
-                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
                     videoEl.srcObject = cameraStream;
                     container.style.display = 'block';
-
-                    // Start Loop
-                    analysisInterval = setInterval(runAnalysis, isRealAI ? 500 : 3000);
+                    analysisInterval = setInterval(runAnalysis, 500); // 500ms intervals
                 } catch (e) {
                     console.error("Camera Error:", e);
-                    // Fallback for HTTP environments
-                    if (confirm("カメラを起動できませんでした (localhost または HTTPSが必要です)。\nエラー: " + e.message + "\n\nシミュレーションモードでAI分析を実行しますか？")) {
-                        const container = document.getElementById('camera-container');
-
-                        // Show container for overlay text
+                    if (confirm("カメラを起動できませんでした。\nシミュレーションモードでAI分析を実行しますか？")) {
                         container.style.display = 'block';
                         container.style.background = '#333';
                         document.getElementById('analysis-overlay').innerText = "Simulation Mode Active";
-
-                        // Force Sim Mode
                         isRealAI = false;
-
-                        // Run once immediately
-                        
-
-                        analysisInterval = setInterval(() => {
-                            
-                        }, 3000);
+                        analysisInterval = setInterval(runAnalysis, 3000);
                     }
                 }
             }
         }
 
-        // Attempt immediate start, might be blocked by browser without interaction
         setTimeout(() => { if (!cameraStream) toggleCamera(); }, 1000);
+
+        function cropFace(videoEl, boundingBox) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 96;
+                canvas.height = 96;
+                const ctx = canvas.getContext('2d');
+                
+                let sx = boundingBox.originX;
+                let sy = boundingBox.originY;
+                let sw = boundingBox.width;
+                let sh = boundingBox.height;
+
+                if (sx < 0) sx = 0;
+                if (sy < 0) sy = 0;
+                if (sx + sw > videoEl.videoWidth) sw = videoEl.videoWidth - sx;
+                if (sy + sh > videoEl.videoHeight) sh = videoEl.videoHeight - sy;
+
+                ctx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, 96, 96);
+                return canvas.toDataURL('image/jpeg', 0.6);
+            } catch (e) {
+                console.error("[Player] Crop Error:", e);
+                return null;
+            }
+        }
 
         async function runAnalysis() {
             const videoEl = document.getElementById('camera-feed');
             const overlay = document.getElementById('analysis-overlay');
 
-            if (isRealAI && typeof faceapi !== 'undefined') {
-                // REAL AI
-                const detections = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender();
+            if (isRealAI && faceDetector && videoEl.readyState >= 2) {
+                try {
+                    const detections = faceDetector.detectForVideo(videoEl, performance.now()).detections;
 
-                if (detections && detections.length > 0) {
-                    const d = detections[0];
-                    const age = Math.round(d.age);
-                    const gender = d.gender; // 'male' or 'female'
-                    const ageStr = `${Math.floor(age / 10) * 10}s`; // 24 -> 20s
+                    if (detections && detections.length > 0) {
+                        const d = detections[0];
+                        overlay.innerText = "REAL: Face Detected";
+                        overlay.style.color = '#e74c3c';
 
-                    overlay.innerText = `REAL: ${gender.toUpperCase()} ${age}y (${Math.round(d.genderProbability * 100)}%)`;
-                    overlay.style.color = '#e74c3c'; // Real color
+                        currentAdStats.faceTimeMs += 500;
+                        currentAdStats.lastFaceTick = Date.now();
 
-                    // Track Synergy
-                    currentAdStats.faceTimeMs += 500; // Analysis runs every 500ms
-                    currentAdStats.lastFaceTick = Date.now();
-
-                    // Send specific data
-                    sendSensorData({ gender: gender, age: ageStr });
-                } else {
-                    overlay.innerText = "Scanning (Real AI)...";
-                    overlay.style.color = "#2ecc71";
+                        // 重複防止：この広告放映でまだ画像を取得していない場合のみ
+                        if (currentAdStats.faceImages && currentAdStats.faceImages.length === 0) {
+                            const faceBase64 = cropFace(videoEl, d.boundingBox);
+                            if (faceBase64) {
+                                currentAdStats.faceImages.push(faceBase64);
+                                console.log("[Player] Cloned face image. Buffered for next beacon.");
+                            }
+                        }
+                    } else {
+                        overlay.innerText = "Scanning (MediaPipe)...";
+                        overlay.style.color = "#2ecc71";
+                    }
+                } catch (err) {
+                    console.error("Analysis loop error:", err);
                 }
             } else {
-                // SIMULATION
-                
+                overlay.innerText = "Simulation Mode Active";
+                overlay.style.color = "#aaa";
             }
-        }
-
-        function simulateAI(overlay) { /* Removed mock AI camera simulation */ }
-
-        // Throttled Sender
-        let lastSent = 0;
-        function sendSensorData(data) {
-            const now = Date.now();
-            if (now - lastSent < 3000) return; // Limit to 1 send per 3s
-            lastSent = now;
-            fetch(window.API_BASE_URL + '/api/sensor', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).catch(e => { });
         }
 
         // --- REAL-TIME BROADCAST LISTENER ---

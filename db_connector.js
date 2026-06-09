@@ -68,6 +68,14 @@ if (process.env.DATABASE_URL) {
                     metric_value DOUBLE PRECISION
                 );
 
+                CREATE TABLE IF NOT EXISTS face_sensor_logs (
+                    id SERIAL PRIMARY KEY,
+                    timestamp VARCHAR(100),
+                    gender VARCHAR(50),
+                    age INT,
+                    ad_id TEXT
+                );
+
                 CREATE TABLE IF NOT EXISTS products (
                     jan_code VARCHAR(255) PRIMARY KEY,
                     name VARCHAR(255) NOT NULL,
@@ -210,6 +218,16 @@ if (process.env.DATABASE_URL) {
                         name TEXT NOT NULL,
                         price INTEGER NOT NULL DEFAULT 0,
                         category TEXT
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS face_sensor_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TEXT,
+                        gender TEXT,
+                        age INTEGER,
+                        ad_id TEXT
                     )
                 `);
 

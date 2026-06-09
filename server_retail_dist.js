@@ -2429,7 +2429,6 @@ let globalDashboardStats = {
     age10s: 0, age20s: 0, age30s: 0, age40s: 0, age50s: 0
 };
 
-let globalSensorLogs = [];
 let posTransactions = [];
 let manualChat = [];
 let manualhelpState = { manuals: [], logs: [] };
@@ -2747,50 +2746,96 @@ app.get('/api/analytics/ranking', (req, res) => {
 });
 
 // 4. AI Sensor Data Receiver
-app.post('/api/sensor', (req, res) => {
-    // Only log occasionally to prevent console spam
-    if (Math.random() < 0.1) {
-        console.log(`[Sensor API] Data Received:`, req.body);
-    }
+app.post('/api/sensor', async (req, res) => {
+    try {
+        const { adId, images, gender, age } = req.body;
+        console.log(`[Sensor API] Request received for adId: ${adId}, images count: ${images ? images.length : 0}`);
 
-    // Update real-time demographic data
-    if (req.body) {
-        // Assume each beacon roughly corresponds to 3s of attention if actively looking
-        globalDashboardStats.attentionTime += 3;
-        globalDashboardStats.faceDetected++; // Increment valid face detection
+        let detectedGender = gender || 'unknown';
+        let detectedAge = age ? parseInt(age) : 25;
 
-        // Add demographic to global list
-        if (req.body.gender || req.body.age) {
-            globalSensorLogs.push(req.body);
-            // Cap history to avoid memory leak
-            if (globalSensorLogs.length > 1000) globalSensorLogs.shift();
+        // クロップ画像が送られてきた場合、Geminiに判定させる
+        if (images && images.length > 0) {
+            const targetImage = images[images.length - 1]; // 最新の画像1枚を対象にする
             
-            // Update global counters
-            if (req.body.gender === 'male') globalDashboardStats.male++;
-            else if (req.body.gender === 'female') globalDashboardStats.female++;
-            else globalDashboardStats.unknown++;
-
-            let a = req.body.age;
-            if (typeof a === 'string') a = a.replace('s', '');
-            const ageNum = parseInt(a);
-            if (!isNaN(ageNum)) {
-                if (ageNum < 20) globalDashboardStats.age10s++;
-                else if (ageNum < 30) globalDashboardStats.age20s++;
-                else if (ageNum < 40) globalDashboardStats.age30s++;
-                else if (ageNum < 50) globalDashboardStats.age40s++;
-                else globalDashboardStats.age50s++;
+            try {
+                const systemInstruction = `You are a helper AI for demographic analysis in a retail media system.
+Your job is to analyze the provided cropped face image and predict the person's gender and estimated age.
+You must output ONLY a valid JSON object matching the following structure:
+{
+    "gender": "male" | "female",
+    "age": integer
+}`;
+                const prompt = "Analyze this cropped face image and identify their gender and estimated age.";
+                
+                const responseText = await callGeminiAPI(prompt, "application/json", systemInstruction, targetImage);
+                const result = JSON.parse(responseText.trim());
+                
+                if (result.gender) detectedGender = result.gender;
+                if (result.age) detectedAge = parseInt(result.age);
+                console.log(`[Gemini Face AI] Detected: ${detectedGender}, Age: ${detectedAge}`);
+            } catch (geminiErr) {
+                console.error("[Gemini Face AI] Analysis failed, falling back to manual or default values:", geminiErr);
             }
-
-            // Broadcast to dashboards
-            broadcastEvent({
-                type: 'sensor_update',
-                sensor_log: globalSensorLogs,
-                stats: globalDashboardStats
-            });
         }
-    }
 
-    res.json({ success: true, status: 'received' });
+        // 判定完了後、安全のために画像データを即時破棄（メモリ解放）
+        req.body.images = null;
+
+        const timestampStr = new Date().toISOString();
+
+        // 1. SQLiteに非同期でインサート
+        await dbHelper.query.run(
+            'INSERT INTO face_sensor_logs (timestamp, gender, age, ad_id) VALUES (?, ?, ?, ?)',
+            [timestampStr, detectedGender, detectedAge, adId || 'unknown']
+        );
+
+        // 2. インプレッションと売上（レベニュー）の更新
+        globalDashboardStats.attentionTime += 3;
+        globalDashboardStats.faceDetected++;
+
+        if (detectedGender === 'male') globalDashboardStats.male++;
+        else if (detectedGender === 'female') globalDashboardStats.female++;
+        else globalDashboardStats.unknown++;
+
+        if (detectedAge < 20) globalDashboardStats.age10s++;
+        else if (detectedAge < 30) globalDashboardStats.age20s++;
+        else if (detectedAge < 40) globalDashboardStats.age30s++;
+        else if (detectedAge < 50) globalDashboardStats.age40s++;
+        else globalDashboardStats.age50s++;
+
+        // キャンペーン全体のインプレッション数加算
+        if (campaigns && campaigns.length > 0) {
+            campaigns[0].imp += 1;
+            campaigns[0].spend += 10; 
+        }
+        totalRevenue += 5;
+
+        // DBから直近50件のログを非同期取得してダッシュボードにブロードキャスト
+        const recentLogs = await dbHelper.query.all(
+            'SELECT gender, age, timestamp FROM face_sensor_logs ORDER BY id DESC LIMIT 50'
+        );
+
+        const formattedLogs = recentLogs.map(log => ({
+            gender: log.gender,
+            age: log.age,
+            time: new Date(log.timestamp).getTime()
+        }));
+
+        broadcastEvent({
+            type: 'sensor_update',
+            sensor_log: formattedLogs,
+            stats: globalDashboardStats
+        });
+
+        // 必須ルール1: S3/DynamoDBデータ保存関数の呼び出し
+        if (typeof saveDatabase === 'function') saveDatabase();
+
+        res.json({ success: true, logged: true });
+    } catch (err) {
+        console.error("[Sensor API] Error processing sensor data:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 // --- External API (For POS / DSP) ---
@@ -3201,30 +3246,6 @@ function broadcastEvent(data) {
     clients.forEach(c => c.write(`data: ${JSON.stringify(data)}\n\n`));
 }
 
-let sensorLogs = [];
-
-// --- Analytics & Sensor API ---
-app.post('/api/sensor', (req, res) => {
-    // Received via Face AI sensor from Signage Player
-    const { gender, age } = req.body;
-    console.log(`[Sensor] Detected 1 View (${gender}, ${age}) via Signage.`);
-
-    // Log the sensor data
-    sensorLogs.push({ gender, age, time: Date.now() });
-
-    // Broadcast for realtime dashboard updates
-    broadcastEvent({ type: 'sensor_update', sensor_log: sensorLogs });
-
-    // Add logic to increase impressions / revenue
-    if (campaigns && campaigns.length > 0) {
-        campaigns[0].imp += 1;
-        campaigns[0].spend += 10; // e.g. 10 yen spent per impression
-    }
-    totalRevenue += 5; // e.g. Store earns 5 yen from the 10 yen spend
-
-    res.json({ success: true, logged: true });
-});
-
 
 
 app.post('/api/campaigns/:id/status', (req, res) => {
@@ -3494,10 +3515,7 @@ function loadLocalDatabase() {
                 transactions.length = 0;
                 parsed.transactions.forEach(t => transactions.push(t));
             }
-            if (parsed.sensorLogs && typeof sensorLogs !== 'undefined') {
-                sensorLogs.length = 0;
-                parsed.sensorLogs.forEach(l => sensorLogs.push(l));
-            }
+
             if (parsed.globalDashboardStats && typeof globalDashboardStats !== 'undefined') {
                 Object.assign(globalDashboardStats, parsed.globalDashboardStats);
             }
@@ -3522,10 +3540,7 @@ function loadLocalDatabase() {
             if (parsed.creatorStats && typeof creatorStats !== 'undefined') {
                 Object.assign(creatorStats, parsed.creatorStats);
             }
-            if (parsed.globalSensorLogs && typeof globalSensorLogs !== 'undefined') {
-                globalSensorLogs.length = 0;
-                parsed.globalSensorLogs.forEach(l => globalSensorLogs.push(l));
-            }
+
             if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
                 global.retailer_videos = parsed.retailer_videos;
             }
@@ -3574,10 +3589,7 @@ async function pullFromS3() {
             transactions.length = 0;
             parsed.transactions.forEach(t => transactions.push(t));
         }
-        if (parsed.sensorLogs && typeof sensorLogs !== 'undefined') {
-            sensorLogs.length = 0;
-            parsed.sensorLogs.forEach(l => sensorLogs.push(l));
-        }
+
         if (parsed.globalDashboardStats && typeof globalDashboardStats !== 'undefined') {
             Object.assign(globalDashboardStats, parsed.globalDashboardStats);
         }
@@ -3602,10 +3614,7 @@ async function pullFromS3() {
         if (parsed.creatorStats && typeof creatorStats !== 'undefined') {
             Object.assign(creatorStats, parsed.creatorStats);
         }
-        if (parsed.globalSensorLogs && typeof globalSensorLogs !== 'undefined') {
-            globalSensorLogs.length = 0;
-            parsed.globalSensorLogs.forEach(l => globalSensorLogs.push(l));
-        }
+
         if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
             global.retailer_videos = parsed.retailer_videos;
         }
@@ -3725,13 +3734,11 @@ const saveDatabase = () => {
             storeData: typeof storeData !== 'undefined' ? storeData : {},
             creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
             transactions: typeof transactions !== 'undefined' ? transactions : [],
-            sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
             retailer_videos: global.retailer_videos || [],
             globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
             agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
             productionStats: global.productionStats ? global.productionStats : null,
             creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
-            globalSensorLogs: typeof globalSensorLogs !== 'undefined' ? globalSensorLogs : [],
             users: typeof users !== 'undefined' ? users : {},
             posTransactions: typeof posTransactions !== 'undefined' ? posTransactions : [],
             shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
@@ -3811,13 +3818,11 @@ setInterval(async () => {
             storeData: mappedStoreData,
             creatorState: typeof CREATOR_STATE !== 'undefined' ? CREATOR_STATE : {},
             transactions: typeof transactions !== 'undefined' ? transactions : [],
-            sensorLogs: typeof sensorLogs !== 'undefined' ? sensorLogs : [],
             retailer_videos: global.retailer_videos || [],
             globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
             agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
             productionStats: global.productionStats ? global.productionStats : null,
             creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
-            globalSensorLogs: typeof globalSensorLogs !== 'undefined' ? globalSensorLogs : [],
             users: mappedUsers,
             posTransactions: mappedPosTx,
             shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
