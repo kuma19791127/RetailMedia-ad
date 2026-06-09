@@ -1,4 +1,4 @@
-const CACHE_NAME = 'retail-ad-store-v4';
+const CACHE_NAME = 'retail-ad-store-v5';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
