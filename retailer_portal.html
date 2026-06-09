@@ -372,7 +372,7 @@
     
 
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar" style="display: none;">
         <h2>Retail Media<br><span style="font-size:0.8rem; color:#94a3b8;">Retailer Portal</span></h2>
         <div class="nav-item active" onclick="switchTab('dashboard')"><span class="nav-icon">🏠</span><span class="nav-text">ダッシュボード</span></div>
         <div class="nav-item" onclick="switchTab('store-setup')"><span class="nav-icon">🏬</span><span class="nav-text">店舗サイネージ設定</span></div>
@@ -1004,6 +1004,7 @@
                 navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
             }
             document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
             if (document.activeElement) {
                 document.activeElement.blur();
             }
