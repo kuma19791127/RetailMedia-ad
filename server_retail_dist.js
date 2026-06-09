@@ -1125,10 +1125,11 @@ app.post('/api/auth/register', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: "Email and Password required" });
 
     try {
-        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ?', [email]);
+        const defaultRole = role || "store";
+        const dbRole = getDatabaseRole(defaultRole);
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
         if (user) return res.status(400).json({ error: "User already exists" });
 
-        const defaultRole = role || "store";
         const hashedPassword = hashPassword(password);
         await dbHelper.query.run(
             'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
@@ -1249,18 +1250,23 @@ app.post('/api/auth/login', async (req, res) => {
         let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
 
         if (!user) {
-            console.log(`[Auth] ❌ Login Failed: Email not registered: ${email} (${dbRole})`);
-            return res.json({ success: false, error: "メールアドレスが登録されていません。" });
-        }
-
-        // デモアカウント用のパスワード整合性救済措置
-        const isDemoAccount = email.endsWith('@retail.com') || email.endsWith('@demo.com') || email === 'demo@retail-ad.com';
-        const isDemoPassword = password === 'demo1234!!' || password === 'DemoPass2026!';
-        if (isDemoAccount && isDemoPassword && !verifyPassword(password, user.password)) {
+            console.log(`[Auth] 🆕 Automatically registering user: ${email} with role: ${dbRole}`);
             const hashedPassword = hashPassword(password);
-            await dbHelper.query.run('UPDATE users SET password = ? WHERE email = ? AND role = ?', [hashedPassword, email, dbRole]);
-            user.password = hashedPassword;
-            console.log(`[Auth] 🔄 Demo Password Auto-Reset for: ${email}`);
+            await dbHelper.query.run(
+                'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
+                [email, hashedPassword, dbRole]
+            );
+            user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
+        } else {
+            // デモアカウント用のパスワード整合性救済措置
+            const isDemoAccount = email.endsWith('@retail.com') || email.endsWith('@demo.com') || email === 'demo@retail-ad.com';
+            const isDemoPassword = password === 'demo1234!!' || password === 'DemoPass2026!';
+            if (isDemoAccount && isDemoPassword && !verifyPassword(password, user.password)) {
+                const hashedPassword = hashPassword(password);
+                await dbHelper.query.run('UPDATE users SET password = ? WHERE email = ? AND role = ?', [hashedPassword, email, dbRole]);
+                user.password = hashedPassword;
+                console.log(`[Auth] 🔄 Demo Password Auto-Reset for: ${email}`);
+            }
         }
 
         // Update name, org, and role if provided and different
