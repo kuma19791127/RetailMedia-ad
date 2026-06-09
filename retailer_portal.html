@@ -1384,7 +1384,8 @@ async function sendBulkEmail() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 prefix: currentPrefix,
-                list: list
+                list: list,
+                senderEmail: currentEmail
             })
         });
         const data = await res.json();

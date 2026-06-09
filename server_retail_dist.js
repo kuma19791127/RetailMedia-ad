@@ -1739,7 +1739,7 @@ app.get('/api/reports/csv', (req, res) => {
 // --- Retailer Bulk Signage Setup Email Delivery ---
 app.post('/api/retailer/bulk-email', async (req, res) => {
     try {
-        const { prefix, list } = req.body;
+        const { prefix, list, senderEmail } = req.body;
         if (!prefix || !list || !Array.isArray(list)) {
             return res.status(400).json({ success: false, error: "Invalid request payload" });
         }
@@ -1926,8 +1926,9 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
 `;
 
             const mailOptions = {
-                from: smtpUser || '"RetailMedia Portal" <noreply@retail-ad.com>',
+                from: smtpUser || '"RetailMedia Portal" <info@retail-ad.com>',
                 to: targetEmail,
+                cc: senderEmail || undefined,
                 subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
                 text: `各店舗スタッフ 様\n\n本部より、店舗サイネージ自動セットアップ用の初期設定資材を送付いたします。\n\nご利用のサイネージ機器の環境・デバイスに合わせて、添付されているファイルを選択して設定を行ってください。\n\n1. Android端末（既存Androidパネル等）の場合：\n  添付されている「android_instructions_${storeId}.txt」を開き、記載の手順に沿って店舗IDを登録してください。\n\n2. Windows PC（セキュリティ設定を全自動適用する場合）の場合：\n  添付されている「setup_${storeId}.bat」をPCに保存し、右クリックして「管理者として実行」してください。\n\n3. セキュリティ設定を行わない場合（制限変更ができない既存パネルなど）：\n  添付されている「simple_start_${storeId}.txt」を開き、記載されているURLをブラウザで開くか、アプリに店舗IDのみを入力して起動してください。\n\n---------------------------------------------------------\n■ 設定を解除・復元する場合\n---------------------------------------------------------\n・Android端末の場合：\n  添付されている「remove_android_signage_${storeId}.txt」を開き、記載の手順に沿ってアプリの設定を解除してください。\n\n・Windows PCの場合：\n  添付されている「remove_retail_signage.bat」（※ZIPダウンロード、または本部から配布された資材に含まれます）を起動するか、本手順で復元設定を行ってください。\n\nよろしくお願いいたします。`,
                 attachments: [
