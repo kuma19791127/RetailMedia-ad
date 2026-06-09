@@ -52,7 +52,8 @@ if (process.env.DATABASE_URL) {
                     account_holder VARCHAR(255),
                     total_pos_sales DOUBLE PRECISION DEFAULT 0.0,
                     total_ad_revenue DOUBLE PRECISION DEFAULT 0.0,
-                    monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0
+                    monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0,
+                    monthly_labor_cost DOUBLE PRECISION DEFAULT 0.0
                 );
 
                 CREATE TABLE IF NOT EXISTS pos_transactions (
@@ -171,7 +172,15 @@ if (process.env.DATABASE_URL) {
                 await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added monthly_operating_cost).');
             } catch (e) {
-                console.error('[DB] ❌ PostgreSQL stores table migration failed:', e.message);
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (monthly_operating_cost):', e.message);
+            }
+
+            // Migration: Add monthly_labor_cost column to stores table if not exists
+            try {
+                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_labor_cost DOUBLE PRECISION DEFAULT 0.0");
+                console.log('[DB] ✅ PostgreSQL stores table migrated (added monthly_labor_cost).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (monthly_labor_cost):', e.message);
             }
 
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');

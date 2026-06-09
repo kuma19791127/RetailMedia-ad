@@ -3007,13 +3007,14 @@ app.post('/api/admin/settings', (req, res) => {
 
 // Update Store Operating Cost (Expenses)
 app.post('/api/admin/store/operating-cost', express.json(), async (req, res) => {
-    const { storeId, operatingCost } = req.body;
+    const { storeId, operatingCost, laborCost } = req.body;
     if (!storeId) return res.status(400).json({ error: "storeId is required" });
     
     try {
         const costVal = parseFloat(operatingCost) || 0;
-        await dbHelper.query.run('UPDATE stores SET monthly_operating_cost = ? WHERE id = ?', [costVal, storeId]);
-        console.log(`[Admin] Operating Cost Updated for store ${storeId}: ${costVal}`);
+        const laborVal = parseFloat(laborCost) || 0;
+        await dbHelper.query.run('UPDATE stores SET monthly_operating_cost = ?, monthly_labor_cost = ? WHERE id = ?', [costVal, laborVal, storeId]);
+        console.log(`[Admin] Costs Updated for store ${storeId}: Operating=${costVal}, Labor=${laborVal}`);
         
         // 必須ルール1: S3/DynamoDBデータ保存関数の呼び出し
         if (typeof saveDatabase === 'function') saveDatabase();
@@ -3055,7 +3056,8 @@ app.get('/api/admin/dashboard', async (req, res) => {
             const agencyCommission = Math.floor(storeAdRevenue * 0.2); // 代理店コミッション20%
             const creatorReward = Math.floor(storeAdRevenue * 0.1); // クリエイター報酬10%
             const operatingCost = s.monthly_operating_cost || 0; // 経費実費をDBから取得
-            const pureStoreRevenue = storeAdRevenue - agencyCommission - creatorReward - operatingCost; // 差引純売上
+            const laborCost = s.monthly_labor_cost || 0; // 人件費実費をDBから取得
+            const pureStoreRevenue = storeAdRevenue - agencyCommission - creatorReward - operatingCost - laborCost; // 差引純売上
             const shareAmount = pureStoreRevenue > 0 ? Math.floor(pureStoreRevenue * 0.5) : 0; // 支払額 (50%)
 
             const bank_info = {
@@ -3072,6 +3074,7 @@ app.get('/api/admin/dashboard', async (req, res) => {
                 agency_commission: agencyCommission,
                 creator_reward: creatorReward,
                 operating_cost: operatingCost,
+                labor_cost: laborCost,
                 total_net_revenue: pureStoreRevenue,
                 ad_revenue_share: shareAmount,
                 bank_info: bank_info,

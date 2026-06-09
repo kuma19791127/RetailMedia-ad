@@ -599,7 +599,7 @@
                             <th>AdSense収益<br><span style="font-size:10px;color:#95a5a6;">(合算)</span></th>
                             <th>代理店コミッション<br><span style="font-size:10px;color:#95a5a6;">(20%)</span></th>
                             <th>クリエイター報酬<br><span style="font-size:10px;color:#95a5a6;">(10%+α)</span></th>
-                            <th>運営費用</th>
+                            <th>必要経費実費<br><span style="font-size:10px;color:#95a5a6;">(サーバー・人件費)</span></th>
                             <th>差引純売上<br><span style="font-size:10px;color:#95a5a6;">(支払対象総額)</span></th>
                             <th>支払額 (50%)<br><span
                                     style="font-size:10px;color:#27ae60;font-weight:bold;">店舗への実質振込額</span></th>
@@ -618,7 +618,7 @@
                 <h4 style="margin-top:0; color:#155724;">💡 経理メモ</h4>
                 <p style="font-size:13px; color:#155724; margin:0; line-height:1.6;">
                     店舗への支払額計算式:
-                    <code>((リテアド収益 ＋ Google AdSense収益) － 代理店コミッション(20％) － クリエイター報酬(10％) ＝ 残り額。そこから必要経費(人件費・サーバー代)として50%を差し引き、残る50%分を店舗へ支払う)</code><br>
+                    <code>(リテアド収益 ＋ Google AdSense収益 － 代理店コミッション(20％) － クリエイター報酬(10％) － 必要経費実費 (サーバー費用 ＋ 人件費)) ＝ 差引純売上。この差引純売上の50%分を店舗へ支払う (純売上がマイナスの場合は0円)</code><br>
                     ※「支払通知メール」を一括送信すると、各店舗の登録メールアドレスに「今月の広告収益振込額と内訳」が自動送信されます。振込手続き完了後、ステータスを「支払済」に変更してください。
                 </p>
             </div>
@@ -1329,11 +1329,23 @@
                     <td style="color:#4285F4; font-weight:bold;">¥${store.adsense_revenue.toLocaleString()}</td>
                     <td style="color:#e67e22;">-¥${store.agency_commission.toLocaleString()}</td>
                     <td style="color:#e74c3c;">-¥${store.creator_reward.toLocaleString()}</td>
-                    <td style="white-space: nowrap;">
-                        <div style="display:flex; align-items:center; gap:5px;">
-                            <span style="color:#e74c3c;">-¥</span>
-                            <input type="number" value="${store.operating_cost}" class="cost-input" style="width:75px; padding:3px; border:1px solid #ccc; border-radius:4px; text-align:right;" id="cost-input-${store.id}">
-                            <button onclick="saveOperatingCost('${store.id}', this)" class="btn-action" style="background:#3498db; padding:4px 8px; font-size:10px;">保存</button>
+                    <td style="white-space: nowrap; padding: 4px;">
+                        <div style="display:flex; flex-direction:column; gap:4px; font-size:11px; width:135px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:2px;">
+                                <span style="color:#555;">サーバー:</span>
+                                <div>
+                                    <span style="color:#e74c3c;">-¥</span>
+                                    <input type="number" value="${store.operating_cost}" class="cost-input" style="width:65px; padding:2px 3px; border:1px solid #ccc; border-radius:4px; text-align:right;" id="cost-input-${store.id}">
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:2px;">
+                                <span style="color:#555;">人件費:</span>
+                                <div>
+                                    <span style="color:#e74c3c;">-¥</span>
+                                    <input type="number" value="${store.labor_cost || 0}" class="labor-input" style="width:65px; padding:2px 3px; border:1px solid #ccc; border-radius:4px; text-align:right;" id="labor-input-${store.id}">
+                                </div>
+                            </div>
+                            <button onclick="saveOperatingCost('${store.id}', this)" class="btn-action" style="background:#3498db; padding:2px 6px; font-size:10px; align-self:flex-end; margin-top:2px;">保存</button>
                         </div>
                     </td>
                     <td style="font-weight:bold; background:rgba(0,0,0,0.02);">¥${store.total_net_revenue.toLocaleString()}</td>
@@ -1403,9 +1415,11 @@
         }
 
         async function saveOperatingCost(storeId, btnElement) {
-            const inputEl = document.getElementById(`cost-input-${storeId}`);
-            if (!inputEl) return;
-            const operatingCost = parseFloat(inputEl.value) || 0;
+            const costInputEl = document.getElementById(`cost-input-${storeId}`);
+            const laborInputEl = document.getElementById(`labor-input-${storeId}`);
+            if (!costInputEl || !laborInputEl) return;
+            const operatingCost = parseFloat(costInputEl.value) || 0;
+            const laborCost = parseFloat(laborInputEl.value) || 0;
             
             try {
                 btnElement.innerText = "⏳...";
@@ -1414,7 +1428,7 @@
                 const res = await fetch(`${API_BASE}/api/admin/store/operating-cost`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ storeId, operatingCost })
+                    body: JSON.stringify({ storeId, operatingCost, laborCost })
                 });
                 
                 const result = await res.json();
