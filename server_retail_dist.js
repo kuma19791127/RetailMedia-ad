@@ -721,11 +721,11 @@ app.post('/api/creator/review-content', async (req, res) => {
                 base64Data = videoBuffer.toString('base64');
                 console.log(`[Review] YouTube動画の取得成功。サイズ: ${videoBuffer.length} bytes`);
             } catch (dlErr) {
-                console.error("[Review] YouTube動画の直接取得に失敗しました。セキュリティのため自動配信を保留します:", dlErr);
-                // タイトル偽装などの悪意あるアップロードを防ぐため、映像ファイルを取得できない場合は無条件通過させず「保留」とする
+                console.error("[Review] YouTube動画の直接取得に失敗しました。制限エラーとして返却します:", dlErr);
+                // 目視審査待ち（Pending）にはせず、配信者にYouTube側のアクセス制限で取得できなかった旨を伝えてアップロードを拒否する
                 return res.json({ 
                     safe: false, 
-                    message: '【配信保留】YouTube動画（映像データ）への直接アクセスに失敗しました。タイトル詐欺などのポリシー違反を防ぐため、管理者による目視審査が完了するまで配信を保留します。' 
+                    message: '【配信不可】YouTube側のアクセス制限（一時的なブロック・認証要求など）により、動画データ（映像）を直接取得して安全性を確認できませんでした。お手数ですが、別のYouTubeリンクを使用するか、動画ファイル（.mp4 等）を直接アップロードしてください。' 
                 });
             }
         } else {
