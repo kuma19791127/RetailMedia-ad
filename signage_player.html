@@ -821,7 +821,7 @@ document.body.addEventListener('click', () => {
                     ttBadge.innerText = '広告';
                     ttBadge.className = 'tt-ad-badge';
                     ttBadge.style.display = 'inline-block';
-                } else if (item.brand === 'Creator' && item.url) { // If creator and has link or something, maybe PR. To be safe, label as 'PR' if it's an affiliate video
+                } else if (item.brand === 'Creator' && (item.isAd === true || item.isAd === 'true')) {
                     ttBadge.innerText = 'PR';
                     ttBadge.className = '';
                     ttBadge.style.display = 'inline-block';

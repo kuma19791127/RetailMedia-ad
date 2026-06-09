@@ -833,7 +833,8 @@ h2 {
                                         title: title,
                                         format: "縦型 (Shorts)",
                                         src: ytUrl || fileUrl,
-                                        email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth')
+                                        email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth'),
+                                        isAd: isAd
                                     })
                                 });
                                 if (res.ok) {
