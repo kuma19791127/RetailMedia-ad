@@ -10,8 +10,6 @@
             : 'https://nsg3hyme2k.us-east-1.awsapprunner.com'; // TODO: 本番環境のバックエンドURLに変更してください
     </script>
     
-    <!-- Google MediaPipe Tasks-Vision -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.js"></script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1093,12 +1091,14 @@ document.body.addEventListener('click', () => {
 
         async function initMediaPipe() {
             try {
-                const visionNamespace = window.vision || window.mpVision || {};
-                const resolver = visionNamespace.FilesetResolver || window.FilesetResolver;
-                const detectorClass = visionNamespace.FaceDetector || window.FaceDetector;
+                // ESM 形式の CDN から動的にモジュールをインポートする
+                const moduleUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/vision_bundle.js";
+                const mp = await import(moduleUrl);
+                const resolver = mp.FilesetResolver;
+                const detectorClass = mp.FaceDetector;
 
                 if (!resolver || !detectorClass) {
-                    throw new Error("MediaPipe components missing from global scope");
+                    throw new Error("MediaPipe components missing from ESM module");
                 }
 
                 const vision = await resolver.forVisionTasks(
