@@ -9,6 +9,9 @@
             ? 'http://localhost:3000' 
             : 'https://nsg3hyme2k.us-east-1.awsapprunner.com'; // TODO: 本番環境のバックエンドURLに変更してください
     </script>
+    
+    <!-- Google MediaPipe Tasks-Vision -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/vision_bundle.js"></script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1082,14 +1085,9 @@ document.body.addEventListener('click', () => {
         let isRealAI = false;
         let faceDetector = null;
 
-        // Load MediaPipe dynamically
-        const mpScript = document.createElement('script');
-        mpScript.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/vision_bundle.js';
-        mpScript.onload = () => {
-            console.log("MediaPipe vision loaded. Initializing FaceDetector...");
-            initMediaPipe();
-        };
-        document.head.appendChild(mpScript);
+        // Initialize MediaPipe FaceDetector directly from static head script
+        console.log("MediaPipe static bundle linked. Initializing FaceDetector...");
+        initMediaPipe();
 
         async function initMediaPipe() {
             try {
