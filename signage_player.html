@@ -1085,9 +1085,11 @@ document.body.addEventListener('click', () => {
         let isRealAI = false;
         let faceDetector = null;
 
-        // Initialize MediaPipe FaceDetector directly from static head script
-        console.log("MediaPipe static bundle linked. Initializing FaceDetector...");
-        initMediaPipe();
+        // Initialize MediaPipe FaceDetector after window (and all static script bundles) is fully loaded
+        window.addEventListener('load', () => {
+            console.log("Window fully loaded. Initializing FaceDetector...");
+            initMediaPipe();
+        });
 
         async function initMediaPipe() {
             try {
