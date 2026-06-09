@@ -832,7 +832,8 @@ h2 {
                                     body: JSON.stringify({
                                         title: title,
                                         format: "縦型 (Shorts)",
-                                        src: ytUrl || fileUrl
+                                        src: ytUrl || fileUrl,
+                                        email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth')
                                     })
                                 });
                                 if (res.ok) {
