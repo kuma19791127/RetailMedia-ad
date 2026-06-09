@@ -3005,6 +3005,25 @@ app.post('/api/admin/settings', (req, res) => {
     res.json({ success: true });
 });
 
+// Update Store Operating Cost (Expenses)
+app.post('/api/admin/store/operating-cost', express.json(), async (req, res) => {
+    const { storeId, operatingCost } = req.body;
+    if (!storeId) return res.status(400).json({ error: "storeId is required" });
+    
+    try {
+        const costVal = parseFloat(operatingCost) || 0;
+        await dbHelper.query.run('UPDATE stores SET monthly_operating_cost = ? WHERE id = ?', [costVal, storeId]);
+        console.log(`[Admin] Operating Cost Updated for store ${storeId}: ${costVal}`);
+        
+        // 必須ルール1: S3/DynamoDBデータ保存関数の呼び出し
+        if (typeof saveDatabase === 'function') saveDatabase();
+        
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // AnyWhere Regi Forgot Password => Billing Email mapping
 app.post('/api/admin/settings/billing-email', express.json(), async (req, res) => {
     if (req.body.email) {
@@ -3035,10 +3054,9 @@ app.get('/api/admin/dashboard', async (req, res) => {
             const adsenseRevenue = 0; // AdSense収益は現状0固定
             const agencyCommission = Math.floor(storeAdRevenue * 0.2); // 代理店コミッション20%
             const creatorReward = Math.floor(storeAdRevenue * 0.1); // クリエイター報酬10%
-            const remaining = storeAdRevenue - agencyCommission - creatorReward; // 残り70%
-            const operatingCost = Math.floor(remaining * 0.5); // 必要経費(人件費・サーバー代) 50%
-            const pureStoreRevenue = remaining - operatingCost; // 差引純売上 (残り35%)
-            const shareAmount = pureStoreRevenue; // 支払額 (残り35%)
+            const operatingCost = s.monthly_operating_cost || 0; // 経費実費をDBから取得
+            const pureStoreRevenue = storeAdRevenue - agencyCommission - creatorReward - operatingCost; // 差引純売上
+            const shareAmount = pureStoreRevenue > 0 ? Math.floor(pureStoreRevenue * 0.5) : 0; // 支払額 (50%)
 
             const bank_info = {
                 bank_name: s.bank_name || '',
@@ -3046,22 +3064,20 @@ app.get('/api/admin/dashboard', async (req, res) => {
                 account_number: s.account_number || '',
                 account_holder: s.account_holder || ''
             };
-            if (shareAmount > 0) {
-                payoutData.push({
-                    id: s.id,
-                    name: s.name,
-                    retail_ad_revenue: storeAdRevenue,
-                    adsense_revenue: adsenseRevenue,
-                    agency_commission: agencyCommission,
-                    creator_reward: creatorReward,
-                    operating_cost: operatingCost,
-                    total_net_revenue: pureStoreRevenue,
-                    ad_revenue_share: shareAmount,
-                    bank_info: bank_info,
-                    status: "未払",
-                    email: s.billing_email
-                });
-            }
+            payoutData.push({
+                id: s.id,
+                name: s.name,
+                retail_ad_revenue: storeAdRevenue,
+                adsense_revenue: adsenseRevenue,
+                agency_commission: agencyCommission,
+                creator_reward: creatorReward,
+                operating_cost: operatingCost,
+                total_net_revenue: pureStoreRevenue,
+                ad_revenue_share: shareAmount,
+                bank_info: bank_info,
+                status: "未払",
+                email: s.billing_email
+            });
         }
         res.json({ accounting_email: adminSettings.accounting_email, billing: billingData, payouts: payoutData });
     } catch (e) {
