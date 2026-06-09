@@ -618,8 +618,8 @@
                 <h4 style="margin-top:0; color:#155724;">💡 経理メモ</h4>
                 <p style="font-size:13px; color:#155724; margin:0; line-height:1.6;">
                     店舗への支払額計算式:
-                    <code>((リテアド収益 ＋ Google AdSense収益) － 代理店へのコミッション(20％) － クリエイター報酬(10％+ボーナス) － 運営費用) × 50%</code><br>
-                    ※「支払通知メール」を一括送信すると、各店舗の登録メールアドレスに「今月の広告収益振込額と内訳」が自動送信され、AdSenseとアドマネージャーの確定レポートのリンクが添付されます。振込手続き完了後、ステータスを「支払済」に変更してください。
+                    <code>((リテアド収益 ＋ Google AdSense収益) － 代理店コミッション(20％) － クリエイター報酬(10％) ＝ 残り額。そこから必要経費(人件費・サーバー代)として50%を差し引き、残る50%分を店舗へ支払う)</code><br>
+                    ※「支払通知メール」を一括送信すると、各店舗の登録メールアドレスに「今月の広告収益振込額と内訳」が自動送信されます。振込手続き完了後、ステータスを「支払済」に変更してください。
                 </p>
             </div>
         </div>
@@ -628,8 +628,8 @@
         <div id="panel-billing" class="panel">
             <div class="header">
                 <div>
-                    <h1>📱 どこでもレジ管理者</h1>
-                    <p style="color:#7f8c8d; margin-top:5px;">請求管理ダッシュボード: 店舗売上の監視・手数料 (0.4%) 徴収</p>
+                    <h1>📱 どこでもレジ請求管理</h1>
+                    <p style="color:#7f8c8d; margin-top:5px;">どこでもレジ利用手数料 (0.4%) 請求管理ダッシュボード: 店舗POS売上とシステム利用料</p>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button onclick="sendAllInvoices()" class="btn-action" style="background:#e67e22;">🚀
@@ -655,14 +655,14 @@
             </div>
 
             <div class="card">
-                <h3>月次請求概要 (翌月請求)</h3>
+                <h3>どこでもレジ月次請求概要 (翌月請求)</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>店舗名</th>
                             <th>POS総売上</th>
-                            <th>手数料率</th>
-                            <th>請求額 (0.4%)</th>
+                            <th>どこでもレジ手数料率</th>
+                            <th>どこでもレジ請求額 (0.4%)</th>
                             <th>請求先メール</th>
                             <th>ステータス</th>
                             <th>操作</th>
@@ -1310,7 +1310,7 @@
                 < tr >
                     <td><b>${store.name}</b><br><span style="font-size:11px; color:#aaa;">${store.id}</span></td>
                     <td>¥${store.sales.toLocaleString()}</td>
-                    <td><span class="badge badge-pending">0.4%</span></td>
+                    <td><span class="badge badge-pending">どこでもレジ 0.4%</span></td>
                     <td class="highlight-value billing-highlight">¥${store.fee_0_4_percent.toLocaleString()}</td>
                     <td>${store.email || '<span style="color:red">未設定</span>'}</td>
                     <td><span class="badge badge-pending">${store.status}</span></td>

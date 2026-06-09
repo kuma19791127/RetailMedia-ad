@@ -3032,9 +3032,14 @@ app.get('/api/admin/dashboard', async (req, res) => {
                 billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_0_4_percent: billingAmount, email: s.billing_email, status: "未請求" });
             }
             const storeAdRevenue = s.total_ad_revenue || 0;
-            const creatorReward = Math.floor(storeAdRevenue * 0.1);
-            const pureStoreRevenue = storeAdRevenue - creatorReward;
-            const shareAmount = Math.floor(pureStoreRevenue * 0.5);
+            const adsenseRevenue = 0; // AdSense収益は現状0固定
+            const agencyCommission = Math.floor(storeAdRevenue * 0.2); // 代理店コミッション20%
+            const creatorReward = Math.floor(storeAdRevenue * 0.1); // クリエイター報酬10%
+            const remaining = storeAdRevenue - agencyCommission - creatorReward; // 残り70%
+            const operatingCost = Math.floor(remaining * 0.5); // 必要経費(人件費・サーバー代) 50%
+            const pureStoreRevenue = remaining - operatingCost; // 差引純売上 (残り35%)
+            const shareAmount = pureStoreRevenue; // 支払額 (残り35%)
+
             const bank_info = {
                 bank_name: s.bank_name || '',
                 branch_name: s.branch_name || '',
@@ -3042,7 +3047,20 @@ app.get('/api/admin/dashboard', async (req, res) => {
                 account_holder: s.account_holder || ''
             };
             if (shareAmount > 0) {
-                payoutData.push({ id: s.id, name: s.name, retail_ad_revenue: storeAdRevenue, creator_reward: creatorReward, total_net_revenue: pureStoreRevenue, ad_revenue_share: shareAmount, bank_info: bank_info, status: "未払", email: s.billing_email });
+                payoutData.push({
+                    id: s.id,
+                    name: s.name,
+                    retail_ad_revenue: storeAdRevenue,
+                    adsense_revenue: adsenseRevenue,
+                    agency_commission: agencyCommission,
+                    creator_reward: creatorReward,
+                    operating_cost: operatingCost,
+                    total_net_revenue: pureStoreRevenue,
+                    ad_revenue_share: shareAmount,
+                    bank_info: bank_info,
+                    status: "未払",
+                    email: s.billing_email
+                });
             }
         }
         res.json({ accounting_email: adminSettings.accounting_email, billing: billingData, payouts: payoutData });
