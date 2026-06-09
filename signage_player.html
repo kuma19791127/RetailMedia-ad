@@ -809,11 +809,15 @@ document.body.addEventListener('click', () => {
                 ttOverlay.style.display = 'block';
                 document.getElementById('tt-progress-container').style.display = 'block';
                 
-                ttBrand.innerText = item.brand || 'Creator';
+                let brandName = item.brand || 'Retailer';
+                if (item.id && String(item.id).startsWith('local_')) {
+                    brandName = 'Retailer';
+                }
+                ttBrand.innerText = brandName;
                 ttTitle.innerText = item.title || '配信動画';
                 
                 // Determine PR/AD Badge
-                if (item.brand && item.brand !== 'Creator') {
+                if (item.brand && item.brand !== 'Creator' && item.brand !== 'Retailer') {
                     ttBadge.innerText = '広告';
                     ttBadge.className = 'tt-ad-badge';
                     ttBadge.style.display = 'inline-block';
