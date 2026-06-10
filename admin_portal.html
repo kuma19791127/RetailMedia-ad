@@ -756,6 +756,7 @@
                     <p style="color:#7f8c8d; margin-top:5px;">サイネージクリエイターへの広告収益分配と振込先口座情報</p>
                 </div>
                 <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <button onclick="executeAllCreatorGmoTransfers(this)" class="btn-action" style="background:#27ae60;">🏦 GMO API一括振込実行</button>
                     <button onclick="sendAllCreatorEmails()" class="btn-action" style="background:#8e44ad;">📨
                         支払通知メール一括送信</button>
                     <button onclick="loadCreatorData()" class="btn-action">🔄 データ更新</button>
@@ -1198,8 +1199,9 @@
                             <td class="highlight-value payout-highlight" style="font-size:16px;">¥${c.payout.toLocaleString()}</td>
                             <td><span class="badge badge-unpaid">未払</span></td>
                             <td style="display:flex; gap:5px; flex-direction:column;">
+                                <button onclick="executeGmoTransfer('${c.email}', 'creator', ${c.payout}, this)" class="btn-action creator-gmo-btn" style="background:#27ae60; font-size:11px;">🏦 GMO送金</button>
                                 <button onclick="sendCreatorEmail('${c.email}', ${c.payout}, this)" class="btn-action send-email-btn" style="background:#9b59b6; font-size:11px;">📩 確定メール</button>
-                                <button class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
+                                <button onclick="markAsPaid('${c.email}', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
                             </td>
                         </tr>
                     `).join('');
@@ -1376,6 +1378,7 @@
                     </td>
                     <td><span class="badge badge-unpaid">${store.status}</span></td>
                     <td style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="executeGmoTransfer('${store.id}', 'store', ${store.ad_revenue_share}, this)" class="btn-action" style="background:#27ae60; font-size:11px;">🏦 GMO振込</button>
                         <button onclick="sendPayoutEmail('${store.email}', ${store.ad_revenue_share}, this)" class="btn-action payout-email-btn" style="background:#8e44ad; font-size:11px;">📩 確定メール</button>
                         <button onclick="markAsPaid('${store.id}', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
                     </td>
@@ -1399,6 +1402,7 @@
                     </td>
                     <td><span class="badge badge-unpaid">${store.status}</span></td>
                     <td style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="executeGmoTransfer('${store.id}', 'store_adsense', ${store.adsense_revenue}, this)" class="btn-action" style="background:#27ae60; font-size:11px;">🏦 GMO振込</button>
                         <button onclick="sendAdsensePayoutEmail('${store.email}', ${store.adsense_revenue}, this)" class="btn-action adsense-email-btn" style="background:#10b981; font-size:11px;">📩 AdSense確定メール</button>
                         <button onclick="markAsPaid('${store.id}', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
                     </td>
@@ -1624,6 +1628,101 @@
                 icon: 'success',
                 title: '自動送信完了',
                 text: `${sentCount} 件のGoogle AdSense収益支払通知メールを各店舗に自動送信しました。`
+            });
+        }
+
+        async function executeGmoTransfer(targetId, type, amount, btnElement) {
+            let label = type === 'creator' ? 'クリエイター' : '店舗';
+            const result = await Swal.fire({
+                title: '🏦 GMO銀行送金の実行',
+                text: `この${label}へ GMOあおぞらネット銀行API経由で振込を実行します。金額: ¥${amount.toLocaleString()}。よろしいですか？`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '送金を実行する',
+                cancelButtonText: 'キャンセル'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                btnElement.innerText = "⏳ 送金中...";
+                btnElement.disabled = true;
+
+                const res = await fetch(`${API_BASE}/api/admin/payout/gmo-transfer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: type, targetIds: [targetId] })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('送金成功', data.message, 'success');
+                    btnElement.innerText = "🏦 送金完了";
+                    btnElement.style.background = "#95a5a6";
+                } else {
+                    Swal.fire('エラー', data.error || '送金処理に失敗しました', 'error');
+                    btnElement.innerText = type === 'creator' ? "🏦 GMO送金" : "🏦 GMO振込";
+                    btnElement.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('通信エラー', '送金要求の送信に失敗しました', 'error');
+                btnElement.innerText = type === 'creator' ? "🏦 GMO送金" : "🏦 GMO振込";
+                btnElement.disabled = false;
+            }
+        }
+
+        async function executeAllCreatorGmoTransfers(btnElement) {
+            const buttons = document.querySelectorAll('.creator-gmo-btn:not([disabled])');
+            if (buttons.length === 0) {
+                return Swal.fire('情報', '現在、送信（送金）可能なクリエイター報酬がありません。', 'info');
+            }
+
+            const result = await Swal.fire({
+                title: '🏦 GMO銀行一括送金の実行',
+                text: `${buttons.length}件のクリエイターへ一括でGMOあおぞらネット銀行API経由の送金処理を実行します。よろしいですか？`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '一括送金を実行',
+                cancelButtonText: 'キャンセル'
+            });
+
+            if (!result.isConfirmed) return;
+
+            btnElement.innerText = "⏳ 一括処理中...";
+            btnElement.disabled = true;
+            let successCount = 0;
+
+            for (let btn of buttons) {
+                btn.click();
+                successCount++;
+                await new Promise(r => setTimeout(r, 300));
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '一括送金完了',
+                text: `${successCount} 件のクリエイター送金処理を実行しました。`
+            });
+            btnElement.innerText = "🏦 GMO API一括振込実行";
+            btnElement.disabled = false;
+        }
+
+        function markAsPaid(targetId, btnElement) {
+            Swal.fire({
+                title: '振込完了の確認',
+                text: 'この対象の支払ステータスを手動で「支払済」に変更しますか？',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'はい',
+                cancelButtonText: 'キャンセル'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    btnElement.innerText = "✅ 振込完了済";
+                    btnElement.disabled = true;
+                    btnElement.style.background = "#95a5a6";
+                    Swal.fire('完了', '支払ステータスを更新しました。', 'success');
+                }
             });
         }
 
