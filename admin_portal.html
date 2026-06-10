@@ -784,27 +784,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <div class="card" style="margin-top: 20px;">
-                <h3>📥 クリエイター出金申請一覧 (承認待ち)</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>申請日時</th>
-                            <th>クリエイター情報</th>
-                            <th>出金申請額</th>
-                            <th>インボイス登録番号</th>
-                            <th>振込先銀行口座</th>
-                            <th>源泉徴収税額</th>
-                            <th>ステータス</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payout-list">
-                        <!-- JS injected -->
-                    </tbody>
-                </table>
-            </div>
         </div>
         <div id="panel-agency" class="panel">
             <div class="header">
@@ -1994,7 +1973,6 @@
                     document.getElementById('main-app').style.display = 'flex';
                     window.dispatchEvent(new Event('resize'));
                     loadData();
-                    loadPayouts();
                     loadAgencyData();
                     renderLiveLogs();
                 } else {
@@ -2150,98 +2128,24 @@
             }
         });
     
-        async function loadPayouts() {
-            console.log("[Payout] loadPayouts function started.");
-            try {
-                const res = await fetch(window.API_BASE_URL + '/api/admin/payouts');
-                console.log("[Payout] API response status:", res.status);
-                const payouts = await res.json();
-                console.log("[Payout] Payouts data fetched:", payouts);
-                const tbody = document.getElementById('payout-list');
-                console.log("[Payout] Target element payout-list:", tbody);
-                tbody.innerHTML = '';
-                
-                if (payouts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">現在、出金申請はありません。</td></tr>';
-                    return;
-                }
-
-                payouts.forEach(p => {
-                    const isCorp = p.bankInfo.businessType === 'corporate';
-                    const tax = isCorp ? 'なし (法人)' : `¥${Math.floor(p.amount * 0.1021).toLocaleString()} (個人: 10.21%)`;
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${new Date(p.requestDate).toLocaleString()}</td>
-                        <td>${p.email}</td>
-                        <td style="font-weight:bold; color:#2c3e50;">¥${p.amount.toLocaleString()}</td>
-                        <td>${p.bankInfo.invoiceNumber ? `<span style="color:green;">${p.bankInfo.invoiceNumber}</span>` : '<span style="color:#e74c3c;">未登録</span>'}</td>
-                        <td>${p.bankInfo.bankName} ${p.bankInfo.branchName}<br>${p.bankInfo.holderName}</td>
-                        <td style="color:#e67e22; font-size:0.85rem;">${tax}</td>
-                        <td><span style="padding: 4px 8px; border-radius: 4px; background: ${p.status === 'completed' ? '#2ecc71' : '#f1c40f'}; color: #fff; font-size: 0.8rem;">${p.status}</span></td>
-                        <td>
-                            ${p.status === 'pending' ? `<button class="btn btn-primary" onclick="executePayout('${p.id}', ${p.amount}, '${p.bankInfo.holderName}')">🏦 API送金実行</button>` : '処理済'}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function executePayout(reqId, amount, name) {
-            const confirm = await Swal.fire({
-                title: '送金・仕訳の実行',
-                html: `クリエイター（${name}）へ <b>¥${amount.toLocaleString()}</b> の出金処理を行います。<br>よろしいですか？<br><br><span style="font-size:0.8rem; color:#666;">※GMOあおぞらネット銀行APIへの振込依頼と、freee会計APIへの仕訳登録が同時に走ります。</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: '実行する (API起動)'
-            });
-
-            if (confirm.isConfirmed) {
-                Swal.fire({ title: '処理中...', text: '銀行・会計システムと通信しています', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                try {
-                    const res = await fetch(window.API_BASE_URL + '/api/admin/payout/execute', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reqId })
-                    });
-                    const data = await res.json();
-                    
-                    if (res.ok) {
-                        Swal.fire('完了！', `銀行への送金指示とfreeeへの仕訳連携が完了しました。<br><br>GMO取引ID: ${data.details.gmo.transferId}<br>freee伝票ID: ${data.details.freee.journalId}`, 'success');
-                        loadPayouts();
-                    } else {
-                        Swal.fire('エラー', data.error || '通信エラー', 'error');
-                    }
-                } catch (e) {
-                    Swal.fire('通信エラー', e.message, 'error');
-                }
-            }
-        }
+        // (payout processing functions deleted)
 
 
         async function downloadGMOCsv() {
             try {
-                const res = await fetch(window.API_BASE_URL + '/api/admin/payouts');
-                const payouts = await res.json();
-                
-                const pendingPayouts = payouts.filter(p => p.status === 'pending');
-                
-                // 代理店の未払い報酬（ステータスが verified のもの）も取得
+                // 代理店の未払い報酬（ステータスが verified のもの）を取得
                 const agencyRes = await fetch(window.API_BASE_URL + '/api/admin/agency');
                 const agencies = await agencyRes.json();
                 const pendingAgencies = agencies.filter(a => a.status === 'verified');
                 
-                if (pendingPayouts.length === 0 && pendingAgencies.length === 0) {
-                    Swal.fire('データなし', '現在、処理待ちの出金申請や代理店報酬はありません。', 'info');
+                if (pendingAgencies.length === 0) {
+                    Swal.fire('データなし', '現在、処理待ちの代理店報酬はありません。', 'info');
                     return;
                 }
 
                 const confirm = await Swal.fire({
                     title: 'GMO一括振込CSVの生成',
-                    html: `クリエイター出金 <b>${pendingPayouts.length}件</b> および 代理店報酬 <b>${pendingAgencies.length}件</b> をGMOあおぞらネット銀行の指定フォーマット（CSV）で出力します。<br><br><span style="font-size:0.8rem; color:#666;">※ダウンロード後、GMOの管理画面から「一括振込・総合振込」＞「GMOあおぞらネット銀行指定形式（CSV）」を選択してアップロードしてください。</span>`,
+                    html: `代理店報酬 <b>${pendingAgencies.length}件</b> をGMOあおぞらネット銀行の指定フォーマット（CSV）で出力します。<br><br><span style="font-size:0.8rem; color:#666;">※ダウンロード後、GMOの管理画面から「一括振込・総合振込」＞「GMOあおぞらネット銀行指定形式（CSV）」を選択してアップロードしてください。</span>`,
                     icon: 'info',
                     showCancelButton: true,
                     confirmButtonText: 'CSVダウンロード'
@@ -2251,22 +2155,6 @@
                     // GMO指定CSVの標準的フォーマット（金融機関コード,支店コード,預金種別(1=普通),口座番号,受取人名,金額）
                     let csvContent = "\uFEFF"; // BOM for Excel compatibility if needed
                     // ヘッダー行なし、または指定フォーマットに従う（GMO形式は基本的にデータ行のみ、または1行目から）
-                    
-                    pendingPayouts.forEach(p => {
-                        const bank = p.bankInfo;
-                        const isCorp = bank.businessType === 'corporate';
-                        const withholdingTax = isCorp ? 0 : Math.floor(p.amount * 0.1021);
-                        const finalAmount = p.amount - withholdingTax - 145; // 145円=振込手数料と仮定
-                        
-                        // GMO CSV: [振込先銀行コード],[振込先支店コード],[科目(1:普通)],[口座番号],[受取人名(半角カナ)],[金額]
-                        const bankCode = "0000"; // 仮
-                        const branchCode = "000"; // 仮
-                        const accountType = "1"; // 1=普通
-                        const accountNum = bank.accountNum || "";
-                        const holderName = bank.holderName ? bank.holderName.replace(/ /g, '') : ""; // スペース除去
-                        
-                        csvContent += `${bankCode},${branchCode},${accountType},${accountNum},${holderName},${finalAmount}\r\n`;
-                    });
 
                     // 代理店のデータをCSVに追加
                     pendingAgencies.forEach(a => {
@@ -2347,7 +2235,6 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
                 loadData();
-                loadPayouts();
                 loadAgencyData();
                 renderLiveLogs();
             } else if (savedEmail && savedPass) {

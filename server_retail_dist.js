@@ -4092,88 +4092,9 @@ function saveFinanceDB() {
 loadFinanceDB();
 
 
-app.post('/api/creator/withdraw', async (req, res) => {
-    const { email, amount } = req.body;
-    if (!email || !amount || amount < 5000) {
-        return res.status(400).json({ error: "出金は5,000円以上から申請可能です。" });
-    }
-    
-    // クリエイターの銀行情報を取得 (DBモック)
-    const bankInfo = creatorBanks[email];
-    if (!bankInfo) return res.status(400).json({ error: "銀行口座が登録されていません。" });
-    
-    // T番号の確認
-    if (bankInfo.invoiceNumber) {
-        const isValid = await verifyInvoiceNumber(bankInfo.invoiceNumber);
-        if (!isValid) return res.status(400).json({ error: "インボイス登録番号が無効です。" });
-    }
-
-    // 出金リクエストを登録
-    const reqId = 'wd_' + Date.now();
-    setTimeout(saveFinanceDB, 100);
-    withdrawalRequests.push({
-        id: reqId,
-        email: email,
-        amount: amount,
-        bankInfo: bankInfo,
-        status: 'pending',
-        requestDate: Date.now()
-    });
-    console.log(`[Withdraw] 出金申請を受理: ${email} - ¥${amount}`);
-    res.json({ success: true, id: reqId });
-});
-
-const processingPayouts = new Set(); // Mutex lock for payouts
-
-// 支払承認と送金実行（管理者から）
-app.post('/api/admin/payout/execute', async (req, res) => {
-    const { reqId } = req.body;
-    
-    // 排他制御 (Lock)
-    if (processingPayouts.has(reqId)) {
-        return res.status(409).json({ error: "現在処理中です。二重送信の可能性があります。" });
-    }
-    
-    const request = withdrawalRequests.find(r => r.id === reqId && r.status === 'pending');
-    if (!request) return res.status(404).json({ error: "無効なリクエストです。" });
-
-    const bank = request.bankInfo;
-    const isCorp = bank.businessType === 'corporate';
-    
-    // 源泉徴収税の計算 (個人のみ、100万円以下は10.21%)
-    let withholdingTax = 0;
-    if (!isCorp) {
-        withholdingTax = Math.floor(request.amount * 0.1021);
-    }
-    const bankFee = 145; // GMOあおぞらネット銀行から他行宛の場合の振込手数料目安など
-    const finalTransferAmount = request.amount - withholdingTax - bankFee;
-
-    try {
-        processingPayouts.add(reqId); // Acquire lock
-        
-        // 1. GMOあおぞらネット銀行で振込実行
-        const gmoRes = await executeGMOBankTransfer(bank.bankCode || '0000', bank.branchName, '普通', bank.accountNum, bank.holderName, finalTransferAmount);
-        
-        // 2. freee 会計へ仕訳登録
-        const freeeRes = await createFreeeJournalEntry(request.amount, withholdingTax, bankFee, bank.holderName);
-        
-        request.status = 'completed';
-        request.withholdingTax = withholdingTax;
-        request.finalAmount = finalTransferAmount;
-        request.processedAt = Date.now();
-        if (typeof saveFinanceDB === 'function') saveFinanceDB();
-
-        res.json({ success: true, message: "送金および会計仕訳が完了しました。", details: { gmo: gmoRes, freee: freeeRes } });
-    } catch (e) {
-        res.status(500).json({ error: "外部API連携中にエラーが発生しました", details: e.message });
-    } finally {
-        processingPayouts.delete(reqId); // Release lock
-    }
-});
-
-// 管理者用 出金リクエスト一覧取得
+// クリエイター手動出金申請機能は廃止され、翌月末自動支払い（一括振込）へ一本化されました。
 app.get('/api/admin/payouts', (req, res) => {
-    res.json(withdrawalRequests);
+    res.json([]);
 });
 
 
