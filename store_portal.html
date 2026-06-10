@@ -871,21 +871,30 @@
                         <a href="signage_player.html" target="_blank" style="font-weight:bold; color:#10b981; text-decoration:underline;">https://nsg3hyme2k.us-east-1.awsapprunner.com/signage_player.html</a>
                     </div>
                     
-                    <strong style="font-size:0.85rem; color:#1e293b; display:block; margin-top:15px; margin-bottom:5px;">📋 リテーラー・大店舗向けIT仕様要件<br class="mobile-br">(Chrome Enterpriseポリシー)</strong>
+                    <strong style="font-size:0.85rem; color:#1e293b; display:block; margin-top:15px; margin-bottom:5px;">💻 個人店舗でも簡単！自動起動設定</strong>
+                    <p style="font-size:0.85rem; color:#475569; line-height:1.6; margin-top:0;">
+                        PCの電源を入れた際に、自動的にChromeが<br class="mobile-br">
+                        全画面（キオスクモード）で起動する設定ツールを用意しました。<br class="mobile-br">
+                        ダウンロードして実行するだけで簡単に自動化できます。
+                    </p>
+                    <div style="margin: 10px 0;">
+                        <a href="setup_chrome_kiosk.bat" download style="background:#10b981; color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-magic"></i> ⏬ Windows自動起動設定ツールDL</a>
+                    </div>
+
+                    <strong style="font-size:0.85rem; color:#1e293b; display:block; margin-top:15px; margin-bottom:5px;">🔧 手動でキオスクモード起動を設定する場合</strong>
                     <ul style="margin:0 0 15px 0; padding-left:20px; font-size:0.85rem; line-height:1.7; color:#475569;">
                         <li style="margin-bottom:8px;">
-                            <b>全画面自動起動:</b><br>
-                            OS起動時にChromeを<br class="mobile-br">
-                            --kiosk オプション付きで<br class="mobile-br">
-                            自動実行し、指定URLを<br class="mobile-br">
-                            全画面で開くよう配信。
+                            Chromeのショートカットを右クリックし、<br class="mobile-br">
+                            「プロパティ」を開きます。
+                        </li>
+                        <li style="margin-bottom:8px;">
+                            「リンク先」の記述の末尾に、<br class="mobile-br">
+                            半角スペースを空けて <code>--kiosk [プレイヤーURL]</code><br class="mobile-br">
+                            を追記して保存します。
                         </li>
                         <li>
-                            <b>セキュリティ制限:</b><br>
-                            誤操作防止のための<br class="mobile-br">
-                            USBメモリ無効化ポリシー、<br class="mobile-br">
-                            およびプレイヤー以外の<br class="mobile-br">
-                            通信制限を推奨。
+                            そのショートカットをWindowsの<br class="mobile-br">
+                            「スタートアップ」フォルダに配置します。
                         </li>
                     </ul>
 
