@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Chrome自動起動＆セットアップガイド | リテアド</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg-base: #f8fafc;
+            --text-main: #334155;
+            --text-sub: #64748b;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.03) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 20%);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1e293b;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 25px;
+        }
+
+        h2, h3, h4 {
+            color: #0f172a;
+            border-bottom: 2px dashed #cbd5e1;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        h2 { font-size: 1.4rem; border-bottom: 2px solid var(--primary); }
+        h3 { font-size: 1.2rem; margin-top: 25px; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-playstore {
+            background: #0f172a;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #3b82f6;
+        }
+
+        .alert-box {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #14532d;
+        }
+
+        .alert-box strong {
+            color: #166534;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        ol, ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 12px;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 40px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .code-block {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #334155;
+            word-break: break-all;
+            display: block;
+            margin: 8px 0;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🌐 Google Chrome (Webプレイヤー方式) 自動起動ガイド</h1>
+        <p>Windows端末、Android端末、スマートモニターでWebプレイヤーを自動起動するための詳細手順</p>
+    </div>
+
+    <div class="card">
+        <h2>💻 1. Windows PCでの自動起動・全画面設定</h2>
+        <p>Windows PCをご使用の場合、自動設定ツールを使用するか、手動でChromeの設定を変更して自動起動化できます。</p>
+        
+        <h3>⚙️ 方法A：自動起動設定ツールの実行（推奨・簡単）</h3>
+        <p>PC起動時に自動でChromeをキオスクモード（全画面）で起動するツールを用意しています。</p>
+        <div style="margin: 15px 0;">
+            <a href="setup_chrome_kiosk.bat" download class="btn">
+                <i class="fa-solid fa-magic"></i> ⏬ Windows自動起動ツールをダウンロード
+            </a>
+        </div>
+        <div class="alert-box">
+            <strong>💡 設定ファイルの適用方法</strong>
+            ダウンロードしたバッチファイルを右クリックし、「管理者として実行」してください。自動的にWindowsスタートアップへ登録されます。解除する場合は、再度実行して画面表示に従って解除できます。
+        </div>
+
+        <h3>🛠️ 方法B：手動での全画面・自動起動設定</h3>
+        <ol>
+            <li>Chromeのショートカットアイコンを右クリックし、「プロパティ」を開きます。</li>
+            <li>「リンク先」の記述の末尾に、半角スペースを空けて以下のように追記します。
+                <span class="code-block">--kiosk https://nsg3hyme2k.us-east-1.awsapprunner.com/signage_player.html</span>
+            </li>
+            <li>修正したショートカットアイコンをコピーします。</li>
+            <li>キーボードの「Windowsキー + Rキー」を同時に押し、入力欄に <code style="font-weight:bold; color:#0f172a;">shell:startup</code> と入力してEnterを押します。</li>
+            <li>開いたフォルダ（スタートアップフォルダ）に、コピーしたショートカットを貼り付けます。これでPC起動時に自動実行されます。</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>🤖 2. Android端末・スマートモニターでの自動起動設定</h2>
+        <p>Android端末では、電源オン時に自動でブラウザ（Chrome）を開いてWebプレイヤーを全画面表示するために、以下のステップで設定を行ってください。</p>
+
+        <h3>📲 ステップ1. 自動起動アプリのインストール</h3>
+        <p>AndroidにはWindowsのようなバッチファイルがないため、自動起動を支援するアプリを利用します。Google Playストアより無料アプリをインストールしてください。</p>
+        
+        <div style="margin: 15px 0;">
+            <a href="https://play.google.com/store/apps/details?id=com.autostart" target="_blank" class="btn btn-playstore">
+                <i class="fa-brands fa-google-play"></i> Google Playで「AutoStart」を表示
+            </a>
+        </div>
+
+        <h3>⚙️ ステップ2. アプリ自動起動の設定（AutoStartの設定）</h3>
+        <ol>
+            <li>インストールした「AutoStart」アプリを起動します。</li>
+            <li>「AutoStart Service」を <b>ON</b>（有効）にします。</li>
+            <li>「Add Applications」または「アプリ追加」ボタンをタップし、アプリ一覧から <b>「Chrome」</b> を選択して登録します。</li>
+            <li>端末を再起動し、電源オン時に自動でChromeが起動することを確認してください。</li>
+        </ol>
+
+        <h3>📌 ステップ3. プレイヤー表示と画面ピン留め（固定化）</h3>
+        <ol>
+            <li>Chromeを起動し、サイネージプレイヤーURLを開きます。
+                <span class="code-block">https://nsg3hyme2k.us-east-1.awsapprunner.com/signage_player.html</span>
+            </li>
+            <li>プレイヤー画面が開いたら、Androidのタスク一覧（起動中のアプリ一覧画面）を開きます。</li>
+            <li>Chromeアプリのアイコンをタップ、または長押しし、表示されるメニューから <b>「ピン留め（または画面固定）」</b> を選択します。</li>
+            <li>これで、誤タップや操作によってプレイヤー画面が閉じたり、他の画面に切り替わったりするのを防ぎ、専用サイネージとして安全に稼働させることができます。</li>
+        </ol>
+    </div>
+
+    <a href="store_portal.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> 店舗ポータルへ戻る</a>
+</div>
+
+</body>
+</html>
