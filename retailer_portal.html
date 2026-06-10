@@ -581,20 +581,37 @@
                                     <li style="margin-bottom:6px;">
                                         <b>1. リテアド：LEDフィルムサイネージ（専用アプリ方式・方式1）をご利用の場合：</b><br>
                                         <span style="color:#10b981; font-weight:bold;">➡ 現場での設定作業は不要</span><br>
+                                        リテアドのLEDフィルム<br>
+                                        セットアップ方法<br>
                                         出荷時に店舗IDが設定済み<br>
                                         電源を入れるだけで自動起動し<br>
                                         サイネージが開始されます
                                     </li>
                                     <li style="margin-bottom:6px;">
                                         <b>2. Android端末（専用アプリ方式・方式1）をご利用の場合：</b><br>
-                                        配布されたフォルダ内の<br>
-                                        android_instructions_店舗ID.txt<br>
-                                        を開いて設定を行います。<br>
+                                        2. Androidアプリと<br>
+                                        サイネージパネルの<br>
+                                        自動セットアップ (MDM)<br>
+                                        既存のAndroidコントローラーや<br>
+                                        サイネージパネルで<br>
+                                        運用する場合<br>
+                                        androidを初期化して<br>
+                                        プロビジョニングQRコードを読み込ませることで<br>
+                                        USB無効化と完全キオスクモード（画面固定）の<br>
+                                        セキュリティパッチが適用されます<br>
                                         <a href="app_setup_guide.html" target="_blank" style="display:inline-block; margin-top:5px; color:#2563eb; text-decoration:underline; font-size:0.85rem; font-weight:bold;">🤖 Android専用アプリ設定ガイド</a>
                                     </li>
                                     <li style="margin-bottom:6px;">
                                         <b>3. Windows PC端末（専用アプリ方式・方式1）をご利用の場合：</b><br>
-                                        <span style="color:#2563eb; font-size:0.8rem; font-weight:bold;">※Windowsでも運用可能ですが、より堅牢な物理ブロックが必要な場合はAndroid専用アプリ（方式1）をご検討ください。</span><br>
+                                        3. Win pcと<br>
+                                        セキュリティパッチと<br>
+                                        自動セットアップ<br>
+                                        Win PCをサイネージ化する場合<br>
+                                        専用のセキュリティパッチファイル（.bat）<br>
+                                        を実行することで<br>
+                                        USBメモリ無効化、キオスクモード設定<br>
+                                        全画面自動起動が<br>
+                                        全自動で適用されます。<br>
                                         送付されたフォルダ内の<br>
                                         setup_店舗ID.bat を右クリックして<br>
                                         「管理者として実行」します<br>
@@ -603,10 +620,31 @@
                                     </li>
                                     <li style="margin-bottom:0;">
                                         <b>4. Webプレイヤー（Chrome起動・方式2）をご利用の場合：</b><br>
-                                        送付されたフォルダ内の<br>
-                                        simple_start_店舗ID.txt に記載の<br>
-                                        プレイヤーURLをブラウザで開きます。<br>
-                                        <span style="color:#2563eb; font-size:0.8rem; font-weight:bold;">※よりセキュアな物理キーロックやMDM制御を重視される場合は、Android専用アプリ（方式1）を推奨します。</span><br>
+                                        4. DLやインストールなど<br>
+                                        できない場合<br>
+                                        アプリを初期化できない場合は<br>
+                                        アプリを直接ダウンロードして<br>
+                                        画面固定化を行います<br>
+                                        下記のボタンからAndroid用アプリ<br>
+                                        （APKファイル）を端末にDLします<br>
+                                        インストール後<br>
+                                        モバイルの「設定」アプリを開き<br>
+                                        「セキュリティ」＞「画面のピン留め」<br>
+                                        をonにします。<br>
+                                        「RetailMedia Signage」アプリを<br>
+                                        起動した状態で<br>
+                                        タスク一覧を開き<br>
+                                        アプリのアイコンをタップして<br>
+                                        「ピン留め」を選択<br>
+                                        <br>
+                                        停電時の自動復旧について<br>
+                                        「RetailMedia Signage」は<br>
+                                        アプリ起動時に<br>
+                                        自動起動する設定が可能<br>
+                                        停電などによる予期せぬシャットダウンが発生も<br>
+                                        再起動すれば<br>
+                                        自動的に配信されます<br>
+                                        <br>
                                         WindowsやAndroidでの自動起動設定は<br>
                                         以下のガイドをご確認ください。<br>
                                         <a href="chrome_setup_guide.html" target="_blank" style="display:inline-block; margin-top:5px; color:#10b981; text-decoration:underline; font-size:0.85rem; font-weight:bold;">🌐 Webプレイヤー自動起動ガイド</a>
