@@ -157,6 +157,16 @@
         @media (max-width: 768px) {
             .mobile-br { display: block; }
         }
+
+        h1, h2, h3, h4, h5 {
+            text-wrap: balance !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
+        p, li, span {
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
