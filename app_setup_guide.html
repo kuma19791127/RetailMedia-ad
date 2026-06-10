@@ -190,17 +190,17 @@
 
 <div class="container">
     <div class="header">
-        <h1>📱 専用アプリ＆セキュリティセットアップ ガイド</h1>
-        <p>Androidコントローラー、LEDフィルム、Windows端末での専用アプリ導入とセキュリティパッチ適用手順</p>
+        <h1>📱 専用アプリ＆<br class="mobile-br">セキュリティセットアップ<br class="mobile-br"> ガイド</h1>
+        <p>Androidコントローラー、<br class="mobile-br">LEDフィルム、<br class="mobile-br">Windows端末での<br class="mobile-br">専用アプリ導入と<br class="mobile-br">セキュリティパッチ<br class="mobile-br">適用手順</p>
     </div>
 
     <div class="card">
-        <h2>1. リテアドの透明LEDフィルム セットアップ方法</h2>
+        <h2>1. リテアドの<br class="mobile-br">透明LEDフィルム<br class="mobile-br"> セットアップ方法</h2>
         <p>
-            自社提供の専用ハードウェア（透明LEDフィルムとAndroidコントローラー）は、納品前にMDMやUSB無効化、キオスクモード設定などをすべて済ませた<strong>「完全な専用機」</strong>として納品されます。
+            自社提供の専用ハードウェア<br class="mobile-br">（透明LEDフィルムと<br class="mobile-br">Androidコントローラー）は、<br class="mobile-br">納品前にMDMやUSB無効化、<br class="mobile-br">キオスクモード設定などを<br class="mobile-br">すべて済ませた<br class="mobile-br"><strong>「完全な専用機」</strong>として<br class="mobile-br">納品されます。
         </p>
         <p style="font-weight:bold; color:#e74c3c;">
-            店舗側でのセキュリティ知識や設定作業は一切不要です。電源を挿し、Wi-Fi等のインターネットに接続するだけで安全に稼働します。
+            店舗側でのセキュリティ知識や<br class="mobile-br">設定作業は一切不要です。<br class="mobile-br">電源を挿し、Wi-Fi等の<br class="mobile-br">インターネットに接続するだけで<br class="mobile-br">安全に稼働します。
         </p>
         <button onclick="sendDownloadLink()" class="btn">
             <i class="fa-solid fa-envelope"></i> アプリのダウンロードリンクを送信する
@@ -208,16 +208,16 @@
     </div>
 
     <div class="card">
-        <h2>2. 汎用Android端末へのインストールと自動セットアップ (MDM)</h2>
+        <h2>2. 汎用Android端末への<br class="mobile-br">インストールと<br class="mobile-br">自動セットアップ (MDM)</h2>
         <p>
-            既存のAndroidコントローラーやタブレットを使用し、サイネージ専用機化する場合、初期化状態で以下のプロビジョニングQRコードを読み込ませることで、自動的に<strong>USB無効化と完全キオスクモード（画面固定）のセキュリティパッチ</strong>が適用されます。
+            既存のAndroidコントローラーや<br class="mobile-br">タブレットを使用し、<br class="mobile-br">サイネージ専用機化する場合、<br class="mobile-br">初期化状態で以下の<br class="mobile-br">プロビジョニングQRコードを<br class="mobile-br">読み込ませることで、<br class="mobile-br">自動的に<strong>USB無効化と<br class="mobile-br">完全キオスクモード<br class="mobile-br">（画面固定）の<br class="mobile-br">セキュリティパッチ</strong>が<br class="mobile-br">適用されます。
         </p>
 
         <div class="qr-section">
-            <strong style="color:#1e293b; display:block;">📱 Androidセットアップ用プロビジョニングQRコード</strong>
+            <strong style="color:#1e293b; display:block;">📱 Androidセットアップ用<br class="mobile-br">プロビジョニングQRコード</strong>
             <div id="mdm-qr-code" class="qr-placeholder"></div>
             <p style="font-size:0.8rem; color:#64748b; margin-top:10px;">
-                ※工場出荷状態に初期化したAndroid端末の「こんにちは」画面を6回連続タップし、カメラを起動して読み込みます。
+                ※工場出荷状態に初期化した<br class="mobile-br">Android端末の<br class="mobile-br">「こんにちは」画面を<br class="mobile-br">6回連続タップし、<br class="mobile-br">カメラを起動して読み込みます。
             </p>
         </div>
 
@@ -245,14 +245,14 @@
     </div>
 
     <div class="card">
-        <h2>3. Windowsパソコンのセキュリティパッチと自動セットアップ</h2>
+        <h2>3. Windowsパソコンの<br class="mobile-br">セキュリティパッチと<br class="mobile-br">自動セットアップ</h2>
         <p>
-            Windows PCをサイネージ化する場合、専用のセキュリティパッチファイル（.bat）を実行することで、<strong>USBメモリ無効化、キオスクモード設定、全画面自動起動</strong>が全自動で適用されます。
+            Windows PCを<br class="mobile-br">サイネージ化する場合、<br class="mobile-br">専用のセキュリティパッチファイル<br class="mobile-br">（.bat）を実行することで、<br class="mobile-br"><strong>USBメモリ無効化、<br class="mobile-br">キオスクモード設定、<br class="mobile-br">全画面自動起動</strong>が<br class="mobile-br">全自動で適用されます。
         </p>
         
         <div style="margin: 20px 0; display: flex; gap: 15px; flex-wrap: wrap;">
             <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/setup_retail_signage.bat" download class="btn">
-                <i class="fa-solid fa-shield-halved"></i> 💻 Win用セキュリティパッチDL
+                <i class="fa-solid fa-shield-halved"></i> Win用パッチDL
             </a>
             <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/remove_retail_signage.bat" download class="btn btn-secondary">
                 <i class="fa-solid fa-rotate-left"></i> 解除ツール
@@ -260,22 +260,22 @@
         </div>
         
         <div class="alert-box">
-            <strong>⚠️ セキュリティパッチの実行に関する注意</strong>
-            バッチファイルを実行すると管理者権限でセキュリティポリシーが書き換えられます。店舗での誤操作を防ぐための正規設定ですが、通常PCに戻したい場合は必ず右横の「解除ツール」を実行してください。
+            <strong>⚠️ セキュリティパッチの<br class="mobile-br">実行に関する注意</strong>
+            バッチファイルを実行すると<br class="mobile-br">管理者権限で<br class="mobile-br">セキュリティポリシーが<br class="mobile-br">書き換えられます。<br class="mobile-br">店舗での誤操作を防ぐための<br class="mobile-br">正規設定ですが、<br class="mobile-br">通常PCに戻したい場合は<br class="mobile-br">必ず右横の「解除ツール」を<br class="mobile-br">実行してください。
         </div>
     </div>
 
     <div class="card">
-        <h2>4. 手動インストールと固定化手順 (端末を初期化できない場合)</h2>
+        <h2>4. 手動インストールと<br class="mobile-br">固定化手順<br class="mobile-br"> (端末を初期化できない場合)</h2>
         <p>
-            端末を初期化できない（＝QRコードMDMが使えない）場合は、アプリを直接ダウンロードして手動で画面固定化を行います。
+            端末を初期化できない<br class="mobile-br">（＝QRコードMDMが使えない）<br class="mobile-br">場合は、アプリを直接ダウンロードして<br class="mobile-br">手動で画面固定化を行います。
         </p>
 
         <ol>
             <li>
-                下記のボタンからAndroid用アプリ（APKファイル）を端末にダウンロードしてインストールします。<br>
+                下記のボタンからAndroid用アプリ<br class="mobile-br">（APKファイル）を端末に<br class="mobile-br">ダウンロードしてインストールします。<br>
                 <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk" download class="btn btn-warning" style="margin-top: 8px;">
-                    <i class="fa-solid fa-download"></i> Androidアプリ(APK)を手動DL
+                    <i class="fa-solid fa-download"></i> APK手動DL
                 </a>
             </li>
             <li>インストール後、端末の「設定」アプリを開き、「セキュリティ」＞「画面のピン留め」をオンにします。</li>
@@ -284,7 +284,7 @@
 
         <div class="alert-box" style="background: #fff7ed; border-left-color: #f97316;">
             <strong>💡 停電時の自動復旧について</strong>
-            Androidアプリ「RetailMedia Signage」は、端末起動時に自動起動するスタートアップ設定が可能です。これにより、停電などによる予期せぬシャットダウンが発生しても、通電が再開すれば自動的にサイネージ再生が復旧します。
+            Androidアプリ<br class="mobile-br">「RetailMedia Signage」は、<br class="mobile-br">端末起動時に自動起動する<br class="mobile-br">スタートアップ設定が可能です。<br class="mobile-br">これにより、停電などによる<br class="mobile-br">予期せぬシャットダウンが<br class="mobile-br">発生しても、通電が再開すれば<br class="mobile-br">自動的にサイネージ再生が<br class="mobile-br">復旧します。
         </div>
     </div>
 
