@@ -174,17 +174,19 @@
 
     <div class="card">
         <h2>💻 1. Windows PCでの自動起動・全画面設定</h2>
-        <div class="alert-warning">
-            <strong>⚠️ セキュリティ上の重要なお知らせ（Windows端末は非推奨）</strong>
-            Windows端末では、いたずらや不正操作を防止するための<b>「物理的なセキュリティブロック（USBポートの完全遮断、キーボード誤入力の完全ロック等）」がOSの仕様上機能しません。</b> キーボードやUSBの接続によってシステムを不正操作されるリスクが高いため、本番環境での稼働には<b>非推奨</b>としております。物理セキュリティが必要な場合は、専用の<b>Android端末（方式2：物理ブロック対応）</b>をご利用ください。
+        <div class="alert-box" style="background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e3a8a;">
+            <strong>🔒 ご導入時のセキュリティに関するご案内（OS別の選択）</strong>
+            本サービスは Windows PC / Android の両方で運用可能です。店舗の運用ポリシーに合わせてお選びください。<br>
+            ・<b>Windows PC方式</b>：既存のパソコンや小型PCで手軽にスタートアップ起動が可能です。※キーボードやUSB機器が露出している環境では、いたずら防止対策として「Androidアプリ方式（方式2）」の併用をご検討ください。<br>
+            ・<b>Androidアプリ方式（方式2・より高セキュリティ）</b>：OS層での「完全な物理セキュリティブロック（USB無効化、キーボード誤操作の完全ロック、MDM遠隔制御）」が機能するため、不特定多数の来店客が触れる環境や、法人・大店舗でのセキュリティ重視の運用に最も適しています。
         </div>
 
-        <p>※テスト環境や一時的な運用のために Windows PCを使用される場合のみ、以下の手順を実行してください。</p>
+        <p>Windows PCを使用して自動起動設定を行う場合は、以下の手順を実行してください。</p>
         
         <h3>⚙️ 方法A：自動起動設定ツールの実行（簡易設定）</h3>
         <p>PC起動時に自動でChromeをキオスクモード（全画面）で起動するツールを用意しています。</p>
         <div style="margin: 15px 0;">
-            <a href="setup_chrome_kiosk.bat" download class="btn" style="background:#f97316;">
+            <a href="setup_chrome_kiosk.bat" download class="btn" style="background:#10b981;">
                 <i class="fa-solid fa-magic"></i> ⏬ Windows自動起動ツールをダウンロード
             </a>
         </div>
