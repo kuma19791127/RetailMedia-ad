@@ -586,41 +586,63 @@
                     </div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
-                    <h3>広告・AdSense 収益分配一覧</h3>
-                    <button onclick="sendAllPayoutEmails()" class="btn-action" style="background:#8e44ad;">📨
-                        支払通知メール自動一括送信 (全店舗)</button>
+                <div style="margin-top:20px; border:1px solid #e2e8f0; padding:15px; border-radius:8px; background:#fff; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px; border-bottom:2px solid #3b82f6; padding-bottom:8px;">
+                        <h3 style="margin:0; color:#1e3a8a;">📢 広告収益分配一覧 (リテアド広告)</h3>
+                        <button onclick="sendAllPayoutEmails()" class="btn-action" style="background:#8e44ad; font-size:12px; padding:6px 12px;">📨 広告支払通知メール自動一括送信 (全店舗)</button>
+                    </div>
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th>店舗情報</th>
+                                <th>リテアド収益<br><span style="font-size:10px;color:#95a5a6;">(企業広告等)</span></th>
+                                <th>代理店コミッション<br><span style="font-size:10px;color:#95a5a6;">(20%)</span></th>
+                                <th>クリエイター報酬<br><span style="font-size:10px;color:#95a5a6;">(10%+α)</span></th>
+                                <th>必要経費実費<br><span style="font-size:10px;color:#95a5a6;">(サーバー・人件費)</span></th>
+                                <th>差引純売上<br><span style="font-size:10px;color:#95a5a6;">(支払対象総額)</span></th>
+                                <th>支払額 (50%)<br><span style="font-size:10px;color:#27ae60;font-weight:bold;">店舗への実質振込額</span></th>
+                                <th>銀行情報</th>
+                                <th>ステータス</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payout-table-body">
+                            <!-- Data injected via JS -->
+                        </tbody>
+                    </table>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>店舗情報</th>
-                            <th>リテアド収益<br><span style="font-size:10px;color:#95a5a6;">(企業広告等)</span></th>
-                            <th>AdSense収益<br><span style="font-size:10px;color:#95a5a6;">(合算)</span></th>
-                            <th>代理店コミッション<br><span style="font-size:10px;color:#95a5a6;">(20%)</span></th>
-                            <th>クリエイター報酬<br><span style="font-size:10px;color:#95a5a6;">(10%+α)</span></th>
-                            <th>必要経費実費<br><span style="font-size:10px;color:#95a5a6;">(サーバー・人件費)</span></th>
-                            <th>差引純売上<br><span style="font-size:10px;color:#95a5a6;">(支払対象総額)</span></th>
-                            <th>支払額 (50%)<br><span
-                                    style="font-size:10px;color:#27ae60;font-weight:bold;">店舗への実質振込額</span></th>
-                            <th>銀行情報</th>
-                            <th>ステータス</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payout-table-body">
-                        <!-- Data injected via JS -->
-                    </tbody>
-                </table>
+
+                <div style="border:1px solid #e2e8f0; padding:15px; border-radius:8px; background:#fff; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px; border-bottom:2px solid #10b981; padding-bottom:8px;">
+                        <h3 style="margin:0; color:#064e3b;">🌐 Google AdSense収益分配一覧 (アドマネージャー連携)</h3>
+                        <button onclick="sendAllAdsensePayoutEmails()" class="btn-action" style="background:#10b981; font-size:12px; padding:6px 12px;">📨 AdSense支払通知メール自動一括送信 (全店舗)</button>
+                    </div>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th>店舗情報</th>
+                                <th>AdSense収益金額<br><span style="font-size:10px;color:#95a5a6;">(100%店舗支払い額)</span></th>
+                                <th>銀行情報</th>
+                                <th>ステータス</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adsense-payout-table-body">
+                            <!-- Data injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="card" style="background:#d4edda; border-left:4px solid #28a745;">
+            <div class="card" style="background:#d4edda; border-left:4px solid #28a745; margin-top:20px;">
                 <h4 style="margin-top:0; color:#155724;">💡 経理メモ</h4>
-                <p style="font-size:13px; color:#155724; margin:0; line-height:1.6;">
-                    店舗への支払額計算式:
-                    <code>(リテアド収益 ＋ Google AdSense収益 － 代理店コミッション(20％) － クリエイター報酬(10％) － 必要経費実費 (サーバー費用 ＋ 人件費)) ＝ 差引純売上。この差引純売上の50%分を店舗へ支払う (純売上がマイナスの場合は0円)</code><br>
-                    ※「支払通知メール」を一括送信すると、各店舗の登録メールアドレスに「今月の広告収益振込額と内訳」が自動送信されます。振込手続き完了後、ステータスを「支払済」に変更してください。
-                </p>
+                <div style="font-size:13px; color:#155724; margin:0; line-height:1.6;">
+                    <p style="margin:4px 0;"><strong>1. 広告収益支払額計算式:</strong><br>
+                    <code>(リテアド収益 － 代理店コミッション(20％) － クリエイター報酬(10％) － 必要経費実費 (サーバー費用 ＋ 人件費)) ＝ 差引純売上。この差引純売上の50%分を店舗へ支払います。(純売上がマイナスの場合は0円)</code></p>
+                    <p style="margin:8px 0 4px 0;"><strong>2. AdSense収益支払額計算式:</strong><br>
+                    <code>Google AdSense収益金額をそのまま100%店舗へ支払います。(経費引きや分配率の対象外となります)</code></p>
+                    <p style="margin:8px 0 0 0; font-size:11px; color:#555;">※それぞれの「支払通知メール」を一括送信すると、各店舗の登録メールアドレスに明細が自動送信されます。振込手続き完了後、ステータスを「支払済」に変更してください。</p>
+                </div>
             </div>
         </div>
 
@@ -1326,7 +1348,6 @@
                 < tr >
                     <td><b>${store.name}</b><br><span style="font-size:11px; color:#aaa;">ID: ${store.id}</span></td>
                     <td>¥${store.retail_ad_revenue.toLocaleString()}</td>
-                    <td style="color:#4285F4; font-weight:bold;">¥${store.adsense_revenue.toLocaleString()}</td>
                     <td style="color:#e67e22;">-¥${store.agency_commission.toLocaleString()}</td>
                     <td style="color:#e74c3c;">-¥${store.creator_reward.toLocaleString()}</td>
                     <td style="white-space: nowrap; padding: 4px;">
@@ -1362,13 +1383,36 @@
                 `).join('');
                 document.getElementById('payout-table-body').innerHTML = payoutRows;
 
+                // Render AdSense Payout Table
+                const adsensePayoutRows = data.payouts.map(store => `
+                < tr >
+                    <td><b>${store.name}</b><br><span style="font-size:11px; color:#aaa;">ID: ${store.id}</span></td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <span style="font-weight:bold; color:#4285F4; margin-right:5px;">¥</span>
+                            <input type="number" value="${store.adsense_revenue}" class="adsense-input" style="width:90px; padding:3px; border:1px solid #ccc; border-radius:4px; text-align:right; font-weight:bold; color:#4285F4;" id="adsense-input-${store.id}">
+                            <button onclick="saveAdsenseRevenue('${store.id}', this)" class="btn-action" style="background:#10b981; padding:4px 8px; font-size:10px;">保存</button>
+                        </div>
+                    </td>
+                    <td>
+                        <button onclick="viewBankInfo('${escape(JSON.stringify(store.bank_info))}')" class="btn-view">🏦 銀行情報確認</button>
+                    </td>
+                    <td><span class="badge badge-unpaid">${store.status}</span></td>
+                    <td style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="sendAdsensePayoutEmail('${store.email}', ${store.adsense_revenue}, this)" class="btn-action adsense-email-btn" style="background:#10b981; font-size:11px;">📩 AdSense確定メール</button>
+                        <button onclick="markAsPaid('${store.id}', this)" class="btn-action" style="background:#2ecc71; font-size:11px;">✅ 振込完了</button>
+                    </td>
+                </tr >
+                `).join('');
+                document.getElementById('adsense-payout-table-body').innerHTML = adsensePayoutRows;
+
             } catch (e) {
                 console.error("Failed to load admin data", e);
                 document.getElementById('admin-email').value = "admin@retail-ad.com";
                 
                 document.getElementById('billing-table-body').innerHTML = '<tr><td colspan="7" style="text-align:center;">データがありません</td></tr>';
-
-                document.getElementById('payout-table-body').innerHTML = '<tr><td colspan="11" style="text-align:center;">データがありません</td></tr>';
+                document.getElementById('payout-table-body').innerHTML = '<tr><td colspan="10" style="text-align:center;">データがありません</td></tr>';
+                document.getElementById('adsense-payout-table-body').innerHTML = '<tr><td colspan="5" style="text-align:center;">データがありません</td></tr>';
             }
         }
 
@@ -1448,6 +1492,38 @@
             }
         }
 
+        async function saveAdsenseRevenue(storeId, btnElement) {
+            const inputEl = document.getElementById(`adsense-input-${storeId}`);
+            if (!inputEl) return;
+            const adsenseRevenue = parseFloat(inputEl.value) || 0;
+            
+            try {
+                btnElement.innerText = "⏳...";
+                btnElement.disabled = true;
+                
+                const res = await fetch(`${API_BASE}/api/admin/store/operating-cost`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ storeId, adsenseRevenue })
+                });
+                
+                const result = await res.json();
+                if (result.success) {
+                    Swal.fire({ toast: true, position: 'top', title: 'AdSense収益を更新しました', icon: 'success', showConfirmButton: false, timer: 1500 });
+                    loadData(); // 再ロードして支払額等の再計算結果を反映させる
+                } else {
+                    Swal.fire('エラー', result.error || 'AdSense収益の更新に失敗しました', 'error');
+                    btnElement.innerText = "保存";
+                    btnElement.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('通信エラー', 'AdSense収益の保存に失敗しました', 'error');
+                btnElement.innerText = "保存";
+                btnElement.disabled = false;
+            }
+        }
+
         async function sendPayoutEmail(email, amount, btnElement) {
             try {
                 // Mock endpoint, same logic as Creator/Billing
@@ -1468,6 +1544,25 @@
             }
         }
 
+        async function sendAdsensePayoutEmail(email, amount, btnElement) {
+            try {
+                await fetch(`${API_BASE}/api/admin/creators/send-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: email, amount: amount, type: 'store_adsense_payout' })
+                });
+
+                if (btnElement) {
+                    btnElement.innerText = "🚀 送信済";
+                    btnElement.disabled = true;
+                    btnElement.style.background = "#27ae60";
+                    btnElement.style.cursor = "default";
+                }
+            } catch (e) {
+                console.error("AdSense Payout Email send failed", e);
+            }
+        }
+
         async function sendAllPayoutEmails() {
             const buttons = document.querySelectorAll('.payout-email-btn:not([disabled])');
             let sentCount = 0;
@@ -1478,7 +1573,7 @@
 
             const result = await Swal.fire({
                 title: '一斉送信の確認',
-                text: `${buttons.length}件の店舗へ「広告収益・AdSense収益支払通知メール」を送信しますか？`,
+                text: `${buttons.length}件の店舗へ「広告収益支払通知メール」を送信しますか？`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: '送信する',
@@ -1496,7 +1591,39 @@
             Swal.fire({
                 icon: 'success',
                 title: '自動送信完了',
-                text: `${sentCount} 件の支払通知メールを各店舗に自動送信しました。`
+                text: `${sentCount} 件の広告支払通知メールを各店舗に自動送信しました。`
+            });
+        }
+
+        async function sendAllAdsensePayoutEmails() {
+            const buttons = document.querySelectorAll('.adsense-email-btn:not([disabled])');
+            let sentCount = 0;
+
+            if (buttons.length === 0) {
+                return Swal.fire('情報', '送信可能なAdSense確定メールがありません。', 'info');
+            }
+
+            const result = await Swal.fire({
+                title: '一斉送信の確認',
+                text: `${buttons.length}件の店舗へ「Google AdSense収益支払通知メール」を送信しますか？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '送信する',
+                cancelButtonText: 'キャンセル'
+            });
+
+            if (!result.isConfirmed) return;
+
+            for (let btn of buttons) {
+                btn.click();
+                sentCount++;
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '自動送信完了',
+                text: `${sentCount} 件のGoogle AdSense収益支払通知メールを各店舗に自動送信しました。`
             });
         }
 

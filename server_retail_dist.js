@@ -3007,14 +3007,20 @@ app.post('/api/admin/settings', (req, res) => {
 
 // Update Store Operating Cost (Expenses)
 app.post('/api/admin/store/operating-cost', express.json(), async (req, res) => {
-    const { storeId, operatingCost, laborCost } = req.body;
+    const { storeId, operatingCost, laborCost, adsenseRevenue } = req.body;
     if (!storeId) return res.status(400).json({ error: "storeId is required" });
     
     try {
-        const costVal = parseFloat(operatingCost) || 0;
-        const laborVal = parseFloat(laborCost) || 0;
-        await dbHelper.query.run('UPDATE stores SET monthly_operating_cost = ?, monthly_labor_cost = ? WHERE id = ?', [costVal, laborVal, storeId]);
-        console.log(`[Admin] Costs Updated for store ${storeId}: Operating=${costVal}, Labor=${laborVal}`);
+        if (adsenseRevenue !== undefined) {
+            const adsenseVal = parseFloat(adsenseRevenue) || 0;
+            await dbHelper.query.run('UPDATE stores SET monthly_adsense_revenue = ? WHERE id = ?', [adsenseVal, storeId]);
+            console.log(`[Admin] AdSense Revenue Updated for store ${storeId}: ${adsenseVal}`);
+        } else {
+            const costVal = parseFloat(operatingCost) || 0;
+            const laborVal = parseFloat(laborCost) || 0;
+            await dbHelper.query.run('UPDATE stores SET monthly_operating_cost = ?, monthly_labor_cost = ? WHERE id = ?', [costVal, laborVal, storeId]);
+            console.log(`[Admin] Costs Updated for store ${storeId}: Operating=${costVal}, Labor=${laborVal}`);
+        }
         
         // 必須ルール1: S3/DynamoDBデータ保存関数の呼び出し
         if (typeof saveDatabase === 'function') saveDatabase();
@@ -3052,7 +3058,7 @@ app.get('/api/admin/dashboard', async (req, res) => {
                 billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_0_4_percent: billingAmount, email: s.billing_email, status: "未請求" });
             }
             const storeAdRevenue = s.total_ad_revenue || 0;
-            const adsenseRevenue = 0; // AdSense収益は現状0固定
+            const adsenseRevenue = s.monthly_adsense_revenue || 0; // AdSense収益をDBから取得
             const agencyCommission = Math.floor(storeAdRevenue * 0.2); // 代理店コミッション20%
             const creatorReward = Math.floor(storeAdRevenue * 0.1); // クリエイター報酬10%
             const operatingCost = s.monthly_operating_cost || 0; // 経費実費をDBから取得
@@ -3158,6 +3164,10 @@ app.post('/api/admin/creators/send-email', async (req, res) => {
   if (type === 'store_payout') {
     subject = `【リテアド】今月の広告収益振込予定のお知らせ (${dateStr})`;
     body = `${to} 様\n\n今月のリテアド動画配信による報酬明細をお送りします。\n--------------------------------\n[計算ロジック]\n月間有効再生数: ${playCount.toLocaleString()} 回\nベース再生単価: ¥2 / 回\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\n※送信用mailアドレスなので返信はできません
+よろしくお願いいたします。`;
+  } else if (type === 'store_adsense_payout') {
+    subject = `【リテアド】今月のGoogle AdSense収益振込予定のお知らせ (${dateStr})`;
+    body = `${to} 様\n\n今月のGoogle AdSense連携による報酬明細をお送りします。\n--------------------------------\nお支払予定金額: ¥${payoutAmount.toLocaleString()}\n--------------------------------\n※本アドセンス収益は、Google Ad Manager (MCM) などから店舗の広告枠成果に応じて100%店舗に支払われるものです。\n--------------------------------\n※送信用mailアドレスなので返信はできません
 よろしくお願いいたします。`;
   } else {
     subject = `【リテアド】クリエイター報酬振込予定のお知らせ (${dateStr})`;
