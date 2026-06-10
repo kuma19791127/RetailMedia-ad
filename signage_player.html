@@ -2,6 +2,9 @@
 <html lang="ja">
 
 <head>
+    <!-- SweetAlert2 & FontAwesome for Terminal Settings -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- === API Base URL Config === -->
     <script>
@@ -605,8 +608,9 @@ document.body.addEventListener('click', () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const location = urlParams.get('location') || 'register_side';
                 const storeId = urlParams.get('storeId') || 'STORE_001';
+                const terminalId = urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || 'DEMO_UNIT';
 
-                const res = await fetch(window.API_BASE_URL + `/api/signage/playlist?location=${location}&storeId=${storeId}`);
+                const res = await fetch(window.API_BASE_URL + `/api/signage/playlist?location=${location}&storeId=${storeId}&terminal_id=${terminalId}`);
                 if (!res.ok) console.error(`[Signage API] Error fetching playlist! Status: ${res.status}`);
                 const newPlaylist = await res.json();
 
@@ -1345,6 +1349,71 @@ document.body.addEventListener('click', () => {
             console.log("[Watchdog] サイネージ無人運用監視モジュールが起動しました。");
         })();
 
+    </script>
+
+    <!-- Terminal ID Settings Button & Badge -->
+    <div id="terminal-settings-btn" style="position: absolute; bottom: 20px; left: 20px; z-index: 10000; background: rgba(0,0,0,0.6); color: white; padding: 10px; border-radius: 50%; width: 42px; height: 42px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); transition: background 0.2s;" onclick="event.stopPropagation(); openTerminalIdSettings();" title="端末ID設定">
+        <i class="fa-solid fa-gear" style="font-size: 1.2rem;"></i>
+    </div>
+    
+    <div id="terminal-id-badge" style="position: absolute; bottom: 72px; left: 20px; z-index: 10000; background: rgba(0,0,0,0.6); color: #10b981; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid rgba(16,185,129,0.3); font-family: monospace;">
+        ID: <span id="terminal-id-val">DEMO_UNIT</span>
+    </div>
+
+    <script>
+        function getTerminalId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || 'DEMO_UNIT';
+        }
+
+        function updateTerminalBadge() {
+            const tId = getTerminalId();
+            const badgeVal = document.getElementById('terminal-id-val');
+            if (badgeVal) {
+                badgeVal.innerText = tId;
+                if (tId === 'DEMO_UNIT') {
+                    badgeVal.style.color = '#ef4444'; // 未設定は赤
+                } else {
+                    badgeVal.style.color = '#10b981'; // 設定済みは緑
+                }
+            }
+        }
+
+        function openTerminalIdSettings() {
+            const currentId = localStorage.getItem('retail_terminal_id') || '';
+            Swal.fire({
+                title: 'サイネージ識別番号 (端末ID) 設定',
+                input: 'text',
+                inputLabel: 'この端末の識別番号を入力してください (例: A-001)',
+                inputValue: currentId,
+                placeholder: '識別番号を入力',
+                showCancelButton: true,
+                confirmButtonText: '保存する',
+                cancelButtonText: 'キャンセル',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return '識別番号を入力してください';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.setItem('retail_terminal_id', result.value.trim());
+                    Swal.fire({
+                        icon: 'success',
+                        title: '保存しました',
+                        text: '設定を反映するため再読み込みします。',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateTerminalBadge();
+        });
     </script>
 </body>
 
