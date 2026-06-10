@@ -152,6 +152,11 @@
         .back-link:hover {
             text-decoration: underline;
         }
+
+        .mobile-br { display: none; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

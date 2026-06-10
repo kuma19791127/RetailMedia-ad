@@ -162,40 +162,45 @@
             margin: 8px 0;
             border: 1px solid #e2e8f0;
         }
+
+        .mobile-br { display: none; }
+        @media (max-width: 768px) {
+            .mobile-br { display: block; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>🌐 Google Chrome (Webプレイヤー方式) 自動起動ガイド</h1>
-        <p>Windows端末、Android端末、スマートモニターでWebプレイヤーを自動起動するための詳細手順</p>
+        <h1>🌐 Google Chrome<br class="mobile-br">(Webプレイヤー方式)<br class="mobile-br"> 自動起動ガイド</h1>
+        <p>Windows端末、Android端末、<br class="mobile-br">スマートモニターで<br class="mobile-br">Webプレイヤーを自動起動するための<br class="mobile-br">詳細手順</p>
     </div>
 
     <div class="card">
-        <h2>💻 1. Windows PCでの自動起動・全画面設定</h2>
+        <h2>💻 1. Windows PCでの<br class="mobile-br">自動起動・全画面設定</h2>
         <div class="alert-box" style="background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e3a8a;">
-            <strong>🔒 ご導入時のセキュリティに関するご案内（OS別の選択）</strong>
-            本サービスは Windows PC / Android の両方で運用可能です。店舗の運用ポリシーに合わせてお選びください。<br>
-            ・<b>Windows PC方式</b>：既存のパソコンや小型PCで手軽にスタートアップ起動が可能です。※キーボードやUSB機器が露出している環境では、いたずら防止対策として「Androidアプリ方式（方式2）」の併用をご検討ください。<br>
-            ・<b>Androidアプリ方式（方式2・より高セキュリティ）</b>：OS層での「完全な物理セキュリティブロック（USB無効化、キーボード誤操作の完全ロック、MDM遠隔制御）」が機能するため、不特定多数の来店客が触れる環境や、法人・大店舗でのセキュリティ重視の運用に最も適しています。
+            <strong>🔒 ご導入時のセキュリティに関する<br class="mobile-br">ご案内（OS別の選択）</strong>
+            本サービスは Windows PC / Android の<br class="mobile-br">両方で運用可能です。店舗の<br class="mobile-br">運用ポリシーに合わせてお選びください。<br>
+            ・<b>Windows PC方式</b>：既存のパソコンや<br class="mobile-br">小型PCで手軽にスタートアップ起動が<br class="mobile-br">可能です。※キーボードやUSB機器が<br class="mobile-br">露出している環境では、いたずら防止対策として<br class="mobile-br">「Androidアプリ方式（方式2）」の<br class="mobile-br">併用をご検討ください。<br>
+            ・<b>Androidアプリ方式<br class="mobile-br">（方式2・より高セキュリティ）</b>：<br class="mobile-br">OS層での「完全な物理セキュリティブロック<br class="mobile-br">（USB無効化、キーボード誤操作の<br class="mobile-br">完全ロック、MDM遠隔制御）」が<br class="mobile-br">機能するため、不特定多数の来店客が<br class="mobile-br">触れる環境や、法人・大店舗での<br class="mobile-br">セキュリティ重視の運用に最も適しています。
         </div>
 
-        <p>Windows PCを使用して自動起動設定を行う場合は、以下の手順を実行してください。</p>
+        <p>Windows PCを使用して<br class="mobile-br">自動起動設定を行う場合は、<br class="mobile-br">以下の手順を実行してください。</p>
         
-        <h3>⚙️ 方法A：自動起動設定ツールの実行（簡易設定）</h3>
-        <p>PC起動時に自動でChromeをキオスクモード（全画面）で起動するツールを用意しています。</p>
+        <h3>⚙️ 方法A：自動起動設定ツールの<br class="mobile-br">実行（簡易設定）</h3>
+        <p>PC起動時に自動でChromeを<br class="mobile-br">キオスクモード（全画面）で<br class="mobile-br">起動するツールを用意しています。</p>
         <div style="margin: 15px 0;">
             <a href="setup_chrome_kiosk.bat" download class="btn" style="background:#10b981;">
-                <i class="fa-solid fa-magic"></i> ⏬ Windows自動起動ツールをダウンロード
+                <i class="fa-solid fa-magic"></i> ⏬ Windows自動起動ツールDL
             </a>
         </div>
         <div class="alert-box">
             <strong>💡 設定ファイルの適用方法</strong>
-            ダウンロードしたバッチファイルを右クリックし、「管理者として実行」してください。自動的にWindowsスタートアップへ登録されます。解除する場合は、再度実行して画面表示に従って解除できます。
+            ダウンロードしたバッチファイルを<br class="mobile-br">右クリックし、「管理者として実行」して<br class="mobile-br">ください。自動的にWindowsの<br class="mobile-br">スタートアップへ登録されます。<br class="mobile-br">解除する場合は、再度実行して<br class="mobile-br">画面表示に従って解除できます。
         </div>
 
-        <h3>🛠️ 方法B：手動での全画面・自動起動設定</h3>
+        <h3>🛠️ 方法B：手動での全画面・<br class="mobile-br">自動起動設定</h3>
         <ol>
             <li>Chromeのショートカットアイコンを右クリックし、「プロパティ」を開きます。</li>
             <li>「リンク先」の記述の末尾に、半角スペースを空けて以下のように追記します。
@@ -208,11 +213,11 @@
     </div>
 
     <div class="card">
-        <h2>🤖 2. Android端末・スマートモニターでの自動起動設定</h2>
-        <p>Android端末では、電源オン時に自動でブラウザ（Chrome）を開いてWebプレイヤーを全画面表示するために、以下のステップで設定を行ってください。</p>
+        <h2>🤖 2. Android端末・<br class="mobile-br">スマートモニターでの<br class="mobile-br">自動起動設定</h2>
+        <p>Android端末では、電源オン時に<br class="mobile-br">自動でブラウザ（Chrome）を開いて<br class="mobile-br">Webプレイヤーを全画面表示するために、<br class="mobile-br">以下のステップで設定を行ってください。</p>
 
-        <h3>📲 ステップ1. 自動起動アプリのインストール</h3>
-        <p>AndroidにはWindowsのようなバッチファイルがないため、自動起動を支援するアプリを利用します。Google Playストアより無料アプリをインストールしてください。</p>
+        <h3>📲 ステップ1. 自動起動アプリの<br class="mobile-br">インストール</h3>
+        <p>AndroidにはWindowsのような<br class="mobile-br">バッチファイルがないため、自動起動を<br class="mobile-br">支援するアプリを利用します。<br class="mobile-br">Google Playストアより無料アプリを<br class="mobile-br">インストールしてください。</p>
         
         <div style="margin: 15px 0;">
             <a href="https://play.google.com/store/apps/details?id=com.autostart" target="_blank" class="btn btn-playstore">
@@ -220,7 +225,7 @@
             </a>
         </div>
 
-        <h3>⚙️ ステップ2. アプリ自動起動の設定（AutoStartの設定）</h3>
+        <h3>⚙️ ステップ2. アプリ自動起動の設定<br class="mobile-br">（AutoStartの設定）</h3>
         <ol>
             <li>インストールした「AutoStart」アプリを起動します。</li>
             <li>「AutoStart Service」を <b>ON</b>（有効）にします。</li>
@@ -228,7 +233,7 @@
             <li>端末を再起動し、電源オン時に自動でChromeが起動することを確認してください。</li>
         </ol>
 
-        <h3>📌 ステップ3. プレイヤー表示と画面ピン留め（固定化）</h3>
+        <h3>📌 ステップ3. プレイヤー表示と<br class="mobile-br">画面ピン留め（固定化）</h3>
         <ol>
             <li>Chromeを起動し、サイネージプレイヤーURLを開きます。
                 <span class="code-block">https://nsg3hyme2k.us-east-1.awsapprunner.com/signage_player.html</span>
