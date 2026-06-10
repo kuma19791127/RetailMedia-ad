@@ -97,6 +97,22 @@
             background: #3b82f6;
         }
 
+        .alert-warning {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #7c2d12;
+        }
+
+        .alert-warning strong {
+            color: #9a3412;
+            display: block;
+            margin-bottom: 5px;
+        }
+
         .alert-box {
             background: #f0fdf4;
             border-left: 4px solid #10b981;
@@ -158,12 +174,17 @@
 
     <div class="card">
         <h2>💻 1. Windows PCでの自動起動・全画面設定</h2>
-        <p>Windows PCをご使用の場合、自動設定ツールを使用するか、手動でChromeの設定を変更して自動起動化できます。</p>
+        <div class="alert-warning">
+            <strong>⚠️ セキュリティ上の重要なお知らせ（Windows端末は非推奨）</strong>
+            Windows端末では、いたずらや不正操作を防止するための<b>「物理的なセキュリティブロック（USBポートの完全遮断、キーボード誤入力の完全ロック等）」がOSの仕様上機能しません。</b> キーボードやUSBの接続によってシステムを不正操作されるリスクが高いため、本番環境での稼働には<b>非推奨</b>としております。物理セキュリティが必要な場合は、専用の<b>Android端末（方式2：物理ブロック対応）</b>をご利用ください。
+        </div>
+
+        <p>※テスト環境や一時的な運用のために Windows PCを使用される場合のみ、以下の手順を実行してください。</p>
         
-        <h3>⚙️ 方法A：自動起動設定ツールの実行（推奨・簡単）</h3>
+        <h3>⚙️ 方法A：自動起動設定ツールの実行（簡易設定）</h3>
         <p>PC起動時に自動でChromeをキオスクモード（全画面）で起動するツールを用意しています。</p>
         <div style="margin: 15px 0;">
-            <a href="setup_chrome_kiosk.bat" download class="btn">
+            <a href="setup_chrome_kiosk.bat" download class="btn" style="background:#f97316;">
                 <i class="fa-solid fa-magic"></i> ⏬ Windows自動起動ツールをダウンロード
             </a>
         </div>
