@@ -80,8 +80,7 @@
             display: none;
             width: 100%;
             height: 100%;
-            display: flex;
-            /* Flex required for layout */
+            /* display: flex is set dynamically after login */
         }
 
         /* Sidebar */
@@ -1974,6 +1973,9 @@
                     document.getElementById('main-app').style.display = 'flex';
                     window.dispatchEvent(new Event('resize'));
                     loadData();
+                    loadPayouts();
+                    loadAgencyData();
+                    renderLiveLogs();
                 } else {
                     Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
                 }
@@ -2303,7 +2305,7 @@
         }
 
 
-        // Auto-fill admin login credentials if stored in LocalStorage
+        // Auto-fill admin login credentials and handle auto-login / session restore
         document.addEventListener('DOMContentLoaded', () => {
             const savedEmail = localStorage.getItem('admin_last_email');
             const savedPass = localStorage.getItem('admin_last_password');
@@ -2313,6 +2315,22 @@
             }
             if (savedPass) {
                 document.getElementById('admin-pass').value = savedPass;
+            }
+
+            // Session check for persistence
+            if (sessionStorage.getItem('retailMediaAuth') === 'true') {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                loadData();
+                loadPayouts();
+                loadAgencyData();
+                renderLiveLogs();
+            } else if (savedEmail && savedPass) {
+                // If remember me is checked, auto login
+                handleLogin();
+            } else {
+                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('login-overlay').style.display = 'flex';
             }
         });
     </script>
