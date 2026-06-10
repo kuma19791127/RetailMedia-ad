@@ -784,6 +784,27 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3>📥 クリエイター出金申請一覧 (承認待ち)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>申請日時</th>
+                            <th>クリエイター情報</th>
+                            <th>出金申請額</th>
+                            <th>インボイス登録番号</th>
+                            <th>振込先銀行口座</th>
+                            <th>源泉徴収税額</th>
+                            <th>ステータス</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payout-list">
+                        <!-- JS injected -->
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div id="panel-agency" class="panel">
             <div class="header">
@@ -2130,10 +2151,14 @@
         });
     
         async function loadPayouts() {
+            console.log("[Payout] loadPayouts function started.");
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/admin/payouts');
+                console.log("[Payout] API response status:", res.status);
                 const payouts = await res.json();
+                console.log("[Payout] Payouts data fetched:", payouts);
                 const tbody = document.getElementById('payout-list');
+                console.log("[Payout] Target element payout-list:", tbody);
                 tbody.innerHTML = '';
                 
                 if (payouts.length === 0) {
