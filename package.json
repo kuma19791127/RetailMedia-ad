@@ -8,6 +8,7 @@
     "dev": "nodemon server_retail_dist.js"
   },
   "dependencies": {
+    "@aws-sdk/client-cost-explorer": "^3.1045.0",
     "@aws-sdk/client-dynamodb": "^3.1045.0",
     "@aws-sdk/client-s3": "^3.1030.0",
     "@aws-sdk/client-ses": "^3.1021.0",

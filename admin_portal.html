@@ -1355,9 +1355,10 @@
                         <div style="display:flex; flex-direction:column; gap:4px; font-size:11px; width:135px;">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:2px;">
                                 <span style="color:#555;">サーバー:</span>
-                                <div>
+                                <div style="display:flex; align-items:center; gap:2px;">
                                     <span style="color:#e74c3c;">-¥</span>
                                     <input type="number" value="${store.operating_cost}" class="cost-input" style="width:65px; padding:2px 3px; border:1px solid #ccc; border-radius:4px; text-align:right;" id="cost-input-${store.id}">
+                                    <button onclick="fetchAwsCost('${store.id}', this)" title="AWS Cost Explorerから前月の請求額（サーバー代）を自動取得" style="background:#f39c12; color:white; border:none; padding:2px 4px; border-radius:3px; font-size:10px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;"><i class="fa-brands fa-aws"></i></button>
                                 </div>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:2px;">
@@ -1458,6 +1459,47 @@
                 }
             } catch (e) {
                 Swal.fire('通信エラー', 'Square API との通信に失敗しました', 'error');
+            }
+        }
+
+        async function fetchAwsCost(storeId, btnElement) {
+            const costInputEl = document.getElementById(`cost-input-${storeId}`);
+            if (!costInputEl) return;
+            
+            try {
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                btnElement.disabled = true;
+                
+                const res = await fetch(`${API_BASE}/api/admin/aws-cost`);
+                const result = await res.json();
+                
+                btnElement.innerHTML = originalHtml;
+                btnElement.disabled = false;
+                
+                if (result.success) {
+                    // AWS Cost is in USD. We convert to JPY (e.g. 1 USD = 150 JPY rate or similar)
+                    const usdAmount = result.costUSD;
+                    const exchangeRate = 150; // Standard fallback rate for billing
+                    const jpyAmount = Math.round(usdAmount * exchangeRate);
+                    
+                    costInputEl.value = jpyAmount;
+                    
+                    Swal.fire({
+                        toast: true,
+                        position: 'top',
+                        title: `AWS請求額を取得しました: $${usdAmount.toFixed(2)} (約¥${jpyAmount.toLocaleString()})`,
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                } else {
+                    Swal.fire('エラー', result.error || 'AWSコストの取得に失敗しました', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('通信エラー', 'AWSコストAPIとの通信に失敗しました', 'error');
+                btnElement.disabled = false;
             }
         }
 

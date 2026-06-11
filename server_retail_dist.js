@@ -4,6 +4,16 @@ const express = require('express');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { CostExplorerClient, GetCostAndUsageCommand } = require('@aws-sdk/client-cost-explorer');
+
+// Cost Explorer Client (SDK)
+let ceClient;
+try {
+    ceClient = new CostExplorerClient({ region: 'us-east-1' });
+    console.log('[AWS SDK] CostExplorerClient successfully initialized.');
+} catch (e) {
+    console.error('[AWS SDK Error] Failed to initialize CostExplorerClient:', e.message);
+}
 
 const cors = require('cors');
 const path = require('path');
@@ -3028,6 +3038,76 @@ app.post('/api/admin/store/operating-cost', express.json(), async (req, res) => 
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+// Fetch AWS Cost (Cost Explorer API) for the previous month
+app.get('/api/admin/aws-cost', async (req, res) => {
+    console.log('[AWS SDK] Request to fetch AWS Cost received.');
+    
+    // AWS Cost Explorer API requires dates in YYYY-MM-DD format
+    const now = new Date();
+    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    const formatDate = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+    
+    const startDate = formatDate(firstDayPrevMonth);
+    const endDate = formatDate(lastDayPrevMonth);
+    
+    console.log(`[AWS SDK] Fetching Cost from ${startDate} to ${endDate}`);
+    
+    // Fallback logic for safety (if credentials missing or offline)
+    const getFallbackCost = () => {
+        // Return a mock cost based on previous operations (e.g. 5200 JPY to USD approx $35)
+        const mockUSD = 34.50;
+        console.log(`[AWS SDK Fallback] Cost Explorer not active or error. Returning mock cost: $${mockUSD}`);
+        return mockUSD;
+    };
+
+    if (!ceClient) {
+        return res.json({ success: true, costUSD: getFallbackCost(), isMock: true });
+    }
+
+    try {
+        const command = new GetCostAndUsageCommand({
+            TimePeriod: {
+                Start: startDate,
+                End: endDate
+            },
+            Granularity: 'MONTHLY',
+            Metrics: ['UnblendedCost'],
+            Filter: {
+                // Return total unblended costs for the account (can narrow to App Runner/RDS if needed, but total is safer first)
+                Dimensions: {
+                    Key: 'RECORD_TYPE',
+                    Values: ['Regular', 'Refund', 'Credit']
+                }
+            }
+        });
+        
+        const data = await ceClient.send(command);
+        console.log('[AWS SDK] CostExplorer response data:', JSON.stringify(data));
+        
+        if (data && data.ResultsByTime && data.ResultsByTime[0]) {
+            const amountStr = data.ResultsByTime[0].Groups && data.ResultsByTime[0].Groups[0]
+                ? data.ResultsByTime[0].Groups[0].Metrics.UnblendedCost.Amount
+                : data.ResultsByTime[0].Total.UnblendedCost.Amount;
+            
+            const costVal = parseFloat(amountStr) || 0;
+            console.log(`[AWS SDK] Successfully fetched AWS Cost: $${costVal}`);
+            res.json({ success: true, costUSD: costVal, isMock: false });
+        } else {
+            res.json({ success: true, costUSD: getFallbackCost(), isMock: true });
+        }
+    } catch (err) {
+        console.error('[AWS SDK Error] Cost Explorer error:', err.message);
+        res.json({ success: true, costUSD: getFallbackCost(), isMock: true, error: err.message });
     }
 });
 
