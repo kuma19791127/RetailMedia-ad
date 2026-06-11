@@ -11,7 +11,10 @@
 
         // 最後に利用したサービスへの自動遷移
         const urlParams = new URLSearchParams(window.location.search);
+        console.log("[F12 Debug] index.html loaded. Query parameters:", window.location.search);
+        
         if (urlParams.has('logout')) {
+            console.log("[F12 Debug] Logout detected. Clearing localStorage credentials...");
             localStorage.removeItem('retailMediaSavedEmail');
             localStorage.removeItem('retailMediaSavedPassword');
             localStorage.removeItem('retailMediaSavedRole');
@@ -20,7 +23,17 @@
             localStorage.removeItem('last_password');
         } else if (!urlParams.has('bypass_redirect')) {
             const lastService = localStorage.getItem('last_active_service');
+            const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
+            
+            console.log("[F12 Debug] Checking auto-redirect. lastService:", lastService, "savedEmail:", savedEmail);
+            
             if (lastService) {
+                // セッションが切れているが、維持情報がある場合は自動的にsessionStorageに復旧キーをセットして無限ループを防ぐ
+                console.log("[F12 Debug] Auto-redirecting to last active service:", lastService);
+                sessionStorage.setItem('retailMediaAuth', 'true');
+                if (savedEmail) {
+                    sessionStorage.setItem('retailUserEmail', savedEmail);
+                }
                 window.location.href = lastService;
             }
         }

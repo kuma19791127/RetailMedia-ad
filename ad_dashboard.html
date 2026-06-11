@@ -898,9 +898,21 @@
 
     <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
     <script>
-        // Check if the user has a valid session token (cleared on restart or cache clear)
-        if (!sessionStorage.getItem('retailMediaAuth')) {
-            window.location.replace('index.html');
+        console.log("[F12 Debug] Checking dashboard session on load...");
+        const sessionAuth = sessionStorage.getItem('retailMediaAuth');
+        const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
+        
+        console.log("[F12 Debug] sessionAuth:", sessionAuth, "savedEmail:", savedEmail);
+        
+        if (!sessionAuth) {
+            if (savedEmail) {
+                console.log("[F12 Debug] Session was cleared but localStorage credentials exist. Recovering session for:", savedEmail);
+                sessionStorage.setItem('retailMediaAuth', 'true');
+                sessionStorage.setItem('retailUserEmail', savedEmail);
+            } else {
+                console.warn("[F12 Debug] No valid session or saved credentials found. Redirecting to index.html...");
+                window.location.replace('index.html');
+            }
         }
     </script>
 
