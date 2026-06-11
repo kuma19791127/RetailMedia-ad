@@ -610,6 +610,26 @@
              
              if (savedEmail) document.getElementById('email').value = savedEmail;
              if (savedPass) document.getElementById('password').value = savedPass;
+             if (savedEmail || savedPass) {
+                 const rememberCheckbox = document.getElementById('remember');
+                 if (rememberCheckbox) rememberCheckbox.checked = true;
+             }
+             
+             // チェックボックスの変更リスナーを追加（維持解除用）
+             const rememberCheckbox = document.getElementById('remember');
+             if (rememberCheckbox) {
+                 rememberCheckbox.addEventListener('change', (e) => {
+                     if (!e.target.checked) {
+                         localStorage.removeItem('retailMediaSavedEmail');
+                         localStorage.removeItem('retailMediaSavedPassword');
+                         localStorage.removeItem('retailMediaSavedRole');
+                         localStorage.removeItem('last_active_service');
+                         localStorage.removeItem('last_email');
+                         localStorage.removeItem('last_password');
+                         console.log('[F12 Debug] Cleared remembered session from localStorage.');
+                     }
+                 });
+             }
              
              if (savedRole) {
                  // Auto-select the saved role
