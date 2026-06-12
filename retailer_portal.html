@@ -652,7 +652,7 @@
                         <button onclick="downloadSingleBat('android')" style="background:#2563eb; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(37,99,235,0.2);">🤖 Android設定手順を<br>DL</button>
                         <button onclick="downloadSingleBat('remove_android')" style="background:#f97316; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(249,115,22,0.2);">🤖 Android設定解除手順を<br>DL</button>
                         <button onclick="downloadSingleBat('normal')" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(16,185,129,0.2);">⏬ Windowsセットアップバッチを<br>DL</button>
-                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除ツールを<br>DL</button>
+                        <button onclick="downloadSingleBat('remove')" style="background:#e74c3c; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(231,76,60,0.2);">❌ Windows設定解除手順書を<br>DL</button>
                         <button onclick="downloadSingleBat('simple')" style="background:#64748b; color:white; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 6px rgba(100,116,139,0.2);">📄 簡易スタートガイドを<br>DL</button>
                     </div>
                 </div>
@@ -687,7 +687,7 @@
                             <input type="checkbox" id="chk-type-normal" checked disabled style="margin-right:8px; width:18px; height:18px;"> 📺 自動起動セットアップバッチ (setup_店舗ID.bat)
                         </label>
                         <label style="display:flex; align-items:center; cursor:pointer; font-weight:500; color:#334155;">
-                            <input type="checkbox" id="chk-type-remove" checked style="margin-right:8px; width:18px; height:18px;"> ❌ 設定解除用バッチ (remove_retail_signage.bat)
+                            <input type="checkbox" id="chk-type-remove" checked style="margin-right:8px; width:18px; height:18px;"> ❌ 設定解除用手順書 (remove_windows_signage_instructions.txt)
                         </label>
                     </div>
                 </div>
@@ -1164,6 +1164,50 @@ pause
 `;
 }
 
+function getWindowsRemoveInstructionsContent() {
+    return `=========================================================
+リテアド・サイネージ Windows設定解除・手動復元手順書
+=========================================================
+
+このファイルは、セキュリティ警告等でバッチファイル（.bat）が実行できない
+環境（法人のパソコンなど）において、手動で安全に設定を解除・復元するための
+手順書です。管理者権限を持つアカウントで実行してください。
+
+---------------------------------------------------------
+■ 解除・復元手順（コマンドプロンプトでの実行）
+---------------------------------------------------------
+1. スタートメニューから「cmd」または「コマンドプロンプト」を検索します。
+
+2. 「コマンドプロンプト」を右クリックし、「管理者として実行」を選択します。
+
+3. 以下の【解除コマンド】ブロックにあるコマンドを1行ずつコピーし、
+   コマンドプロンプト画面に貼り付けて（右クリックで貼り付け可能）Enterキーで実行してください。
+
+---------------------------------------------------------
+【解除コマンド】
+---------------------------------------------------------
+:: 1. 自動起動ショートカットの削除
+del "%ALLUSERSPROFILE%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RetailAd_Signage.lnk" /f /q 2>nul
+del "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RetailAd_Signage.lnk" /f /q 2>nul
+
+:: 2. USB制限の解除（再起動後に有効）
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR" /v Start /t REG_DWORD /d 3 /f
+
+:: 3. 自動サインイン設定の無効化
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultUserName /f 2>nul
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultPassword /f 2>nul
+
+:: 4. 専用ユーザーの削除
+net user SignagePlayer /delete 2>nul
+
+---------------------------------------------------------
+■ 完了の確認
+---------------------------------------------------------
+・上記のコマンドがすべて実行されたら、パソコンを再起動してください。
+・再起動後、通常のパソコンのデスクトップ画面が開き、USBの使用や自動サインインが解除されていることを確認してください。
+`;
+
 function getAndroidInstructionsContent(storeId) {
     return `=========================================================
 リテアド・サイネージ Androidアプリ用初期設定ガイド
@@ -1310,15 +1354,15 @@ function downloadSingleBat(type) {
     }
 
     if (type === 'remove') {
-        const batContent = getRemoveBatContent();
-        const blob = new Blob([batContent], { type: 'application/x-bat' });
+        const textContent = getWindowsRemoveInstructionsContent();
+        const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `remove_retail_signage.bat`;
+        a.download = `remove_windows_signage_instructions.txt`;
         a.click();
         URL.revokeObjectURL(url);
-        Swal.fire("発行完了", "「remove_retail_signage.bat」をダウンロードしました。", "success");
+        Swal.fire("発行完了", "「remove_windows_signage_instructions.txt」をダウンロードしました。", "success");
         return;
     }
 
@@ -1432,10 +1476,10 @@ async function downloadBulkZip() {
             const simpleInstructions = getSimpleStartInstructionsContent(storeId);
             storeFolder.file(`simple_start_${storeId}.txt`, simpleInstructions);
 
-            // 4. Remove batch
+            // 4. Remove instructions
             if (includeRemove) {
-                const removeContent = getRemoveBatContent();
-                storeFolder.file('remove_retail_signage.bat', removeContent);
+                const removeContent = getWindowsRemoveInstructionsContent();
+                storeFolder.file('remove_windows_signage_instructions.txt', removeContent);
 
                 const removeAndroidContent = getAndroidRemoveInstructionsContent(storeId);
                 storeFolder.file(`remove_android_signage_${storeId}.txt`, removeAndroidContent);
