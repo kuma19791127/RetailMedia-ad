@@ -1083,7 +1083,7 @@
                     });
 
                     if (result.isConfirmed) {
-                        const authUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code`;
+                        const authUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&prompt=select_company`;
                         window.open(authUrl, '_blank');
 
                         setTimeout(() => {
@@ -1214,7 +1214,7 @@
                         confirmButtonText: '再認可する',
                         allowOutsideClick: false
                     }).then(() => {
-                        window.location.href = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code`;
+                        window.location.href = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&prompt=select_company`;
                     });
                 } else {
                     Swal.fire('エラー', 'freee連携処理に失敗しました: ' + e.message, 'error');
@@ -1233,7 +1233,7 @@
                     confirmButtonText: '再認可する',
                     allowOutsideClick: false
                 }).then(() => {
-                    const authUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code`;
+                    const authUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&prompt=select_company`;
                     window.location.href = authUrl;
                 });
             }, 300);
