@@ -1155,10 +1155,8 @@
                         confirmButtonColor: '#2563eb',
                         denyButtonColor: '#e11d48',
                         inputValidator: (value) => {
-                            // Only validate input if the user clicked the Confirm/Send button (not Deny/Disconnect)
-                            // Swal validator triggers on confirm. We check if Swal.getDenyButton was focused or if we want to send
-                            if (document.activeElement && document.activeElement.classList.contains('swal2-confirm')) {
-                                if (value !== '承認') return '「承認」と入力してください';
+                            if (value !== '承認') {
+                                return '「承認」と入力してください';
                             }
                         }
                     });
