@@ -4867,10 +4867,10 @@ app.get('/api/freee/status', (req, res) => {
 
 // Start freee OAuth Connection
 app.get('/api/freee/connect', (req, res) => {
-    const redirectUri = encodeURIComponent(getFreeeRedirectUri(req));
-    const freeeAuthUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=${FREEE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code`;
+    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+    const freeeAuthUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=${FREEE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
     
-    console.log("[freee OAuth] Redirecting to authorization URL:", freeeAuthUrl);
+    console.log("[freee OAuth] Redirecting to authorization URL (OOB):", freeeAuthUrl);
     res.redirect(freeeAuthUrl);
 });
 
