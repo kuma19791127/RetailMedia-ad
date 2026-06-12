@@ -8,7 +8,7 @@ const FREEE_API_BASE = "https://api.freee.co.jp/api/1";
 
 // 開発用テスト事業所 (Development Test Company)
 // If you want to use the main company "non-logi", change this to 10685574
-const DEFAULT_COMPANY_ID = 12661328; 
+const DEFAULT_COMPANY_ID = 10685574; 
 
 // Helper to check what token to use (dynamic or static env)
 function getAccessToken() {
@@ -81,7 +81,13 @@ async function createSalesEntry(companyId = undefined, salesData) {
     try {
         const companiesRes = await getCompanies();
         if (companiesRes && companiesRes.companies && companiesRes.companies.length > 0) {
-            activeCompanyId = companiesRes.companies[0].id;
+            // "non-logi" の名前を含む事業所を最優先で探し、無ければ最初を使用する
+            const matched = companiesRes.companies.find(c => 
+                c.display_name && c.display_name.includes("non-logi")
+            ) || companiesRes.companies.find(c => 
+                c.name && c.name.includes("non-logi")
+            );
+            activeCompanyId = matched ? matched.id : companiesRes.companies[0].id;
             console.log("[freee API] Automatically resolved active company_id:", activeCompanyId);
         }
     } catch (err) {
