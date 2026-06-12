@@ -75,8 +75,21 @@ async function getAccountItems(companyId = DEFAULT_COMPANY_ID) {
  * 3. 売上の自動仕訳登録 (Create Sales Journal Entry / 取引)
  * This creates a deal (売上) in freee.
  */
-async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
-    console.log(`[freee API] Creating sales entry for company: ${companyId}`);
+async function createSalesEntry(companyId = undefined, salesData) {
+    // 0. 動的に適切な事業所ID (companyId) を解決する
+    let activeCompanyId = companyId;
+    try {
+        const companiesRes = await getCompanies();
+        if (companiesRes && companiesRes.companies && companiesRes.companies.length > 0) {
+            activeCompanyId = companiesRes.companies[0].id;
+            console.log("[freee API] Automatically resolved active company_id:", activeCompanyId);
+        }
+    } catch (err) {
+        console.warn("[freee API] Failed to resolve company_id dynamically, using fallback:", err.message);
+        activeCompanyId = activeCompanyId || DEFAULT_COMPANY_ID;
+    }
+
+    console.log(`[freee API] Creating sales entry for company: ${activeCompanyId}`);
     
     // Default dummy data if none provided
     const amount = salesData?.amount || 50000;
@@ -86,7 +99,7 @@ async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
     // 1. 動的に「売上高」に相当する勘定科目のIDを探す
     let accountItemId = null;
     try {
-        const itemsRes = await getAccountItems(companyId);
+        const itemsRes = await getAccountItems(activeCompanyId);
         if (itemsRes && itemsRes.account_items) {
             const matchItem = itemsRes.account_items.find(item => 
                 item.name.includes("売上高") || 
@@ -106,7 +119,7 @@ async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
     let walletableId = null;
     let walletableType = "bank_account";
     try {
-        const walletablesRes = await freeeRequest(`/walletables?company_id=${companyId}`);
+        const walletablesRes = await freeeRequest(`/walletables?company_id=${activeCompanyId}`);
         if (walletablesRes && walletablesRes.walletables && walletablesRes.walletables.length > 0) {
             walletableId = walletablesRes.walletables[0].id;
             walletableType = walletablesRes.walletables[0].type; // bank_account, wallet, credit_card
@@ -120,7 +133,7 @@ async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
     const payload = {
         issue_date: issueDate,
         type: "income",      // income = 収入 (売上)
-        company_id: companyId,
+        company_id: activeCompanyId,
         details: [
             {
                 tax_code: 1, // 課税売上10%
