@@ -49,7 +49,20 @@ async function freeeRequest(endpoint, method = 'GET', data = null) {
 
     if (!response.ok) {
         console.error("[freee API Error]", responseData);
-        throw new Error(`freee API Error: ${response.status} ${response.statusText}`);
+        let errorDetail = "";
+        if (responseData && responseData.errors && Array.isArray(responseData.errors)) {
+            errorDetail = " - " + responseData.errors.map(err => {
+                if (err.messages && Array.isArray(err.messages)) {
+                    return err.messages.join(", ");
+                }
+                return err.message || JSON.stringify(err);
+            }).join("; ");
+        } else if (responseData && responseData.message) {
+            errorDetail = " - " + responseData.message;
+        } else if (responseData) {
+            errorDetail = " - " + JSON.stringify(responseData);
+        }
+        throw new Error(`freee API Error: ${response.status} ${response.statusText}${errorDetail}`);
     }
 
     return responseData;
