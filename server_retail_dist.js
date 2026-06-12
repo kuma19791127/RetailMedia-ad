@@ -4914,7 +4914,8 @@ app.post('/api/freee/callback-manual', async (req, res) => {
             res.json({ success: true, message: "Manual connection successful." });
         } else {
             console.warn("[freee OAuth Manual] Token exchange failed with description:", tokenData.error_description || tokenData.error);
-            res.status(400).json({ error: tokenData.error_description || tokenData.error || "Failed to exchange token." });
+            const debugInfo = `(サーバー側使用ClientId: ${FREEE_CLIENT_ID || '未設定'}, Secret設定状況: ${FREEE_CLIENT_SECRET ? '設定有り(長さ:' + FREEE_CLIENT_SECRET.length + ')' : '未設定'})`;
+            res.status(400).json({ error: `${tokenData.error_description || tokenData.error || "Failed to exchange token."} ${debugInfo}` });
         }
     } catch (e) {
         console.error("[freee OAuth Manual] Error during token exchange:", e);
