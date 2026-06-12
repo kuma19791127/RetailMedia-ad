@@ -1083,8 +1083,47 @@
                     });
 
                     if (result.isConfirmed) {
-                        // Redirect user to freee OAuth Authorization Code flow url
-                        window.location.href = window.API_BASE_URL + '/api/freee/connect';
+                        const authUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code`;
+                        window.open(authUrl, '_blank');
+
+                        setTimeout(() => {
+                            Swal.fire({
+                                title: '🔑 freee認証コードの入力',
+                                text: '開いたfreeeの認可画面で「許可する」を押した後、表示される長い認証コードを以下に貼り付けてください。',
+                                input: 'text',
+                                inputPlaceholder: '認証コードをここに貼り付け',
+                                showCancelButton: true,
+                                confirmButtonText: '連携を完了する',
+                                cancelButtonText: 'キャンセル',
+                                preConfirm: async (code) => {
+                                    if (!code) {
+                                        Swal.showValidationMessage('認証コードを入力してください');
+                                        return false;
+                                    }
+                                    try {
+                                        const res = await fetch(window.API_BASE_URL + '/api/freee/callback-manual', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ code: code.trim() })
+                                        });
+                                        const data = await res.json();
+                                        if (!res.ok || data.error) {
+                                            throw new Error(data.error || '連携に失敗しました。');
+                                        }
+                                        return data;
+                                    } catch (err) {
+                                        Swal.showValidationMessage(`エラー: ${err.message}`);
+                                        return false;
+                                    }
+                                }
+                            }).then((resVal) => {
+                                if (resVal.isConfirmed) {
+                                    Swal.fire('連携成功', 'freee会計との手動連携が成功しました！', 'success').then(() => {
+                                        syncFreeeApi();
+                                    });
+                                }
+                            });
+                        }, 800);
                     }
                 } else {
                     // 2. Connected State Modal (Allowing Send Data or Disconnect)
