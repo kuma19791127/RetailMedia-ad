@@ -83,6 +83,39 @@ async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
     const issueDate = salesData?.date || new Date().toISOString().split('T')[0];
     const description = salesData?.description || "どこでもレジ（Square）からの自動連携売上";
 
+    // 1. 動的に「売上高」に相当する勘定科目のIDを探す
+    let accountItemId = null;
+    try {
+        const itemsRes = await getAccountItems(companyId);
+        if (itemsRes && itemsRes.account_items) {
+            const matchItem = itemsRes.account_items.find(item => 
+                item.name.includes("売上高") || 
+                item.name.includes("売上") || 
+                item.name.includes("雑収入")
+            );
+            if (matchItem) {
+                accountItemId = matchItem.id;
+                console.log("[freee API] Resolved account_item_id:", accountItemId);
+            }
+        }
+    } catch (err) {
+        console.warn("[freee API] Failed to resolve account item id dynamically:", err.message);
+    }
+
+    // 2. 動的に決済口座（銀行口座等）のIDを探す
+    let walletableId = null;
+    let walletableType = "bank_account";
+    try {
+        const walletablesRes = await freeeRequest(`/walletables?company_id=${companyId}`);
+        if (walletablesRes && walletablesRes.walletables && walletablesRes.walletables.length > 0) {
+            walletableId = walletablesRes.walletables[0].id;
+            walletableType = walletablesRes.walletables[0].type; // bank_account, wallet, credit_card
+            console.log("[freee API] Resolved walletable_id:", walletableId, "type:", walletableType);
+        }
+    } catch (err) {
+        console.warn("[freee API] Failed to resolve walletable dynamically:", err.message);
+    }
+
     // freee API expects a specific payload format for Deals (取引)
     const payload = {
         issue_date: issueDate,
@@ -90,8 +123,8 @@ async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
         company_id: companyId,
         details: [
             {
-                tax_code: 1, // 課税売上10% (dummy tax code, should be fetched dynamically in prod)
-                account_item_id: null, // Will let freee use default sales account if null, or we must fetch and set it
+                tax_code: 1, // 課税売上10%
+                account_item_id: accountItemId, // 動的に解決した勘定科目IDをセット
                 amount: amount,
                 item_id: null,
                 section_id: null,
@@ -103,39 +136,24 @@ async function createSalesEntry(companyId = DEFAULT_COMPANY_ID, salesData) {
                 vat: Math.floor(amount - (amount / 1.1)) // Calculate 10% VAT
             }
         ],
-        payments: [
+        payments: walletableId ? [
             {
                 amount: amount,
                 date: issueDate,
-                from_walletable_type: "bank_account", // Assuming payment goes to a bank account
-                from_walletable_id: null // Should be mapped to the actual bank account ID in freee
+                from_walletable_type: walletableType,
+                from_walletable_id: walletableId // 動的に解決した口座IDをセット
             }
-        ],
+        ] : [], // 口座が見つからない場合は未決済取引として登録する
         receipt_ids: []
     };
-
-    // Note: In a robust implementation, we would first call `getAccountItems` to find the exact ID for "売上高".
-    // For this demonstration, we are attempting to post to `/deals`. 
-    // If `account_item_id` is required by the specific company setup, this might fail,
-    // so we catch the error gracefully.
 
     try {
         const result = await freeeRequest('/deals', 'POST', payload);
         console.log("[freee API] Sales entry created successfully:", result);
         return result;
     } catch (e) {
-        console.error("[freee API] Failed to create deal. The company might require specific account_item_id or walletable_id mapping.");
-        // Fallback for demonstration: Return a mock success response so the UI flow can be tested
-        return {
-            deal: {
-                id: 99999999,
-                company_id: companyId,
-                issue_date: issueDate,
-                amount: amount,
-                status: "settled",
-                description: "【モック結果】" + description + " (API要設定)"
-            }
-        };
+        console.error("[freee API] Failed to create deal. Error details:", e.message);
+        throw e; // エラーを上位に伝播させ、デモ用モックによるサイレント失敗を防ぐ
     }
 }
 
