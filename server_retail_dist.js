@@ -4845,7 +4845,7 @@ const FREEE_CLIENT_SECRET = process.env.FREEE_CLIENT_SECRET || "dummy_client_sec
 // Callback URL (This server's callback endpoint)
 const getFreeeRedirectUri = (req) => {
     const host = req.get('host');
-    const protocol = req.protocol;
+    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
     return `${protocol}://${host}/api/freee/callback`;
 };
 
