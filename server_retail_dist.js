@@ -4840,8 +4840,8 @@ app.post('/api/bank/transfer', async (req, res) => {
 const freeeApi = require('./freee_api');
 
 // OAuth App Credentials
-const FREEE_CLIENT_ID = process.env.FREEE_CLIENT_ID || "743263067030588";
-const FREEE_CLIENT_SECRET = process.env.FREEE_CLIENT_SECRET || "wvJFcJNuhaXo6yNbtkWKtd1hWpBjw6IT594IdDSqNiW46yyrykumhGXR94-_sonhUN1mlaDLqQVg27-w1PMlpA";
+const FREEE_CLIENT_ID = process.env.FREEE_CLIENT_ID || "dummy_client_id_for_review";
+const FREEE_CLIENT_SECRET = process.env.FREEE_CLIENT_SECRET || "dummy_client_secret";
 // Callback URL (This server's callback endpoint)
 const getFreeeRedirectUri = (req) => {
     const host = req.get('host');
