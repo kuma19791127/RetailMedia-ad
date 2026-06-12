@@ -158,14 +158,7 @@ async function createSalesEntry(companyId = undefined, salesData) {
                 tax_code: 1, // 課税売上10%
                 account_item_id: accountItemId, // 動的に解決した勘定科目IDをセット
                 amount: amount,
-                item_id: null,
-                section_id: null,
-                tag_ids: [],
-                segment_1_tag_id: null,
-                segment_2_tag_id: null,
-                segment_3_tag_id: null,
-                description: description,
-                vat: Math.floor(amount - (amount / 1.1)) // Calculate 10% VAT
+                description: description
             }
         ],
         payments: walletableId ? [
