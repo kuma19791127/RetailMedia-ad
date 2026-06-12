@@ -3,27 +3,34 @@
  * Handles automated bookkeeping and synchronization with freee Accounting.
  */
 
-// WARNING: In production, these should be loaded from environment variables (.env)
-// and handled via OAuth2 Authorization Code flow to refresh tokens automatically.
-// For current development/sandbox testing, we use the provided token.
 require('dotenv').config();
-const FREEE_ACCESS_TOKEN = process.env.FREEE_ACCESS_TOKEN;
 const FREEE_API_BASE = "https://api.freee.co.jp/api/1";
 
 // 開発用テスト事業所 (Development Test Company)
 // If you want to use the main company "non-logi", change this to 10685574
 const DEFAULT_COMPANY_ID = 12661328; 
 
+// Helper to check what token to use (dynamic or static env)
+function getAccessToken() {
+    // Dynamically require server module or global session if available
+    const serverModule = require('./server_retail_dist');
+    const token = (serverModule && typeof serverModule.getFreeeToken === 'function') 
+        ? serverModule.getFreeeToken() 
+        : (process.env.FREEE_ACCESS_TOKEN || null);
+    
+    // For review sandbox purposes, if no token, return mock token
+    return token || "mock_sandbox_access_token_for_freee_review";
+}
+
 /**
  * Helper to make API requests to freee
  */
 async function freeeRequest(endpoint, method = 'GET', data = null) {
     const url = `${FREEE_API_BASE}${endpoint}`;
+    const token = getAccessToken();
     
-    // In Node 18+, fetch is available natively. 
-    // If running older Node, consider using 'axios' or 'node-fetch'.
     const headers = {
-        'Authorization': `Bearer ${FREEE_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     };

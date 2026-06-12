@@ -1051,42 +1051,132 @@
 
         async function syncFreeeApi() {
             try {
-                const { value: confirmText } = await Swal.fire({
-                    title: '二段階認証 (freee自動記帳)',
-                    html: '本番環境のfreee会計へ売上データ（50,000円）を送信します。<br>実行するには入力欄に <b>承認</b> と入力してください。',
-                    input: 'text',
-                    inputPlaceholder: '承認 と入力',
-                    showCancelButton: true,
-                    confirmButtonText: '実行する',
-                    cancelButtonText: 'キャンセル',
-                    inputValidator: (value) => {
-                        if (value !== '承認') return '「承認」と入力してください';
-                    }
-                });
-
-                if (!confirmText) return;
-
                 Swal.fire({
-                    title: 'freee連携中...',
-                    text: 'freee APIへ仕訳データを送信しています。',
+                    title: 'freee連携状態を確認中...',
                     allowOutsideClick: false,
                     didOpen: () => { Swal.showLoading(); }
                 });
 
-                const payload = { amount: 50000, description: '日次売上自動連携テスト' };
-                const res = await fetch(window.API_BASE_URL + '/api/freee/sales', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
+                // Get Current freee connection status from backend
+                const statusRes = await fetch(window.API_BASE_URL + '/api/freee/status');
+                const statusData = await statusRes.json();
+                Swal.close();
 
-                Swal.fire('連携成功', 'freee会計へ自動記帳が完了しました。', 'success');
+                const isConnected = statusData.connected;
+                const connectedEmail = statusData.email || "info@retail-ad.com";
+
+                if (!isConnected) {
+                    // 1. Not Connected State Modal
+                    const result = await Swal.fire({
+                        title: '🔗 freee会計 連携設定',
+                        html: `
+                        <div style="text-align:left; font-size:14px; background:#f8fafc; padding:15px; border-radius:8px; line-height:1.6; color:#475569;">
+                            <p>現在、freee会計と連携していません。</p>
+                            <p>連携を開始すると、リテアドの広告収益とシステム利用経費が自動的にfreee会計へ仕訳データとして同期されます。</p>
+                        </div>
+                        `,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: '🔗 freee連携を開始する (認可)',
+                        cancelButtonText: '閉じる',
+                        confirmButtonColor: '#2ecc71'
+                    });
+
+                    if (result.isConfirmed) {
+                        // Redirect user to freee OAuth Authorization Code flow url
+                        window.location.href = window.API_BASE_URL + '/api/freee/connect';
+                    }
+                } else {
+                    // 2. Connected State Modal (Allowing Send Data or Disconnect)
+                    const result = await Swal.fire({
+                        title: '✅ freee会計 連携中',
+                        html: `
+                        <div style="text-align:left; font-size:14px; background:#f0fdf4; border:1px solid #bbf7d0; padding:15px; border-radius:8px; line-height:1.6; color:#166534; margin-bottom:15px;">
+                            <p>● 接続アカウント: <b>${connectedEmail}</b></p>
+                            <p>● 自動連携ステータス: <b>稼働中 (Active)</b></p>
+                        </div>
+                        <p style="font-size:13px; color:#64748b; margin-bottom:15px;">※仕訳売上データ（50,000円）を今すぐfreeeに記帳する場合は、承認と入力して「送信する」を押してください。</p>
+                        `,
+                        input: 'text',
+                        inputPlaceholder: '承認 と入力して送信',
+                        showCancelButton: true,
+                        showDenyButton: true,
+                        confirmButtonText: '📊 売上データを送信する',
+                        denyButtonText: '❌ 連携を解除する',
+                        cancelButtonText: '閉じる',
+                        confirmButtonColor: '#2563eb',
+                        denyButtonColor: '#e11d48',
+                        inputValidator: (value) => {
+                            // Only validate input if the user clicked the Confirm/Send button (not Deny/Disconnect)
+                            // Swal validator triggers on confirm. We check if Swal.getDenyButton was focused or if we want to send
+                            if (document.activeElement && document.activeElement.classList.contains('swal2-confirm')) {
+                                if (value !== '承認') return '「承認」と入力してください';
+                            }
+                        }
+                    });
+
+                    if (result.isConfirmed) {
+                        // User chose to send/sync data
+                        Swal.fire({
+                            title: 'freeeに売上データを送信中...',
+                            text: 'freee APIへ仕訳データを自動記帳しています。',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+
+                        const payload = { amount: 50000, description: '日次売上自動連携テスト' };
+                        const res = await fetch(window.API_BASE_URL + '/api/freee/sales', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        const data = await res.json();
+                        
+                        // 4. Handle 403 / 401 Unauthorized errors (Scope updates requirement)
+                        if (res.status === 403 || (data && data.require_reauth)) {
+                            throw new Error("403_REAUTH");
+                        }
+                        if (data.error) throw new Error(data.error);
+
+                        Swal.fire('連携成功', 'freee会計へ自動記帳が完了しました。', 'success');
+                    } else if (result.isDenied) {
+                        // User chose to disconnect/revoke freee OAuth
+                        Swal.fire({
+                            title: '連携解除中...',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+
+                        const disconnectRes = await fetch(window.API_BASE_URL + '/api/freee/disconnect', {
+                            method: 'POST'
+                        });
+                        const disconnectData = await disconnectRes.json();
+                        Swal.close();
+
+                        if (disconnectData.success) {
+                            Swal.fire('連携解除完了', 'freee会計との接続を解除しました。', 'success');
+                        } else {
+                            Swal.fire('エラー', '連携解除に失敗しました。', 'error');
+                        }
+                    }
+                }
             } catch (e) {
                 console.error(e);
-                Swal.fire('エラー', 'freee連携に失敗しました: ' + e.message, 'error');
+                if (e.message === "403_REAUTH") {
+                    // 403 Scope update requirements: Auto redirect to re-authorize
+                    Swal.fire({
+                        title: '⚠️ 権限（スコープ）の更新が必要です',
+                        text: '新しいAPI連携に必要なアクセス権限（Scope）が不足しているか、無効になっています。freee認可画面へ自動リダイレクトします。',
+                        icon: 'warning',
+                        confirmButtonText: '再認可する',
+                        allowOutsideClick: false
+                    }).then(() => {
+                        window.location.href = window.API_BASE_URL + '/api/freee/connect';
+                    });
+                } else {
+                    Swal.fire('エラー', 'freee連携処理に失敗しました: ' + e.message, 'error');
+                }
             }
         }
 
