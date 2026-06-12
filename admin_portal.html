@@ -1101,17 +1101,23 @@
                                         return false;
                                     }
                                     try {
-                                        const res = await fetch(window.API_BASE_URL + '/api/freee/callback-manual', {
+                                        console.log("[freee Manual Connect] Code input:", code.trim());
+                                        const requestUrl = window.API_BASE_URL + '/api/freee/callback-manual';
+                                        console.log("[freee Manual Connect] Fetching URL:", requestUrl);
+                                        const res = await fetch(requestUrl, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ code: code.trim() })
                                         });
+                                        console.log("[freee Manual Connect] Response status:", res.status);
                                         const data = await res.json();
+                                        console.log("[freee Manual Connect] Response data:", data);
                                         if (!res.ok || data.error) {
                                             throw new Error(data.error || '連携に失敗しました。');
                                         }
                                         return data;
                                     } catch (err) {
+                                        console.error("[freee Manual Connect] Error details:", err);
                                         Swal.showValidationMessage(`エラー: ${err.message}`);
                                         return false;
                                     }

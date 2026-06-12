@@ -4880,6 +4880,9 @@ app.post('/api/freee/callback-manual', async (req, res) => {
     const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
     
     console.log("[freee OAuth Manual] Manual callback received. Code:", code);
+    console.log("[freee OAuth Manual] Using FREEE_CLIENT_ID:", FREEE_CLIENT_ID);
+    console.log("[freee OAuth Manual] Using FREEE_CLIENT_SECRET length:", FREEE_CLIENT_SECRET ? FREEE_CLIENT_SECRET.length : 0);
+    console.log("[freee OAuth Manual] Using FREEE_CLIENT_SECRET (masked):", FREEE_CLIENT_SECRET ? (FREEE_CLIENT_SECRET.substring(0, 4) + "..." + FREEE_CLIENT_SECRET.substring(FREEE_CLIENT_SECRET.length - 4)) : "none");
     
     if (!code) {
         return res.status(400).json({ error: "Authorization code is required." });
@@ -4900,6 +4903,8 @@ app.post('/api/freee/callback-manual', async (req, res) => {
                 redirect_uri: redirectUri
             })
         });
+        
+        console.log("[freee OAuth Manual] Fetch response status:", response.status);
         const tokenData = await response.json();
         console.log("[freee OAuth Manual] Token exchange response:", tokenData);
         
@@ -4908,7 +4913,8 @@ app.post('/api/freee/callback-manual', async (req, res) => {
             console.log("[freee OAuth Manual] Access token updated successfully via manual OOB.");
             res.json({ success: true, message: "Manual connection successful." });
         } else {
-            res.status(400).json({ error: tokenData.error_description || "Failed to exchange token." });
+            console.warn("[freee OAuth Manual] Token exchange failed with description:", tokenData.error_description || tokenData.error);
+            res.status(400).json({ error: tokenData.error_description || tokenData.error || "Failed to exchange token." });
         }
     } catch (e) {
         console.error("[freee OAuth Manual] Error during token exchange:", e);
