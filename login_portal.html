@@ -369,6 +369,28 @@
                     parser.applyToElement(el);
                 });
             }
+
+            const savedEmail = localStorage.getItem('retailMediaSavedEmail');
+            const savedPass = localStorage.getItem('retailMediaSavedPassword');
+            if (savedEmail) document.getElementById('email').value = savedEmail;
+            if (savedPass) document.getElementById('password').value = savedPass;
+            if (savedEmail || savedPass) {
+                const rememberCheckbox = document.getElementById('remember');
+                if (rememberCheckbox) rememberCheckbox.checked = true;
+            }
+            const rememberCheckbox = document.getElementById('remember');
+            if (rememberCheckbox) {
+                rememberCheckbox.addEventListener('change', (e) => {
+                    if (!e.target.checked) {
+                        localStorage.removeItem('retailMediaSavedEmail');
+                        localStorage.removeItem('retailMediaSavedPassword');
+                        localStorage.removeItem('retailMediaSavedRole');
+                        localStorage.removeItem('last_active_service');
+                        localStorage.removeItem('last_email');
+                        localStorage.removeItem('last_password');
+                    }
+                });
+            }
         });
     </script>
 
@@ -425,8 +447,7 @@
             <p class="subtitle">Retail Media Platform</p>
         </div>
 
-        <iframe name="dummyframe_login" style="display:none;"></iframe>
-        <form id="loginForm" action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(function(){ handleLogin(new Event('submit')); }, 10); return true;">
+        <form id="loginForm" action="javascript:void(0)" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label>Email Address</label>
                 <div class="input-wrapper">
@@ -440,6 +461,12 @@
                     <input type="password" id="password" name="password" placeholder="••••••••" required
                         autocomplete="current-password">
                 </div>
+            </div>
+
+            <div style="margin-top:15px; margin-bottom:15px; font-size:0.85rem; display:flex; align-items:center; justify-content:space-between;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="remember" name="remember"> ログイン状態と遷移を維持する
+                </label>
             </div>
 
             <button type="submit" class="btn-primary">Login</button>
@@ -499,6 +526,32 @@
             }, 2000);
         }
 
+        function saveRememberCredentials(email, password, role, redirectUrl) {
+            const rememberCheckbox = document.getElementById('remember');
+            if (rememberCheckbox && rememberCheckbox.checked) {
+                localStorage.setItem('retailMediaSavedEmail', email);
+                localStorage.setItem('retailMediaSavedPassword', password);
+                localStorage.setItem('retailMediaSavedRole', role || '');
+                localStorage.setItem('last_active_service', redirectUrl);
+                localStorage.setItem('last_email', email);
+                localStorage.setItem('last_password', password);
+            } else {
+                localStorage.removeItem('retailMediaSavedEmail');
+                localStorage.removeItem('retailMediaSavedPassword');
+                localStorage.removeItem('retailMediaSavedRole');
+                localStorage.removeItem('last_active_service');
+                localStorage.removeItem('last_email');
+                localStorage.removeItem('last_password');
+            }
+            if (window.PasswordCredential) {
+                const cred = new PasswordCredential({
+                    id: email,
+                    password: password
+                });
+                navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+            }
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -554,35 +607,9 @@
                             const verifyData = await verifyRes.json();
                             if (verifyData.success) {
                                 Swal.fire('完了', '二段階認証を設定しました！', 'success').then(() => {
-                                    if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                                    if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                        if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                                    if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                        window.location.href = data.redirect || 'store_portal.html';
+                                    const targetRedirect = data.redirect || 'store_portal.html';
+                                    saveRememberCredentials(email, password, data.role, targetRedirect);
+                                    window.location.href = targetRedirect;
                                 });
                             } else {
                                 Swal.fire('エラー', verifyData.error, 'error');
@@ -641,14 +668,9 @@
                             const loginData = await loginRes.json();
                             if (loginData.success) {
                                 btn.innerText = 'Redirecting...';
-                                if (window.PasswordCredential) {
-                                    const cred = new PasswordCredential({
-                                        id: email,
-                                        password: password
-                                    });
-                                    navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                                }
-                                window.location.href = loginData.redirect || 'store_portal.html';
+                                const targetRedirect = loginData.redirect || 'store_portal.html';
+                                saveRememberCredentials(email, password, data.role, targetRedirect);
+                                window.location.href = targetRedirect;
                             } else {
                                 btn.innerText = 'Login';
                                 Swal.fire({
@@ -678,35 +700,9 @@
                         }
                     } else {
                         btn.innerText = 'Redirecting...';
-                        if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                                    if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                        if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                                    if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
-                        window.location.href = data.redirect || 'store_portal.html';
+                        const targetRedirect = data.redirect || 'store_portal.html';
+                        saveRememberCredentials(email, password, data.role, targetRedirect);
+                        window.location.href = targetRedirect;
                     }
                 } else {
                     btn.innerText = 'Login';
@@ -717,17 +713,12 @@
                 console.error(err);
                 // Fallback for demo without server if needed
                 let redirect = 'store_portal.html';
-                if (email.includes('advertiser')) redirect = 'ad_dashboard.html';
-                if (email.includes('agency')) redirect = 'agency_portal.html';
-                if (email.includes('creator')) redirect = 'creator_portal.html';
+                let roleStr = 'store';
+                if (email.includes('advertiser')) { redirect = 'ad_dashboard.html'; roleStr = 'advertiser'; }
+                if (email.includes('agency')) { redirect = 'agency_portal.html'; roleStr = 'agency'; }
+                if (email.includes('creator')) { redirect = 'creator_portal.html'; roleStr = 'creator'; }
 
-                if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
-                    }
+                saveRememberCredentials(email, password, roleStr, redirect);
                 window.location.href = redirect;
             }
         }
