@@ -2085,6 +2085,135 @@ app.post('/api/retailer/send-app-link', async (req, res) => {
     }
 });
 
+// --- Windows Setup Guide Download (.txt to avoid browser block) ---
+app.get('/api/download/setup-win', (req, res) => {
+    const content = `=========================================================
+リテアド・サイネージ Windows自動起動＆セキュリティ設定パッチ
+=========================================================
+
+このファイルは、Windows PCを店舗用サイネージ端末として全自動セットアップするためのバッチファイルです。
+
+---------------------------------------------------------
+■ 実行手順
+---------------------------------------------------------
+1. 本ファイルの拡張子を「.txt」から「.bat」に変更します。
+   （例: setup_retail_signage.txt  ==>  setup_retail_signage.bat）
+
+2. 保存した「setup_retail_signage.bat」を右クリックします。
+
+3. 「管理者として実行」を選択して実行してください。
+
+4. 画面の指示に従い、自動セットアップが完了するまでお待ちください。
+
+---------------------------------------------------------
+■ バッチファイルの中身（ソースコード）
+---------------------------------------------------------
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul
+
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo 管理者権限が必要です。プロンプト表示中...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+
+color 0B
+echo =========================================================
+echo リテアド LEDサイネージ セットアップツール (Win PC版)
+echo =========================================================
+echo.
+echo パソコンをサイネージとしてセットアップします。
+echo.
+pause
+
+mkdir "C:\\RetailMedia" >nul 2>&1
+echo [OK] フォルダを作成しました。
+
+:: USB無効化
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
+echo [OK] USBストレージの読み込みを無効化しました。
+
+:: スタートアップ登録
+set "STARTUP_DIR=%ALLUSERSPROFILE%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+set "SHORTCUT_PATH=%STARTUP_DIR%\\RetailAd_Signage.lnk"
+set "TARGET_URL=https://retail-ad.com/signage_player.html"
+
+set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+set "EDGE_PATH=C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
+if exist "%CHROME_PATH%" (
+    set "BROWSER_PATH=%CHROME_PATH%"
+) else (
+    set "BROWSER_PATH=%EDGE_PATH%"
+)
+
+set "VBS_SCRIPT=%TEMP%\\CreateShortcut.vbs"
+echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"
+echo sLinkFile = "%SHORTCUT_PATH%" >> "%VBS_SCRIPT%"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"
+echo oLink.TargetPath = "%BROWSER_PATH%" >> "%VBS_SCRIPT%"
+echo oLink.Arguments = "--kiosk \\"%TARGET_URL%\\" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" >> "%VBS_SCRIPT%"
+echo oLink.Save >> "%VBS_SCRIPT%"
+cscript //nologo "%VBS_SCRIPT%"
+del "%VBS_SCRIPT%"
+
+echo [OK] セットアップが完了しました！
+pause
+`;
+    res.setHeader('Content-disposition', 'attachment; filename=setup_retail_signage.txt');
+    res.setHeader('Content-type', 'text/plain; charset=utf-8');
+    res.send(content);
+});
+
+// --- Windows Remove Guide Download ---
+app.get('/api/download/remove-win', (req, res) => {
+    const content = `=========================================================
+リテアド・サイネージ Windows設定解除・手動復元手順書
+=========================================================
+
+このファイルは、セキュリティ警告等でバッチファイル（.bat）が実行できない
+環境（法人のパソコンなど）において、手動で安全に設定を解除・復元するための
+手順書です。管理者権限を持つアカウントで実行してください。
+
+---------------------------------------------------------
+■ 解除・復元手順（コマンドプロンプトでの実行）
+---------------------------------------------------------
+1. スタートメニューから「cmd」または「コマンドプロンプト」を検索します。
+
+2. 「コマンドプロンプト」を右クリックし、「管理者として実行」を選択します。
+
+3. 以下の【解除コマンド】ブロックにあるコマンドを1行ずつコピーし、
+   コマンドプロンプト画面に貼り付けて（右クリックで貼り付け可能）Enterキーで実行してください。
+
+---------------------------------------------------------
+【解除コマンド】
+---------------------------------------------------------
+:: 1. 自動起動ショートカットの削除
+del "%ALLUSERSPROFILE%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RetailAd_Signage.lnk" /f /q 2>nul
+del "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RetailAd_Signage.lnk" /f /q 2>nul
+
+:: 2. USB制限の解除（再起動後に有効）
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR" /v Start /t REG_DWORD /d 3 /f
+
+:: 3. 自動サインイン設定の無効化
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultUserName /f 2>nul
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultPassword /f 2>nul
+
+:: 4. 専用ユーザーの削除
+net user SignagePlayer /delete 2>nul
+
+---------------------------------------------------------
+■ 完了の確認
+---------------------------------------------------------
+・上記のコマンドがすべて実行されたら、パソコンを再起動してください。
+`;
+    res.setHeader('Content-disposition', 'attachment; filename=remove_windows_signage_instructions.txt');
+    res.setHeader('Content-type', 'text/plain; charset=utf-8');
+    res.send(content);
+});
+
 // --- Retailer Video Upload (S3 Direct) ---
 app.post('/api/retailer/upload', async (req, res) => {
     try {
