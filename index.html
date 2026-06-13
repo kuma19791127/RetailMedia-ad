@@ -816,7 +816,12 @@
                     console.log("[F12 Debug] Login process completed successfully. Redirecting to:", data.redirect);
                     sessionStorage.setItem('retailMediaAuth', 'true');
                     sessionStorage.setItem('retailUserEmail', email);
-                    if (document.getElementById('remember') && document.getElementById('remember').checked) {
+                    
+                    const rememberChecked = document.getElementById('remember') && document.getElementById('remember').checked;
+                    console.log("[F12 Debug] remember checkbox status:", rememberChecked);
+                    
+                    if (rememberChecked) {
+                        console.log("[F12 Debug] Saving credentials to localStorage for auto-fill.");
                         localStorage.setItem('retailMediaSavedEmail', email);
                         localStorage.setItem('retailMediaSavedPassword', password);
                         localStorage.setItem('retailMediaSavedRole', role);
@@ -824,6 +829,7 @@
                         localStorage.setItem('last_email', email);
                         localStorage.setItem('last_password', password);
                     } else {
+                        console.log("[F12 Debug] Clearing credentials from localStorage.");
                         localStorage.removeItem('retailMediaSavedEmail');
                         localStorage.removeItem('retailMediaSavedPassword');
                         localStorage.removeItem('retailMediaSavedRole');
@@ -831,13 +837,26 @@
                         localStorage.removeItem('last_email');
                         localStorage.removeItem('last_password');
                     }
+                    
+                    console.log("[F12 Debug] Checking PasswordCredential support in browser:", !!window.PasswordCredential);
                     if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: password
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                        try {
+                            const cred = new PasswordCredential({
+                                id: email,
+                                password: password
+                            });
+                            console.log("[F12 Debug] Created PasswordCredential instance. Attempting to store...");
+                            navigator.credentials.store(cred)
+                                .then(() => console.log("[F12 Debug] navigator.credentials.store completed successfully."))
+                                .catch(err => console.error("[F12 Debug] navigator.credentials.store failed:", err));
+                        } catch (credErr) {
+                            console.error("[F12 Debug] Failed to instantiate PasswordCredential:", credErr);
+                        }
+                    } else {
+                        console.warn("[F12 Debug] PasswordCredential is NOT supported or blocked by browser policy.");
                     }
+                    
+                    console.log("[F12 Debug] Performing window.location.href redirect to:", data.redirect);
                     window.location.href = data.redirect;
                 } else {
                     console.warn("[F12 Debug] Login failed on backend side:", data.error);
