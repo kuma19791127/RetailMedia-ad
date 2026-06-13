@@ -196,26 +196,51 @@
             }
         });
 
-        // Simulating the email trigger from old setup
         async function sendDownloadLink() {
-            Swal.fire({
-                title: 'メール送信確認',
-                text: 'ご登録済みの店舗用メールアドレス宛に、アプリインストール用URLを送信しますか？',
-                icon: 'question',
+            const defaultEmail = sessionStorage.getItem('retailUserEmail') || '';
+            
+            const { value: email } = await Swal.fire({
+                title: 'メール送信',
+                text: 'アプリ（APK）インストール用URLの送信先メールアドレスを入力してください。',
+                input: 'email',
+                inputValue: defaultEmail,
+                inputPlaceholder: 'example@store.com',
                 showCancelButton: true,
                 confirmButtonText: '送信する',
-                cancelButtonText: 'キャンセル'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: '送信完了',
-                        text: 'インストール用URLをお送りしました。メールフォルダをご確認ください。',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                }
+                cancelButtonText: 'キャンセル',
+                validationMessage: '有効なメールアドレスを入力してください。'
             });
+
+            if (email) {
+                Swal.fire({
+                    title: 'メール送信中...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                try {
+                    const res = await fetch('/api/retailer/send-app-link', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire({
+                            title: '送信完了',
+                            text: `${email} 宛にインストール用URLを送信しました。`,
+                            icon: 'success',
+                            timer: 3000
+                        });
+                    } else {
+                        throw new Error(data.error || '送信に失敗しました。');
+                    }
+                } catch (err) {
+                    Swal.fire('エラー', err.message, 'error');
+                }
+            }
         }
     </script>
 </head>

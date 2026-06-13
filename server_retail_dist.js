@@ -2036,6 +2036,55 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
     }
 });
 
+// --- Send App Download Link Email ---
+app.post('/api/retailer/send-app-link', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: "Email is required" });
+        }
+
+        console.log(`[App Link Email] Starting mail delivery for: ${email}`);
+
+        const smtpHost = process.env.SMTP_HOST;
+        const smtpPort = process.env.SMTP_PORT;
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASS;
+
+        let transporter = null;
+        if (smtpHost && smtpUser && smtpPass) {
+            const nodemailer = require('nodemailer');
+            transporter = nodemailer.createTransport({
+                host: smtpHost,
+                port: parseInt(smtpPort) || 587,
+                secure: smtpPort == 465,
+                auth: { user: smtpUser, pass: smtpPass }
+            });
+        }
+
+        const mailOptions = {
+            from: smtpUser || '"RetailMedia Portal" <info@retail-ad.com>',
+            to: email,
+            subject: '【リテアド】サイネージプレイヤー アプリのダウンロードリンク送付',
+            text: `店舗サイネージ管理者 様\n\n店舗サイネージプレイヤー専用Androidアプリのダウンロードリンクを送付いたします。\n\n【アプリ(APK)ダウンロードURL】\nhttps://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\n\n【セットアップ手順】\n1. サイネージ用Android端末のブラウザ等で上記URLを開き、アプリをダウンロード・インストールしてください。\n2. アプリを起動し、初期起動時の店舗ID入力欄に、本部より案内された店舗固有IDを入力してください。\n3. 保存・接続すると自動的にサイネージの再生が開始されます。\n\n詳細なセットアップガイドは下記ポータルサイトでもご確認いただけます：\nhttps://retail-ad.com/app_setup_guide.html\n\nよろしくお願いいたします。`
+        };
+
+        if (transporter) {
+            await transporter.sendMail(mailOptions);
+            console.log(`[App Link Email] Successfully sent setup mail to ${email}`);
+        } else {
+            // Simulation Log Mode when SMTP configs are missing
+            console.log(`[App Link Email] [SIMULATION MODE] Target: ${email}`);
+            console.log(`- Subject: ${mailOptions.subject}`);
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error("[App Link Email Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // --- Retailer Video Upload (S3 Direct) ---
 app.post('/api/retailer/upload', async (req, res) => {
     try {
