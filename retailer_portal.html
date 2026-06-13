@@ -878,8 +878,8 @@
                         const verifyData = await verifyRes.json();
                         
                         if (verifyData.success) {
-                            Swal.close();
                             loginSuccess(email, pass);
+                            Swal.close();
                         } else {
                             Swal.fire({
                                 title: '認証エラー',
@@ -950,8 +950,8 @@
                         const verifyData = await verifyRes.json();
 
                         if (verifyData.success) {
-                            Swal.close();
                             loginSuccess(email, pass);
+                            Swal.close();
                         } else {
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
                         }
