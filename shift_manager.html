@@ -864,8 +864,11 @@
         <div class="board-panel">
             <!-- === Shift Agent UI === -->
             <div style="margin: 20px; padding: 15px; background: rgba(0,255,136,0.1); border: 1px solid var(--primary); border-radius: 8px;">
-                <h3 style="margin-top:0; color: var(--dark);">AI エージェント（シフト・マニュアル連動） <a href="shift_manager_lp.html#ai-agent-section" target="_blank" style="margin-left: 10px; font-size: 0.8rem; color: #3b82f6; text-decoration: underline;">[機能の詳細を見る]</a></h3>
-                <p style="font-size: 0.9em; margin-bottom: 15px;">希望シフトと混雑予測データをAIが分析して最適なシフトを生成し、新人配置時には業務マニュアルの確認を自動で促します。</p>
+                <div class="agent-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 15px;">
+                    <div style="font-size: 1.17em; font-weight: bold; color: var(--dark);">シフト＆マニュアル作成</div>
+                    <div style="font-size: 1.17em; font-weight: bold; color: var(--dark);">エージェント</div>
+                    <div><a href="shift_manager_lp.html#ai-agent-section" target="_blank" style="font-size: 0.8rem; color: #3b82f6; text-decoration: underline;">[機能の詳細を見る]</a></div>
+                </div>
                 <button class="primary-btn" onclick="runShiftAgent()" style="width:100%;"><i class="fas fa-magic"></i> マニュアル自律配信を実行</button>
             </div>
             <script>
