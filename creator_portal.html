@@ -8,6 +8,18 @@
         window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
             ? 'http://localhost:3000' 
             : 'https://nsg3hyme2k.us-east-1.awsapprunner.com'; // TODO: 本番環境のバックエンドURLに変更してください
+
+        // Security Check: Redirect to login if cache/session is cleared or app restarted
+        const sessionAuth = sessionStorage.getItem('retailMediaAuth');
+        const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
+        if (!sessionAuth) {
+            if (savedEmail) {
+                sessionStorage.setItem('retailMediaAuth', 'true');
+                sessionStorage.setItem('retailUserEmail', savedEmail);
+            } else {
+                window.location.replace('index.html');
+            }
+        }
     </script>
 
     <meta charset="UTF-8">
@@ -329,13 +341,7 @@ h2 {
         });
     </script>
 
-    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
-    <script>
-        // Check if the user has a valid session token (cleared on restart or cache clear)
-        if (!sessionStorage.getItem('retailMediaAuth')) {
-            window.location.replace('index.html');
-        }
-    </script>
+
 
     
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
