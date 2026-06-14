@@ -1182,6 +1182,26 @@ app.post('/api/admin/sales', (req, res) => {
     }
 });
 
+app.post('/api/admin/sales/sync-batch', (req, res) => {
+    try {
+        const { storeId, syncTimestamp, records } = req.body;
+        console.log(`[POS Batch Sync] Received batch sync request from Store: ${storeId} at ${syncTimestamp}, count: ${records ? records.length : 0}`);
+        
+        if (records && records.length > 0) {
+            records.forEach(txData => {
+                broadcastEvent({
+                    type: 'pos_purchase_sync',
+                    transaction: txData
+                });
+            });
+        }
+        res.json({ success: true, message: "Batch synced successfully to Admin Server" });
+    } catch (e) {
+        console.error("[POS Batch Sync Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // --- AUTH (2FA) ---
 
 app.post('/api/auth/register', async (req, res) => {

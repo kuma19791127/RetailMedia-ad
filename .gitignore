@@ -1,5 +1,8 @@
 node_modules/
 .env
+.env_utf8
+database.json
+retail_media.db
 Googleapi.txt
 *.mp4
 広告ショート/

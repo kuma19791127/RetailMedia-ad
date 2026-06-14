@@ -8,11 +8,12 @@
     "dev": "nodemon server_retail_dist.js"
   },
   "dependencies": {
-    "@aws-sdk/client-cost-explorer": "^3.1045.0",
+    "@aws-sdk/client-cost-explorer": "^3.1067.0",
     "@aws-sdk/client-dynamodb": "^3.1045.0",
     "@aws-sdk/client-s3": "^3.1030.0",
     "@aws-sdk/client-ses": "^3.1021.0",
     "@aws-sdk/lib-dynamodb": "^3.1045.0",
+    "@distube/ytdl-core": "^4.15.1",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@google-cloud/text-to-speech": "^6.4.0",
     "@google-cloud/vertexai": "^1.10.0",
@@ -34,8 +35,7 @@
     "speakeasy": "^2.0.0",
     "sqlite3": "^5.1.7",
     "square": "^44.0.1",
-    "xlsx": "^0.18.5",
-    "@distube/ytdl-core": "^4.15.1"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "eslint": "^9.39.2"
