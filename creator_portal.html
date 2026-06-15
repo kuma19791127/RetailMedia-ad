@@ -9,6 +9,16 @@
             ? 'http://localhost:3000' 
             : 'https://nsg3hyme2k.us-east-1.awsapprunner.com'; // TODO: 本番環境のバックエンドURLに変更してください
 
+        // Global Fetch Hook to inject credentials for CORS cookies
+        const originalFetch = window.fetch;
+        window.fetch = function (input, init) {
+            if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
+                init = init || {};
+                init.credentials = 'include';
+            }
+            return originalFetch(input, init);
+        };
+
         // Security Check: Redirect to login if cache/session is cleared or app restarted
         const sessionAuth = sessionStorage.getItem('retailMediaAuth');
         const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
