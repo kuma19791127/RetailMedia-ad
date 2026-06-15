@@ -258,10 +258,16 @@ app.post('/api/kyc', async (req, res) => {
         let aiScore = 50;
         let aiDetails = [];
 
-        // Real Google Cloud Vertex AI (Gemini 1.5 Pro) Image Analysis
-        if (typeof generativeModel !== 'undefined' && docs.length > 0) {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+
+        if (!GEMINI_API_KEY) {
+            console.error("[KYC AI] GEMINI_API_KEY not configured. Failing KYC check.");
+            aiScore = 0;
+            aiDetails.push("【システムエラー】審査システムが未設定のため、安全を考慮して審査を却下しました。");
+        } else if (docs.length > 0) {
             try {
-                // Prepare images for Gemini
+                const fetch = (await import('node-fetch')).default;
                 const imageParts = docs.map(doc => {
                     return {
                         inlineData: {
@@ -272,46 +278,68 @@ app.post('/api/kyc', async (req, res) => {
                 });
                 
                 let promptText = `あなたはKYC（本人確認・法人確認）の専門審査AIです。以下の画像（免許証、登記簿、許認可証など）を読み取り、以下の申告情報と一致するか検証してください。
-`;
-                promptText += `【申告情報】
+【申告情報】
 法人番号: ${corpId || 'なし'}
 組織名: ${orgName || 'なし'}
 代表者/担当者名: ${personName || 'なし'}
 
-`;
-                promptText += `【指示】
+【指示】
 1. 画像から文字をOCRで読み取り、申告情報と一致している部分を抽出してください。
-2. 最終的な「本人確認の一致率スコア（0〜100）」と、「一致した具体的な理由（簡潔にカンマ区切り）」を以下のJSON形式で出力してください。
-`;
-                promptText += `{"score": 95, "reasons": ["運転免許証の氏名一致", "登記簿の法人番号一致"]}`;
+2. 最終的な「本人確認の一致率スコア（0〜100）」と、「一致した具体的な理由（簡潔に構成された配列）」を以下のJSON形式でのみ出力してください（Markdownのバッククォートは不要です）。
+{"score": 95, "reasons": ["運転免許証の氏名一致", "登記簿の法人番号一致"]}`;
 
-                const request = {
-                    contents: [{
-                        role: 'user',
-                        parts: [...imageParts, { text: promptText }]
-                    }],
-                    generationConfig: { temperature: 0.1 }
-                };
-                
-                const result = await generativeModel.generateContent(request);
-                const response = await result.response;
-                const text = response.candidates[0].content.parts[0].text;
-                
-                // Parse JSON from Gemini response
-                const jsonMatch = text.match(/\{[\s\S]*?\}/);
-                if (jsonMatch) {
-                    const aiResult = JSON.parse(jsonMatch[0]);
-                    aiScore = aiResult.score || aiScore;
-                    aiDetails = aiResult.reasons || aiDetails;
+                const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+                let requestSuccess = false;
+                let aiResponseText = "";
+
+                for (const model of models) {
+                    try {
+                        console.log(`[KYC AI] Sending documents to Gemini API model: ${model}`);
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{
+                                    role: 'user',
+                                    parts: [...imageParts, { text: promptText }]
+                                }]
+                            })
+                        });
+
+                        if (!response.ok) throw new Error(`Status ${response.status}`);
+                        const resData = await response.json();
+                        if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
+                            aiResponseText = resData.candidates[0].content.parts[0].text;
+                            requestSuccess = true;
+                            break;
+                        }
+                    } catch (err) {
+                        console.warn(`[KYC AI] Model ${model} failed:`, err.message);
+                    }
+                }
+
+                if (requestSuccess) {
+                    const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const jsonMatch = cleanJson.match(/\{[\s\S]*?\}/);
+                    if (jsonMatch) {
+                        const aiResult = JSON.parse(jsonMatch[0]);
+                        aiScore = aiResult.score || 0;
+                        aiDetails = aiResult.reasons || ["解析完了"];
+                    }
+                } else {
+                    console.error("[KYC AI] All Gemini models failed. Failing KYC check.");
+                    aiScore = 0;
+                    aiDetails.push("【システムエラー】AI審査通信エラーのため審査を却下しました。");
                 }
             } catch (aiErr) {
                 console.error("[KYC AI Analysis Error]", aiErr);
-                aiDetails.push("AI解析エラー");
+                aiScore = 0;
+                aiDetails.push("【システムエラー】AI解析処理エラーのため審査を却下しました。");
             }
         } else {
-            // Fallback rules if Gemini is unavailable
-            if (isCorp) { aiScore = 75; aiDetails.push("法人番号フォーマット一致(API未設定)"); }
-            else { aiScore = 60; aiDetails.push("画像アップロード確認(API未設定)"); }
+            aiScore = 0;
+            aiDetails.push("提出された書類が見つかりません。");
         }
         
         // Process & upload files to S3 asynchronously
@@ -2320,30 +2348,72 @@ app.post('/api/retailer/upload', async (req, res) => {
         const { fileData, filename, prefix, targetStore } = req.body;
         if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
 
-        // --- AI Moderation for Retailer Videos (Gemini 1.5 Pro) ---
+        // --- AI Moderation for Retailer Videos (REST Gemini API with Model Fallback) ---
         console.log("[Retailer Video Upload] AI 審査開始...");
-        if (typeof generativeModel !== 'undefined' && fileData.includes('base64,')) {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+
+        if (!GEMINI_API_KEY) {
+            console.error("[Retailer AI] GEMINI_API_KEY not configured. Rejecting upload.");
+            return res.status(403).json({ success: false, error: "【配信不可】審査システム（APIキー）が設定されていないため、安全を考慮してアップロードを拒否しました。" });
+        }
+
+        if (fileData.includes('base64,')) {
             const base64Data = fileData.split('base64,')[1];
             try {
-                const request = {
-                    contents: [{
-                        role: 'user',
-                        parts: [
-                            { inlineData: { mimeType: 'video/mp4', data: base64Data } },
-                            { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。\n1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。\n2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。\n3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。\n少しでも該当する場合は「FAIL: 理由」を、安全であれば「PASS」を出力してください。' }
-                        ]
-                    }]
-                };
-                const result = await generativeModel.generateContent(request);
-                const responseText = await result.response.text();
-                console.log("[Retailer AI Moderation] 結果:", responseText);
-                
-                if (responseText.includes('FAIL')) {
-                    return res.status(403).json({ success: false, error: 'AI審査で拒絶されました。不適切なコンテンツまたは詐欺的誘導が含まれています。\n' + responseText });
+                const fetch = (await import('node-fetch')).default;
+                const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+                let requestSuccess = false;
+                let aiResponseText = "";
+
+                const systemPrompt = `あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。
+1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。
+2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。
+3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。
+少しでも該当する場合は「FAIL: 理由」を、安全であれば「PASS」を出力してください。`;
+
+                for (const model of models) {
+                    try {
+                        console.log(`[Retailer AI] Sending video to Gemini API model: ${model}`);
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{
+                                    role: 'user',
+                                    parts: [
+                                        { inlineData: { mimeType: 'video/mp4', data: base64Data } },
+                                        { text: systemPrompt }
+                                    ]
+                                }]
+                            })
+                        });
+
+                        if (!response.ok) throw new Error(`Status ${response.status}`);
+                        const resData = await response.json();
+                        if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
+                            aiResponseText = resData.candidates[0].content.parts[0].text;
+                            requestSuccess = true;
+                            break;
+                        }
+                    } catch (err) {
+                        console.warn(`[Retailer AI] Model ${model} failed:`, err.message);
+                    }
+                }
+
+                if (requestSuccess) {
+                    console.log("[Retailer AI Moderation] 結果:", aiResponseText);
+                    if (aiResponseText.includes('FAIL')) {
+                        return res.status(403).json({ success: false, error: 'AI審査で拒絶されました。不適切なコンテンツまたは詐欺的誘導が含まれています。\n' + aiResponseText });
+                    }
+                } else {
+                    console.error("[Retailer AI] All models failed. Rejecting upload.");
+                    return res.status(403).json({ success: false, error: "【配信不可】AI審査システムの通信エラーまたはタイムアウトが発生したため、安全を考慮してアップロードを拒否しました。" });
                 }
             } catch (aiErr) {
                 console.error("[Retailer AI Moderation Error]", aiErr);
-                // Continue upload if AI fails due to size limits, etc.
+                return res.status(403).json({ success: false, error: "【配信不可】AI審査中に予期せぬエラーが発生しました。" });
             }
         }
         // --------------------------------------------------------
@@ -2787,34 +2857,71 @@ app.post('/api/creator/bank', async (req, res) => {
             base64Data = match[2];
         }
 
-        if (typeof generativeModel !== 'undefined') {
-            const promptText = `あなたは厳密なKYC（本人確認）AIです。
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+
+        if (!GEMINI_API_KEY) {
+            console.error("[Bank KYC] GEMINI_API_KEY not configured. Rejecting bank registration.");
+            return res.status(400).json({ error: "【本人確認エラー】本人確認（KYC）システムが未設定のため、安全を考慮して登録を却下しました。" });
+        }
+
+        const fetch = (await import('node-fetch')).default;
+        const promptText = `あなたは厳密なKYC（本人確認）AIです。
 以下の身分証画像を読み取り、書かれている「氏名（本名）」を抽出してください。
 その後、申請者が入力した口座名義（カタカナ）「${holderName}」と同一人物であるか厳密に判定してください。
 もし氏名の読みと口座名義が一致していれば match: true、偽名や別人の口座（法人口座含む）であれば match: false としてください。
-必ず以下のJSON形式のみを出力してください。
+必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
 {"match": true, "detected_name": "山田 太郎", "reason": "読みが一致するため"}`;
-            
-            const request = {
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: mimeType, data: base64Data } },
-                        { text: promptText }
-                    ]
-                }]
-            };
-            const result = await generativeModel.generateContent(request);
-            const response = await result.response;
-            const text = response.candidates[0].content.parts[0].text;
-            
-            const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const aiResult = JSON.parse(cleanJson);
-            
-            if (aiResult.match !== true) {
-                console.log(`[Creator KYC Blocked] ${email} - ID: ${aiResult.detected_name} != Bank: ${holderName}`);
-                return res.status(400).json({ error: `【AI判定エラー】身分証の氏名（${aiResult.detected_name || '不明'}）と口座名義（${holderName}）が一致しませんでした。詐欺防止のため登録を拒否しました。` });
+
+        const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+        let requestSuccess = false;
+        let aiResponseText = "";
+
+        for (const model of models) {
+            try {
+                console.log(`[Bank KYC] Sending ID document to Gemini API model: ${model}`);
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            role: 'user',
+                            parts: [
+                                { inlineData: { mimeType: mimeType, data: base64Data } },
+                                { text: promptText }
+                            ]
+                        }]
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+                const resData = await response.json();
+                if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
+                    aiResponseText = resData.candidates[0].content.parts[0].text;
+                    requestSuccess = true;
+                    break;
+                }
+            } catch (err) {
+                console.warn(`[Bank KYC] Model ${model} failed:`, err.message);
             }
+        }
+
+        if (requestSuccess) {
+            const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const jsonMatch = cleanJson.match(/\{[\s\S]*?\}/);
+            if (jsonMatch) {
+                const aiResult = JSON.parse(jsonMatch[0]);
+                if (aiResult.match !== true) {
+                    console.log(`[Creator KYC Blocked] ${email} - ID: ${aiResult.detected_name} != Bank: ${holderName}`);
+                    return res.status(400).json({ error: `【AI判定エラー】身分証の氏名（${aiResult.detected_name || '不明'}）と口座名義（${holderName}）が一致しませんでした。詐欺防止のため登録を拒否しました。` });
+                }
+            } else {
+                return res.status(400).json({ error: "【本人確認エラー】AIの判定結果フォーマットが不正のため、登録を却下しました。" });
+            }
+        } else {
+            console.error("[Bank KYC] All Gemini models failed. Failing KYC check.");
+            return res.status(400).json({ error: "【本人確認エラー】AI審査システム一時的エラーのため、登録を却下しました。" });
         }
         
         creatorBankData[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
