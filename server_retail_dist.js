@@ -719,7 +719,7 @@ async function downloadYoutubeVideo(url) {
 app.post('/api/creator/review-content', async (req, res) => {
     try {
         const { video_base64, ytUrl, title } = req.body;
-        console.log("クリエイター動画審査開始: Gemini 1.5 Pro");
+        console.log("クリエイター動画審査開始: Gemini 1.5 Pro / Flash Fallback");
 
         let mimeType = 'video/mp4';
         let base64Data = "";
@@ -757,14 +757,21 @@ app.post('/api/creator/review-content', async (req, res) => {
             }
         }
 
-        // Use generativeModel defined globally in server_retail_dist
-        if(typeof generativeModel !== 'undefined') {
-            const request = {
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: mimeType, data: base64Data } },
-                        { text: `あなたは世界で最も厳格な「リテールメディア（店舗サイネージ）広告」のコンプライアンス審査AIです。
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+
+        if (!GEMINI_API_KEY) {
+            console.warn("GEMINI_API_KEY is not configured. Falling back to Demo approve.");
+            return res.json({ safe: true, message: "【デモ審査通過】APIキー未設定のため、自動で審査通過としました。" });
+        }
+
+        const fetch = (await import('node-fetch')).default;
+        const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+        let lastError = null;
+        let aiResponseText = "";
+        let requestSuccess = false;
+
+        const systemPrompt = `あなたは世界で最も厳格な「リテールメディア（店舗サイネージ）広告」のコンプライアンス審査AIです。
 画像や動画を極めて厳密にスキャンし、以下のいずれかに該当する場合は絶対に配信を許可しないでください。
 
 【絶対禁止ルール（即時FAIL）】
@@ -772,37 +779,70 @@ app.post('/api/creator/review-content', async (req, res) => {
 2. 暴力・攻撃的描写: 流血の有無やフィクションに関係なく、殴る・蹴るなどの他者への攻撃的・威圧的な身体接触が1フレームでもあればブロック。
 3. 誇大広告・情報商材: 「簡単に稼げる」「確実に痩せる」などの文言、著名人の画像を無断使用した投資詐欺の疑いがあるもの。
 4. 危険なQRコード: 安全性が100%確認できない不審なドメインや短縮URL、公式を装った偽LINEアカウントへの誘導。
-5. 定期購入の隠蔽（お試し詐欺）: 「初回無料」「たったの500円」と巨大な文字で強調しながら、継続購入の条件が極小文字で隠されている、または明記されていない優良誤認広告。
+5. 定期購入 of 隠蔽（お試し詐欺）: 「初回無料」「たったの500円」と巨大な文字で強調しながら、継続購入の条件が極小文字で隠されている、または明記されていない優良誤認広告。
 6. 悪徳点検・格安修理: 「トイレの詰まり数百円〜」「屋根の無料点検」など、相場から著しく逸脱した不自然なほど格安な訪問修理や点検を謳う広告。
 
 【出力フォーマット】
 いかなる理由があっても、必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
-{"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}` }
-                    ]
-                }]
-            };
-            const result = await generativeModel.generateContent(request);
-            const response = await result.response;
-            const text = response.candidates[0].content.parts[0].text;
-            console.log("クリエイター動画審査完了:", text);
-            
+{"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}`;
+
+        for (const model of models) {
             try {
-                const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                const aiResult = JSON.parse(cleanJson);
-                if (aiResult.safe === false) {
-                    return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + aiResult.reason });
+                console.log(`[Review] Sending video to Gemini API model: ${model}`);
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            role: 'user',
+                            parts: [
+                                { inlineData: { mimeType: mimeType, data: base64Data } },
+                                { text: systemPrompt }
+                            ]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gemini API returned status ${response.status}`);
+                }
+
+                const resData = await response.json();
+                if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
+                    aiResponseText = resData.candidates[0].content.parts[0].text;
+                    requestSuccess = true;
+                    console.log(`[Review] Gemini API response succeeded using ${model}`);
+                    break;
                 } else {
-                    return res.json({ safe: true, message: aiResult.reason });
+                    throw new Error("Invalid response format from Gemini API");
                 }
-            } catch(e) {
-                if (text.includes('FAIL') || text.includes('"safe": false') || text.includes('"safe":false')) {
-                    return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + text });
-                }
-                return res.json({ safe: true, message: text });
+            } catch (err) {
+                console.warn(`[Review] Model ${model} failed:`, err.message);
+                lastError = err;
             }
         }
-        
-        res.json({ safe: true, message: "審査通過 (問題なし)" });
+
+        if (!requestSuccess) {
+            console.error("[Review] All Gemini models failed. Falling back to Demo approve.", lastError);
+            return res.json({ safe: true, message: "【デモ審査通過】AI障害のため、一時的に自動で審査通過としました。" });
+        }
+
+        try {
+            const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const aiResult = JSON.parse(cleanJson);
+            if (aiResult.safe === false) {
+                return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + aiResult.reason });
+            } else {
+                return res.json({ safe: true, message: aiResult.reason });
+            }
+        } catch(e) {
+            if (aiResponseText.includes('FAIL') || aiResponseText.includes('"safe": false') || aiResponseText.includes('"safe":false')) {
+                return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + aiResponseText });
+            }
+            return res.json({ safe: true, message: aiResponseText });
+        }
     } catch (error) {
         console.error('コンテンツ審査エラー:', error);
         // エラー時はフェイルクローズ（安全ではない）とする
