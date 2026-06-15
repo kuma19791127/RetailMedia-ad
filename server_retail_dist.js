@@ -2009,8 +2009,9 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
    （アプリ管理など）から「アンインストール」を実行してください。
 `;
 
+            const mailFrom = process.env.SMTP_FROM || process.env.SENDER_EMAIL || process.env.SES_SENDER_EMAIL || 'info@retail-ad.com';
             const mailOptions = {
-                from: smtpUser || '"RetailMedia Portal" <info@retail-ad.com>',
+                from: `"RetailMedia Portal" <${mailFrom}>`,
                 to: targetEmail,
                 cc: senderEmail || undefined,
                 subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
@@ -2082,8 +2083,9 @@ app.post('/api/retailer/send-app-link', async (req, res) => {
             });
         }
 
+        const mailFrom = process.env.SMTP_FROM || process.env.SENDER_EMAIL || process.env.SES_SENDER_EMAIL || 'info@retail-ad.com';
         const mailOptions = {
-            from: smtpUser || '"RetailMedia Portal" <info@retail-ad.com>',
+            from: `"RetailMedia Portal" <${mailFrom}>`,
             to: email,
             subject: '【リテアド】サイネージプレイヤー アプリのダウンロードリンク送付',
             text: `店舗サイネージ管理者 様\n\n店舗サイネージプレイヤー専用Androidアプリのダウンロードリンクを送付いたします。\n\n【アプリ(APK)ダウンロードURL】\nhttps://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\n\n【セットアップ手順】\n1. サイネージ用Android端末のブラウザ等で上記URLを開き、アプリをダウンロード・インストールしてください。\n2. アプリを起動し、初期起動時の店舗ID入力欄に、本部より案内された店舗固有IDを入力してください。\n3. 保存・接続すると自動的にサイネージの再生が開始されます。\n\n詳細なセットアップガイドは下記ポータルサイトでもご確認いただけます：\nhttps://retail-ad.com/app_setup_guide.html\n\nよろしくお願いいたします。`
