@@ -133,7 +133,7 @@
 <body>
 
     <header style="padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; position: relative;">
-        <a href="index.html" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
+        <a href="javascript:void(0)" onclick="goBackToPortal()" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
         <div style="font-size: 1.5rem; font-weight: 900; margin-left: 140px;"><i class="fa-solid fa-feather" style="color:var(--primary);"></i> ManualHelp</div>
         <a href="manualhelp.html#login" class="cta-btn" style="padding: 10px 25px; font-size: 1rem;">ログイン / 登録</a>
     </header>
@@ -214,5 +214,15 @@
         <p>&copy; 2026 non-logi Inc. All Rights Reserved.</p>
     </footer>
 
+    <script>
+        function goBackToPortal() {
+            const lastActive = localStorage.getItem('last_active_service');
+            if (lastActive) {
+                window.location.href = lastActive;
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
 </body>
 </html>

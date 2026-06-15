@@ -447,7 +447,7 @@
 
     <nav>
         <div class="logo">retail-ad Agency</div>
-        <a href="index.html" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
+        <a href="javascript:void(0)" onclick="goBackToPortal()" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
         <a href="index.html" class="btn-login" style="text-align: center; line-height: 1.2;">パートナー<br>ログイン</a>
     </nav>
 
@@ -583,6 +583,16 @@
         <p style="margin-top: 40px; font-size: 0.8rem; opacity: 0.7;">© 2026 nonlogi .Inc</p>
     </footer>
 
+    <script>
+        function goBackToPortal() {
+            const lastActive = localStorage.getItem('last_active_service');
+            if (lastActive) {
+                window.location.href = lastActive;
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
 </body>
 
 </html>

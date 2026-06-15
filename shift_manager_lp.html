@@ -323,7 +323,7 @@
 <body>
 
     <nav style="position: relative;">
-        <a href="index.html" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
+        <a href="javascript:void(0)" onclick="goBackToPortal()" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
         <div class="logo" style="margin-left: 140px;">📅 AI <span>ShiftManager</span> <span style="font-size: 0.8rem; background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; margin-left: 10px; font-weight: bold;">完全無料</span></div>
         <a href="shift_manager.html" class="btn-nav" style="white-space: nowrap;">無料で始める</a>
     </nav>
@@ -436,5 +436,15 @@
         <p>© 2026 nonlogi .Inc (RetailMedia) All Rights Reserved.</p>
     </footer>
 
+    <script>
+        function goBackToPortal() {
+            const lastActive = localStorage.getItem('last_active_service');
+            if (lastActive) {
+                window.location.href = lastActive;
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
 </body>
 </html>
