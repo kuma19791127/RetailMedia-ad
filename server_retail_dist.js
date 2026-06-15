@@ -1666,38 +1666,76 @@ app.post('/api/campaigns', async (req, res) => {
                     const base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
                     if (base64Data.length < 500) {
                         adStatus = 'active';
-                    } else if (typeof generativeModel !== 'undefined') {
-                        const mimeType = finalUrl.startsWith('data:image') ? 'image/jpeg' : 'video/mp4';
-                        const request = {
-                            contents: [{
-                                role: 'user',
-                                parts: [
-                                    { inlineData: { mimeType: mimeType, data: base64Data } },
-                                    { text: 'あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。\n1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容\n2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告\n3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。これらが少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全な小売広告であれば「PASS: 理由」を出力してください。' }
-                                ]
-                            }]
-                        };
-                        const result = await generativeModel.generateContent(request);
-                        const text = result.response.candidates[0].content.parts[0].text;
-                        if (text.includes('FAIL')) { 
-                            adStatus = 'rejected'; 
-                            if (ad_email) {
-                                accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
-                                console.log(`[Strike] Account ${ad_email} received a strike! Total: ${accountStrikes[ad_email]}`);
-                            }
-                        } else { 
-                            adStatus = 'active'; 
-                        } 
-                        console.log(`[AutoReview] AI Result: ${text} -> (実装テスト中のため active として処理)`);
                     } else {
-                        adStatus = 'active'; // Fallback
+                        const rawKey = process.env.GEMINI_API_KEY || '';
+                        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+                        if (!GEMINI_API_KEY) {
+                            console.error("[AutoReview] GEMINI_API_KEY not configured. Failing review.");
+                            adStatus = 'rejected';
+                        } else {
+                            const fetch = (await import('node-fetch')).default;
+                            const mimeType = finalUrl.startsWith('data:image') ? 'image/jpeg' : 'video/mp4';
+                            const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+                            let requestSuccess = false;
+                            let aiResponseText = "";
+
+                            const systemPrompt = `あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。
+1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容
+2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告
+3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。これらが少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全な小売広告であれば「PASS: 理由」を出力してください。`;
+
+                            for (const model of models) {
+                                try {
+                                    console.log(`[AutoReview] Sending video to Gemini API model: ${model}`);
+                                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                                    const response = await fetch(url, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            contents: [{
+                                                role: 'user',
+                                                parts: [
+                                                    { inlineData: { mimeType: mimeType, data: base64Data } },
+                                                    { text: systemPrompt }
+                                                ]
+                                            }]
+                                        })
+                                    });
+
+                                    if (!response.ok) throw new Error(`Status ${response.status}`);
+                                    const resData = await response.json();
+                                    if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
+                                        aiResponseText = resData.candidates[0].content.parts[0].text;
+                                        requestSuccess = true;
+                                        break;
+                                    }
+                                } catch (err) {
+                                    console.warn(`[AutoReview] Model ${model} failed:`, err.message);
+                                }
+                            }
+
+                            if (requestSuccess) {
+                                if (aiResponseText.includes('FAIL')) {
+                                    adStatus = 'rejected';
+                                    if (ad_email) {
+                                        accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
+                                        console.log(`[Strike] Account ${ad_email} received a strike! Total: ${accountStrikes[ad_email]}`);
+                                    }
+                                } else {
+                                    adStatus = 'active';
+                                }
+                            } else {
+                                console.error("[AutoReview] All models failed. Rejecting campaign.");
+                                adStatus = 'rejected';
+                            }
+                        }
                     }
                 } else {
                     adStatus = 'active'; // YouTube/Empty
                 }
             } catch (err) {
                 console.error("[AutoReview] AI Review failed:", err);
-                adStatus = 'pending'; // Failsafe
+                adStatus = 'rejected'; // Failsafe (fails closed)
             }
             console.log(`[AutoReview] Campaign '${name}' auto-review result: ${adStatus}`);
 
