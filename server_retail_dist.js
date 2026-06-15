@@ -3331,6 +3331,7 @@ app.get('/api/admin/dashboard', async (req, res) => {
         
         for (const s of rows) {
             if (s.id === "default_store") continue;
+            const displayPosSales = s.total_pos_sales || 0;
             const billingAmount = Math.floor(displayPosSales * 0.004);
             if (billingAmount > 0) {
                 billingData.push({ id: s.id, name: s.name, sales: displayPosSales, fee_0_4_percent: billingAmount, email: s.billing_email, status: "未請求" });
