@@ -761,8 +761,8 @@ app.post('/api/creator/review-content', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
         if (!GEMINI_API_KEY) {
-            console.warn("GEMINI_API_KEY is not configured. Falling back to Demo approve.");
-            return res.json({ safe: true, message: "【デモ審査通過】APIキー未設定のため、自動で審査通過としました。" });
+            console.error("GEMINI_API_KEY is not configured. Failing review.");
+            return res.json({ safe: false, message: "【配信不可】審査システム（APIキー）が設定されていないため、安全確保の観点から自動的に不許可としました。" });
         }
 
         const fetch = (await import('node-fetch')).default;
@@ -825,8 +825,8 @@ app.post('/api/creator/review-content', async (req, res) => {
         }
 
         if (!requestSuccess) {
-            console.error("[Review] All Gemini models failed. Falling back to Demo approve.", lastError);
-            return res.json({ safe: true, message: "【デモ審査通過】AI障害のため、一時的に自動で審査通過としました。" });
+            console.error("[Review] All Gemini models failed. Failing review.", lastError);
+            return res.json({ safe: false, message: "【配信不可】AI審査システムの通信エラーまたはタイムアウトが発生したため、安全確保の観点から自動的に不許可としました。" });
         }
 
         try {
