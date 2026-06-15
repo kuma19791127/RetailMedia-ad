@@ -1,9 +1,6 @@
 const { Pool } = require('pg');
 
 const getDatabaseRole = (role) => {
-    if (['store', 'advertiser', 'agency', 'creator', 'retailer'].includes(role)) {
-        return 'store';
-    }
     return role;
 };
 
@@ -98,13 +95,8 @@ if (process.env.DATABASE_URL) {
                 // If migration fails because it is already composite, ignore
             }
 
-            // Migration path: Normalize advertiser/agency/creator/retailer roles to store role
-            try {
-                await pool.query("UPDATE users SET role = 'store' WHERE role IN ('advertiser', 'agency', 'creator', 'retailer')");
-                console.log('[DB] ✅ Users roles migrated (normalized to store).');
-            } catch (e) {
-                console.error('[DB] ❌ Users roles migration failed:', e.message);
-            }
+            // Migration path: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
+            console.log('[DB] Users roles migration bypassed (roles are preserved).');
 
             // 初期データの投入 (空の場合のみ)
             const countRes = await pool.query('SELECT COUNT(*) FROM products');
@@ -297,8 +289,7 @@ if (process.env.DATABASE_URL) {
                     }
                 });
 
-                // SQLite Migration: Normalize advertiser/agency/creator/retailer roles to store role
-                sqliteDb.run("UPDATE users SET role = 'store' WHERE role IN ('advertiser', 'agency', 'creator', 'retailer')");
+                // SQLite Migration: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
 
                 // database.json からユーザー情報を SQLite の users テーブルに同期
                 const fs = require('fs');
