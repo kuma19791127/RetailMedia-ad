@@ -212,12 +212,47 @@ setInterval(() => {
 
 // --- ⏰ Schedule / Broadcast Voice via AI Voice Studio ---
 app.post('/api/signage/schedule_voice', (req, res) => {
+    // ユーザー情報の取得 (JWTデコード)
+    let ad_email = 'unknown';
+    const authHeader = req.headers.authorization;
+    let token = req.cookies.token;
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            ad_email = decoded.email;
+        } catch(e) {}
+    }
+
+    // ストライク制限（3回以上でBAN）
+    if (ad_email && accountStrikes[ad_email] >= 3) {
+        console.log(`[AI-Voice] Request rejected: Account ${ad_email} is BANNED.`);
+        return res.status(403).json({ success: false, error: "アカウントが規約違反（3ストライク）により凍結されています。" });
+    }
+
     // AI Content Moderation Check
     if (req.body.text) {
-        const bannedWords = ["必ず儲かる", "投資で稼ぐ", "続きはLINEで", "LINE登録はこちら"];
+        const bannedWords = [
+            "必ず儲かる", "投資で稼ぐ", "続きはLINEで", "LINE登録はこちら",
+            "還付金", "ATMで手続き", "キャッシュカードを預", "キャッシュカードをお預",
+            "暗証番号を教", "口座情報", "銀行の窓口", "振り込んで", "振込詐欺",
+            "未払い金", "法的措置", "差押", "差し押さえ", "身代金",
+            "事故を起こした", "会社のお金を使い込", "至急お金が必要", "誰にも言わないで",
+            "名義を貸して", "闇バイト", "受け子", "出し子", "高額報酬", "簡単な仕事"
+        ];
         for (let word of bannedWords) {
             if (req.body.text.includes(word)) {
                 console.log(`[AI-Voice] 規約違反を検出 (${word}). 拒絶します。`);
+                
+                // ストライク加算と永続化
+                if (ad_email && ad_email !== 'unknown') {
+                    accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
+                    console.log(`[Strike] Voice Studio Account ${ad_email} received a strike! Total: ${accountStrikes[ad_email]}`);
+                    if (typeof saveDatabase === 'function') saveDatabase();
+                }
+                
                 return res.status(400).json({ success: false, error: `不適切なコンテンツ（禁止ワード: ${word}）が含まれているため、配信を自動拒絶しました。アカウントを一時凍結します。` });
             }
         }
@@ -1883,6 +1918,7 @@ app.post('/api/campaigns', async (req, res) => {
                                     if (ad_email) {
                                         accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
                                         console.log(`[Strike] Account ${ad_email} received a strike! Total: ${accountStrikes[ad_email]}`);
+                                        if (typeof saveDatabase === 'function') saveDatabase();
                                     }
                                 } else {
                                     adStatus = 'active';
@@ -4294,6 +4330,9 @@ function loadLocalDatabase() {
             if (parsed.creatorStats && typeof creatorStats !== 'undefined') {
                 Object.assign(creatorStats, parsed.creatorStats);
             }
+            if (parsed.accountStrikes && typeof accountStrikes !== 'undefined') {
+                Object.assign(accountStrikes, parsed.accountStrikes);
+            }
 
             if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
                 global.retailer_videos = parsed.retailer_videos;
@@ -4367,6 +4406,9 @@ async function pullFromS3() {
         }
         if (parsed.creatorStats && typeof creatorStats !== 'undefined') {
             Object.assign(creatorStats, parsed.creatorStats);
+        }
+        if (parsed.accountStrikes && typeof accountStrikes !== 'undefined') {
+            Object.assign(accountStrikes, parsed.accountStrikes);
         }
 
         if (parsed.retailer_videos && Array.isArray(parsed.retailer_videos)) {
@@ -4498,7 +4540,8 @@ const saveDatabase = () => {
             shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
             manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
             manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
-            scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
+            scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : [],
+            accountStrikes: typeof accountStrikes !== 'undefined' ? accountStrikes : {}
         }, null, 2);
         require('fs').writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
         pushToS3(dataStr);
