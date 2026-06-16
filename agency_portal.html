@@ -15,7 +15,7 @@
             try {
                 window.fetch = function (input, init) {
                     init = init || {};
-                    if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
+                    if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.includes('retail-ad.com') || input.startsWith('/api/'))) {
                         init.credentials = 'include';
                         
                         // Inject JWT Token from localStorage if present
