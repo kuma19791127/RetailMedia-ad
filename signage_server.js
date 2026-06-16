@@ -144,7 +144,13 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         }
 
         // 2. Check Paid Campaign
-        if (state.paid && state.paid.id === adId) {
+        if (Array.isArray(state.paid)) {
+            const foundAd = state.paid.find(ad => ad.id === adId);
+            if (foundAd) {
+                console.log(`[Analytics] 📡 Beacon Received: Paid Ad View (${foundAd.title})`);
+                return true;
+            }
+        } else if (state.paid && state.paid.id === adId) {
             console.log(`[Analytics] 📡 Beacon Received: Paid Ad View (${state.paid.title})`);
             return true;
         }
@@ -165,6 +171,10 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
 
         // Helper to push if exists
         const add = (item, defaultStatus) => {
+            if (Array.isArray(item)) {
+                item.forEach(sub => add(sub, defaultStatus));
+                return;
+            }
             if (item) {
                 list.push({
                     id: item.id,
@@ -194,7 +204,14 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         const state = STATE["register_side"];
         let found = false;
         ['paid', 'moment', 'impression'].forEach(type => {
-            if (state[type] && state[type].id === id) {
+            if (Array.isArray(state[type])) {
+                state[type].forEach(ad => {
+                    if (ad.id === id) {
+                        ad.status = newStatus;
+                        found = true;
+                    }
+                });
+            } else if (state[type] && state[type].id === id) {
                 state[type].status = newStatus;
                 found = true;
             }
@@ -235,9 +252,16 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
             console.log(`[CMS] 📈 IMPRESSION Ad Injected: ${newAd.title}`);
         } else {
             // Default to PAID (Priority 2)
-            STATE["register_side"].paid = newAd;
+            if (!Array.isArray(STATE["register_side"].paid)) {
+                STATE["register_side"].paid = [];
+            }
+            // Avoid duplicate ID injection
+            const exists = STATE["register_side"].paid.some(ad => ad.id === newAd.id);
+            if (!exists) {
+                STATE["register_side"].paid.push(newAd);
+            }
             STATE["register_side"].network = null; // Reset network to allow premium ad
-            console.log(`[CMS] 🔴 PAID Ad injected: ${newAd.title}`);
+            console.log(`[CMS] 🔴 PAID Ad injected: ${newAd.title} (Total Paid in Loop: ${STATE["register_side"].paid.length})`);
         }
 
         return newAd;
