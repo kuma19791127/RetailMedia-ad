@@ -1255,11 +1255,47 @@
                     loadCampaigns();
                     loadAnalytics();
                     return;
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    if (res.status === 403 || (errData.error && (errData.error.includes('凍結') || errData.error.includes('ロック')))) {
+                        Swal.fire({
+                            title: '❌ アカウント凍結',
+                            html: `<div style="color:red;font-size:0.9rem;text-align:left;">${errData.error || "アカウントが制限されています。"}</div><br><button id="btn-unlock-req" class="btn btn-primary" style="margin-top:10px; background:#2563eb; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">ロック解除を申請する</button>`,
+                            icon: 'error',
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                document.getElementById('btn-unlock-req').onclick = async () => {
+                                    const { value: text } = await Swal.fire({
+                                        title: '申し開き（理由）',
+                                        input: 'textarea',
+                                        inputPlaceholder: '規約に違反していない理由をご記入ください...'
+                                    });
+                                    if (text) {
+                                        try {
+                                            await fetch(API_URL + '/api/creator/request-unlock', {
+                                                method: 'POST',
+                                                headers: {'Content-Type':'application/json'},
+                                                body: JSON.stringify({ email: loggedInEmail, appealText: text })
+                                            });
+                                            Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                        } catch (err) {
+                                            Swal.fire('エラー', '送信に失敗しました。', 'error');
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        closeModal();
+                        return;
+                    }
+                    throw new Error(errData.error || 'API Error: ' + res.status);
                 }
-            } catch (e) { console.error(e) }
-
-            Swal.fire('エラー', "登録失敗 (Offline)", 'error');
-            closeModal();
+            } catch (e) {
+                console.error(e);
+                Swal.fire('エラー', e.message || "登録失敗", 'error');
+                closeModal();
+                return;
+            }
         }
 
         async function chargeBudget() {

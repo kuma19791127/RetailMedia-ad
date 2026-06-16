@@ -2681,6 +2681,37 @@
                     }
                 } catch (e) {
                     console.error("Campaign Creation Failed:", e);
+                    const isBanned = e.message.includes('凍結') || e.message.includes('ロック');
+                    if (isBanned) {
+                        Swal.fire({
+                            title: '❌ アカウント凍結',
+                            html: `<div style="color:red;font-size:0.9rem;text-align:left;">${e.message}</div><br><button id="btn-unlock-req" class="btn btn-primary" style="margin-top:10px; background:#2563eb; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">ロック解除を申請する</button>`,
+                            icon: 'error',
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                document.getElementById('btn-unlock-req').onclick = async () => {
+                                    const { value: text } = await Swal.fire({
+                                        title: '申し開き（理由）',
+                                        input: 'textarea',
+                                        inputPlaceholder: '規約に違反していない理由をご記入ください...'
+                                    });
+                                    if (text) {
+                                        try {
+                                            await fetch(API_URL + '/api/creator/request-unlock', {
+                                                method: 'POST',
+                                                headers: {'Content-Type':'application/json'},
+                                                body: JSON.stringify({ email: adEmail, appealText: text })
+                                            });
+                                            Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                        } catch (err) {
+                                            Swal.fire('エラー', '送信に失敗しました。', 'error');
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        return;
+                    }
                     Swal.fire({
                         icon: 'error',
                         title: '配信エラー (詳細)',

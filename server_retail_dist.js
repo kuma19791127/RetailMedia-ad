@@ -640,6 +640,9 @@ app.post('/api/review/unlock/:id/approve', (req, res) => {
     const item = CREATOR_STATE.unlockRequests.find(r => r.id == req.params.id);
     if(item) {
         item.status = 'approved';
+        if (item.creatorId) {
+            accountStrikes[item.creatorId] = 0; // Reset strikes
+        }
         // Unlock all banned videos for this creator
         if (CREATOR_STATE.videos) {
             CREATOR_STATE.videos.forEach(v => {
@@ -681,24 +684,10 @@ const isDemoAccount = (email) => {
     if (!email) return true;
     return email.includes('demo') || email === 'admin';
 };
-const unlockRequests = [];
-
-app.get('/api/review/unlock', (req, res) => {
-    res.json(unlockRequests);
-});
-app.post('/api/review/unlock/:id/approve', (req, res) => {
-    const id = req.params.id;
-    const reqItem = unlockRequests.find(r => r.id === id);
-    if (reqItem) {
-        reqItem.status = 'approved';
-        accountStrikes[reqItem.creatorId] = 0; // Reset strikes
-    }
-    res.json({ success: true });
-});
-
 app.post('/api/creator/request-unlock', (req, res) => {
     const { email, appealText } = req.body;
-    unlockRequests.push({
+    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
+    CREATOR_STATE.unlockRequests.push({
         id: Date.now().toString(),
         creatorId: email,
         appealText: appealText,
@@ -707,6 +696,7 @@ app.post('/api/creator/request-unlock', (req, res) => {
         status: 'pending',
         date: new Date().toISOString()
     });
+    if (typeof saveDatabase === 'function') saveDatabase();
     res.json({ success: true });
 });
 
