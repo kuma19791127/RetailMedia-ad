@@ -240,10 +240,15 @@ app.post('/api/signage/schedule_voice', (req, res) => {
             "暗証番号を教", "口座情報", "銀行の窓口", "振り込んで", "振込詐欺",
             "未払い金", "法的措置", "差押", "差し押さえ", "身代金",
             "事故を起こした", "会社のお金を使い込", "至急お金が必要", "誰にも言わないで",
-            "名義を貸して", "闇バイト", "受け子", "出し子", "高額報酬", "簡単な仕事"
+            "名義を貸して", "闇バイト", "受け子", "出し子", "高額報酬", "簡単な仕事",
+            // English banned words (lowercase for case-insensitive checks)
+            "dark web", "dark net", "illegal job", "money mule", "easy cash", "easy money",
+            "fast money", "quick cash", "cash card", "atm transfer", "money transfer",
+            "wire money", "bank transfer", "money laundering", "tax evasion", "legal action"
         ];
+        const textLower = req.body.text.toLowerCase();
         for (let word of bannedWords) {
-            if (req.body.text.includes(word)) {
+            if (textLower.includes(word)) {
                 console.log(`[AI-Voice] 規約違反を検出 (${word}). 拒絶します。`);
                 
                 // ストライク加算と永続化 (一発アウトのため、ストライクを一撃で3に設定して即座にBAN)
