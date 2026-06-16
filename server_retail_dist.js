@@ -1725,10 +1725,20 @@ app.post('/api/campaigns', async (req, res) => {
                             let requestSuccess = false;
                             let aiResponseText = "";
 
-                            const systemPrompt = `あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。
-1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容
-2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告
-3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。これらが少しでも含まれる場合は必ず「FAIL: 理由」を、完全に安全な小売広告であれば「PASS: 理由」を出力してください。`;
+                            const systemPrompt = `あなたは世界で最も厳格な「リテールメディア（店舗サイネージ）広告」のコンプライアンス審査AIです。
+画像や動画を極めて厳密にスキャンし、以下のいずれかに該当する場合は絶対に配信を許可しないでください。
+
+【絶対禁止ルール（即時FAIL）】
+1. 架空請求・サポート詐欺: 「未払い料金」「法的処置」「アカウント消去」等の脅迫や、「ウイルス感染」「システム破損」等の偽警告（サポート詐欺）でユーザーの不安を煽るテキストや画像。
+2. 暴力・攻撃的描写: 流血の有無やフィクションに関係なく、殴る・蹴るなどの他者への攻撃的・威圧的な身体接触が1フレームでもあればブロック。
+3. 誇大広告・情報商材: 「簡単に稼げる」「確実に痩せる」などの文言、著名人の画像を無断使用した投資詐欺の疑いがあるもの。
+4. 危険なQRコード: 安全性が100%確認できない不審なドメインや短縮URL、公式を装った偽LINEアカウントへの誘導。
+5. 定期購入 of 隠蔽（お試し詐欺）: 「初回無料」「たったの500円」と巨大な文字で強調しながら、継続購入の条件が極小文字で隠されている、または明記されていない優良誤認広告。
+6. 悪徳点検・格安修理: 「トイレの詰まり数百円〜」「屋根の無料点検」など、相場から著しく逸脱した不自然なほど格安な訪問修理や点検を謳う広告。
+
+【出力フォーマット】
+いかなる理由があっても、必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
+{"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}`;
 
                             for (const model of models) {
                                 try {
@@ -1761,7 +1771,20 @@ app.post('/api/campaigns', async (req, res) => {
                             }
 
                             if (requestSuccess) {
-                                if (aiResponseText.includes('FAIL')) {
+                                let isSafe = true;
+                                try {
+                                    const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                                    const aiResult = JSON.parse(cleanJson);
+                                    if (aiResult.safe === false) {
+                                        isSafe = false;
+                                    }
+                                } catch (e) {
+                                    if (aiResponseText.includes('FAIL') || aiResponseText.includes('"safe": false') || aiResponseText.includes('"safe":false')) {
+                                        isSafe = false;
+                                    }
+                                }
+
+                                if (!isSafe) {
                                     adStatus = 'rejected';
                                     if (ad_email) {
                                         accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
