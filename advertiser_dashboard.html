@@ -1143,7 +1143,13 @@
         async function createCampaign() {
 
             // === KYC Authorization Gate ===
-            const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+            let checkUser = {};
+            try {
+                const authState = sessionStorage.getItem('retailMediaAuth');
+                if (authState && authState.startsWith('{')) {
+                    checkUser = JSON.parse(authState);
+                }
+            } catch (e) {}
             const userEmail2 = checkUser.email || sessionStorage.getItem('retailUserEmail');
             const isRealUser2 = userEmail2 && userEmail2 !== 'guest@example.com' && userEmail2 !== 'Guest';
             const isDemoUser2 = userEmail2 && userEmail2.includes('@demo.com');
@@ -1188,7 +1194,13 @@
                     if (file.type.startsWith('video/')) {
                         try {
                             const duration = await window.getVideoDuration(file);
-                            const currentUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+                            let currentUser = {};
+                            try {
+                                const authState = sessionStorage.getItem('retailMediaAuth');
+                                if (authState && authState.startsWith('{')) {
+                                    currentUser = JSON.parse(authState);
+                                }
+                            } catch (e) {}
                             const userEmail = currentUser.email || sessionStorage.getItem('retailUserEmail');
                             const isDemoUser = userEmail && userEmail.includes('@demo.com');
                             

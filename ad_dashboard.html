@@ -37,7 +37,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>リテアド | Advertiser Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
         function requestUnlock() {
             Swal.fire({
                 title: 'アカウントロック解除申請',
@@ -3087,7 +3088,13 @@
 
     // Check KYC status on load
     window.addEventListener('load', async () => {
-        const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+        let checkUser = {};
+        try {
+            const authState = sessionStorage.getItem('retailMediaAuth');
+            if (authState && authState.startsWith('{')) {
+                checkUser = JSON.parse(authState);
+            }
+        } catch (e) {}
         const email = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'advertiser@example.com';
         try {
             const res = await fetch(window.API_BASE_URL + '/api/kyc/status?email=' + encodeURIComponent(email));
@@ -3120,7 +3127,13 @@
             didOpen: () => { Swal.showLoading(); }
         });
 
-        const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
+        let checkUser = {};
+        try {
+            const authState = sessionStorage.getItem('retailMediaAuth');
+            if (authState && authState.startsWith('{')) {
+                checkUser = JSON.parse(authState);
+            }
+        } catch (e) {}
         const email = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'advertiser@example.com';
 
         try {
