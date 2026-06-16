@@ -524,7 +524,7 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
  // Serve transcoded video files
 
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
 
 // State
 const LOCAL_MEDIA_PATH = path.join(os.tmpdir(), 'retail-media-temp');
@@ -2919,7 +2919,7 @@ let shiftState = { staff: [], chatHistory: [] };
 // --- AGENCY REFERRAL DATA STORE ---
 let agencyReferrals = [];
 
-app.post('/api/admin/agency-submit', express.json(), async (req, res) => {
+app.post('/api/admin/agency-submit', async (req, res) => {
     setTimeout(saveFinanceDB, 100);
     agencyReferrals.push({
         date: req.body.date,
@@ -2947,7 +2947,7 @@ app.get('/api/admin/agency', (req, res) => {
     res.json(agencyReferrals);
 });
 
-app.post('/api/admin/agency-verify', express.json(), (req, res) => {
+app.post('/api/admin/agency-verify', (req, res) => {
     const { advertise } = req.body;
     const ref = agencyReferrals.find(r => r.advertise === advertise);
     if (ref) {
@@ -3576,7 +3576,7 @@ app.post('/api/admin/settings', (req, res) => {
 });
 
 // Update Store Operating Cost (Expenses)
-app.post('/api/admin/store/operating-cost', express.json(), async (req, res) => {
+app.post('/api/admin/store/operating-cost', async (req, res) => {
     const { storeId, operatingCost, laborCost, adsenseRevenue } = req.body;
     if (!storeId) return res.status(400).json({ error: "storeId is required" });
     
@@ -3672,7 +3672,7 @@ app.get('/api/admin/aws-cost', async (req, res) => {
 });
 
 // AnyWhere Regi Forgot Password => Billing Email mapping
-app.post('/api/admin/settings/billing-email', express.json(), async (req, res) => {
+app.post('/api/admin/settings/billing-email', async (req, res) => {
     if (req.body.email) {
         try {
             await dbHelper.query.run('UPDATE stores SET billing_email = ? WHERE id = ?', [req.body.email, 'default_store']);
@@ -3822,7 +3822,7 @@ app.post('/api/admin/creators/send-email', async (req, res) => {
 const processingGmoTransfers = new Set(); // Mutex lock for GMO Transfers
 
 // GMOあおぞらネット銀行 API 振込実行 (またはデモ送金)
-app.post('/api/admin/payout/gmo-transfer', express.json(), async (req, res) => {
+app.post('/api/admin/payout/gmo-transfer', async (req, res) => {
     const { type, targetIds } = req.body;
     if (!type || !targetIds || !Array.isArray(targetIds) || targetIds.length === 0) {
         return res.status(400).json({ error: "Invalid request parameters" });
@@ -5657,7 +5657,7 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // --- [NEW] Admin API: Register Device to Store ---
-app.post('/api/admin/devices', express.json(), (req, res) => {
+app.post('/api/admin/devices', (req, res) => {
     const { deviceId, storeId } = req.body;
     if (!deviceId || !storeId) return res.status(400).json({ error: "Missing parameters" });
     
