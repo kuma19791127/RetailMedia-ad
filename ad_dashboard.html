@@ -1850,7 +1850,10 @@
                 const reviewRes = await fetch(window.API_BASE_URL + '/api/creator/review-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ video_base64: await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); }) })
+                    body: JSON.stringify({ 
+                        video_base64: await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); }),
+                        title: file.name
+                    })
                 });
                 const reviewData = await reviewRes.json();
                 

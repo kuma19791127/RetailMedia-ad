@@ -742,7 +742,8 @@ app.post('/api/creator/review-content', async (req, res) => {
         let mimeType = 'video/mp4';
         let base64Data = "";
 
-        const isYt = (ytUrl && ytUrl.length > 0) || (title && (title.includes('YouTube') || title.includes('youtu')));
+        const isYt = (ytUrl && ytUrl.length > 0) || 
+                     (title && (title.startsWith('http') && (title.includes('youtube.com') || title.includes('youtu.be'))));
 
         if (isYt) {
             console.log(`[Review] YouTube動画の映像解析を開始します: ${ytUrl}`);
