@@ -838,7 +838,12 @@ app.post('/api/creator/review-content', async (req, res) => {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Gemini API returned status ${response.status}`);
+                    let errMsg = `Gemini API returned status ${response.status}`;
+                    try {
+                        const errBody = await response.text();
+                        errMsg += ` - Body: ${errBody}`;
+                    } catch (_) {}
+                    throw new Error(errMsg);
                 }
 
                 const resData = await response.json();
