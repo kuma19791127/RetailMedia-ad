@@ -254,6 +254,12 @@
 
     <!-- Unified Typography Fix -->
     <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        #ai-agent-section {
+            scroll-margin-top: 100px; /* 固定ヘッダー分の余白を確保して頭に合わせる */
+        }
         /* Force break blocks */
         .nw { display: inline-block; }
         .mobile-br { display: none; }
@@ -445,6 +451,18 @@
                 window.location.href = 'index.html';
             }
         }
+
+        // ロード完了時にハッシュが #ai-agent-section の場合、画像やDOMの描画を待って正しい位置へスクロール
+        window.addEventListener('load', () => {
+            if (window.location.hash === '#ai-agent-section') {
+                setTimeout(() => {
+                    const target = document.getElementById('ai-agent-section');
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 300); // 300msの遅延を設けてDOM/画像ロード後のズレを防止
+            }
+        });
     </script>
 </body>
 </html>
