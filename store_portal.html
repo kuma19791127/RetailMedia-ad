@@ -596,7 +596,18 @@
                         }
                     }
                 }
-                return originalFetch(input, init);
+                return originalFetch(input, init).then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+                        if (!url.includes('/api/auth/login')) {
+                            console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
+                            sessionStorage.clear();
+                            localStorage.removeItem('last_active_service');
+                            window.location.replace('index.html?logout=true');
+                        }
+                    }
+                    return response;
+                });
             };
         } catch (e) {
             console.warn("[Auth] window.fetch hook failed:", e);
