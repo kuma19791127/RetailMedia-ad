@@ -1191,6 +1191,9 @@
 }
 
         function logout() {
+            console.log('[F12 Debug] Shift Manager Logout initiated');
+            sessionStorage.clear();
+            localStorage.removeItem('last_active_service');
             document.getElementById('login-overlay').style.display = 'flex';
             document.getElementById('main-app').style.display = 'none';
         }

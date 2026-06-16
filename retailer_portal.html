@@ -1027,7 +1027,10 @@
         }
 
         function logout() {
-            location.reload();
+            console.log('[F12 Debug] Retailer Portal Logout initiated');
+            sessionStorage.clear();
+            localStorage.removeItem('last_active_service');
+            location.href = 'index.html?logout=true';
         }
 
 function switchSetupMode(mode) {

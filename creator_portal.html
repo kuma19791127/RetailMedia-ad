@@ -981,8 +981,10 @@ h2 {
         fetchStats();
 
         function logout() {
-            sessionStorage.removeItem('retailMediaAuth');
-            window.location.replace('index.html');
+            console.log('[F12 Debug] Creator Portal Logout initiated');
+            sessionStorage.clear();
+            localStorage.removeItem('last_active_service');
+            window.location.replace('index.html?logout=true');
         }
     </script>
 

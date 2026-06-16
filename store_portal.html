@@ -1873,13 +1873,18 @@
 
                 // Sync with Login Email
                 try {
+                    console.log("[F12 Debug] Store Portal: Fetching user/me from", `${API_URL}/api/user/me`);
                     const meRes = await fetch(`${API_URL}/api/user/me`);
+                    console.log("[F12 Debug] Store Portal: user/me response status:", meRes.status);
                     const meData = await meRes.json();
+                    console.log("[F12 Debug] Store Portal: user/me response data:", meData);
                     const emailInput = document.getElementById('billing-email');
                     if (emailInput && meData.user && meData.user.email && !meData.user.email.includes('demo')) {
                         if (!emailInput.value) emailInput.value = meData.user.email;
                     }
-                } catch (e) { }
+                } catch (e) {
+                    console.error("[F12 Debug] Store Portal: user/me fetch failed:", e);
+                }
 
                 const list = document.getElementById('tx-list');
                 list.innerHTML = '';
@@ -2249,7 +2254,7 @@
                     <div style="display:grid; grid-template-columns:1fr; gap:10px; border-top:1px solid #eee; padding-top:15px;">
 
                         <button onclick="showPanel('inventory'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
-                        <button onclick="location.href='index.html';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
+                        <button onclick="console.log('[F12 Debug] Store Portal Logout clicked'); sessionStorage.clear(); localStorage.removeItem('last_active_service'); location.href='index.html?logout=true';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
                     </div>
                 `,
                 showConfirmButton: false,

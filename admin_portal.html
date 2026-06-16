@@ -2284,7 +2284,9 @@
         }
 
         function logoutAdmin() {
-            sessionStorage.removeItem('retailMediaAuth');
+            console.log('[F12 Debug] Admin Portal Logout initiated');
+            sessionStorage.clear();
+            localStorage.removeItem('last_active_service');
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'flex';
             document.getElementById('admin-user').value = '';
