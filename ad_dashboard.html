@@ -3146,6 +3146,7 @@
 
     async function submitKyc() {
         const corpId = document.getElementById('kyc-corp-id').value;
+        const duns = document.getElementById('kyc-duns').value;
         if (!corpId || corpId.length !== 13) {
             Swal.fire('エラー', '法人番号は13桁の数字を入力してください。', 'error');
             return;
@@ -3181,6 +3182,8 @@
             if (data.success) {
                 // Set to pending locally
                 localStorage.setItem('retail_kyc_approved', 'pending');
+                localStorage.setItem('demo_kyc_corp_id', corpId);
+                localStorage.setItem('demo_kyc_duns', duns);
                 Swal.fire({
                     title: '✅ 書類提出完了',
                     html: '審査書類の提出が完了しました。<br>運営(Review)ダッシュボードでの<b>承認をお待ちください。</b>',
@@ -3189,7 +3192,7 @@
                     location.reload();
                 });
             } else {
-                Swal.fire('エラー', '提出に失敗しました', 'error');
+                Swal.fire('エラー', data.error || '提出に失敗しました', 'error');
             }
         } catch(e) {
             Swal.fire('エラー', 'サーバーに接続できません', 'error');
@@ -3228,12 +3231,71 @@
     }
 
     function openAdvertiserProfileModal() {
+        // Set initial values
+        document.getElementById('prof-org').value = localStorage.getItem('demo_org') || (window.currentUser ? window.currentUser.org : "") || "";
+        document.getElementById('prof-name').value = localStorage.getItem('demo_name') || (window.currentUser ? window.currentUser.name : "") || "";
+        document.getElementById('prof-email').value = localStorage.getItem('demo_email') || (window.currentUser ? window.currentUser.email : "") || sessionStorage.getItem("retailUserEmail") || "";
+        document.getElementById('prof-pass').value = ""; // clear password field
+        
+        // Also load KYC info if saved
+        document.getElementById('kyc-corp-id').value = localStorage.getItem('demo_kyc_corp_id') || "";
+        document.getElementById('kyc-duns').value = localStorage.getItem('demo_kyc_duns') || "";
+
         document.getElementById('advertiser-profile-modal').style.display = 'flex';
     }
     function closeAdvertiserProfileModal() {
         document.getElementById('advertiser-profile-modal').style.display = 'none';
-        
-        // Optional: Ensure the background scrolls or stops scrolling
+    }
+
+    async function saveAdvertiserProfile() {
+        const org = document.getElementById('prof-org').value;
+        const name = document.getElementById('prof-name').value;
+        const email = document.getElementById('prof-email').value;
+        const pass = document.getElementById('prof-pass').value;
+
+        // Save locally
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_name', name);
+        localStorage.setItem('demo_email', email);
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
+
+        try {
+            const body = { email, name, org };
+            if (pass) {
+                body.password = pass;
+            }
+            const res = await fetch(window.API_BASE_URL + '/api/user/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'プロフィールを保存・同期しました',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                closeAdvertiserProfileModal();
+                // Update display email
+                const emailEl = document.getElementById('user-email');
+                if (emailEl) emailEl.innerText = email;
+                // Update window.currentUser
+                if (!window.currentUser) window.currentUser = {};
+                window.currentUser.email = email;
+                window.currentUser.name = name;
+                window.currentUser.org = org;
+            } else {
+                Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+            }
+        } catch(e) {
+            Swal.fire('エラー', 'サーバーに接続できませんでした', 'error');
+        }
     }
 </script>
 

@@ -3021,7 +3021,7 @@ app.post('/api/admin/agency-verify', express.json(), (req, res) => {
 
 
 // --- CREATOR BANK DATA STORE ---
-const creatorBankData = {};
+const creatorBankData = creatorBanks;
 
 app.post('/api/creator/bank', async (req, res) => {
     const { email, bankName, branchName, accountNum, holderName, idBase64 } = req.body;
@@ -3104,8 +3104,9 @@ app.post('/api/creator/bank', async (req, res) => {
             return res.status(400).json({ error: "【本人確認エラー】AI審査システム一時的エラーのため、登録を却下しました。" });
         }
         
-        creatorBankData[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
+        creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
         console.log(`[Creator] Bank Info Updated & KYC Passed for: ${email}`);
+        if (typeof saveFinanceDB === 'function') saveFinanceDB();
         res.json({ success: true, message: "本人確認（KYC）を通過し、口座情報を保存しました" });
     } catch (e) {
         console.error("KYC Error:", e);
@@ -3116,8 +3117,8 @@ app.post('/api/creator/bank', async (req, res) => {
 app.get('/api/admin/creators', (req, res) => {
     // Merge stats with bank data for Admin view
     // For demo, we just match mock stats to registered bank info conceptually
-    const list = Object.keys(creatorBankData).map(email => {
-        const bd = creatorBankData[email];
+    const list = Object.keys(creatorBanks).map(email => {
+        const bd = creatorBanks[email];
         // Using global CREATOR_STATE for demo purposes based on current live data
         const views = CREATOR_STATE.total_views;
         const manufacturer_ad = Math.floor(views * 0.5);

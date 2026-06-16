@@ -947,31 +947,43 @@ h2 {
             });       }
 
         function showBankSettings() {
+            // Read saved local values if any
+            const savedBank = localStorage.getItem('demo_bank_name') || '';
+            const savedBranch = localStorage.getItem('demo_bank_branch') || '';
+            const savedAccount = localStorage.getItem('demo_bank_account') || '';
+            const savedEmail = localStorage.getItem('demo_bank_email') || sessionStorage.getItem('retailUserEmail') || 'creator@demo.com';
+            const savedHolder = localStorage.getItem('demo_bank_holder') || '';
+
             Swal.fire({
                 title: '収益の受け取り設定',
                 html: `
                     <div style="text-align:left; font-size:0.9rem; margin-top:10px;">
                         <label style="display:block; margin-bottom:5px; color:#555;">銀行名</label>
-                        <input type="text" id="bank-name" class="swal2-input" placeholder="例: みずほ銀行" style="width:80%; margin:0 0 15px 0;">
+                        <input type="text" id="bank-name" class="swal2-input" placeholder="例: みずほ銀行" value="${savedBank}" style="width:80%; margin:0 0 15px 0;">
                         
                         <label style="display:block; margin-bottom:5px; color:#555;">支店名</label>
-                        <input type="text" id="bank-branch" class="swal2-input" placeholder="例: 渋谷支店" style="width:80%; margin:0 0 15px 0;">
+                        <input type="text" id="bank-branch" class="swal2-input" placeholder="例: 渋谷支店" value="${savedBranch}" style="width:80%; margin:0 0 15px 0;">
                         
                         <label style="display:block; margin-bottom:5px; color:#555;">口座番号</label>
-                        <input type="text" id="bank-account" class="swal2-input" placeholder="例: 普通 1234567" style="width:80%; margin:0 0 15px 0;">
+                        <input type="text" id="bank-account" class="swal2-input" placeholder="例: 普通 1234567" value="${savedAccount}" style="width:80%; margin:0 0 15px 0;">
                         
                         <label style="display:block; margin-bottom:5px; color:#555;">連絡先メールアドレス</label>
-                        <input type="email" id="bank-email" class="swal2-input" placeholder="例: creator@example.com" value="creator@demo.com" style="width:80%; margin:0 0 15px 0;">
+                        <input type="email" id="bank-email" class="swal2-input" placeholder="例: creator@example.com" value="${savedEmail}" style="width:80%; margin:0 0 15px 0;">
 
                         <label style="display:block; margin-bottom:5px; color:#555;">口座名義 (カタカナ)</label>
-                        <input type="text" id="bank-holder" class="swal2-input" placeholder="例: ヤマダ タロウ" style="width:80%; margin:0 0 15px 0;">
+                        <input type="text" id="bank-holder" class="swal2-input" placeholder="例: ヤマダ タロウ" value="${savedHolder}" style="width:80%; margin:0 0 15px 0;">
                         
                         <hr style="margin: 15px 0; border: 0.5px solid #eee;">
                         <label style="display:block; margin-bottom:5px; color:#c0392b; font-weight:bold;">本人確認書類 (必須)</label>
                         <p style="font-size:0.75rem; color:#888; margin-top:0;">運転免許証等（※身分証と口座名義が一致しない場合はAIにより登録拒否されます）</p>
-                        <input type="file" id="bank-id-image" accept="image/*" style="width:80%; margin:0 0 15px 0; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                        <div id="bank-upload-zone" style="border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 15px; cursor: pointer; background: #f8f9fa;">
+                            <span id="bank-upload-text" style="color:#3498db; font-weight:bold;">クリックして画像をアップロード</span>
+                        </div>
+                        <input type="file" id="bank-id-image" accept="image/*" style="display:none;">
                         
-                                                <div style="font-size:0.8rem; color:#333; background:#f1f5f9; padding:10px; border-radius:5px; margin-top:10px; text-align:left;">
+                        <div id="bank-ai-kyc-check" style="display:none; margin-bottom:10px; padding:10px; border-radius:6px; font-size:12px; font-weight:bold; line-height:1.5;"></div>
+
+                        <div style="font-size:0.8rem; color:#333; background:#f1f5f9; padding:10px; border-radius:5px; margin-top:10px; text-align:left;">
                             <strong>【報酬振込に関するご案内】</strong><br>
                             ・報酬の振込は「翌月末払い（1ヶ月後）」となります。<br>
                             ・振込手数料（一律145円）はお客様（受取人）のご負担となります。
@@ -979,30 +991,96 @@ h2 {
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: '保存する',
+                confirmButtonText: '保存して管理者に送信',
                 cancelButtonText: 'キャンセル',
+                didOpen: () => {
+                    const zone = document.getElementById('bank-upload-zone');
+                    const fileInput = document.getElementById('bank-id-image');
+                    const uploadText = document.getElementById('bank-upload-text');
+                    const aiZone = document.getElementById('bank-ai-kyc-check');
+
+                    window._bankIdBase64 = null;
+
+                    zone.onclick = () => fileInput.click();
+
+                    fileInput.onchange = () => {
+                        const file = fileInput.files[0];
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            window._bankIdBase64 = e.target.result;
+                            zone.innerHTML = `<img src="${e.target.result}" style="max-height:100px; border-radius:4px;"><br><span style="color:#2ecc71; font-weight:bold; font-size:12px;">✅ ${file.name}</span>`;
+                            
+                            aiZone.style.display = 'block';
+                            aiZone.style.background = '#fef2f2';
+                            aiZone.style.color = '#991b1b';
+                            aiZone.innerHTML = 'アップロードされた画像を読み込み中...';
+                            
+                            setTimeout(() => {
+                                aiZone.style.background = '#f0fdf4';
+                                aiZone.style.color = '#166534';
+                                aiZone.innerHTML = '画像が正常に読み込まれました。保存して管理者に送信できます。';
+                            }, 1000);
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                },
                 preConfirm: () => {
-                    return {
-                        bankName: document.getElementById('bank-name').value,
-                        branchName: document.getElementById('bank-branch').value,
-                        accountNum: document.getElementById('bank-account').value,
-                        holderName: document.getElementById('bank-holder').value,
-                        email: document.getElementById('bank-email').value
+                    const bankName = document.getElementById('bank-name').value;
+                    const branchName = document.getElementById('bank-branch').value;
+                    const accountNum = document.getElementById('bank-account').value;
+                    const email = document.getElementById('bank-email').value;
+                    const holderName = document.getElementById('bank-holder').value;
+                    const idBase64 = window._bankIdBase64;
+
+                    if (!bankName || !branchName || !accountNum || !email || !holderName) {
+                        Swal.showValidationMessage('すべての項目を入力してください');
+                        return false;
                     }
+                    if (!idBase64) {
+                        Swal.showValidationMessage('本人確認書類をアップロードしてください');
+                        return false;
+                    }
+
+                    return { bankName, branchName, accountNum, email, holderName, idBase64 };
                 }
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    const data = result.value;
-                    fetch(`${API_BASE}/api/creator/bank`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    }).then(() => {
-                        Swal.fire('保存しました', '口座情報が更新されました。', 'success');
-                    }).catch(e => {
-                        console.error(e);
-                        Swal.fire('エラー', '保存に失敗しました。', 'error');
+                    Swal.fire({
+                        title: '🤖 AI審査＆送信中...',
+                        html: 'Google Cloud Vision AIで書類を解析・照合しています...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
                     });
+
+                    const payload = result.value;
+                    try {
+                        const res = await fetch(`${API_BASE}/api/creator/bank`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+                        Swal.close();
+
+                        if (res.ok && data.success) {
+                            // Save locally
+                            localStorage.setItem('demo_bank_name', payload.bankName);
+                            localStorage.setItem('demo_bank_branch', payload.branchName);
+                            localStorage.setItem('demo_bank_account', payload.accountNum);
+                            localStorage.setItem('demo_bank_email', payload.email);
+                            localStorage.setItem('demo_bank_holder', payload.holderName);
+
+                            Swal.fire('送信完了', '本人確認審査を通過し、口座情報が管理者に送信されました。', 'success');
+                        } else {
+                            Swal.fire('エラー', data.error || '送信に失敗しました。', 'error');
+                        }
+                    } catch (e) {
+                        Swal.close();
+                        console.error(e);
+                        Swal.fire('エラー', 'サーバーへの接続に失敗しました。', 'error');
+                    }
                 }
             });
         }
