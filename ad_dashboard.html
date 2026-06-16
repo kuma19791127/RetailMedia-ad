@@ -2767,7 +2767,7 @@
 
             try {
                 // Fetch User Info
-                const res = await fetch(`${API_URL}/api/user/me`);
+                const res = await fetch(`${API_URL}/api/user/me`, { credentials: 'include' });
                 const data = await res.json();
                 if (data.success && data.user) {
                     window.currentUser = data.user;
@@ -2826,7 +2826,7 @@
 
         async function updateBudgetDisplays() {
             try {
-                const res = await fetch(`${API_URL}/api/campaigns`);
+                const res = await fetch(`${API_URL}/api/campaigns`, { credentials: 'include' });
                 if(res.ok) {
                     const camps = await res.json();
                     let totalSpend = 0;
