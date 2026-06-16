@@ -2709,10 +2709,10 @@
                 const res = await fetch(`${window.API_BASE_URL}/api/user/me`, { credentials: 'include' });
                 if (!res.ok) {
                     if (res.status === 401) {
-                        console.warn("Session expired (401). Redirecting to login portal.");
-                        sessionStorage.removeItem('retailMediaAuth');
-                        sessionStorage.removeItem('retailUserEmail');
-                        window.location.replace('index.html');
+                        console.warn("[F12 Debug] Session expired (401). Redirecting to login portal and clearing states.");
+                        sessionStorage.clear();
+                        localStorage.removeItem('last_active_service');
+                        window.location.replace('index.html?logout=true');
                         return;
                     }
                 }

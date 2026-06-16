@@ -751,7 +751,9 @@
     <script>
         // Check if the user has a valid session token (cleared on restart or cache clear)
         if (!sessionStorage.getItem('retailMediaAuth')) {
-            window.location.replace('index.html');
+            console.warn("[F12 Debug] No active session. Clearing redirect trace and returning to index.html");
+            localStorage.removeItem('last_active_service');
+            window.location.replace('index.html?logout=true');
         }
     </script>
 

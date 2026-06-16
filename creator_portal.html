@@ -549,10 +549,10 @@ h2 {
             try {
                 const res = await fetch(`${API_BASE}/api/creator/stats`);
                 if (res.status === 401 || res.status === 403) {
-                    console.warn("Session expired or Unauthorized. Redirecting to login...");
+                    console.warn("[F12 Debug] Session expired or Unauthorized. Redirecting to login...");
                     sessionStorage.clear();
-                    localStorage.removeItem('retailMediaSavedEmail');
-                    window.location.replace('index.html');
+                    localStorage.removeItem('last_active_service');
+                    window.location.replace('index.html?logout=true');
                     return;
                 }
                 if (res.ok) {
