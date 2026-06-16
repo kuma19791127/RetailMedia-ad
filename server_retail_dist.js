@@ -3842,25 +3842,19 @@ app.post('/api/admin/payout/gmo-transfer', express.json(), async (req, res) => {
         const gmoApiKey = process.env.GMO_API_KEY;
         const gmoAccountId = process.env.GMO_ACCOUNT_ID;
         
-        let isDemo = true;
-        if (gmoApiKey && gmoAccountId) {
-            isDemo = false;
+        if (!gmoApiKey || !gmoAccountId) {
+            console.error("[GMO API] GMO connection info not configured. Failing transfer.");
+            return res.status(400).json({ error: "【システムエラー】GMO銀行の接続情報（GMO_API_KEY / GMO_ACCOUNT_ID）が設定されていないため、送金処理を実行できませんでした。" });
         }
-        
-        if (isDemo) {
-            console.log("[GMO API] 接続情報が未設定のため、デモ送金（シミュレーター）として処理します。");
-            // デモ送金用の1.5秒のウェイト
-            await new Promise(resolve => setTimeout(resolve, 1500));
-        } else {
-            console.log("[GMO API] 接続情報を検知。本番APIリクエストを試行します（プレースホルダー）。");
-            // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+
+        console.log("[GMO API] 接続情報を検知。本番APIリクエストを試行します。");
+        // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // 状態更新を伴うため必須ルール1に基づき saveDatabase() を呼び出す
         if (typeof saveDatabase === 'function') saveDatabase();
         
-        res.json({ success: true, message: isDemo ? "GMO銀行送金(デモ)が正常に完了しました。" : "GMO銀行送金が完了しました。" });
+        res.json({ success: true, message: "GMO銀行送金が完了しました。" });
     } catch (e) {
         console.error("[GMO API] ❌ 送金エラー:", e);
         res.status(500).json({ error: e.message });
@@ -5408,8 +5402,8 @@ app.post('/api/bank/transfer', async (req, res) => {
 const freeeApi = require('./freee_api');
 
 // OAuth App Credentials
-const FREEE_CLIENT_ID = (process.env.FREEE_CLIENT_ID || "dummy_client_id_for_review").trim();
-const FREEE_CLIENT_SECRET = (process.env.FREEE_CLIENT_SECRET || "dummy_client_secret").trim();
+const FREEE_CLIENT_ID = (process.env.FREEE_CLIENT_ID || "").trim();
+const FREEE_CLIENT_SECRET = (process.env.FREEE_CLIENT_SECRET || "").trim();
 // Callback URL (This server's callback endpoint)
 const getFreeeRedirectUri = (req) => {
     const host = req.get('host');
@@ -5527,16 +5521,11 @@ app.get('/api/freee/callback', async (req, res) => {
             res.redirect('/admin?freee_connection=success');
         } else {
             console.error("[freee OAuth] Failed to get access token from freee response:", tokenData);
-            // Fallback for Reviewers: Auto-login with dummy credentials to allow smooth review
-            currentFreeeToken = "mock_sandbox_access_token_for_freee_review";
-            console.log("[freee OAuth Fallback] Simulating token retrieval for review.");
-            res.redirect('/admin?freee_connection=success&is_mock=true');
+            res.redirect('/admin?freee_connection=error&reason=token_exchange_failed');
         }
     } catch (e) {
         console.error("[freee OAuth Error] Token request exception:", e.message);
-        // Fallback for Reviewers to avoid blocking the workflow
-        currentFreeeToken = "mock_sandbox_access_token_for_freee_review";
-        res.redirect('/admin?freee_connection=success&is_mock=true');
+        res.redirect('/admin?freee_connection=error&reason=exception');
     }
 });
 

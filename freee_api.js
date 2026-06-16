@@ -18,8 +18,7 @@ function getAccessToken() {
         ? serverModule.getFreeeToken() 
         : (process.env.FREEE_ACCESS_TOKEN || null);
     
-    // For review sandbox purposes, if no token, return mock token
-    return token || "mock_sandbox_access_token_for_freee_review";
+    return token;
 }
 
 /**
