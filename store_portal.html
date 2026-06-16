@@ -1004,20 +1004,89 @@
                     window.location.href = 'index.html';
                 }
 
+                // Tab switcher helper for Policy modal
+                window.switchPolicyLang = function(lang) {
+                    const langs = ['ja', 'en', 'zh', 'ko'];
+                    langs.forEach(l => {
+                        const el = document.getElementById('policy-lang-' + l);
+                        const btn = document.getElementById('policy-btn-' + l);
+                        if (el && btn) {
+                            if (l === lang) {
+                                el.style.display = 'block';
+                                btn.style.background = '#6366f1';
+                                btn.style.color = '#ffffff';
+                            } else {
+                                el.style.display = 'none';
+                                btn.style.background = '#e2e8f0';
+                                btn.style.color = '#334155';
+                            }
+                        }
+                    });
+                };
+
                 function showVoiceUsagePolicy() {
                     Swal.fire({
-                        title: '🚨 AIボイススタジオ利用基準',
-                        html: `<div style="text-align:left; font-size:14px; line-height:1.6;">
-                            <p style="color:#e74c3c; font-weight:bold; font-size:16px;">詐欺・暴力に利用するとアカウントは凍結されます。</p>
+                        title: '🚨 AIボイススタジオ利用基準 / Usage Policy',
+                        html: `
+                        <div style="display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                            <button id="policy-btn-ja" onclick="window.switchPolicyLang('ja')" style="flex: 1; padding: 6px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; background: #6366f1; color: white; cursor: pointer; transition: all 0.2s;">日本語</button>
+                            <button id="policy-btn-en" onclick="window.switchPolicyLang('en')" style="flex: 1; padding: 6px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; background: #e2e8f0; color: #334155; cursor: pointer; transition: all 0.2s;">English</button>
+                            <button id="policy-btn-zh" onclick="window.switchPolicyLang('zh')" style="flex: 1; padding: 6px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; background: #e2e8f0; color: #334155; cursor: pointer; transition: all 0.2s;">中文</button>
+                            <button id="policy-btn-ko" onclick="window.switchPolicyLang('ko')" style="flex: 1; padding: 6px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; background: #e2e8f0; color: #334155; cursor: pointer; transition: all 0.2s;">한국어</button>
+                        </div>
+                        
+                        <!-- Japanese -->
+                        <div id="policy-lang-ja" style="display: block; text-align: left; font-size: 13px; line-height: 1.6;">
+                            <p style="color:#e74c3c; font-weight:bold; font-size:15px; margin-top: 0;">詐欺・暴力に利用するとアカウントは凍結されます。</p>
                             <p>本機能は小売店舗内での正常な販促活動（セール案内や商品宣伝等）を目的として提供されています。</p>
                             <p>以下の行為・テキスト入力は固く禁止されており、検知された場合は<b>即座にシステムのアカウントが自動的に凍結（無効化）</b>されます：</p>
-                            <ul style="margin-top:10px; padding-left:20px; color:#c0392b; font-weight:bold;">
+                            <ul style="margin-top: 8px; padding-left: 20px; color: #c0392b; font-weight: bold;">
                                 <li>オレオレ詐欺・還付金詐欺などのなりすましや不正請求テキストの入力</li>
                                 <li>暗証番号・口座情報・身代金の要求などの詐欺文脈</li>
                                 <li>暴力、脅迫、公序良俗に反するテキストの入力</li>
                                 <li>闇バイト等の違法取引への誘導</li>
                             </ul>
-                        </div>`,
+                        </div>
+
+                        <!-- English -->
+                        <div id="policy-lang-en" style="display: none; text-align: left; font-size: 13px; line-height: 1.6;">
+                            <p style="color:#e74c3c; font-weight:bold; font-size:15px; margin-top: 0;">Account will be frozen if used for fraud or violence.</p>
+                            <p>This function is provided for normal promotional activities within retail stores (sale information, product promotions, etc.).</p>
+                            <p>The following acts/text inputs are strictly prohibited. If detected, the system account will be <b>immediately and automatically frozen (disabled)</b>:</p>
+                            <ul style="margin-top: 8px; padding-left: 20px; color: #c0392b; font-weight: bold;">
+                                <li>Entering spoofing or fraudulent billing texts such as phishing or phone scams.</li>
+                                <li>Requesting PINs, bank accounts, or ransom.</li>
+                                <li>Entering texts containing violence, threats, or offending public order and morals.</li>
+                                <li>Recruiting or guiding users to illegal jobs ("Yami-baito" / money mules).</li>
+                            </ul>
+                        </div>
+
+                        <!-- Chinese -->
+                        <div id="policy-lang-zh" style="display: none; text-align: left; font-size: 13px; line-height: 1.6;">
+                            <p style="color:#e74c3c; font-weight:bold; font-size:15px; margin-top: 0;">如用于欺诈或暴力，账户将被冻结。</p>
+                            <p>本功能旨在用于零售店铺内正常的促销活动（促销信息、商品宣传等）。</p>
+                            <p>严禁以下行为/输入以下文本。一经检测，系统账户将<b>立即被自动冻结（禁用）</b>：</p>
+                            <ul style="margin-top: 8px; padding-left: 20px; color: #c0392b; font-weight: bold;">
+                                <li>输入钓鱼、电话诈骗等冒充或欺诈性账单文本。</li>
+                                <li>索取密码、银行账户或赎金。</li>
+                                <li>输入包含暴力、威胁或违反公共秩序与公序良俗的文本。</li>
+                                <li>诱导或招募人员从事非法工作（如“黑工”、洗钱等）。</li>
+                            </ul>
+                        </div>
+
+                        <!-- Korean -->
+                        <div id="policy-lang-ko" style="display: none; text-align: left; font-size: 13px; line-height: 1.6;">
+                            <p style="color:#e74c3c; font-weight:bold; font-size:15px; margin-top: 0;">사기나 폭력에 이용될 경우 계정이 동결됩니다.</p>
+                            <p>본 기능은 소매점 내에서의 정상적인 판촉 활동(세일 안내, 상품 홍보 등)을 목적으로 제공됩니다.</p>
+                            <p>다음 행위 및 텍스트 입력은 엄격히 금지되며, 감지될 경우 <b>즉시 시스템 계정이 자동으로 동결(비활성화)</b>됩니다:</p>
+                            <ul style="margin-top: 8px; padding-left: 20px; color: #c0392b; font-weight: bold;">
+                                <li>보이스피싱, 피싱 등 사칭 또는 부당 청구 텍스트 입력</li>
+                                <li>비밀번호, 계좌 정보, 몸값 요구 등의 사기 문맥</li>
+                                <li>폭력, 협박, 공공질서 및 미풍양속에 반하는 텍스트 입력</li>
+                                <li>고액 알바(자금 세탁, 대포 통장 대여 등)와 같은 불법 거래 유도</li>
+                            </ul>
+                        </div>
+                        `,
                         icon: 'warning',
                         confirmButtonText: '承諾して閉じる'
                     });
