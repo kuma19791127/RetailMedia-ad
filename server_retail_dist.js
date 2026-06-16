@@ -1423,7 +1423,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
                 const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
                 res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
-                res.json({ success: true });
+                res.json({ success: true, token: jwtToken });
             } else {
                 res.json({ success: false, error: "コードが違います" });
             }
@@ -1461,7 +1461,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
             const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
             res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
-            res.json({ success: true });
+            res.json({ success: true, token: jwtToken });
         } else {
             res.json({ success: false, error: "無効なコードです" });
         }

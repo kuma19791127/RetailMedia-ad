@@ -760,6 +760,9 @@
                         if (verifyData.success) {
                             Swal.close();
                             data.success = true;
+                            if (verifyData.token) {
+                                data.token = verifyData.token;
+                            }
                         } else {
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。', 'error');
                             btn.innerText = '新規登録またはメールアドレスでログイン';
@@ -811,6 +814,9 @@
                     if (vData.success) {
                         Swal.close();
                         data.success = true;
+                        if (vData.token) {
+                            data.token = vData.token;
+                        }
                     } else {
                         Swal.fire('認証エラー', vData.error || 'コードが間違っています。', 'error');
                         btn.innerText = '新規登録またはメールアドレスでログイン';
