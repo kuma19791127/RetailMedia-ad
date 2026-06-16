@@ -10,13 +10,15 @@
 
         // Global Fetch Hook to inject credentials for CORS cookies
         const originalFetch = window.fetch;
-        window.fetch = function (input, init) {
-            if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
-                init = init || {};
-                init.credentials = 'include';
-            }
-            return originalFetch(input, init);
-        };
+        if (typeof originalFetch === 'function') {
+            window.fetch = function (input, init) {
+                if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
+                    init = init || {};
+                    init.credentials = 'include';
+                }
+                return originalFetch(input, init);
+            };
+        }
     </script>
 
     <meta charset="UTF-8">

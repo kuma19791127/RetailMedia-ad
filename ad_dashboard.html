@@ -11,13 +11,15 @@
 
         // Global Fetch Hook to inject credentials for CORS cookies
         const originalFetch = window.fetch;
-        window.fetch = function (input, init) {
-            if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
-                init = init || {};
-                init.credentials = 'include';
-            }
-            return originalFetch(input, init);
-        };
+        if (typeof originalFetch === 'function') {
+            window.fetch = function (input, init) {
+                if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
+                    init = init || {};
+                    init.credentials = 'include';
+                }
+                return originalFetch(input, init);
+            };
+        }
 
         // Security Check: Redirect to login if cache/session is cleared or app restarted
         const sessionAuth = sessionStorage.getItem('retailMediaAuth');
@@ -3086,7 +3088,7 @@
     // Check KYC status on load
     window.addEventListener('load', async () => {
         const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
-        const email = checkUser.email || 'advertiser@example.com';
+        const email = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'advertiser@example.com';
         try {
             const res = await fetch(window.API_BASE_URL + '/api/kyc/status?email=' + encodeURIComponent(email));
             const data = await res.json();
@@ -3119,7 +3121,7 @@
         });
 
         const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
-        const email = checkUser.email || 'advertiser@example.com';
+        const email = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'advertiser@example.com';
 
         try {
             const res = await fetch(window.API_BASE_URL + '/api/kyc', {

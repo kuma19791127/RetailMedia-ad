@@ -624,6 +624,9 @@
                             if (verifyData.success) {
                                 Swal.fire('完了', '二段階認証を設定しました！', 'success').then(() => {
                                     const targetRedirect = data.redirect || 'store_portal.html';
+                                    sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: data.role }));
+                                    sessionStorage.setItem('retailUserEmail', email);
+                                    sessionStorage.setItem('retailUserRole', data.role);
                                     saveRememberCredentials(email, password, data.role, targetRedirect);
                                     window.location.href = targetRedirect;
                                 });
@@ -685,6 +688,9 @@
                             if (loginData.success) {
                                 btn.innerText = 'Redirecting...';
                                 const targetRedirect = loginData.redirect || 'store_portal.html';
+                                sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: data.role }));
+                                sessionStorage.setItem('retailUserEmail', email);
+                                sessionStorage.setItem('retailUserRole', data.role);
                                 saveRememberCredentials(email, password, data.role, targetRedirect);
                                 window.location.href = targetRedirect;
                             } else {
@@ -717,6 +723,9 @@
                     } else {
                         btn.innerText = 'Redirecting...';
                         const targetRedirect = data.redirect || 'store_portal.html';
+                        sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: data.role }));
+                        sessionStorage.setItem('retailUserEmail', email);
+                        sessionStorage.setItem('retailUserRole', data.role);
                         saveRememberCredentials(email, password, data.role, targetRedirect);
                         window.location.href = targetRedirect;
                     }
@@ -734,6 +743,9 @@
                 if (email.includes('agency')) { redirect = 'agency_portal.html'; roleStr = 'agency'; }
                 if (email.includes('creator')) { redirect = 'creator_portal.html'; roleStr = 'creator'; }
 
+                sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: roleStr }));
+                sessionStorage.setItem('retailUserEmail', email);
+                sessionStorage.setItem('retailUserRole', roleStr);
                 saveRememberCredentials(email, password, roleStr, redirect);
                 window.location.href = redirect;
             }

@@ -11,13 +11,15 @@
 
         // Global Fetch Hook to inject credentials for CORS cookies
         const originalFetch = window.fetch;
-        window.fetch = function (input, init) {
-            if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
-                init = init || {};
-                init.credentials = 'include';
-            }
-            return originalFetch(input, init);
-        };
+        if (typeof originalFetch === 'function') {
+            window.fetch = function (input, init) {
+                if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
+                    init = init || {};
+                    init.credentials = 'include';
+                }
+                return originalFetch(input, init);
+            };
+        }
 
         // Security Check: Redirect to login if cache/session is cleared or app restarted
         const sessionAuth = sessionStorage.getItem('retailMediaAuth');
@@ -1142,8 +1144,9 @@
 
             // === KYC Authorization Gate ===
             const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
-            const isRealUser2 = checkUser && checkUser.email && checkUser.email !== 'guest@example.com' && checkUser.email !== 'Guest';
-            const isDemoUser2 = checkUser && checkUser.email && checkUser.email.includes('@demo.com');
+            const userEmail2 = checkUser.email || sessionStorage.getItem('retailUserEmail');
+            const isRealUser2 = userEmail2 && userEmail2 !== 'guest@example.com' && userEmail2 !== 'Guest';
+            const isDemoUser2 = userEmail2 && userEmail2.includes('@demo.com');
             if (isRealUser2 && !isDemoUser2) {
                 const kycStatus = localStorage.getItem('retail_kyc_approved');
                 if (kycStatus !== 'true') {
@@ -1186,7 +1189,8 @@
                         try {
                             const duration = await window.getVideoDuration(file);
                             const currentUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
-                            const isDemoUser = currentUser.email && currentUser.email.includes('@demo.com');
+                            const userEmail = currentUser.email || sessionStorage.getItem('retailUserEmail');
+                            const isDemoUser = userEmail && userEmail.includes('@demo.com');
                             
                             if (duration > 60) {
                                 Swal.fire('⚠️ 配信規定（60秒超過）', '本番環境では60秒以内の動画のみ配信可能です。\n※60秒以内の動画を再選択してください。', 'warning');

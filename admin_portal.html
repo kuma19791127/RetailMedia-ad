@@ -11,13 +11,15 @@
 
         // Global Fetch Hook to inject credentials for CORS cookies
         const originalFetch = window.fetch;
-        window.fetch = function (input, init) {
-            if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
-                init = init || {};
-                init.credentials = 'include';
-            }
-            return originalFetch(input, init);
-        };
+        if (typeof originalFetch === 'function') {
+            window.fetch = function (input, init) {
+                if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
+                    init = init || {};
+                    init.credentials = 'include';
+                }
+                return originalFetch(input, init);
+            };
+        }
     </script>
 
     <meta charset="UTF-8">
@@ -2433,7 +2435,9 @@
             }
 
             // Session check for persistence
-            if (sessionStorage.getItem('retailMediaAuth') === 'true') {
+            const authState = sessionStorage.getItem('retailMediaAuth');
+            const isAuthenticated = authState === 'true' || (authState && authState.startsWith('{') && JSON.parse(authState).authenticated);
+            if (isAuthenticated) {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
                 loadData();
