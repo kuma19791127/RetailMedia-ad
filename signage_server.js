@@ -6,8 +6,8 @@ let STATE = {
     "register_side": {
         interrupt: null, // 🔥 Priority 1: Emergency/Voice Broadcast
         paid: [],      // 💰 Priority 2: Paid Ads (High CPM)
-        moment: null,    // ☔ Priority 3a: Moment Delivery (Contextual)
-        impression: null,// 📈 Priority 3b: Impression Delivery (Guaranteed)
+        moment: [],    // ☔ Priority 3a: Moment Delivery (Contextual)
+        impression: [],// 📈 Priority 3b: Impression Delivery (Guaranteed)
         network: null,   // 🌐 Priority 4: Ad Network (Backfill)
 
         default: [] // Empty default as requested (No animation)
@@ -56,8 +56,23 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         }
 
         // 2. Add active Moment / Impression ads
-        if (state.moment && state.moment.status === 'active') playlist.push(state.moment);
-        if (state.impression && state.impression.status === 'active') {
+        if (Array.isArray(state.moment)) {
+            for (const ad of state.moment) {
+                if (ad.status === 'active') playlist.push(ad);
+            }
+        } else if (state.moment && state.moment.status === 'active') {
+            playlist.push(state.moment);
+        }
+
+        if (Array.isArray(state.impression)) {
+            for (const ad of state.impression) {
+                if (ad.status === 'active') {
+                    const current = ad.current_imp || 0;
+                    const target = ad.target_imp || 1000;
+                    if (current < target) playlist.push(ad);
+                }
+            }
+        } else if (state.impression && state.impression.status === 'active') {
             const current = state.impression.current_imp || 0;
             const target = state.impression.target_imp || 1000;
             if (current < target) playlist.push(state.impression);
@@ -137,7 +152,14 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         const state = STATE["register_side"];
 
         // 1. Check Impression Campaign
-        if (state.impression && state.impression.id === adId) {
+        if (Array.isArray(state.impression)) {
+            const foundAd = state.impression.find(ad => ad.id === adId);
+            if (foundAd) {
+                foundAd.current_imp = (foundAd.current_imp || 0) + 1;
+                console.log(`[Analytics] 📡 Beacon Received: Impression Counted (${foundAd.current_imp}/${foundAd.target_imp})`);
+                return true;
+            }
+        } else if (state.impression && state.impression.id === adId) {
             state.impression.current_imp = (state.impression.current_imp || 0) + 1;
             console.log(`[Analytics] 📡 Beacon Received: Impression Counted (${state.impression.current_imp}/${state.impression.target_imp})`);
             return true;
@@ -155,7 +177,19 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
             return true;
         }
 
-        // 3. Network or others
+        // 3. Check Moment Campaign
+        if (Array.isArray(state.moment)) {
+            const foundAd = state.moment.find(ad => ad.id === adId);
+            if (foundAd) {
+                console.log(`[Analytics] 📡 Beacon Received: Moment Ad View (${foundAd.title})`);
+                return true;
+            }
+        } else if (state.moment && state.moment.id === adId) {
+            console.log(`[Analytics] 📡 Beacon Received: Moment Ad View (${state.moment.title})`);
+            return true;
+        }
+
+        // 4. Network or others
         if (state.network && state.network.id === adId) {
             console.log(`[Analytics] 📡 Beacon Received: Network Ad View`);
             return true;
@@ -243,13 +277,25 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
             console.log(`[CMS] ⚡⚡ INTERRUPT Injected: ${newAd.title}`);
         } else if (type === 'MOMENT') {
             newAd.trigger = { weather: 'rain' }; // Demo: Force trigger
-            STATE["register_side"].moment = newAd;
-            console.log(`[CMS] ☔ MOMENT Ad Injected: ${newAd.title}`);
+            if (!Array.isArray(STATE["register_side"].moment)) {
+                STATE["register_side"].moment = [];
+            }
+            const exists = STATE["register_side"].moment.some(ad => ad.id === newAd.id);
+            if (!exists) {
+                STATE["register_side"].moment.push(newAd);
+            }
+            console.log(`[CMS] ☔ MOMENT Ad Injected: ${newAd.title} (Total: ${STATE["register_side"].moment.length})`);
         } else if (type === 'IMPRESSION') {
             newAd.target_imp = metadata.target_imp || 10000;
             newAd.current_imp = 0;
-            STATE["register_side"].impression = newAd;
-            console.log(`[CMS] 📈 IMPRESSION Ad Injected: ${newAd.title}`);
+            if (!Array.isArray(STATE["register_side"].impression)) {
+                STATE["register_side"].impression = [];
+            }
+            const exists = STATE["register_side"].impression.some(ad => ad.id === newAd.id);
+            if (!exists) {
+                STATE["register_side"].impression.push(newAd);
+            }
+            console.log(`[CMS] 📈 IMPRESSION Ad Injected: ${newAd.title} (Total: ${STATE["register_side"].impression.length})`);
         } else {
             // Default to PAID (Priority 2)
             if (!Array.isArray(STATE["register_side"].paid)) {
@@ -271,9 +317,9 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
     setState: (newState) => { STATE = newState; },
 
     clearCampaigns: () => {
-        STATE["register_side"].paid = null;
-        STATE["register_side"].moment = null;
-        STATE["register_side"].impression = null;
+        STATE["register_side"].paid = [];
+        STATE["register_side"].moment = [];
+        STATE["register_side"].impression = [];
         STATE["register_side"].network = null;
         STATE["register_side"].interrupt = null;
         console.log(`[CMS] 🧹 Playlist Cleared`);

@@ -3070,11 +3070,34 @@ app.get('/api/analytics/track', (req, res) => {
                     console.log(`[Optimization Engine] ✨ ID: ${adId} is performing well (Attention: ${Math.round(avgAttention)}%)`);
                 }
             }
+
+            // 必須ルール1: データ永続化 (S3保存)
+            if (typeof saveDatabase === 'function') saveDatabase();
         }
     }
 
     // Call Signage Server Logic
     const recorded = signageServer.recordImpression(adId);
+
+    if (recorded) {
+        (async () => {
+            try {
+                let campaignId = parseInt(adId);
+                if (isNaN(campaignId) && adId && adId.startsWith('ad_')) {
+                    campaignId = parseInt(adId.replace('ad_', ''));
+                }
+                if (!isNaN(campaignId)) {
+                    await dbHelper.query.run(
+                        'UPDATE campaigns SET impressions = impressions + 1, spend = spend + 10 WHERE id = ?',
+                        [campaignId]
+                    );
+                    console.log(`[Database] Incremented impressions/spend in SQLite for campaign ID: ${campaignId}`);
+                }
+            } catch (dbErr) {
+                console.error("[Database] Failed to update campaign impressions in SQLite:", dbErr);
+            }
+        })();
+    }
 
     if (global.productionStats) {
         global.productionStats.scans++;
@@ -3267,10 +3290,40 @@ You must output ONLY a valid JSON object matching the following structure:
         else globalDashboardStats.age50s++;
 
         // キャンペーン全体のインプレッション数加算
-        if (campaigns && campaigns.length > 0) {
-            campaigns[0].imp += 1;
-            campaigns[0].spend += 10; 
+        let matchedCampaign = null;
+        if (adId && typeof campaigns !== 'undefined') {
+            let campaignIdNum = parseInt(adId);
+            if (isNaN(campaignIdNum) && adId.startsWith('ad_')) {
+                campaignIdNum = parseInt(adId.replace('ad_', ''));
+            }
+            if (!isNaN(campaignIdNum)) {
+                matchedCampaign = campaigns.find(c => c.id === campaignIdNum);
+                if (matchedCampaign) {
+                    matchedCampaign.imp = (matchedCampaign.imp || 0) + 1;
+                    matchedCampaign.spend = (matchedCampaign.spend || 0) + 10;
+                }
+            }
         }
+        // Fallback to campaigns[0] if no match (compatibility with legacy flow)
+        if (!matchedCampaign && campaigns && campaigns.length > 0) {
+            campaigns[0].imp += 1;
+            campaigns[0].spend += 10;
+        }
+
+        // Update SQLite Database
+        try {
+            const campaignIdNum = matchedCampaign ? matchedCampaign.id : (campaigns && campaigns[0] ? campaigns[0].id : null);
+            if (campaignIdNum) {
+                await dbHelper.query.run(
+                    'UPDATE campaigns SET impressions = impressions + 1, spend = spend + 10 WHERE id = ?',
+                    [campaignIdNum]
+                );
+                console.log(`[Sensor API] SQLite updated: Campaign ID ${campaignIdNum} impressions/spend incremented.`);
+            }
+        } catch (dbErr) {
+            console.error("[Sensor API] Failed to update campaign stats in SQLite:", dbErr);
+        }
+
         totalRevenue += 5;
 
         // DBから直近50件のログを非同期取得してダッシュボードにブロードキャスト

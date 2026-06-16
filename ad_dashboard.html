@@ -2699,6 +2699,15 @@
             try {
                 // Fetch User Info
                 const res = await fetch(`${window.API_BASE_URL}/api/user/me`, { credentials: 'include' });
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        console.warn("Session expired (401). Redirecting to login portal.");
+                        sessionStorage.removeItem('retailMediaAuth');
+                        sessionStorage.removeItem('retailUserEmail');
+                        window.location.replace('index.html');
+                        return;
+                    }
+                }
                 const data = await res.json();
                 if (data.success && data.user) {
                     window.currentUser = data.user;
