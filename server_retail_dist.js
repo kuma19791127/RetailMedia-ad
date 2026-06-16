@@ -244,7 +244,11 @@ app.post('/api/signage/schedule_voice', (req, res) => {
             // English banned words (lowercase for case-insensitive checks)
             "dark web", "dark net", "illegal job", "money mule", "easy cash", "easy money",
             "fast money", "quick cash", "cash card", "atm transfer", "money transfer",
-            "wire money", "bank transfer", "money laundering", "tax evasion", "legal action"
+            "wire money", "bank transfer", "money laundering", "tax evasion", "legal action",
+            // Chinese banned words
+            "黑工", "高薪兼职", "日结", "日結", "轻松工作", "輕鬆工作", "洗钱", "洗錢", "暗网", "暗網",
+            // Korean banned words
+            "고액알바", "꿀알바", "돈세탁", "송금", "계좌대여", "다크웹", "쉬운일", "당일지급"
         ];
         const textLower = req.body.text.toLowerCase();
         for (let word of bannedWords) {

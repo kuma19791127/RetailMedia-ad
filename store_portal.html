@@ -1033,10 +1033,19 @@
                         "暗証番号を教", "口座情報", "銀行の窓口", "振り込んで", "振込詐欺",
                         "未払い金", "法的措置", "差押", "差し押さえ", "身代金",
                         "事故を起こした", "会社のお金を使い込", "至急お金が必要", "誰にも言わないで",
-                        "名義を貸して", "闇バイト", "受け子", "出し子", "高額報酬", "簡単な仕事"
+                        "名義を貸して", "闇バイト", "受け子", "出し子", "高額報酬", "簡単な仕事",
+                        // English Banned Words (lowercase)
+                        "dark web", "dark net", "illegal job", "money mule", "easy cash", "easy money",
+                        "fast money", "quick cash", "cash card", "atm transfer", "money transfer",
+                        "wire money", "bank transfer", "money laundering", "tax evasion", "legal action",
+                        // Chinese Banned Words
+                        "黑工", "高薪兼职", "日结", "日結", "轻松工作", "輕鬆工作", "洗钱", "洗錢", "暗网", "暗網",
+                        // Korean Banned Words
+                        "고액알바", "꿀알바", "돈세탁", "송금", "계좌대여", "다크웹", "쉬운일", "당일지급"
                     ];
+                    const textLower = text.toLowerCase();
                     for (let word of bannedWords) {
-                        if (text.includes(word)) {
+                        if (textLower.includes(word)) {
                             Swal.fire({
                                 title: '【警告】利用規約違反',
                                 html: `不適切なコンテンツ（禁止ワード: <b>${word}</b>）が検出されました。<br>公序良俗に反する内容やスパム誘導は禁止されています。<br><br><span style="color:red; font-weight:bold;">システムによりアカウントが自動凍結されました。</span>`,

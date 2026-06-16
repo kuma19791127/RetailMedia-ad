@@ -1,126 +1,6 @@
-Found 13 syntax errors:
-Error in patch_creator.js:
-C:\Users\one\Desktop\RetailMedia_System\patch_creator.js:1
-��c
-
-
-SyntaxError: Invalid or unexpected token
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in patch_manual_pdf.js:
-C:\Users\one\Desktop\RetailMedia_System\patch_manual_pdf.js:9
-        \<select id="edit-manual-category" style="width:100%; padding:15px; margin-bottom:10px; border-radius:8px; border:none; background:rgba(0,0,0,0.2); color:white; font-size:1rem; outline:none;">
-        ^
-
-SyntaxError: Invalid or unexpected token
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in patch_optimistic.js:
-C:\Users\one\Desktop\RetailMedia_System\patch_optimistic.js:14
-                    const ytInput = document.getElementById('+prefix+-yt-url');
-                    ^^^^^
-
-SyntaxError: Unexpected token 'const'
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in patch_pdf_ai.js:
-C:\Users\one\Desktop\RetailMedia_System\patch_pdf_ai.js:22
-        const FIXED_URL = \https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\;
-                          ^
-
-SyntaxError: Invalid or unexpected token
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in repair.js:
-C:\Users\one\Desktop\RetailMedia_System\repair.js:1
-��c
-
-
-SyntaxError: Invalid or unexpected token
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in review_script.js:
-C:\Users\one\Desktop\RetailMedia_System\review_script.js:145
-
-
-
-SyntaxError: Unexpected end of input
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in temp_script.js:
-C:\Users\one\Desktop\RetailMedia_System\temp_script.js:165
-                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                ^
-
-SyntaxError: Unexpected token '<'
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in admin_portal.html (script #9):
-C:\Users\one\Desktop\RetailMedia_System\temp_script_8.js:687
-                const agencyResTmp = await fetch('/api/admin/agency');
-                      ^
-
-SyntaxError: Identifier 'agencyResTmp' has already been declared
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in anywhere_retail.html (script #9):
-C:\Users\one\Desktop\RetailMedia_System\temp_script_8.js:81
-                        <span style="font-size:12px; color:#888;">${d}</span><br>
-                              ^^^^^
-
-SyntaxError: Unexpected identifier 'style'
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
-Error in index.html (script #1):
-C:\Users\one\Desktop\RetailMedia_System\temp_script_0.js:3
-      "@context": "https://schema.org",
-                ^
-
-SyntaxError: Unexpected token ':'
-    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
-    at checkSyntax (node:internal/main/check_syntax:76:3)
-
-Node.js v24.13.0
-
-----------------------------------------
+Found 3 syntax errors:
 Error in index.html (script #2):
-C:\Users\one\Desktop\RetailMedia_System\temp_script_1.js:3
+C:\Users\one\.gemini\antigravity\playground\twilight-parsec\temp_script_1.js:3
       "@context": "https://schema.org",
                 ^
 
@@ -132,7 +12,7 @@ Node.js v24.13.0
 
 ----------------------------------------
 Error in index.html (script #3):
-C:\Users\one\Desktop\RetailMedia_System\temp_script_2.js:3
+C:\Users\one\.gemini\antigravity\playground\twilight-parsec\temp_script_2.js:3
       "@context": "https://schema.org",
                 ^
 
@@ -143,12 +23,12 @@ SyntaxError: Unexpected token ':'
 Node.js v24.13.0
 
 ----------------------------------------
-Error in review.html (script #3):
-C:\Users\one\Desktop\RetailMedia_System\temp_script_2.js:145
+Error in index.html (script #4):
+C:\Users\one\.gemini\antigravity\playground\twilight-parsec\temp_script_3.js:3
+      "@context": "https://schema.org",
+                ^
 
-
-
-SyntaxError: Unexpected end of input
+SyntaxError: Unexpected token ':'
     at wrapSafe (node:internal/modules/cjs/loader:1692:18)
     at checkSyntax (node:internal/main/check_syntax:76:3)
 
