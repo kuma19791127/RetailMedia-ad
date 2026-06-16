@@ -327,9 +327,9 @@ app.post('/api/kyc', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
         if (!GEMINI_API_KEY) {
-            console.warn("[KYC AI] GEMINI_API_KEY not configured. Falling back to Demo/Dummy approval.");
-            aiScore = 100;
-            aiDetails.push("【デモモード】審査システム未設定のため、自動的に仮承認されました。");
+            console.error("[KYC AI] GEMINI_API_KEY not configured. Failing KYC check.");
+            aiScore = 0;
+            aiDetails.push("【システムエラー】審査システムが未設定のため、安全を考慮して審査を却下しました。");
         } else if (docs.length > 0) {
             try {
                 const fetch = (await import('node-fetch')).default;
@@ -393,19 +393,18 @@ app.post('/api/kyc', async (req, res) => {
                         aiDetails = aiResult.reasons || ["解析完了"];
                     }
                 } else {
-                    console.warn("[KYC AI] All Gemini models failed. Falling back to Demo/Dummy approval.");
-                    aiScore = 100;
-                    aiDetails.push("【デモモード】AI審査通信エラーのため自動的に仮承認されました。");
+                    console.error("[KYC AI] All Gemini models failed. Failing KYC check.");
+                    aiScore = 0;
+                    aiDetails.push("【システムエラー】AI審査通信エラーのため審査を却下しました。");
                 }
             } catch (aiErr) {
-                console.warn("[KYC AI Analysis Error] Falling back to Demo/Dummy approval:", aiErr);
-                aiScore = 100;
-                aiDetails.push("【デモモード】AI解析処理エラーのため自動的に仮承認されました。");
+                console.error("[KYC AI Analysis Error]", aiErr);
+                aiScore = 0;
+                aiDetails.push("【システムエラー】AI解析処理エラーのため審査を却下しました。");
             }
         } else {
-            console.warn("[KYC AI] Documents missing. Falling back to Demo/Dummy approval.");
-            aiScore = 100;
-            aiDetails.push("【デモモード】提出書類なしのため自動的に仮承認されました。");
+            aiScore = 0;
+            aiDetails.push("提出された書類が見つかりません。");
         }
         
         // Process & upload files to S3 asynchronously
@@ -881,21 +880,10 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
         if (!GEMINI_API_KEY) {
-            console.warn("GEMINI_API_KEY is not configured. Running Backend Rule 5 Fallback (Demo Action).");
-            // Standard Heuristics Fallback (Resilience / Demo mode)
-            const lowerTitle = (title || "").toLowerCase();
-            const badKeywords = ["詐欺", "ウイルス", "警告", "簡単に稼げる", "即日融資", "お試し無料"];
-            const containsBad = badKeywords.some(kw => lowerTitle.includes(kw));
-
-            if (containsBad) {
-                return res.json({
-                    safe: false,
-                    message: "【配信停止】AI判定（Heuristics）によりポリシー違反キーワードが検出されました: " + lowerTitle
-                });
-            }
+            console.error("[Review] GEMINI_API_KEY not configured. Failing review check.");
             return res.json({
-                safe: true,
-                message: "【AI審査フォールバック】デモモードとして正常に承認されました (問題なし)"
+                safe: false,
+                message: "【審査保留】AI動画審査システムが未設定です。安全のため、手動審査が完了するまで配信は保留されます。"
             });
         }
 
@@ -964,20 +952,10 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
         }
 
         if (!requestSuccess) {
-            console.error("[Review] All Gemini models failed. Running Backend Rule 5 Fallback (Demo Guarantee).", lastError);
-            const lowerTitle = (title || "").toLowerCase();
-            const badKeywords = ["詐欺", "ウイルス", "警告", "簡単に稼げる", "即日融資", "お試し無料"];
-            const containsBad = badKeywords.some(kw => lowerTitle.includes(kw));
-
-            if (containsBad) {
-                return res.json({
-                    safe: false,
-                    message: "【配信停止】AI通信障害のためHeuristics判定を適用し、ポリシー違反キーワードを検出しました: " + lowerTitle
-                });
-            }
+            console.error("[Review] All Gemini models failed. Failing review check.", lastError);
             return res.json({
-                safe: true,
-                message: "【AI通信障害フォールバック】デモモードとして正常に承認されました (問題なし)"
+                safe: false,
+                message: "【審査保留】AI動画審査システムに一時的な通信障害が発生しました。安全のため、手動審査が完了するまで配信は保留されます。"
             });
         }
 
@@ -1154,11 +1132,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
     const { token, amount, source, email, buyer_name } = req.body;
     console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}. Email: ${email || 'none'}, Name: ${buyer_name || 'none'}`);
     
-    // デモ決済用のトークンが送られてきた場合は、本番のSquareAPIを叩かずに成功扱いにする
-    if (token === 'demo-applepay' || token === 'demo-local-token' || token === 'demo-error-token') {
-        console.log(`[Square API] Demo token detected (${token}). Bypassing actual Square charge.`);
-        return res.json({ success: true, transactionId: `demo_tx_${Date.now()}` });
-    }
+    console.log(`[Square API] Processing charge.`);
 
     console.log(`[Square API] Using Production Key for actual charge.`);
     
@@ -1528,23 +1502,8 @@ app.post('/api/auth/login', async (req, res) => {
         let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
 
         if (!user) {
-            console.log(`[Auth] 🆕 Automatically registering user: ${email} with role: ${dbRole}`);
-            const hashedPassword = hashPassword(password);
-            await dbHelper.query.run(
-                'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
-                [email, hashedPassword, dbRole]
-            );
-            user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
-        } else {
-            // デモアカウント用のパスワード整合性救済措置
-            const isDemoAccount = email.endsWith('@retail.com') || email.endsWith('@demo.com') || email === 'demo@retail-ad.com';
-            const isDemoPassword = password === 'demo1234!!' || password === 'DemoPass2026!';
-            if (isDemoAccount && isDemoPassword && !verifyPassword(password, user.password)) {
-                const hashedPassword = hashPassword(password);
-                await dbHelper.query.run('UPDATE users SET password = ? WHERE email = ? AND role = ?', [hashedPassword, email, dbRole]);
-                user.password = hashedPassword;
-                console.log(`[Auth] 🔄 Demo Password Auto-Reset for: ${email}`);
-            }
+            console.log(`[Auth] Login failed: User ${email} with role ${dbRole} not found`);
+            return res.status(401).json({ error: "ユーザーが存在しないか、パスワードが正しくありません。" });
         }
 
         // Update name, org, and role if provided and different
@@ -1580,13 +1539,6 @@ app.post('/api/auth/login', async (req, res) => {
 
         if (verifyPassword(password, user.password)) {
             const targetRole = role || user.role;
-            const isDemoUser = email.endsWith('@demo.com') || 
-                               email.endsWith('@retail.com') || 
-                               email === 'demo@retail-ad.com' ||
-                               email.includes('google') ||
-                               email.includes('playtest') ||
-                               email.includes('tester');
-
             // 2FAスキップクッキーの検証
             let skip2FA = false;
             if (req.cookies && req.cookies['2fa_skip']) {
@@ -1600,8 +1552,8 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            // Enforce 2FA verification for all roles (Bypass only if isDemoUser)
-            if (!isDemoUser) {
+            // Enforce 2FA verification for all roles
+            if (true) {
                 // If 2FA is not setup, require setup (QR Code display)
                 if (!user.two_factor_secret) {
                     return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(targetRole), role: targetRole });
@@ -1829,20 +1781,8 @@ app.post('/api/campaigns', async (req, res) => {
                         mimeType = 'video/mp4';
                         console.log(`[AutoReview] YouTube video downloaded successfully. Size: ${videoBuffer.length} bytes`);
                     } catch (dlErr) {
-                        console.warn("[AutoReview] YouTube download failed. Running heuristics fallback check:", dlErr.message);
-                        
-                        // Heuristics 審査（タイトルキーワードチェック）
-                        const lowerTitle = (name || "").toLowerCase();
-                        const badKeywords = ["詐欺", "ウイルス", "警告", "簡単に稼げる", "即日融資", "お試し無料"];
-                        const containsBad = badKeywords.some(kw => lowerTitle.includes(kw));
-
-                        if (containsBad) {
-                            console.warn("[AutoReview] YouTube download failed & contains bad keywords. Rejecting campaign.");
-                            adStatus = 'rejected';
-                        } else {
-                            console.log("[AutoReview] YouTube download failed but name is safe. Campaign approved via heuristics.");
-                            adStatus = 'active';
-                        }
+                        console.error("[AutoReview] YouTube download failed. Failing campaign review:", dlErr.message);
+                        adStatus = 'rejected';
                     }
                 } else if (finalUrl && finalUrl.startsWith('data:')) {
                     base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
@@ -3042,11 +2982,8 @@ app.post('/api/creator/bank', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
         if (!GEMINI_API_KEY) {
-            console.warn("[Bank KYC] GEMINI_API_KEY not configured. Falling back to Demo/Dummy approval.");
-            creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
-            console.log(`[Creator] Bank Info Updated & KYC Passed (Demo Mode) for: ${email}`);
-            if (typeof saveFinanceDB === 'function') saveFinanceDB();
-            return res.json({ success: true, message: "【デモモード】本人確認（KYC）を仮承認し、口座情報を保存しました" });
+            console.error("[Bank KYC] GEMINI_API_KEY not configured. Failing KYC check.");
+            return res.status(400).json({ error: "【システムエラー】本人確認（KYC）システムが未設定のため、安全を考慮して登録を拒否しました。" });
         }
 
         const fetch = (await import('node-fetch')).default;
@@ -3104,11 +3041,8 @@ app.post('/api/creator/bank', async (req, res) => {
                 return res.status(400).json({ error: "【本人確認エラー】AIの判定結果フォーマットが不正のため、登録を却下しました。" });
             }
         } else {
-            console.warn("[Bank KYC] All Gemini models failed or network error. Falling back to Demo/Dummy approval.");
-            creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
-            console.log(`[Creator] Bank Info Updated & KYC Passed (Demo Fallback) for: ${email}`);
-            if (typeof saveFinanceDB === 'function') saveFinanceDB();
-            return res.json({ success: true, message: "【デモモード】通信エラーのため本人確認（KYC）を仮承認し、口座情報を保存しました" });
+            console.error("[Bank KYC] All Gemini models failed or network error. Failing KYC check.");
+            return res.status(500).json({ error: "【本人確認システムエラー】通信エラーまたは解析エラーのため、本人確認を完了できませんでした。時間をおいて再度お試しください。" });
         }
         
         creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
@@ -3908,25 +3842,19 @@ app.post('/api/admin/payout/gmo-transfer', express.json(), async (req, res) => {
         const gmoApiKey = process.env.GMO_API_KEY;
         const gmoAccountId = process.env.GMO_ACCOUNT_ID;
         
-        let isDemo = true;
-        if (gmoApiKey && gmoAccountId) {
-            isDemo = false;
+        if (!gmoApiKey || !gmoAccountId) {
+            console.error("[GMO API] GMO connection info not configured. Failing transfer.");
+            return res.status(400).json({ error: "【システムエラー】GMO銀行の接続情報（GMO_API_KEY / GMO_ACCOUNT_ID）が設定されていないため、送金処理を実行できませんでした。" });
         }
-        
-        if (isDemo) {
-            console.log("[GMO API] 接続情報が未設定のため、デモ送金（シミュレーター）として処理します。");
-            // デモ送金用の1.5秒のウェイト
-            await new Promise(resolve => setTimeout(resolve, 1500));
-        } else {
-            console.log("[GMO API] 接続情報を検知。本番APIリクエストを試行します（プレースホルダー）。");
-            // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+
+        console.log("[GMO API] 接続情報を検知。本番APIリクエストを試行します。");
+        // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // 状態更新を伴うため必須ルール1に基づき saveDatabase() を呼び出す
         if (typeof saveDatabase === 'function') saveDatabase();
         
-        res.json({ success: true, message: isDemo ? "GMO銀行送金(デモ)が正常に完了しました。" : "GMO銀行送金が完了しました。" });
+        res.json({ success: true, message: "GMO銀行送金が完了しました。" });
     } catch (e) {
         console.error("[GMO API] ❌ 送金エラー:", e);
         res.status(500).json({ error: e.message });
@@ -5474,8 +5402,8 @@ app.post('/api/bank/transfer', async (req, res) => {
 const freeeApi = require('./freee_api');
 
 // OAuth App Credentials
-const FREEE_CLIENT_ID = (process.env.FREEE_CLIENT_ID || "dummy_client_id_for_review").trim();
-const FREEE_CLIENT_SECRET = (process.env.FREEE_CLIENT_SECRET || "dummy_client_secret").trim();
+const FREEE_CLIENT_ID = (process.env.FREEE_CLIENT_ID || "").trim();
+const FREEE_CLIENT_SECRET = (process.env.FREEE_CLIENT_SECRET || "").trim();
 // Callback URL (This server's callback endpoint)
 const getFreeeRedirectUri = (req) => {
     const host = req.get('host');
@@ -5593,16 +5521,11 @@ app.get('/api/freee/callback', async (req, res) => {
             res.redirect('/admin?freee_connection=success');
         } else {
             console.error("[freee OAuth] Failed to get access token from freee response:", tokenData);
-            // Fallback for Reviewers: Auto-login with dummy credentials to allow smooth review
-            currentFreeeToken = "mock_sandbox_access_token_for_freee_review";
-            console.log("[freee OAuth Fallback] Simulating token retrieval for review.");
-            res.redirect('/admin?freee_connection=success&is_mock=true');
+            res.redirect('/admin?freee_connection=error&reason=token_exchange_failed');
         }
     } catch (e) {
         console.error("[freee OAuth Error] Token request exception:", e.message);
-        // Fallback for Reviewers to avoid blocking the workflow
-        currentFreeeToken = "mock_sandbox_access_token_for_freee_review";
-        res.redirect('/admin?freee_connection=success&is_mock=true');
+        res.redirect('/admin?freee_connection=error&reason=exception');
     }
 });
 
