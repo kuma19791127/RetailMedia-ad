@@ -2679,6 +2679,7 @@
         window.currentUser = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log("[ad_dashboard Debug] DOMContentLoaded triggered. Fetching /api/user/me...");
             function updateDashboardDate() {
                 const dateSpan = document.getElementById('current-date-text');
                 if (dateSpan) {

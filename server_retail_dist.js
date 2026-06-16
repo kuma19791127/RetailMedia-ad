@@ -1464,6 +1464,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
+    console.log("[API /api/auth/login] Request body:", req.body);
     const { email, password, role, name, org, totpCode } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
@@ -1659,6 +1660,7 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
 });
 
 app.get('/api/user/me', (req, res) => {
+    console.log("[API /api/user/me] Cookies received:", req.cookies);
     const token = req.cookies.token;
     if (token) {
         try {
