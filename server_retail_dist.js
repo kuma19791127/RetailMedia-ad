@@ -1599,8 +1599,8 @@ app.get('/api/user/me', (req, res) => {
             console.error('[Auth] Token verification failed in /me');
         }
     }
-    // Default fall-back for demo consistency if server restarted or token missing
-    res.json({ success: true, user: { email: "store@demo.com", role: "store" } });
+    // Default fall-back: Return 401 Unauthorized instead of silent demo bypass
+    res.status(401).json({ error: "Unauthorized: Active session required" });
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -1690,8 +1690,27 @@ app.post('/api/campaigns', async (req, res) => {
         const processAndInject = async (finalUrl) => {
             let adStatus = 'pending';
             try {
-                if (finalUrl && finalUrl.startsWith('data:')) {
-                    const base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
+                let base64Data = "";
+                let mimeType = "";
+                const isYt = finalUrl && (finalUrl.includes('youtube.com') || finalUrl.includes('youtu.be'));
+
+                if (isYt) {
+                    console.log(`[AutoReview] Detected YouTube campaign video: ${finalUrl}`);
+                    try {
+                        const videoBuffer = await downloadYoutubeVideo(finalUrl);
+                        base64Data = videoBuffer.toString('base64');
+                        mimeType = 'video/mp4';
+                        console.log(`[AutoReview] YouTube video downloaded successfully. Size: ${videoBuffer.length} bytes`);
+                    } catch (dlErr) {
+                        console.error("[AutoReview] YouTube download failed. Rejecting campaign.", dlErr);
+                        adStatus = 'rejected';
+                    }
+                } else if (finalUrl && finalUrl.startsWith('data:')) {
+                    base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
+                    mimeType = finalUrl.startsWith('data:image') ? 'image/jpeg' : 'video/mp4';
+                }
+
+                if (adStatus !== 'rejected' && base64Data) {
                     if (base64Data.length < 500) {
                         adStatus = 'active';
                     } else {
@@ -1702,7 +1721,6 @@ app.post('/api/campaigns', async (req, res) => {
                             adStatus = 'rejected';
                         } else {
                             const fetch = (await import('node-fetch')).default;
-                            const mimeType = finalUrl.startsWith('data:image') ? 'image/jpeg' : 'video/mp4';
                             const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
                             let requestSuccess = false;
                             let aiResponseText = "";
@@ -1758,8 +1776,8 @@ app.post('/api/campaigns', async (req, res) => {
                             }
                         }
                     }
-                } else {
-                    adStatus = 'active'; // YouTube/Empty
+                } else if (adStatus !== 'rejected') {
+                    adStatus = 'active'; // YouTube/Empty without data
                 }
             } catch (err) {
                 console.error("[AutoReview] AI Review failed:", err);
