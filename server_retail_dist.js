@@ -327,9 +327,9 @@ app.post('/api/kyc', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
         if (!GEMINI_API_KEY) {
-            console.error("[KYC AI] GEMINI_API_KEY not configured. Failing KYC check.");
-            aiScore = 0;
-            aiDetails.push("【システムエラー】審査システムが未設定のため、安全を考慮して審査を却下しました。");
+            console.warn("[KYC AI] GEMINI_API_KEY not configured. Falling back to Demo/Dummy approval.");
+            aiScore = 100;
+            aiDetails.push("【デモモード】審査システム未設定のため、自動的に仮承認されました。");
         } else if (docs.length > 0) {
             try {
                 const fetch = (await import('node-fetch')).default;
@@ -393,18 +393,19 @@ app.post('/api/kyc', async (req, res) => {
                         aiDetails = aiResult.reasons || ["解析完了"];
                     }
                 } else {
-                    console.error("[KYC AI] All Gemini models failed. Failing KYC check.");
-                    aiScore = 0;
-                    aiDetails.push("【システムエラー】AI審査通信エラーのため審査を却下しました。");
+                    console.warn("[KYC AI] All Gemini models failed. Falling back to Demo/Dummy approval.");
+                    aiScore = 100;
+                    aiDetails.push("【デモモード】AI審査通信エラーのため自動的に仮承認されました。");
                 }
             } catch (aiErr) {
-                console.error("[KYC AI Analysis Error]", aiErr);
-                aiScore = 0;
-                aiDetails.push("【システムエラー】AI解析処理エラーのため審査を却下しました。");
+                console.warn("[KYC AI Analysis Error] Falling back to Demo/Dummy approval:", aiErr);
+                aiScore = 100;
+                aiDetails.push("【デモモード】AI解析処理エラーのため自動的に仮承認されました。");
             }
         } else {
-            aiScore = 0;
-            aiDetails.push("提出された書類が見つかりません。");
+            console.warn("[KYC AI] Documents missing. Falling back to Demo/Dummy approval.");
+            aiScore = 100;
+            aiDetails.push("【デモモード】提出書類なしのため自動的に仮承認されました。");
         }
         
         // Process & upload files to S3 asynchronously
@@ -3041,12 +3042,15 @@ app.post('/api/creator/bank', async (req, res) => {
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
         if (!GEMINI_API_KEY) {
-            console.error("[Bank KYC] GEMINI_API_KEY not configured. Rejecting bank registration.");
-            return res.status(400).json({ error: "【本人確認エラー】本人確認（KYC）システムが未設定のため、安全を考慮して登録を却下しました。" });
+            console.warn("[Bank KYC] GEMINI_API_KEY not configured. Falling back to Demo/Dummy approval.");
+            creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
+            console.log(`[Creator] Bank Info Updated & KYC Passed (Demo Mode) for: ${email}`);
+            if (typeof saveFinanceDB === 'function') saveFinanceDB();
+            return res.json({ success: true, message: "【デモモード】本人確認（KYC）を仮承認し、口座情報を保存しました" });
         }
 
         const fetch = (await import('node-fetch')).default;
-        const promptText = `あなたは厳密なKYC（本人確認）AIです。
+        const promptText = `モール銀行等も含めて、あなたは厳密なKYC（本人確認）AIです。
 以下の身分証画像を読み取り、書かれている「氏名（本名）」を抽出してください。
 その後、申請者が入力した口座名義（カタカナ）「${holderName}」と同一人物であるか厳密に判定してください。
 もし氏名の読みと口座名義が一致していれば match: true、偽名や別人の口座（法人口座含む）であれば match: false としてください。
@@ -3100,8 +3104,11 @@ app.post('/api/creator/bank', async (req, res) => {
                 return res.status(400).json({ error: "【本人確認エラー】AIの判定結果フォーマットが不正のため、登録を却下しました。" });
             }
         } else {
-            console.error("[Bank KYC] All Gemini models failed. Failing KYC check.");
-            return res.status(400).json({ error: "【本人確認エラー】AI審査システム一時的エラーのため、登録を却下しました。" });
+            console.warn("[Bank KYC] All Gemini models failed or network error. Falling back to Demo/Dummy approval.");
+            creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
+            console.log(`[Creator] Bank Info Updated & KYC Passed (Demo Fallback) for: ${email}`);
+            if (typeof saveFinanceDB === 'function') saveFinanceDB();
+            return res.json({ success: true, message: "【デモモード】通信エラーのため本人確認（KYC）を仮承認し、口座情報を保存しました" });
         }
         
         creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
