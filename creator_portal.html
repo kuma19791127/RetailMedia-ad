@@ -586,6 +586,29 @@ h2 {
                     `;
                 }
 
+                let deliveryInfo = '';
+                if (v.status === 'active') {
+                    deliveryInfo = `
+                        <div style="margin-top: 10px; padding: 10px; background: #e0f2fe; border-radius: 6px; border: 1px solid #bae6fd; font-size: 0.85rem; color: #0369a1; text-align: left; line-height: 1.5;">
+                            <div style="font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                                <span>📢</span> 配信状況: <span style="color: #0284c7; font-weight: 800;">配信中 (稼働)</span>
+                            </div>
+                            <div>📍 配信対象: <strong>STORE-001 (他 全店舗)</strong></div>
+                            <div>⚡ 配信方法: <strong>コラボレーション動画枠 (PAID)</strong></div>
+                            <div>📅 スケジュール: <strong>常時ローテーション配信中</strong></div>
+                        </div>
+                    `;
+                } else {
+                    deliveryInfo = `
+                        <div style="margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; text-align: left; line-height: 1.5;">
+                            <div style="font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                                <span>⚠️</span> 配信状況: <span style="color: #64748b; font-weight: 800;">配信制限中 (停止)</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">コンプライアンス自動審査の基準に満たないため、現在サイネージでの配信は制限されています。</div>
+                        </div>
+                    `;
+                }
+
                 const card = `
                     <div class="video-card">
                         ${badge}
@@ -595,6 +618,7 @@ h2 {
                         <div style="margin-top:10px; font-weight:bold;">
                             ${v.views.toLocaleString()} 再生 / 推定 ¥${v.revenue.toLocaleString()}
                         </div>
+                        ${deliveryInfo}
                         ${scoreHtml}
                     </div>
                 `;
