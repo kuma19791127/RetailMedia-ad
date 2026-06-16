@@ -12,21 +12,28 @@
             ? 'http://localhost:3000' 
             : 'https://nsg3hyme2k.us-east-1.awsapprunner.com'; // TODO: 本番環境のバックエンドURLに変更してください
 
-        // MediaPipe WASM generated OpenGL error warning suppression
+        // Log interceptor to suppress WebGL warnings and YouTube postMessage origin mismatch errors
         (function() {
             const orgWarn = console.warn;
             console.warn = function(...args) {
-                if (args[0] && typeof args[0] === 'string' && (args[0].includes('OpenGL error checking') || args[0].includes('gl_context.cc'))) {
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('OpenGL error checking') || args[0].includes('gl_context.cc') || args[0].includes('postMessage') || args[0].includes('youtube.com'))) {
                     return; // Suppress
                 }
                 orgWarn.apply(console, args);
             };
             const orgLog = console.log;
             console.log = function(...args) {
-                if (args[0] && typeof args[0] === 'string' && (args[0].includes('OpenGL error checking') || args[0].includes('gl_context.cc'))) {
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('OpenGL error checking') || args[0].includes('gl_context.cc') || args[0].includes('postMessage') || args[0].includes('youtube.com'))) {
                     return; // Suppress
                 }
                 orgLog.apply(console, args);
+            };
+            const orgErr = console.error;
+            console.error = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('postMessage') || args[0].includes('DOMWindow') || args[0].includes('youtube.com'))) {
+                    return; // Suppress target origin mismatch error
+                }
+                orgErr.apply(console, args);
             };
         })();
     </script>
@@ -649,7 +656,7 @@ document.body.addEventListener('click', () => {
                             playContent(currentPlaylist[0]);
                         } else {
                             const oldIds = oldPlaylist.map(p => p.id);
-                            const newAds = currentPlaylist.filter(p => !p.id.startsWith('local_') && !oldIds.includes(p.id));
+                            const newAds = currentPlaylist.filter(p => !String(p.id).startsWith('local_') && !oldIds.includes(p.id));
                             
                             if (newAds.length > 0) {
                                 console.log("[Signage Player] 🎯 新しい優先広告を検知しました。現在のベース動画を中断して割り込み再生します。");
