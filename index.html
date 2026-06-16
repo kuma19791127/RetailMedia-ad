@@ -21,6 +21,7 @@
             localStorage.removeItem('last_active_service');
             localStorage.removeItem('last_email');
             localStorage.removeItem('last_password');
+            localStorage.removeItem('retailMediaToken');
         } else if (!urlParams.has('bypass_redirect')) {
             const lastService = localStorage.getItem('last_active_service');
             const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
@@ -819,6 +820,9 @@
 
                 if (data.success) {
                     console.log("[F12 Debug] Login process completed successfully. Redirecting to:", data.redirect);
+                    if (data.token) {
+                        localStorage.setItem('retailMediaToken', data.token);
+                    }
                     sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: role }));
                     sessionStorage.setItem('retailUserEmail', email);
                     

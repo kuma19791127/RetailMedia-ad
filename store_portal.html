@@ -567,14 +567,34 @@
         ? 'http://localhost:3000'
         : 'https://nsg3hyme2k.us-east-1.awsapprunner.com';
 
-    // Global Fetch Hook to inject credentials for CORS cookies
+    // Global Fetch Hook to inject credentials and Authorization headers for cross-domain CORS requests
     const originalFetch = window.fetch;
     if (typeof originalFetch === 'function') {
         try {
             window.fetch = function (input, init) {
+                init = init || {};
                 if (typeof input === 'string' && (input.includes('localhost:3000') || input.includes('awsapprunner.com') || input.startsWith('/api/'))) {
-                    init = init || {};
                     init.credentials = 'include';
+                    
+                    // Inject JWT Token from localStorage if present
+                    const token = localStorage.getItem('retailMediaToken');
+                    if (token) {
+                        init.headers = init.headers || {};
+                        if (init.headers instanceof Headers) {
+                            if (!init.headers.has('Authorization')) {
+                                init.headers.append('Authorization', `Bearer ${token}`);
+                            }
+                        } else if (Array.isArray(init.headers)) {
+                            const hasAuth = init.headers.some(h => h[0].toLowerCase() === 'authorization');
+                            if (!hasAuth) {
+                                init.headers.push(['Authorization', `Bearer ${token}`]);
+                            }
+                        } else {
+                            if (!init.headers['Authorization'] && !init.headers['authorization']) {
+                                init.headers['Authorization'] = `Bearer ${token}`;
+                            }
+                        }
+                    }
                 }
                 return originalFetch(input, init);
             };

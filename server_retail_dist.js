@@ -98,7 +98,14 @@ const getCookieOptions = (req, maxAge = null) => {
 
 // Middleware: API Authentication
 const requireAuth = (req, res, next) => {
-    const token = req.cookies.token;
+    let token = req.cookies.token;
+    
+    // Support Authorization header for cross-domain Bearer tokens (safeguard for third-party cookie restrictions)
+    const authHeader = req.headers.authorization;
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+    }
+
     if (!token) return res.status(401).json({ error: "Unauthorized: No token provided" });
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
@@ -1572,7 +1579,7 @@ app.post('/api/auth/login', async (req, res) => {
             res.cookie('token', jwtToken, getCookieOptions(req));
 
             currentUser = { email, role: targetRole }; // Set Session
-            res.json({ success: true, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
+            res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
         } else {
             console.log(`[Auth] ❌ Login Failed: Password incorrect for: ${email}`);
             res.json({ success: false, error: "パスワードが間違っています。" });
