@@ -1671,7 +1671,6 @@
             await simulateUpload(ratio, url, null, null, false);
         }
         // Collect new params for all upload types
-        // Collect new params for all upload types
         function getCampaignParams() {
             // Scope was removed from UI, defaulting to national
             const scope = "national";
@@ -1703,35 +1702,7 @@
             return `&scope=${scope}&slot=${slot}&brand=${encodeURIComponent(brand)}&planType=${planType}&format=${format}` + cardParams;
         }
 
-        // Initialize Drag & Drop
-        document.addEventListener('DOMContentLoaded', () => {
-            const dropZones = document.querySelectorAll('.drop-zone');
-            dropZones.forEach(zone => {
-                zone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    zone.style.background = '#eef2f7';
-                    zone.style.borderColor = '#3498db';
-                });
-                zone.addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    zone.style.background = '#f8f9fa';
-                    zone.style.borderColor = 'transparent';
-                });
-                zone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    zone.style.background = '#f8f9fa';
-                    zone.style.borderColor = 'transparent';
-
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) {
-                        handleFile(files[0]);
-                    }
-                });
-            });
-        });
-
-        async function handleFile(file) {
-            
+        async function handleFile(file, variant = null, ratio = '16:9') {
             // Add 15s check for real users
             if (file.type.startsWith('video/')) {
                 try {
@@ -1756,86 +1727,6 @@
                 return;
             }
 
-            Swal.fire({
-                title: 'Uploading ' + file.name + '...',
-                html: 'Processing media...',
-                timer: 1000,
-                timerProgressBar: true,
-                didOpen: () => Swal.showLoading()
-            }).then(() => {
-                // No AI Analysis - Manual Input Only
-                const defaultText = ""; // Default empty
-
-                Swal.fire({
-                    title: '📱 QRコード・食材情報の登録',
-                    html: `
-                        <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:6px; font-size:14px; margin-bottom:10px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:5px; color:#2c3e50;">配信プラン:</label>
-                            <select id="swal-plan" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
-                                <option value="cpa">🛒 成果報酬・POS連動型 (A/Bテスト・併売分析：1再生 10円〜)</option>
-                                <option value="moment">☔ モーメント配信 (雨天等の条件連動：1再生 3円〜)</option>
-                                <option value="imp">👁️ インプレッション配信 (不特定多数へ認知拡大：1再生 1円〜)</option>
-                            </select>
-                        </div>
-                        <p style="font-size:13px; color:#7f8c8d;">動画に関連する食材を入力してください。<br>この内容がサイネージのQRコードと食材リストに反映されます。</p>
-                        <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:6px; font-size:14px; margin-top:10px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:5px; color:#2c3e50;">表示する食材リスト (編集可):</label>
-                            <textarea id="ai-ingredients" placeholder="例：スパゲティ、ミートソース、粉チーズ" style="width:100%; height:80px; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-family:sans-serif; font-size:16px;">${defaultText}</textarea>
-                            <p style="font-size:11px; color:#2c3e50; margin-top:5px;">※ 複数の食材は読点（、）やスペースで区切ってください。</p>
-                        </div>
-                    `,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: '確定して配信登録',
-                    cancelButtonText: 'キャンセル',
-                    preConfirm: () => {
-                        return document.getElementById('ai-ingredients').value;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        const ingredients = result.value;
-                        const ratio = file.name.includes('shorts') ? '9:16' : '16:9';
-                        const isImage = file.type.startsWith('image/');
-                        simulateUpload(ratio, null, null, ingredients, isImage);
-                    }
-                });
-            });
-        }
-
-        // Smart Analysis Logic
-        function analyzeFilename(filename) {
-            const name = filename.toLowerCase().replace(/[-_.]/g, " ");
-            const keywords = {
-                "spaghetti": "スパゲティ", "pasta": "パスタ", "noodle": "麺",
-                "meat": "ミートソース", "bolognese": "ミートソース", "beef": "牛肉",
-                "cheese": "粉チーズ", "parmesan": "粉チーズ", "mozarella": "チーズ",
-                "tomato": "トマト", "sauce": "ソース", "basil": "バジル",
-                "salad": "レタス", "vegetable": "野菜ミックス", "oil": "オリーブオイル",
-                "steak": "ステーキ", "grill": "焼肉", "pepper": "黒胡椒",
-                "salt": "岩塩", "onion": "玉ねぎ", "garlic": "ニンニク"
-            };
-
-            let detected = [];
-            for (let k in keywords) {
-                if (name.includes(k) && !detected.includes(keywords[k])) detected.push(keywords[k]);
-            }
-            // Enhance Bolognese specifically if partial match
-            if (name.includes("bolognese") && !detected.includes("スパゲティ")) detected.unshift("スパゲティ");
-            return detected.length > 0 ? detected : [];
-        }
-
-        async function handleUpload(ratio, variant = null) {
-            // Always allow file selection to simulate the "upload experience"
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'video/*,image/*';
-            input.onchange = (e) => {
-                if (e.target.files.length > 0) handleFile(e.target.files[0], variant, ratio);
-            };
-            input.click();
-        }
-
-        async function handleFile(file, variant = null, ratio = '16:9') {
             // --- AI REVIEW CONTENT ---
             Swal.fire({
                 title: '🤖 Google AI 審査中...',
@@ -1846,7 +1737,6 @@
             });
             
             try {
-                
                 const reviewRes = await fetch(window.API_BASE_URL + '/api/creator/review-content', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1858,6 +1748,7 @@
                 const reviewData = await reviewRes.json();
                 
                 if (!reviewData.safe) {
+                    Swal.close();
                     Swal.fire({
                         title: '❌ 審査不合格 (アカウント制限)',
                         html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>',
@@ -1865,19 +1756,20 @@
                     });
                     return; // UPLOAD STOPPED
                 }
+                Swal.close();
             } catch(e) {
                 console.error("Review Error:", e);
+                Swal.close();
             }
 
-            // Check if image or video, ask for BGM (maybe irrelevant for video but consistent UI) 
             let bgm = null;
             let ingredients = "";
-            let promptTitle = file.type.startsWith('image/') ? '🖼️ 画像配信設定' : '🎥 動画配信設定';
+            const isImage = file.type.startsWith('image/');
+            const calculatedRatio = file.name.includes('shorts') ? '9:16' : ratio;
 
-            // Only show prompt if Image (for BGM). Videos upload directly.
-            if (file.type.startsWith('image/')) {
-                const result = await Swal.fire({
-                    title: promptTitle,
+            if (isImage) {
+                const bgmResult = await Swal.fire({
+                    title: '🖼️ 画像配信設定',
                     html: `
                         <div style="text-align:left; font-size:14px;">
                             <p style="margin-bottom:5px; font-weight:bold;">BGMの選択 (画像のみ有効)</p>
@@ -1891,56 +1783,47 @@
                         </div>
                     `,
                     showCancelButton: true,
-                    confirmButtonText: 'アップロード',
-                    preConfirm: () => {
-                        const checkboxes = document.querySelectorAll('.store-checkbox:checked');
-                    const targetStores = Array.from(checkboxes).map(c => c.value);
-
-                    return {
-                            bgm: document.getElementById('swal-bgm').value
-                        };
-                    }
+                    confirmButtonText: '次へ',
+                    cancelButtonText: 'キャンセル'
                 });
-
-                if (!result.isConfirmed) return;
-                bgm = result.value.bgm;
+                if (!bgmResult.isConfirmed) return;
+                bgm = document.getElementById('swal-bgm').value;
             }
 
-            Swal.fire({
-                title: variant ? `Uploading Variant ${variant}...` : 'Uploading...',
-                text: 'Please wait while we upload your media directly to the server.',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
+            const ingredResult = await Swal.fire({
+                title: '📱 QRコード・食材情報の登録',
+                html: `
+                    <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:6px; font-size:14px; margin-bottom:10px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:5px; color:#2c3e50;">配信プラン:</label>
+                        <select id="swal-plan" style="width:100%; padding:8px; border:1px solid #bdc3c7; border-radius:4px;">
+                            <option value="cpa">🛒 成果報酬・POS連動型 (A/Bテスト・併売分析：1再生 10円〜)</option>
+                            <option value="moment">☔ モーメント配信 (雨天等の条件連動：1再生 3円〜)</option>
+                            <option value="imp">👁️ インプレッション配信 (不特定多数へ認知拡大：1再生 1円〜)</option>
+                        </select>
+                    </div>
+                    <p style="font-size:13px; color:#7f8c8d;">動画に関連する食材を入力してください。<br>この内容がサイネージのQRコードと食材リストに反映されます。</p>
+                    <div style="text-align:left; background:#f9f9f9; padding:15px; border-radius:6px; font-size:14px; margin-top:10px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:5px; color:#2c3e50;">表示する食材リスト (編集可):</label>
+                        <textarea id="ai-ingredients" placeholder="例：スパゲティ、ミートソース、粉チーズ" style="width:100%; height:80px; padding:10px; border:1px solid #bdc3c7; border-radius:4px; font-family:sans-serif; font-size:16px;"></textarea>
+                        <p style="font-size:11px; color:#2c3e50; margin-top:5px;">※ 複数の食材は読点（、）やスペースで区切ってください。</p>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: '確定して配信登録',
+                cancelButtonText: 'キャンセル',
+                preConfirm: () => {
+                    return document.getElementById('ai-ingredients').value;
+                }
             });
 
-            try {
-                // Determine Query Params
-                let query = '?filename=' + encodeURIComponent(file.name);
-                if (bgm) query += '&bgm=' + encodeURIComponent(bgm);
-                if (ingredients) query += '&ingredients=' + encodeURIComponent(ingredients);
+            if (!ingredResult.isConfirmed) return;
+            ingredients = ingredResult.value;
 
-                const res = await fetch(window.API_BASE_URL + '/api/ad/upload' + query, {
-                    method: 'POST',
-                    headers: { 'Content-Type': file.type },
-                    body: file
-                });
-
-                if (res.ok) {
-                    if (variant === 'A') {
-                        Swal.fire({ icon: 'info', title: 'Variant A Uploaded', text: 'Now upload Variant B to start comparison.' });
-                    } else if (variant === 'B') {
-                        showABResults();
-                    } else {
-                        Swal.fire({ icon: 'success', title: 'Upload Complete', text: 'Media is now queued for playback!' });
-                        loadData();
-                    }
-                } else {
-                    throw new Error('Upload failed');
-                }
-            } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Upload Error', text: e.message });
-            }
+            // Simulate simulated upload (includes AI review inside simulateUpload, but redundancy here is fine or we can skip it inside simulateUpload if desired - wait, simulateUpload has its own mock review fetch, which is okay since it's just demo logic)
+            simulateUpload(calculatedRatio, null, variant, ingredients, isImage);
         }
+
 
         async function simulateUpload(aspectRatio, ytUrl = null, variant = null, ingredients = null, isImage = false) {
             Swal.fire({ title: '🤖 Google AI 審査中...', html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>', showConfirmButton: false, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -2617,6 +2500,51 @@
                             adEmail = meData.user.email;
                         }
                     } catch(e) {}
+
+                    // --- AI REVIEW CONTENT ---
+                    if (formValues.fileUrl || formValues.ytUrl) {
+                        Swal.fire({
+                            title: '🤖 Google AI 審査中...',
+                            html: '配信コンテンツの安全性をリアルタイム解析しています...<br><span style="font-size:0.8rem; color:#aaa;">Powered by Google Cloud Vertex AI</span>',
+                            showConfirmButton: false,
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+
+                        const reqBody = {
+                            title: formValues.name || formValues.fileName || "Campaign Video",
+                            email: adEmail
+                        };
+                        if (formValues.ytUrl) {
+                            reqBody.ytUrl = formValues.ytUrl;
+                        } else if (formValues.fileUrl) {
+                            reqBody.video_base64 = formValues.fileUrl; // Base64
+                        }
+
+                        const reviewRes = await fetch(`${API_URL}/api/creator/review-content`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(reqBody)
+                        });
+                        
+                        if (!reviewRes.ok) {
+                            Swal.close();
+                            throw new Error(`AI審査APIの呼び出しに失敗しました (Status: ${reviewRes.status})`);
+                        }
+                        
+                        const reviewData = await reviewRes.json();
+                        
+                        if (!reviewData.safe) {
+                            Swal.close();
+                            Swal.fire({
+                                title: '❌ 審査不合格 (アカウント制限)',
+                                html: '<div style="color:red;font-size:0.9rem;text-align:left;">' + reviewData.message + '<br><br><b>アカウントの一部機能がロックされました。</b><br>運営(Admin)による実態審査をお待ちください。</div>',
+                                icon: 'error'
+                            });
+                            return; // UPLOAD STOPPED
+                        }
+                        Swal.close();
+                    }
 
                     console.log(`[Campaign API] Submitting new campaign data to endpoint: ${API_URL}/api/campaigns`);
                     console.log(`[Campaign Debug] Resolved email for upload: ${adEmail}`);
