@@ -246,10 +246,10 @@ app.post('/api/signage/schedule_voice', (req, res) => {
             if (req.body.text.includes(word)) {
                 console.log(`[AI-Voice] 規約違反を検出 (${word}). 拒絶します。`);
                 
-                // ストライク加算と永続化
+                // ストライク加算と永続化 (一発アウトのため、ストライクを一撃で3に設定して即座にBAN)
                 if (ad_email && ad_email !== 'unknown') {
-                    accountStrikes[ad_email] = (accountStrikes[ad_email] || 0) + 1;
-                    console.log(`[Strike] Voice Studio Account ${ad_email} received a strike! Total: ${accountStrikes[ad_email]}`);
+                    accountStrikes[ad_email] = 3;
+                    console.log(`[Strike] Voice Studio Account ${ad_email} committed a critical violation (banned words). BANNED immediately.`);
                     if (typeof saveDatabase === 'function') saveDatabase();
                 }
                 
