@@ -542,6 +542,13 @@ h2 {
         async function fetchStats() {
             try {
                 const res = await fetch(`${API_BASE}/api/creator/stats`);
+                if (res.status === 401 || res.status === 403) {
+                    console.warn("Session expired or Unauthorized. Redirecting to login...");
+                    sessionStorage.clear();
+                    localStorage.removeItem('retailMediaSavedEmail');
+                    window.location.replace('index.html');
+                    return;
+                }
                 if (res.ok) {
                     const data = await res.json();
                     mockVideos = data.videos || [];

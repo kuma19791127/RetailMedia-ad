@@ -85,6 +85,17 @@ const verifyPassword = (password, storedHash) => {
     return hash === verifyHash;
 };
 
+const getCookieOptions = (req, maxAge = null) => {
+    const isProd = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const opts = {
+        httpOnly: true,
+        sameSite: isProd ? 'none' : 'lax',
+        secure: isProd
+    };
+    if (maxAge) opts.maxAge = maxAge;
+    return opts;
+};
+
 // Middleware: API Authentication
 const requireAuth = (req, res, next) => {
     const token = req.cookies.token;
@@ -1349,7 +1360,7 @@ app.post('/api/auth/register', async (req, res) => {
         console.log(`[Auth] 🆕 New User Registered: ${email} (${defaultRole})`);
 
         const token = jwt.sign({ email, role: defaultRole }, JWT_SECRET, { expiresIn: '24h' });
-        res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, getCookieOptions(req));
         res.json({ success: true, redirect: getRedirectUrl(defaultRole) });
     } catch (e) {
         console.error("[Auth Register Error]", e);
@@ -1399,11 +1410,11 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
             const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 2 });
             if (verified) {
                 const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-                res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
+                res.cookie('token', jwtToken, getCookieOptions(req));
                 
                 // 5時間有効な2FAスキップクッキーを発行
                 const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
-                res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
+                res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
                 res.json({ success: true });
             } else {
@@ -1437,11 +1448,11 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
             }
 
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-            res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
+            res.cookie('token', jwtToken, getCookieOptions(req));
 
             // 5時間有効な2FAスキップクッキーを発行
             const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
-            res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
+            res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
             res.json({ success: true });
         } else {
@@ -1550,14 +1561,14 @@ app.post('/api/auth/login', async (req, res) => {
 
                         // 2FA検証に成功したのでスキップクッキーを更新/発行
                         const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
-                        res.cookie('2fa_skip', skipToken, { httpOnly: true, sameSite: 'lax', maxAge: 5 * 60 * 60 * 1000 });
+                        res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
                     }
                 }
             }
 
             // ログイン成功時にJWTトークンを発行してCookieにセット
             const jwtToken = jwt.sign({ email, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-            res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax' });
+            res.cookie('token', jwtToken, getCookieOptions(req));
 
             currentUser = { email, role: targetRole }; // Set Session
             res.json({ success: true, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
