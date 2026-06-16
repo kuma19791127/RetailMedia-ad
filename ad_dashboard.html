@@ -2770,7 +2770,7 @@
 
             try {
                 // Fetch User Info
-                const res = await fetch(`${API_URL}/api/user/me`, { credentials: 'include' });
+                const res = await fetch(`${window.API_BASE_URL}/api/user/me`, { credentials: 'include' });
                 const data = await res.json();
                 if (data.success && data.user) {
                     window.currentUser = data.user;
