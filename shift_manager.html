@@ -834,7 +834,7 @@
             <iframe name="dummyframe_shift" id="dummyframe_shift" style="display:none;"></iframe>
             <form target="dummyframe_shift" action="about:blank" method="POST" onsubmit="setTimeout(doLogin, 10); return true;">
                 <input type="text" id="login-org" placeholder="組織コードを入力 (例: non-logi.inc)" value="non-logi.inc" required autocomplete="organization">
-                <input type="text" id="login-name" placeholder="氏名を入力 (例: Aさん)" required autocomplete="username">
+                <input type="email" id="login-email" name="email" placeholder="メールアドレス" required autocomplete="username">
                 <select id="login-dept">
                     <option value="meat">🥩 畜産</option>
                     <option value="fresh">🐟 生鮮</option>
@@ -842,7 +842,7 @@
                     <option value="deli">🍱 惣菜</option>
                     <option value="bakery">🍞 ベーカリー</option>
                 </select>
-                <input type="email" id="login-email" name="email" placeholder="メールアドレス" value="staff@demo.com" autocomplete="email">
+                <input type="text" id="login-name" placeholder="氏名を入力 (例: Aさん)" value="Demo Store Staff" autocomplete="name">
                 <input type="password" id="login-password" name="password" placeholder="パスワード" required autocomplete="current-password" value="password123">
                 <label style="font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 15px; cursor: pointer; text-align: left;"><input type="checkbox" id="remember-me"> ログイン状態と遷移を維持する</label>
                 <button type="submit">ログインして進む</button>
