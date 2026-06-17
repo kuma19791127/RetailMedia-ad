@@ -78,43 +78,7 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
             if (current < target) playlist.push(state.impression);
         }
 
-        // 3. Scan project-relative base loop folder
-        const fs = require('fs');
-        const path = require('path');
-        const desktopPath = path.join(__dirname, 'base_loop_videos');
-        
-        if (!global.cachedBaseVideos || Date.now() - (global.lastBaseVideoScan || 0) > 60000) {
-            if (fs.existsSync(desktopPath)) {
-                try {
-                    const files = fs.readdirSync(desktopPath);
-                    let baseVideos = [];
-                    for (const f of files) {
-                        if (f.toLowerCase().endsWith('.mp4') || f.toLowerCase().endsWith('.mov')) {
-                            baseVideos.push({
-                                id: `local_${f}`,
-                                title: f,
-                                url: `/desktop_shorts/${encodeURIComponent(f)}`,
-                                aspect_ratio: '16:9',
-                                status: 'active'
-                            });
-                        }
-                    }
-                    // Shuffle the array randomly
-                    for (let i = baseVideos.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [baseVideos[i], baseVideos[j]] = [baseVideos[j], baseVideos[i]];
-                    }
-                    global.cachedBaseVideos = baseVideos;
-                    global.lastBaseVideoScan = Date.now();
-                } catch (e) {
-                    console.error("[CMS] Error reading Desktop shorts:", e);
-                }
-            }
-        }
-        
-        if (global.cachedBaseVideos) {
-            playlist.push(...global.cachedBaseVideos);
-        }
+        // 3. Scan project-relative base loop folder (Disabled: Demo videos are not required)
         
         // 4. Inject Retailer S3 Videos (Dynamic specific or ALL)
         if (global.retailer_videos) {
