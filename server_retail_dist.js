@@ -603,6 +603,9 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_pol
 // --- CREATOR API ---
 
 app.get('/api/review/unlock', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     res.json(CREATOR_STATE.unlockRequests);
 });
@@ -1250,8 +1253,18 @@ app.post('/api/payment/square-refund', async (req, res) => {
 });
 
 // --- RETAILER DASHBOARD APIs ---
-app.get('/api/retailer/dashboard', async (req, res) => {
+app.get('/api/retailer/dashboard', requireAuth, async (req, res) => {
+    // ロールチェック (ストア/リテーラー/管理者以外を拒否)
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+    }
     const storeId = req.query.store_id || "default_store";
+    
+    // 所有者検証 (他店舗の売上データを取得しようとしていないかチェック。管理者はパス)
+    const userPrefix = req.user.org || req.user.email;
+    if (req.user.role !== 'admin' && storeId !== userPrefix) {
+        return res.status(403).json({ success: false, error: "他店舗のダッシュボードにアクセスする権限がありません" });
+    }
     
     try {
         const params = {
@@ -1318,12 +1331,23 @@ app.post('/api/pos/transaction', async (req, res) => {
     }
 });
 
-app.post('/api/retailer/settings', (req, res) => {
+app.post('/api/retailer/settings', requireAuth, (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+    }
     const { store_id, settings } = req.body;
     const sId = store_id || "default_store";
+    
+    // 所有者検証
+    const userPrefix = req.user.org || req.user.email;
+    if (req.user.role !== 'admin' && sId !== userPrefix) {
+        return res.status(403).json({ success: false, error: "他店舗の設定を変更する権限がありません" });
+    }
+    
     if(!storeData[sId]) storeData[sId] = { total_pos_sales: 0 };
     storeData[sId].settings = settings;
-    // pushToS3 will automatically catch this change in the next interval
+    if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: S3永続化
     res.json({ success: true, message: 'Settings saved' });
 });
 
@@ -2048,9 +2072,19 @@ app.get('/api/reports/csv', (req, res) => {
 // Real Upload Endpoint (Production Mode)
 
 // --- Retailer Bulk Signage Setup Email Delivery ---
-app.post('/api/retailer/bulk-email', async (req, res) => {
+app.post('/api/retailer/bulk-email', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+    }
     try {
         const { prefix, list, senderEmail } = req.body;
+        
+        // 所有者検証
+        const userPrefix = req.user.org || req.user.email;
+        if (req.user.role !== 'admin' && prefix !== userPrefix) {
+            return res.status(403).json({ success: false, error: "他社のプレフィックスで送信する権限がありません" });
+        }
         if (!prefix || !list || !Array.isArray(list)) {
             return res.status(400).json({ success: false, error: "Invalid request payload" });
         }
@@ -2285,7 +2319,11 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
 });
 
 // --- Send App Download Link Email ---
-app.post('/api/retailer/send-app-link', async (req, res) => {
+app.post('/api/retailer/send-app-link', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+    }
     try {
         const { email } = req.body;
         if (!email) {
