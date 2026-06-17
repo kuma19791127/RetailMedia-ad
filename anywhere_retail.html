@@ -572,27 +572,37 @@ function copyQrUrl() {
 
     async function reconcileSales() {
         const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value;
+        console.log("[reconcileSales] 売上照合を開始します。対象店舗Email:", email);
         try {
             Swal.fire({title: 'データ照合中...', html: 'POSサーバーの売上計上と<br>各スキャン履歴の整合性を確認しています...', didOpen: () => Swal.showLoading()});
             
             // Get data from backend POS endpoints
+            console.log("[reconcileSales] /api/pos/transactions を取得中...");
             const posRes = await fetch(window.API_BASE_URL + '/api/pos/transactions');
             const posData = await posRes.json();
+            console.log("[reconcileSales] 取得した全POSトランザクション数:", posData.length, "全データ:", JSON.stringify(posData));
             
             // Filter transactions for this retailer's email
             const myTransactions = posData.filter(t => t.billingEmail === email);
+            console.log("[reconcileSales] 自店舗のトランザクション数:", myTransactions.length, "店舗データ:", JSON.stringify(myTransactions));
             const scanTotal = myTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+            console.log("[reconcileSales] 自店舗スキャン売上合計 (scanTotal):", scanTotal);
             
             // Note: If you want to check against daily sales, you'd filter by today's date
             // For now, we compare total logged POS transactions with expected sales
             
+            console.log("[reconcileSales] /api/retailer/dashboard を取得中...");
             const dashRes = await fetch(window.API_BASE_URL + `/api/retailer/dashboard?store_id=${email}`);
             const dashData = await dashRes.json();
+            console.log("[reconcileSales] ダッシュボード取得データ:", JSON.stringify(dashData));
             const dashTotal = dashData.sales || 0; // Using current mock from S3 mock
+            console.log("[reconcileSales] ダッシュボード売上合計 (dashTotal):", dashTotal);
 
             if (scanTotal === dashTotal) {
+                console.log("[reconcileSales] 照合結果: 一致 (scanTotal === dashTotal)");
                 Swal.fire('✅ 照合一致', `売上計上額 (¥${dashTotal}) と<br>スキャン履歴合計 (¥${scanTotal}) が完全に一致しています。`, 'success');
             } else {
+                console.warn("[reconcileSales] 照合結果: 不一致! scanTotal:", scanTotal, "dashTotal:", dashTotal);
                 Swal.fire({
                     icon: 'warning',
                     title: '⚠️ 照合不一致エラー',
@@ -600,6 +610,7 @@ function copyQrUrl() {
                 });
             }
         } catch(e) {
+            console.error("[reconcileSales] 照合失敗エラー:", e);
             Swal.fire('エラー', '照合処理に失敗しました', 'error');
         }
     }

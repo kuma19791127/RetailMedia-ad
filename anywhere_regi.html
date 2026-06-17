@@ -1101,6 +1101,7 @@ function playBeep() {
         let cartItems = [];
 
         async function goToPayment() {
+            console.log("[goToPayment] 決済画面への遷移開始. 合計金額:", total);
             if (total === 0) return alert("商品がありません");
             document.getElementById('page-pos').classList.remove('active');
             document.getElementById('page-payment').classList.add('active');
@@ -1121,7 +1122,9 @@ function playBeep() {
             document.getElementById('google-pay-button').innerHTML = '';
             document.getElementById('apple-pay-button').innerHTML = '';
 
+            console.log("[goToPayment] Square決済フォームを初期化します...");
             initializeSquarePayment(total, 'sq-card-container', async () => {
+                console.log("[goToPayment] Square決済完了コールバックが実行されました");
                 try {
                     const txData = {
                         storeId: currentSession ? currentSession.storeName : "Demo Store",
@@ -1130,23 +1133,29 @@ function playBeep() {
                         items: cartItems.map(i => ({ janCode: i.janCode, name: i.name, price: i.price })),
                         timestamp: new Date().toISOString()
                     };
+                    console.log("[goToPayment] 送信決済データ(txData):", JSON.stringify(txData));
 
                     // Send exact POS transaction data to Admin Server (Fake API)
                     try {
+                        console.log("[goToPayment] /api/admin/sales への送信を開始します...");
                         const syncRes = await fetch(API_URL + '/api/admin/sales', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(txData)
                         });
+                        const syncResJson = await syncRes.json();
+                        console.log("[goToPayment] /api/admin/sales 応答:", JSON.stringify(syncResJson));
                         logDebug("✅ [SERVER-SYNC] 決済データ送信成功: " + total + "円");
                     } catch(e) { 
-                        console.log('Admin sync mock fallback', e); 
+                        console.error('Admin sync mock fallback error:', e); 
                         logDebug("⚠️ [SERVER-SYNC] 通信エラー・オフライン保存モード");
                     }
 
                     // --- DynamoDB への実データ送信 ---
                     try {
-                        await fetch(window.API_BASE_URL + '/api/pos/transaction', {
+                        const url = window.API_BASE_URL + '/api/pos/transaction';
+                        console.log(`[goToPayment] ${url} への送信を開始します...`);
+                        const dynamoRes = await fetch(url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1155,6 +1164,8 @@ function playBeep() {
                                 items: txData.items
                             })
                         });
+                        const dynamoResJson = await dynamoRes.json();
+                        console.log("[goToPayment] /api/pos/transaction 応答:", JSON.stringify(dynamoResJson));
                         logDebug("✅ [DynamoDB] 決済データの保存に成功しました！");
                     } catch(dynamoErr) { 
                         console.error("DynamoDB sync failed", dynamoErr);
@@ -1181,6 +1192,7 @@ function playBeep() {
                         text: '決済が完了し、本部に売上データが送信されました。'
                     }).then(() => { resetPos(); });
                 } catch (e) {
+                    console.error("[goToPayment] 決済処理エラー:", e);
                     Swal.fire('エラー', '本部の通信に失敗しました (オフライン仮保存)', 'warning').then(() => { resetPos(); });
                 }
             });
@@ -1203,9 +1215,13 @@ function playBeep() {
         }
 
         async function onScanSuccess(code) {
+            console.log("[onScanSuccess] スキャン検知. バーコード:", code);
     if (typeof playBeep === 'function') playBeep();
             logDebug(`[SCAN EVENT] Raw Barcode Read: ${code}`);
-            if (isPaused) return;
+            if (isPaused) {
+                console.log("[onScanSuccess] スキャナーは現在一時停止中です");
+                return;
+            }
             isPaused = true;
             const mask = document.getElementById('mask');
             document.getElementById('mask-msg').innerText = "Searching db...";

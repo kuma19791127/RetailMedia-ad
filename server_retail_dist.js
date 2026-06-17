@@ -1375,31 +1375,77 @@ app.get('/api/retailer/dashboard', requireAuth, async (req, res) => {
 
 // --- DynamoDB POS Transaction API ---
 app.post('/api/pos/transaction', async (req, res) => {
+    console.log("[API POST /api/pos/transaction] 受信データ:", JSON.stringify(req.body));
     try {
         const { store_id, total_amount, items } = req.body;
-        if (!store_id) return res.status(400).json({ success: false, error: "store_id is required" });
+        if (!store_id) {
+            console.error("[API POST /api/pos/transaction] エラー: store_id がありません");
+            return res.status(400).json({ success: false, error: "store_id is required" });
+        }
         
-        const timestamp = Date.now().toString();
+        const timestamp = Date.now();
         const transaction_id = `tx_${timestamp}_${Math.floor(Math.random()*1000)}`;
         
-        const params = {
-            TableName: 'RetailMediaTransactions',
-            Item: {
-                store_id: store_id,
-                timestamp: timestamp,
-                transaction_id: transaction_id,
-                total_amount: total_amount || 0,
-                items: items || [],
-                created_at: new Date().toISOString()
-            }
-        };
+        // 1. DynamoDB への保存処理 (失敗しても決済全体を落とさないよう個別 try-catch)
+        try {
+            const params = {
+                TableName: 'RetailMediaTransactions',
+                Item: {
+                    store_id: store_id,
+                    timestamp: timestamp.toString(),
+                    transaction_id: transaction_id,
+                    total_amount: total_amount || 0,
+                    items: items || [],
+                    created_at: new Date().toISOString()
+                }
+            };
+            await docClient.send(new PutCommand(params));
+            console.log(`[DynamoDB] 保存成功: ${transaction_id} (store: ${store_id})`);
+        } catch (dynamoErr) {
+            console.error("[DynamoDB Error] 保存失敗 (フォールバックしてローカルDBに保存します):", dynamoErr.message);
+        }
 
-        await docClient.send(new PutCommand(params));
-        console.log(`[DynamoDB] Saved transaction ${transaction_id} for store ${store_id}`);
+        // 2. メモリ (posTransactions) への追加
+        const itemsData = items || [];
+        const newTx = {
+            id: transaction_id,
+            companyName: store_id,
+            storeName: store_id,
+            totalAmount: Number(total_amount) || 0,
+            billingEmail: 'store@demo.com',
+            items: itemsData,
+            status: 'completed',
+            timestamp: timestamp
+        };
+        posTransactions.push(newTx);
+        console.log("[POS Memory] トランザクションを追加しました:", transaction_id);
+
+        // 3. ローカルデータベース (SQLite / PostgreSQL) への保存
+        try {
+            await dbHelper.query.run(
+                'INSERT INTO pos_transactions (id, company_name, store_name, total_amount, billing_email, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    transaction_id,
+                    store_id,
+                    store_id,
+                    Number(total_amount) || 0,
+                    'store@demo.com',
+                    JSON.stringify(itemsData),
+                    'completed',
+                    timestamp
+                ]
+            );
+            console.log(`[POS DB] トランザクションをデータベースに保存しました: ${transaction_id}`);
+        } catch (dbErr) {
+            console.error(`[POS DB] データベース保存失敗:`, dbErr.message);
+        }
+
+        // 4. S3 への即時保存の徹底 (必須ルール1)
+        saveDatabase();
 
         res.json({ success: true, transaction_id });
     } catch (err) {
-        console.error("[DynamoDB Error]:", err);
+        console.error("[API POST /api/pos/transaction] 致命的エラー:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
