@@ -330,6 +330,9 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
     if (schedule_time) {
         // Schedule it
         const sTime = new Date(schedule_time).getTime();
+        if (isNaN(sTime)) {
+            return res.status(400).json({ success: false, error: "無効な予約日時フォーマットです。" });
+        }
         if (sTime > Date.now()) {
             scheduledBroadcasts.push({
                 scheduleTime: sTime,
@@ -338,6 +341,8 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
             console.log(`[Schedule] Added broadcast: ${JSON.stringify(metadata)} for ${new Date(sTime).toLocaleString()}`);
             if (typeof saveDatabase === 'function') saveDatabase();
             return res.json({ success: true, message: "予約配信を設定しました", scheduled_for: sTime });
+        } else {
+            return res.status(400).json({ success: false, error: "過去の日時は予約できません。" });
         }
     }
     
@@ -4267,6 +4272,10 @@ app.post('/api/manualhelp/video-to-steps', requireAuth, async (req, res) => {
 app.post('/api/manualhelp/translate-steps', requireAuth, async (req, res) => {
     try {
         const { texts, target } = req.body;
+        if (!texts || !Array.isArray(texts)) {
+            console.warn("[ManualHelp AI] Invalid texts array format for translation");
+            return res.status(400).json({ error: "texts must be an array" });
+        }
         const apiKey = process.env.GCP_API_KEY || "INSERT_API_KEY_HERE_AFTER_CLONING";
         
         console.log(`[ManualHelp AI] Translating ${texts.length} steps to ${target} via Google Cloud Translation API`);
@@ -4313,30 +4322,48 @@ app.post('/api/voice/synthesize', requireAuth, async (req, res) => {
             return res.json({ success: true, audioBase64: DUMMY_AUDIO_BASE64 });
         }
         
-        const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}`;
-        const response = await fetch(FIXED_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: `You are an AI voice generator. Generate a pristine voice track of the following text with this style: ${stylePrompt}. Text: ${text}` }] }],
-                generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } } }
-            })
-        });
-        if (!response.ok) {
-            const err = await response.text();
-            console.error('Gemini TTS Error:', err);
-            console.warn('[Gemini TTS] API failure. Falling back to Demo Audio.');
-            return res.json({ success: true, audioBase64: DUMMY_AUDIO_BASE64 });
+        const ttsModels = ['gemini-2.5-flash-preview-tts', 'gemini-2.5-flash'];
+        let audioBase64 = null;
+        let requestSuccess = false;
+
+        for (const model of ttsModels) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                console.log(`[Gemini TTS] Requesting audio synthesis using model: ${model}`);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: `You are an AI voice generator. Generate a pristine voice track of the following text with this style: ${stylePrompt || 'natural'}. Text: ${text}` }] }],
+                        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName || 'Puck' } } } }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    let audioPart = null;
+                    if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+                        audioPart = data.candidates[0].content.parts.find(p => p.inlineData);
+                    }
+                    if (audioPart && audioPart.inlineData) {
+                        audioBase64 = audioPart.inlineData.data;
+                        requestSuccess = true;
+                        console.log(`[Gemini TTS] Successfully generated audio using model: ${model}`);
+                        break;
+                    }
+                } else {
+                    const errText = await response.text();
+                    console.warn(`[Gemini TTS] Model ${model} returned non-OK status. Error details:`, errText);
+                }
+            } catch (err) {
+                console.warn(`[Gemini TTS] Model ${model} request failed:`, err.message);
+            }
         }
-        const data = await response.json();
-        let audioPart = null;
-        if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
-            audioPart = data.candidates[0].content.parts.find(p => p.inlineData);
-        }
-        if (audioPart && audioPart.inlineData) {
-            res.json({ success: true, audioBase64: audioPart.inlineData.data });
+
+        if (requestSuccess && audioBase64) {
+            res.json({ success: true, audioBase64 });
         } else {
-            console.warn('[Gemini TTS] No audio returned. Falling back to Demo Audio.');
+            console.warn('[Gemini TTS] All models failed. Falling back to Demo Audio.');
             res.json({ success: true, audioBase64: DUMMY_AUDIO_BASE64 });
         }
     } catch (error) {
