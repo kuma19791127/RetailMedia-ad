@@ -2466,6 +2466,10 @@ net user SignagePlayer /delete 2>nul
 // --- Retailer Video Upload (S3 Direct) ---
 app.post('/api/retailer/upload', requireAuth, async (req, res) => {
     try {
+        // ロールチェック (ストア/リテーラー/管理者以外を拒否)
+        if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+        }
         const { fileData, filename, targetStore } = req.body;
         const prefix = req.user.org || req.user.email; // Bodyのprefixを無視し、JWTから取得
         if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
@@ -2627,6 +2631,10 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
 });
 
 app.get('/api/retailer/videos', requireAuth, (req, res) => {
+    // ロールチェック (ストア/リテーラー/管理者以外を拒否)
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+    }
     const prefix = req.user.org || req.user.email; // Queryのprefixを無視し、JWTから取得
     if (!global.retailer_videos) global.retailer_videos = [];
     const vids = global.retailer_videos.filter(v => v.retailer_prefix === prefix);
@@ -2634,6 +2642,10 @@ app.get('/api/retailer/videos', requireAuth, (req, res) => {
 });
 
 app.delete('/api/retailer/videos/:id', requireAuth, (req, res) => {
+    // ロールチェック (ストア/リテーラー/管理者以外を拒否)
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
+    }
     if (!global.retailer_videos) return res.status(404).json({ success: false, error: "動画リストが初期化されていません" });
     
     const targetVideo = global.retailer_videos.find(v => v.id === req.params.id);
@@ -2849,7 +2861,8 @@ app.get('/api/ad/analytics', async (req, res) => {
 app.get('/api/signage/playlist', (req, res) => {
     console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
     const location = req.query.location || 'register_side';
-    let playlist = signageServer.getPlaylist(location, false, req.query.storeId);
+    const storeId = req.query.storeId || 'STORE_001'; // 安全なデフォルトフォールバック
+    let playlist = signageServer.getPlaylist(location, false, storeId);
 
     // [Fix] Force Remove Default "Spaghetti" Demo Content if present
     if (playlist && playlist.length > 0 && playlist[0].id === 'ad_default') {
@@ -3390,6 +3403,11 @@ You must output ONLY a valid JSON object matching the following structure:
             } catch (geminiErr) {
                 console.error("[Gemini Face AI] Analysis failed, falling back to manual or default values:", geminiErr);
             }
+        }
+
+        // 年齢のパース失敗 (NaN) に対する安全なデフォルトフォールバック
+        if (isNaN(detectedAge) || detectedAge <= 0) {
+            detectedAge = 25;
         }
 
         // 判定完了後、安全のために画像データを即時破棄（メモリ解放）
