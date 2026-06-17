@@ -1162,6 +1162,12 @@ app.post('/api/payment/square-charge', async (req, res) => {
     const { token, amount, source, email, buyer_name } = req.body;
     console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}. Email: ${email || 'none'}, Name: ${buyer_name || 'none'}`);
     
+    const chargeAmount = Number(amount);
+    if (isNaN(chargeAmount) || chargeAmount <= 0) {
+        console.warn(`[Square API] Invalid payment amount: ${amount}`);
+        return res.status(400).json({ success: false, error: '無効な決済金額です。' });
+    }
+    
     console.log(`[Square API] Processing charge.`);
 
     console.log(`[Square API] Using Production Key for actual charge.`);
@@ -1861,6 +1867,10 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
 
         // Handle Agency Commission Match
         let appliedPrice = parseInt(budget) || 10000;
+        if (isNaN(appliedPrice) || appliedPrice <= 0) {
+            console.warn(`[Campaign] Invalid budget amount: ${budget}`);
+            return res.status(400).json({ error: "無効な予算金額です。正の数値を入力してください。" });
+        }
         let matchedAgency = null;
         if (agencyReferrals) {
             for (const email of Object.keys(agencyReferrals)) {
@@ -3941,7 +3951,10 @@ async function sendSESEmail(toAddress, subject, bodyText) {
 }
 
 // AWS SES Send Email (Invoice / Admin)
-app.post('/api/admin/billing/send-email', async (req, res) => {
+app.post('/api/admin/billing/send-email', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     const { to, amount } = req.body;
     const dateStr = new Date().toISOString().split('T')[0];
     
@@ -3957,7 +3970,10 @@ app.post('/api/admin/billing/send-email', async (req, res) => {
 });
 
 // AWS SES Payout Emails for Creators and Stores
-app.post('/api/admin/creators/send-email', async (req, res) => {
+app.post('/api/admin/creators/send-email', requireAuth, async (req, res) => {
+  if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "管理者権限が必要です" });
+  }
   const { to, amount, type } = req.body;
   const dateStr = new Date().toISOString().split('T')[0];
   const payoutAmount = Number(amount) || 0;
@@ -3984,14 +4000,20 @@ app.post('/api/admin/creators/send-email', async (req, res) => {
 const processingGmoTransfers = new Set(); // Mutex lock for GMO Transfers
 
 // GMOあおぞらネット銀行 API 振込実行 (またはデモ送金)
-app.post('/api/admin/payout/gmo-transfer', async (req, res) => {
+app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        console.warn(`[GMO API] Unauthorized payout attempt by ${req.user.email}`);
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+
     const { type, targetIds } = req.body;
     if (!type || !targetIds || !Array.isArray(targetIds) || targetIds.length === 0) {
         return res.status(400).json({ error: "Invalid request parameters" });
     }
     
-    // Mutexロックの獲得（二重実行防止）
-    const lockKey = `${type}:${targetIds.join(',')}`;
+    // Mutexロックの獲得（二重実行防止。IDの並び順が異なっても確実に同じロックキーにするためソート）
+    const sortedIds = [...targetIds].sort();
+    const lockKey = `${type}:${sortedIds.join(',')}`;
     if (processingGmoTransfers.has(lockKey)) {
         return res.status(409).json({ error: "現在、同じ対象への送金処理を実行中です。" });
     }
@@ -4121,28 +4143,8 @@ let campaigns = [
     { id: 2, name: "New Product Launch Video", start: "2026-04-01", end: "2026-04-15", budget: 15000, spend: 0, imp: 0, status: "pending" }
 ];
 
-// --- Server-Sent Events (SSE) ---
+// --- Clients Data (For Agency/Advertiser database persistence) ---
 let clients = [];
-setInterval(() => {
-    clients.forEach(c => c.write(':\n\n'));
-}, 30000); // 30s keep-alive heartbeat
-
-app.get('/events', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
-
-    clients.push(res);
-    req.on('close', () => {
-        clients = clients.filter(c => c !== res);
-    });
-});
-
-// Broadcast Event
-function broadcastEvent(data) {
-    clients.forEach(c => c.write(`data: ${JSON.stringify(data)}\n\n`));
-}
 
 
 
