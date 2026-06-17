@@ -92,9 +92,6 @@ const getCookieOptions = (req, maxAge = null) => {
         sameSite: isProd ? 'none' : 'lax',
         secure: isProd
     };
-    if (isProd) {
-        opts.domain = '.retail-ad.com';
-    }
     if (maxAge) opts.maxAge = maxAge;
     return opts;
 };
