@@ -336,6 +336,7 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
                 metadata: metadata
             });
             console.log(`[Schedule] Added broadcast: ${JSON.stringify(metadata)} for ${new Date(sTime).toLocaleString()}`);
+            if (typeof saveDatabase === 'function') saveDatabase();
             return res.json({ success: true, message: "予約配信を設定しました", scheduled_for: sTime });
         }
     }
@@ -343,6 +344,7 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
     // Immediate broadcast
     console.log(`[Signage] Immediate voice broadcast: ${JSON.stringify(metadata)}`);
     signageServer.injectCampaign('16:9', metadata, 'INTERRUPT');
+    if (typeof saveDatabase === 'function') saveDatabase();
     res.json({ success: true, message: "サイネージへ即時配信しました" });
 });
 
@@ -1134,6 +1136,7 @@ app.post('/api/creator/upload', requireAuth, (req, res) => {
 
         // Broadcast reload event to all signage players
         broadcastEvent({ type: 'force_reload' });
+        if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true, video: newVideo, finalUrl: finalUrl });
     };
 
@@ -2118,6 +2121,7 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
             if (signageServer && signageServer.injectCampaign) {
                 signageServer.injectCampaign('16:9', metadata, type);
             }
+            if (typeof saveDatabase === 'function') saveDatabase();
         };
 
         const rawUrl = url || file_url || youtube_url || "";
