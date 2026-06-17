@@ -346,22 +346,18 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
     res.json({ success: true, message: "サイネージへ即時配信しました" });
 });
 
-express.static.mime.define({ 'video/quicktime': ['mov'] });
-app.use(express.static(__dirname, {
-    dotfiles: 'allow',
-    setHeaders: (res, filepath) => {
-        if (filepath.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-        }
-    }
-})); // Serve root files
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
-
-
 // --- Advertiser KYC (Review) System ---
 let kycRequests = [];
+const processingKycRequests = new Set();
+const processingKycStatusUpdates = new Set();
 
 app.post('/api/kyc', requireAuth, async (req, res) => {
+    const userEmail = req.user.email;
+    if (processingKycRequests.has(userEmail)) {
+        return res.status(409).json({ error: "現在、KYC申請の解析処理を実行中です。しばらくお待ちください。" });
+    }
+    processingKycRequests.add(userEmail);
+
     try {
         const docs = req.body.documents || [];
         const isCorp = !!(req.body.corpId && req.body.corpId.length === 13);
@@ -397,7 +393,7 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
 
 【指示】
 1. 画像から文字をOCRで読み取り、申告情報と一致している部分を抽出してください。
-2. 最終的な「本人確認の一致率スコア（0〜100）」と、「一致した具体的な理由（簡潔に構成された配列）」を以下のJSON形式でのみ出力してください（Markdownのバッククォートは不要です）。
+2. 最終的な「本人確認の一致率スコア（0〜100）」と、「一致した具体的な理由（簡潔に構成された配列）」を以下のJSON形式でのみ出力してください（Markdown of バッククォートは不要です）。
 {"score": 95, "reasons": ["運転免許証の氏名一致", "登記簿の法人番号一致"]}`;
 
                 const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
@@ -476,7 +472,7 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
 
         const newReq = {
             id: 'kyc_' + Date.now(),
-            userEmail: req.user.email, // ログインしたユーザーのメールアドレスを強制
+            userEmail: req.user.email,
             orgName: orgName,
             personName: personName,
             corpId: corpId,
@@ -495,6 +491,8 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
     } catch(err) {
         console.error(err);
         res.status(500).json({ error: "Internal Server Error" });
+    } finally {
+        processingKycRequests.delete(userEmail);
     }
 });
 
@@ -513,14 +511,24 @@ app.post('/api/kyc/:id/status', requireAuth, (req, res) => {
     }
     const reqId = req.params.id;
     const { status } = req.body;
-    const target = kycRequests.find(r => r.id === reqId);
-    if (target) {
-        target.status = status;
-        console.log(`[KYC] Request ${reqId} status updated to ${status} by admin ${req.user.email}`);
-        if (typeof saveFinanceDB === 'function') saveFinanceDB();
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ error: "Not found" });
+
+    if (processingKycStatusUpdates.has(reqId)) {
+        return res.status(409).json({ error: "現在、該当の申請ステータスを更新中です。" });
+    }
+    processingKycStatusUpdates.add(reqId);
+
+    try {
+        const target = kycRequests.find(r => r.id === reqId);
+        if (target) {
+            target.status = status;
+            console.log(`[KYC] Request ${reqId} status updated to ${status} by admin ${req.user.email}`);
+            if (typeof saveFinanceDB === 'function') saveFinanceDB();
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: "Not found" });
+        }
+    } finally {
+        processingKycStatusUpdates.delete(reqId);
     }
 });
 
@@ -672,25 +680,35 @@ app.get('/api/review/unlock', requireAuth, (req, res) => {
     res.json(CREATOR_STATE.unlockRequests);
 });
 
-app.post('/api/review/unlock', requireAuth, async (req, res) => {
-    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
-    
-    const proofFile = req.body.proofFile;
-    const appealText = req.body.appealText;
-    const creatorId = req.user.email;
-    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    
-    let aiRiskScore = 15; // default low risk
-    let aiReason = "Google reCAPTCHA Enterprise: 不審なアクティビティ(同一IP・デバイスからの連続BAN履歴)は検出されませんでした。";
+const processingUnlockRequests = new Set();
+const processingUnlockApprovals = new Set();
+const processingCreatorUnlockRequests = new Set();
 
-    // Gemini AI Fraud Detection (KYC Risk Assessment)
+app.post('/api/review/unlock', requireAuth, async (req, res) => {
+    const creatorId = req.user.email;
+    if (processingUnlockRequests.has(creatorId)) {
+        return res.status(409).json({ error: "現在、ロック解除申請を処理中です。しばらくお待ちください。" });
+    }
+    processingUnlockRequests.add(creatorId);
+
     try {
-        const rawKey = process.env.GEMINI_API_KEY || '';
-        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
         
-        if (GEMINI_API_KEY) {
-            const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-            const promptText = `あなたはリテールメディアプラットフォームの不正検知（KYC）AIアシスタントです。
+        const proofFile = req.body.proofFile;
+        const appealText = req.body.appealText;
+        const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+        
+        let aiRiskScore = 15; // default low risk
+        let aiReason = "Google reCAPTCHA Enterprise: 不審なアクティビティ(同一IP・デバイスからの連続BAN履歴)は検出されませんでした。";
+
+        // Gemini AI Fraud Detection (KYC Risk Assessment)
+        try {
+            const rawKey = process.env.GEMINI_API_KEY || '';
+            const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+            
+            if (GEMINI_API_KEY) {
+                const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                const promptText = `あなたはリテールメディアプラットフォームの不正検知（KYC）AIアシスタントです。
 以下の申請情報から、このユーザーがスパム、過去のBAN回避、または悪意のあるボットである可能性（リスクスコア）を0〜100の数値で判定し、その理由を簡潔に回答してください。
 （0=極めて安全、100=極めて危険なスパム/違反者）
 
@@ -705,97 +723,113 @@ app.post('/api/review/unlock', requireAuth, async (req, res) => {
   "reason": "判定理由の簡潔な説明"
 }`;
 
-            const response = await fetch(FIXED_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ role: "user", parts: [{ text: promptText }] }],
-                    generationConfig: { response_mime_type: "application/json" }
-                })
-            });
-            const data = await response.json();
-            if (data.candidates && data.candidates[0].content.parts[0].text) {
-                const aiResponse = JSON.parse(data.candidates[0].content.parts[0].text);
-                aiRiskScore = aiResponse.score || 15;
-                aiReason = `Gemini不正検知AI: ${aiResponse.reason} (Score: ${aiRiskScore})`;
+                const response = await fetch(FIXED_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: promptText }] }],
+                        generationConfig: { response_mime_type: "application/json" }
+                    })
+                });
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const aiResponse = JSON.parse(data.candidates[0].content.parts[0].text);
+                    aiRiskScore = aiResponse.score || 15;
+                    aiReason = `Gemini不正検知AI: ${aiResponse.reason} (Score: ${aiRiskScore})`;
+                }
+            } else {
+                console.log("[Gemini] API Key not configured. Running fallback logic.");
+                if (creatorId.includes('demo') || creatorId.includes('test')) {
+                    aiRiskScore = 92;
+                    aiReason = "⚠️ [Fallback] 過去にBANされたアカウントと一致しています (Demo)";
+                }
             }
-        } else {
-            console.log("[Gemini] API Key not configured. Running fallback logic.");
-            if (creatorId.includes('demo') || creatorId.includes('test')) {
-                aiRiskScore = 92;
-                aiReason = "⚠️ [Fallback] 過去にBANされたアカウントと一致しています (Demo)";
+        } catch (e) {
+            console.error("Gemini Fraud Detection API Error:", e);
+        }
+
+        let proofUrl = null;
+        if (proofFile) {
+            const fileKey = `unlock/${Date.now()}_proof`;
+            const buffer = Buffer.from(proofFile.split(',')[1] || '', 'base64');
+            const mime = proofFile.match(/data:(.*?);base64/)[1] || 'image/png';
+            try {
+                await s3Client.send(new PutObjectCommand({
+                    Bucket: S3_BUCKET_NAME,
+                    Key: fileKey,
+                    Body: buffer,
+                    ContentType: mime
+                }));
+                proofUrl = `https://${S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`;
+            } catch(e) {
+                proofUrl = proofFile; // fallback to Data URI
             }
         }
-    } catch (e) {
-        console.error("Gemini Fraud Detection API Error:", e);
-    }
 
-    let proofUrl = null;
-    if (proofFile) {
-        const fileKey = `unlock/${Date.now()}_proof`;
-        const buffer = Buffer.from(proofFile.split(',')[1] || '', 'base64');
-        const mime = proofFile.match(/data:(.*?);base64/)[1] || 'image/png';
-        try {
-            await s3Client.send(new PutObjectCommand({
-                Bucket: S3_BUCKET_NAME,
-                Key: fileKey,
-                Body: buffer,
-                ContentType: mime
-            }));
-            proofUrl = `https://${S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`;
-        } catch(e) {
-            proofUrl = proofFile; // fallback to Data URI
-        }
+        CREATOR_STATE.unlockRequests.push({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            creatorId: creatorId,
+            appealText: appealText || '特になし',
+            proofUrl: proofUrl,
+            aiRiskScore: aiRiskScore,
+            aiReason: aiReason,
+            status: 'pending'
+        });
+        if (typeof saveDatabase === 'function') saveDatabase();
+        res.json({ success: true, riskScore: aiRiskScore });
+    } catch (err) {
+        console.error("Unlock request error:", err);
+        res.status(500).json({ error: err.message });
+    } finally {
+        processingUnlockRequests.delete(creatorId);
     }
-
-    CREATOR_STATE.unlockRequests.push({
-        id: Date.now(),
-        date: new Date().toISOString(),
-        creatorId: creatorId,
-        appealText: appealText || '特になし',
-        proofUrl: proofUrl,
-        aiRiskScore: aiRiskScore,
-        aiReason: aiReason,
-        status: 'pending'
-    });
-    if (typeof saveDatabase === 'function') saveDatabase();
-    res.json({ success: true, riskScore: aiRiskScore });
 });
 
 app.post('/api/review/unlock/:id/approve', requireAuth, (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'review') {
         return res.status(403).json({ error: "審査・管理者権限が必要です" });
     }
-    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
-    const item = CREATOR_STATE.unlockRequests.find(r => r.id == req.params.id);
-    if(item) {
-        item.status = 'approved';
-        if (item.creatorId) {
-            accountStrikes[item.creatorId] = 0; // Reset strikes
-        }
-        // Unlock all banned videos for this creator
-        if (CREATOR_STATE.videos) {
-            CREATOR_STATE.videos.forEach(v => {
-                if (v.status === 'ban') {
-                    v.status = 'active';
-                    v.totalAttention = 0; // Reset metrics
-                    v.totalSkip = 0;
-                    v.views = 0;
-                    v.uplift = 0;
-                }
-            });
-        }
-        // Unlock all banned campaigns for advertiser
-        if (typeof campaigns !== 'undefined') {
-            campaigns.forEach(c => {
-                if (c.status === 'ban') {
-                    c.status = 'active';
-                }
-            });
-        }
-        if (typeof saveDatabase === 'function') saveDatabase();
+    const reqId = req.params.id;
+    if (processingUnlockApprovals.has(reqId)) {
+        return res.status(409).json({ error: "現在、該当のロック解除申請を承認処理中です。" });
     }
-    res.json({ success: true });
+    processingUnlockApprovals.add(reqId);
+
+    try {
+        if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
+        const item = CREATOR_STATE.unlockRequests.find(r => r.id == reqId);
+        if(item) {
+            item.status = 'approved';
+            if (item.creatorId) {
+                accountStrikes[item.creatorId] = 0; // Reset strikes
+            }
+            // Unlock all banned videos for this creator
+            if (CREATOR_STATE.videos) {
+                CREATOR_STATE.videos.forEach(v => {
+                    if (v.status === 'ban') {
+                        v.status = 'active';
+                        v.totalAttention = 0; // Reset metrics
+                        v.totalSkip = 0;
+                        v.views = 0;
+                        v.uplift = 0;
+                    }
+                });
+            }
+            // Unlock all banned campaigns for advertiser
+            if (typeof campaigns !== 'undefined') {
+                campaigns.forEach(c => {
+                    if (c.status === 'ban') {
+                        c.status = 'active';
+                    }
+                });
+            }
+            if (typeof saveDatabase === 'function') saveDatabase();
+        }
+        res.json({ success: true });
+    } finally {
+        processingUnlockApprovals.delete(reqId);
+    }
 });
 
 app.get('/api/creator/stats', requireAuth, (req, res) => {
@@ -838,20 +872,29 @@ const isDemoAccount = (email) => {
     return email.includes('demo') || email === 'admin';
 };
 app.post('/api/creator/request-unlock', requireAuth, (req, res) => {
-    const { appealText } = req.body;
     const email = req.user.email;
-    if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
-    CREATOR_STATE.unlockRequests.push({
-        id: Date.now().toString(),
-        creatorId: email,
-        appealText: appealText,
-        aiRiskScore: 0,
-        aiReason: '手動申請',
-        status: 'pending',
-        date: new Date().toISOString()
-    });
-    if (typeof saveDatabase === 'function') saveDatabase();
-    res.json({ success: true });
+    if (processingCreatorUnlockRequests.has(email)) {
+        return res.status(409).json({ error: "現在、ロック解除申請を送信中です。" });
+    }
+    processingCreatorUnlockRequests.add(email);
+
+    try {
+        const { appealText } = req.body;
+        if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
+        CREATOR_STATE.unlockRequests.push({
+            id: Date.now().toString(),
+            creatorId: email,
+            appealText: appealText,
+            aiRiskScore: 0,
+            aiReason: '手動申請',
+            status: 'pending',
+            date: new Date().toISOString()
+        });
+        if (typeof saveDatabase === 'function') saveDatabase();
+        res.json({ success: true });
+    } finally {
+        processingCreatorUnlockRequests.delete(email);
+    }
 });
 
 const ytdl = require('@distube/ytdl-core');
@@ -1721,7 +1764,7 @@ app.post('/api/auth/login', async (req, res) => {
             const jwtToken = jwt.sign({ email, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, getCookieOptions(req));
 
-            currentUser = { email, role: targetRole }; // Set Session
+            // Session token set in cookies
             res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
         } else {
             console.log(`[Auth] ❌ Login Failed: Password incorrect for: ${email}`);
