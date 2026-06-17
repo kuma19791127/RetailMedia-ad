@@ -5401,7 +5401,7 @@ Return ONLY a JSON object:
 
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
 app.post('/api/agent/advertiser', async (req, res) => {
-    const { message } = req.body;
+    const { message, email } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
@@ -5466,7 +5466,7 @@ Return ONLY a JSON object:
             campaignName: "午後の水分補給キャンペーン (AI推奨)",
             voiceScript: `本日のおすすめ！喉を潤す冷たいドリンクはいかがですか？ただいまポイント2倍キャンペーン実施中！`,
             targetTime: "13:00-15:00",
-            budget: budget || "50000",
+            budget: "50000",
             status: "DRAFT"
         };
         const newCampaign = {
