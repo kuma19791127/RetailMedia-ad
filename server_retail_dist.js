@@ -377,14 +377,8 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
             aiDetails.push("【システムエラー】審査システムが未設定のため、安全を考慮して審査を却下しました。");
         } else if (docs.length > 0) {
             try {
-                const imageParts = docs.map(doc => {
-                    return {
-                        inlineData: {
-                            mimeType: doc.type || 'image/jpeg',
-                            data: doc.data.split(',')[1] || ''
-                        }
-                    };
-                });
+                const mediaBase64 = docs.map(doc => doc.data);
+                const mediaMimeType = docs.map(doc => doc.type || 'image/jpeg');
                 
                 let promptText = `あなたはKYC（本人確認・法人確認）の専門審査AIです。以下の画像（免許証、登記簿、許認可証など）を読み取り、以下の申告情報と一致するか検証してください。
 【申告情報】
@@ -394,57 +388,22 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
 
 【指示】
 1. 画像から文字をOCRで読み取り、申告情報と一致している部分を抽出してください。
-2. 最終的な「本人確認の一致率スコア（0〜100）」と、「一致した具体的な理由（簡潔に構成された配列）」を以下のJSON形式でのみ出力してください（Markdown of バッククォートは不要です）。
+2. 最終的な「本人確認の一致率スコア（0〜100）」と、「一致した具体的な理由（簡潔に構成された配列）」を以下のJSON形式でのみ出力してください（Markdownのバッククォートは不要です）。
 {"score": 95, "reasons": ["運転免許証の氏名一致", "登記簿の法人番号一致"]}`;
 
-                const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
-                let requestSuccess = false;
-                let aiResponseText = "";
+                const aiResponseText = await callGeminiAPI(promptText, 'application/json', null, mediaBase64, mediaMimeType);
 
-                for (const model of models) {
-                    try {
-                        console.log(`[KYC AI] Sending documents to Gemini API model: ${model}`);
-                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{
-                                    role: 'user',
-                                    parts: [...imageParts, { text: promptText }]
-                                }]
-                            })
-                        });
-
-                        if (!response.ok) throw new Error(`Status ${response.status}`);
-                        const resData = await response.json();
-                        if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
-                            aiResponseText = resData.candidates[0].content.parts[0].text;
-                            requestSuccess = true;
-                            break;
-                        }
-                    } catch (err) {
-                        console.warn(`[KYC AI] Model ${model} failed:`, err.message);
-                    }
-                }
-
-                if (requestSuccess) {
-                    const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-                    const jsonMatch = cleanJson.match(/\{[\s\S]*?\}/);
-                    if (jsonMatch) {
-                        const aiResult = JSON.parse(jsonMatch[0]);
-                        aiScore = aiResult.score || 0;
-                        aiDetails = aiResult.reasons || ["解析完了"];
-                    }
-                } else {
-                    console.error("[KYC AI] All Gemini models failed. Failing KYC check.");
-                    aiScore = 0;
-                    aiDetails.push("【システムエラー】AI審査通信エラーのため審査を却下しました。");
+                const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                const jsonMatch = cleanJson.match(/\{[\s\S]*?\}/);
+                if (jsonMatch) {
+                    const aiResult = JSON.parse(jsonMatch[0]);
+                    aiScore = aiResult.score || 0;
+                    aiDetails = aiResult.reasons || ["解析完了"];
                 }
             } catch (aiErr) {
                 console.error("[KYC AI Analysis Error]", aiErr);
                 aiScore = 0;
-                aiDetails.push("【システムエラー】AI解析処理エラーのため審査を却下しました。");
+                aiDetails.push(`【システムエラー】AI審査エラーのため審査を却下しました (${aiErr.message})。`);
             }
         } else {
             aiScore = 0;
@@ -997,11 +956,6 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
             });
         }
 
-        const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
-        let lastError = null;
-        let aiResponseText = "";
-        let requestSuccess = false;
-
         const systemPrompt = `あなたは世界で最も厳格な「リテールメディア（店舗サイネージ）広告」のコンプライアンス審査AIです。
 画像や動画を極めて厳密にスキャンし、以下のいずれかに該当する場合は絶対に配信を許可しないでください。
 
@@ -1017,51 +971,17 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
 いかなる理由があっても、必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
 {"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}`;
 
-        for (const model of models) {
-            try {
-                console.log(`[Review] Sending video to Gemini API model: ${model}`);
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            role: 'user',
-                            parts: [
-                                { inlineData: { mimeType: mimeType, data: base64Data } },
-                                { text: systemPrompt }
-                            ]
-                        }]
-                    })
-                });
-
-                if (!response.ok) {
-                    let errMsg = `Gemini API returned status ${response.status}`;
-                    try {
-                        const errBody = await response.text();
-                        errMsg += ` - Body: ${errBody}`;
-                    } catch (_) {}
-                    throw new Error(errMsg);
-                }
-
-                const resData = await response.json();
-                if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
-                    aiResponseText = resData.candidates[0].content.parts[0].text;
-                    requestSuccess = true;
-                    console.log(`[Review] Gemini API response succeeded using ${model}`);
-                    break;
-                } else {
-                    throw new Error("Invalid response format from Gemini API");
-                }
-            } catch (err) {
-                console.warn(`[Review] Model ${model} failed:`, err.message);
-                lastError = err;
-            }
+        let aiResponseText = "";
+        let requestSuccess = false;
+        try {
+            aiResponseText = await callGeminiAPI(systemPrompt, 'application/json', null, base64Data, mimeType);
+            requestSuccess = true;
+            console.log(`[Review] Gemini API response succeeded using callGeminiAPI`);
+        } catch (err) {
+            console.error("[Review] callGeminiAPI failed. Failing review check.", err.message);
         }
 
         if (!requestSuccess) {
-            console.error("[Review] All Gemini models failed. Failing review check.", lastError);
             return res.json({
                 safe: false,
                 message: "【審査保留】AI動画審査システムに一時的な通信障害が発生しました。安全のため、手動審査が完了するまで配信は保留されます。"
@@ -1997,10 +1917,6 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
                             console.error("[AutoReview] GEMINI_API_KEY not configured. Failing review.");
                             adStatus = 'rejected';
                         } else {
-                            const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
-                            let requestSuccess = false;
-                            let aiResponseText = "";
-
                             const systemPrompt = `あなたは世界で最も厳格な「リテールメディア（店舗サイネージ）広告」のコンプライアンス審査AIです。
 画像や動画を極めて厳密にスキャンし、以下のいずれかに該当する場合は絶対に配信を許可しないでください。
 
@@ -2008,7 +1924,7 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
 1. 架空請求・サポート詐欺: 「未払い料金」「法的処置」「アカウント消去」等の脅迫や、「ウイルス感染」「システム破損」等の偽警告（サポート詐欺）でユーザーの不安を煽るテキストや画像。
 2. 暴力・攻撃的描写: 流血の有無やフィクションに関係なく、殴る・蹴るなどの他者への攻撃的・威圧的な身体接触が1フレームでもあればブロック。
 3. 誇大広告・情報商材: 「簡単に稼げる」「確実に痩せる」などの文言、著名人の画像を無断使用した投資詐欺の疑いがあるもの。
-4. 危険なQRコード: 安全性が100%確認できない不審なドメインや短縮URL、公式を装った偽LINEアカウントへの誘導。
+4. 危険なQRコード: 安全性が100%確認できない不審なドメインや短縮URL、公式を装った偽LINEアカウントへの誘導.
 5. 定期購入 of 隠蔽（お試し詐欺）: 「初回無料」「たったの500円」と巨大な文字で強調しながら、継続購入の条件が極小文字で隠されている、または明記されていない優良誤認広告。
 6. 悪徳点検・格安修理: 「トイレの詰まり数百円〜」「屋根の無料点検」など、相場から著しく逸脱した不自然なほど格安な訪問修理や点検を謳う広告。
 
@@ -2016,34 +1932,13 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
 いかなる理由があっても、必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
 {"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}`;
 
-                            for (const model of models) {
-                                try {
-                                    console.log(`[AutoReview] Sending video to Gemini API model: ${model}`);
-                                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                                    const response = await fetch(url, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            contents: [{
-                                                role: 'user',
-                                                parts: [
-                                                    { inlineData: { mimeType: mimeType, data: base64Data } },
-                                                    { text: systemPrompt }
-                                                ]
-                                            }]
-                                        })
-                                    });
-
-                                    if (!response.ok) throw new Error(`Status ${response.status}`);
-                                    const resData = await response.json();
-                                    if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
-                                        aiResponseText = resData.candidates[0].content.parts[0].text;
-                                        requestSuccess = true;
-                                        break;
-                                    }
-                                } catch (err) {
-                                    console.warn(`[AutoReview] Model ${model} failed:`, err.message);
-                                }
+                            let aiResponseText = "";
+                            let requestSuccess = false;
+                            try {
+                                aiResponseText = await callGeminiAPI(systemPrompt, 'application/json', null, base64Data, mimeType);
+                                requestSuccess = true;
+                            } catch (err) {
+                                console.warn("[AutoReview] callGeminiAPI failed:", err.message);
                             }
 
                             if (requestSuccess) {
@@ -2706,44 +2601,19 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
         } else if (fileData.includes('base64,')) {
             const base64Data = fileData.split('base64,')[1];
             try {
-                const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
-                let requestSuccess = false;
-                let aiResponseText = "";
-
                 const systemPrompt = `あなたは広告プラットフォームの厳格なAIモデレーターです。以下に該当する不適切なコンテンツが含まれていないか審査してください。
 1: 過度な暴力、性的描写、ヘイトスピーチ等の公序良俗に反する内容。
 2: 「必ず儲かる」「投資で稼ぐ」といった投資詐欺・誇大広告。
 3: 「続きはLINEで」「LINE登録はこちら」などのLINEや外部SNSへ誘導し情報商材を売るようなスパム・詐欺的誘導。
 少しでも該当する場合は「FAIL: 理由」を、安全であれば「PASS」を出力してください。`;
 
-                for (const model of models) {
-                    try {
-                        console.log(`[Retailer AI] Sending video to Gemini API model: ${model}`);
-                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{
-                                    role: 'user',
-                                    parts: [
-                                        { inlineData: { mimeType: 'video/mp4', data: base64Data } },
-                                        { text: systemPrompt }
-                                    ]
-                                }]
-                            })
-                        });
-
-                        if (!response.ok) throw new Error(`Status ${response.status}`);
-                        const resData = await response.json();
-                        if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
-                            aiResponseText = resData.candidates[0].content.parts[0].text;
-                            requestSuccess = true;
-                            break;
-                        }
-                    } catch (err) {
-                        console.warn(`[Retailer AI] Model ${model} failed:`, err.message);
-                    }
+                let aiResponseText = "";
+                let requestSuccess = false;
+                try {
+                    aiResponseText = await callGeminiAPI(systemPrompt, null, null, base64Data, 'video/mp4');
+                    requestSuccess = true;
+                } catch (err) {
+                    console.warn("[Retailer AI] callGeminiAPI failed:", err.message);
                 }
 
                 if (requestSuccess) {
@@ -3263,38 +3133,13 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
 必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
 {"match": true, "detected_name": "山田 太郎", "reason": "読みが一致するため"}`;
 
-        const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
         let requestSuccess = false;
         let aiResponseText = "";
-
-        for (const model of models) {
-            try {
-                console.log(`[Bank KYC] Sending ID document to Gemini API model: ${model}`);
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            role: 'user',
-                            parts: [
-                                { inlineData: { mimeType: mimeType, data: base64Data } },
-                                { text: promptText }
-                            ]
-                        }]
-                    })
-                });
-
-                if (!response.ok) throw new Error(`Status ${response.status}`);
-                const resData = await response.json();
-                if (resData.candidates && resData.candidates[0] && resData.candidates[0].content && resData.candidates[0].content.parts[0]) {
-                    aiResponseText = resData.candidates[0].content.parts[0].text;
-                    requestSuccess = true;
-                    break;
-                }
-            } catch (err) {
-                console.warn(`[Bank KYC] Model ${model} failed:`, err.message);
-            }
+        try {
+            aiResponseText = await callGeminiAPI(promptText, 'application/json', null, base64Data, mimeType);
+            requestSuccess = true;
+        } catch (err) {
+            console.warn("[Bank KYC] callGeminiAPI failed:", err.message);
         }
 
         if (requestSuccess) {
@@ -5399,23 +5244,30 @@ async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction 
             const parts = [{ text: prompt }];
             
             if (mediaBase64) {
-                let mimeType = mediaMimeType;
-                let data = mediaBase64;
+                const mediaItems = Array.isArray(mediaBase64) ? mediaBase64 : [mediaBase64];
+                const mimeTypes = Array.isArray(mediaMimeType) ? mediaMimeType : Array(mediaItems.length).fill(mediaMimeType);
                 
-                const match = mediaBase64.match(/^data:([^;]+);base64,(.+)$/);
-                if (match) {
-                    mimeType = match[1];
-                    data = match[2];
-                } else if (mediaBase64.includes(';base64,')) {
-                    data = mediaBase64.split(';base64,').pop();
-                }
-
-                parts.push({
-                    inlineData: {
-                        mimeType: mimeType || 'image/png',
-                        data: data
+                for (let i = 0; i < mediaItems.length; i++) {
+                    let itemBase64 = mediaItems[i];
+                    let itemMime = mimeTypes[i] || 'image/png';
+                    
+                    if (itemBase64) {
+                        const match = itemBase64.match(/^data:([^;]+);base64,(.+)$/);
+                        if (match) {
+                            itemMime = match[1];
+                            itemBase64 = match[2];
+                        } else if (itemBase64.includes(';base64,')) {
+                            itemBase64 = itemBase64.split(';base64,').pop();
+                        }
+                        
+                        parts.push({
+                            inlineData: {
+                                mimeType: itemMime,
+                                data: itemBase64
+                            }
+                        });
                     }
-                });
+                }
             }
 
             const reqBody = {
