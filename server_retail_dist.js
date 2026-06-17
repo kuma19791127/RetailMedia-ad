@@ -499,17 +499,17 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
 });
 
 app.get('/api/kyc', requireAuth, (req, res) => {
-    // 管理者専用
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "Forbidden: Admin access required" });
+    // 管理者および審査担当者
+    if (req.user.role !== 'admin' && req.user.role !== 'review') {
+        return res.status(403).json({ error: "Forbidden: Admin or Reviewer access required" });
     }
     res.json(kycRequests);
 });
 
 app.post('/api/kyc/:id/status', requireAuth, (req, res) => {
-    // 管理者専用
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "Forbidden: Admin access required" });
+    // 管理者および審査担当者
+    if (req.user.role !== 'admin' && req.user.role !== 'review') {
+        return res.status(403).json({ error: "Forbidden: Admin or Reviewer access required" });
     }
     const reqId = req.params.id;
     const { status } = req.body;
@@ -665,8 +665,8 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_pol
 // --- CREATOR API ---
 
 app.get('/api/review/unlock', requireAuth, (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "管理者権限が必要です" });
+    if (req.user.role !== 'admin' && req.user.role !== 'review') {
+        return res.status(403).json({ error: "審査・管理者権限が必要です" });
     }
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     res.json(CREATOR_STATE.unlockRequests);
@@ -763,8 +763,8 @@ app.post('/api/review/unlock', requireAuth, async (req, res) => {
 });
 
 app.post('/api/review/unlock/:id/approve', requireAuth, (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "管理者権限が必要です" });
+    if (req.user.role !== 'admin' && req.user.role !== 'review') {
+        return res.status(403).json({ error: "審査・管理者権限が必要です" });
     }
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     const item = CREATOR_STATE.unlockRequests.find(r => r.id == req.params.id);

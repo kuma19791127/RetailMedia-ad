@@ -399,9 +399,11 @@ async function loadKYCReq() {
             if (remember) {
                 localStorage.setItem('last_email', email);
                 localStorage.setItem('last_password', pass);
+                localStorage.setItem('last_active_service', 'review.html');
             } else {
                 localStorage.removeItem('last_email');
                 localStorage.removeItem('last_password');
+                localStorage.removeItem('last_active_service');
             }
 
             if (window.PasswordCredential) {
@@ -417,6 +419,7 @@ async function loadKYCReq() {
         function logout() {
             document.getElementById('login-pass').value = '';
             document.getElementById('login-overlay').style.display = 'flex';
+            localStorage.removeItem('last_active_service');
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     toast: true,
@@ -431,6 +434,7 @@ async function loadKYCReq() {
 
         // Auto-fill login credentials if stored in LocalStorage
         document.addEventListener('DOMContentLoaded', () => {
+            localStorage.setItem('last_active_service', 'review.html');
             const savedEmail = localStorage.getItem('last_email');
             const savedPass = localStorage.getItem('last_password');
             if (savedEmail) {
