@@ -308,7 +308,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // --- Advertiser KYC (Review) System ---
 let kycRequests = [];
 
-app.post('/api/kyc', async (req, res) => {
+app.post('/api/kyc', requireAuth, async (req, res) => {
     try {
         const docs = req.body.documents || [];
         const isCorp = !!(req.body.corpId && req.body.corpId.length === 13);
@@ -423,7 +423,7 @@ app.post('/api/kyc', async (req, res) => {
 
         const newReq = {
             id: 'kyc_' + Date.now(),
-            userEmail: req.body.userEmail || 'unknown',
+            userEmail: req.user.email, // ログインしたユーザーのメールアドレスを強制
             orgName: orgName,
             personName: personName,
             corpId: corpId,
@@ -445,17 +445,25 @@ app.post('/api/kyc', async (req, res) => {
     }
 });
 
-app.get('/api/kyc', (req, res) => {
+app.get('/api/kyc', requireAuth, (req, res) => {
+    // 管理者専用
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+    }
     res.json(kycRequests);
 });
 
-app.post('/api/kyc/:id/status', (req, res) => {
+app.post('/api/kyc/:id/status', requireAuth, (req, res) => {
+    // 管理者専用
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+    }
     const reqId = req.params.id;
     const { status } = req.body;
     const target = kycRequests.find(r => r.id === reqId);
     if (target) {
         target.status = status;
-        console.log(`[KYC] Request ${reqId} status updated to ${status}`);
+        console.log(`[KYC] Request ${reqId} status updated to ${status} by admin ${req.user.email}`);
         if (typeof saveFinanceDB === 'function') saveFinanceDB();
         res.json({ success: true });
     } else {
@@ -464,8 +472,12 @@ app.post('/api/kyc/:id/status', (req, res) => {
 });
 
 // --- User Profile/KYC check endpoint for polling ---
-app.get('/api/kyc/status', (req, res) => {
+app.get('/api/kyc/status', requireAuth, (req, res) => {
     const userEmail = req.query.email;
+    // 自身のステータスのみ取得可能（管理者はすべて閲覧可能）
+    if (userEmail !== req.user.email && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Forbidden: Unauthorized access to other users KYC status" });
+    }
     const reqs = kycRequests.filter(r => r.userEmail === userEmail);
     if (reqs.length > 0) {
         // Return latest
@@ -1754,10 +1766,12 @@ function getRedirectUrl(role) {
 
 
 // Official Campaign Creation Endpoint (Dashboard)
-app.post('/api/campaigns', async (req, res) => {
+app.post('/api/campaigns', requireAuth, async (req, res) => {
     console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
-        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ad_email, ytUrl, fileUrl } = req.body;
+        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ytUrl, fileUrl } = req.body;
+        // ログインしたユーザーのメールアドレスを強制使用
+        const ad_email = req.user.email;
 
         // --- Demo Account Restriction ---
         if (!ad_email || ad_email.includes('demo') || ad_email.includes('admin') || ad_email.includes('test') || ad_email === 'client@example.com' || ad_email === 'Guest' || ad_email === 'Unknown') {
@@ -2006,10 +2020,12 @@ app.post('/api/campaigns', async (req, res) => {
                     }
                 }).run();
 
+            if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: データ永続化
             res.json({ success: true, message: "Campaign Created (Transcoding in background)" });
         } else {
             processAndInject(rawUrl);
             if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
+            if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: データ永続化
             res.json({ success: true, message: "Campaign Created" });
         }
     } catch (e) {
@@ -2017,7 +2033,7 @@ app.post('/api/campaigns', async (req, res) => {
     }
 });
 
-app.get('/api/campaigns', async (req, res) => {
+app.get('/api/campaigns', requireAuth, async (req, res) => {
     try {
         const rows = await dbHelper.query.all('SELECT * FROM campaigns');
         const formattedList = rows.map(c => ({
@@ -2037,7 +2053,12 @@ app.get('/api/campaigns', async (req, res) => {
 });
 
 // Update Campaign Status Endpoint (for Approval)
-app.post('/api/campaigns/:id/status', async (req, res) => {
+app.post('/api/campaigns/:id/status', requireAuth, async (req, res) => {
+    // ロールチェック (管理者/店舗オーナー/リテーラーのみ許可)
+    const userRole = req.user.role;
+    if (userRole !== 'admin' && userRole !== 'store' && userRole !== 'retailer') {
+        return res.status(403).json({ success: false, error: 'この操作を実行する権限がありません' });
+    }
     const id = req.params.id;
     const { status } = req.body;
     try {
@@ -2851,7 +2872,7 @@ app.get('/api/store/revenue', (req, res) => {
     });
 });
 
-app.get('/api/ad/analytics', async (req, res) => {
+app.get('/api/ad/analytics', requireAuth, async (req, res) => {
     const region = req.query.region || 'Tokyo';
     const lat = req.query.lat;
     const lon = req.query.lon;

@@ -425,24 +425,8 @@
 
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                // Apply to standard text elements avoiding breaking components
-                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
-                elements.forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
-
-
-
     
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
-    
     <style>
         h1, h2, h3, h4, h5 {
             text-wrap: balance !important;
@@ -461,9 +445,12 @@
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            localStorage.setItem('last_active_service', 'advertiser_dashboard.html');
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
-                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                // Apply to standard text elements avoiding breaking components
+                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle, li');
+                elements.forEach(el => {
                     parser.applyToElement(el);
                 });
             }
