@@ -36,7 +36,8 @@ if (process.env.DATABASE_URL) {
                     budget DOUBLE PRECISION DEFAULT 0.0,
                     spend DOUBLE PRECISION DEFAULT 0.0,
                     impressions INT DEFAULT 0,
-                    status VARCHAR(50) DEFAULT 'pending'
+                    status VARCHAR(50) DEFAULT 'pending',
+                    advertiser VARCHAR(255)
                 );
 
                 CREATE TABLE IF NOT EXISTS stores (
@@ -109,6 +110,16 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ PostgreSQL face_sensor_logs.store_id column added or already exists.');
             } catch (e) {
                 console.error('[DB] PostgreSQL face_sensor_logs.store_id migration error:', e.message);
+            }
+
+            // Migration path: Add advertiser column to campaigns table if not exists
+            try {
+                await pool.query(`
+                    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS advertiser VARCHAR(255);
+                `);
+                console.log('[DB] ✅ PostgreSQL campaigns.advertiser column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL campaigns.advertiser migration error:', e.message);
             }
 
             // Migration path: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
@@ -293,37 +304,46 @@ if (process.env.DATABASE_URL) {
                         budget REAL DEFAULT 0.0,
                         spend REAL DEFAULT 0.0,
                         impressions INTEGER DEFAULT 0,
-                        status TEXT DEFAULT 'pending'
-                    )
-                `);
-
-                sqliteDb.run(`
-                    DROP TABLE IF EXISTS pos_transactions
-                `);
-
-                sqliteDb.run(`
-                    CREATE TABLE IF NOT EXISTS pos_transactions (
-                        id TEXT PRIMARY KEY,
-                        company_name TEXT,
-                        store_name TEXT,
-                        total_amount REAL,
-                        billing_email TEXT,
-                        items TEXT,
-                        status TEXT,
-                        timestamp INTEGER
-                    )
-                `);
-
-                sqliteDb.run(`
-                    CREATE TABLE IF NOT EXISTS sensor_logs (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp TEXT,
-                        metric_name TEXT,
-                        metric_value REAL
+                        status TEXT DEFAULT 'pending',
+                        advertiser TEXT
                     )
                 `);
 
                 // Migration: Add store_id column to face_sensor_logs for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error:', err.message);
+                        return;
+                    }
+                    const hasStoreId = rows && rows.some(row => row.name === 'store_id');
+                    if (!hasStoreId) {
+                        sqliteDb.run("ALTER TABLE face_sensor_logs ADD COLUMN store_id TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE face_sensor_logs error:', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ face_sensor_logs.store_id column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // SQLite Migration: Add advertiser column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error:', err.message);
+                        return;
+                    }
+                    const hasAdvertiser = rows && rows.some(row => row.name === 'advertiser');
+                    if (!hasAdvertiser) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN advertiser TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error:', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.advertiser column added successfully.');
+                            }
+                        });
+                    }
+                });
                 sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {
                     if (err) {
                         console.error('[SQLite] PRAGMA table_info error:', err.message);

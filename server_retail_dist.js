@@ -2004,8 +2004,8 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
             let campaignId = Date.now();
             try {
                 const dbRes = await dbHelper.query.run(
-                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    [name, start, end, appliedPrice, 0.0, 0, adStatus]
+                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status, advertiser) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [name, start, end, appliedPrice, 0.0, 0, adStatus, ad_email]
                 );
                 campaignId = dbRes.lastID;
                 console.log(`[Campaign Database] Saved campaign ID: ${campaignId} into SQLite`);
@@ -2103,7 +2103,18 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
 
 app.get('/api/campaigns', requireAuth, async (req, res) => {
     try {
-        const rows = await dbHelper.query.all('SELECT * FROM campaigns');
+        const userRole = req.user.role;
+        const userEmail = req.user.email;
+        let rows = [];
+        
+        // セキュリティ・認可制御: 一般広告主は自分自身のキャンペーンのみ取得可能
+        if (userRole === 'advertiser') {
+            rows = await dbHelper.query.all('SELECT * FROM campaigns WHERE advertiser = ?', [userEmail]);
+        } else {
+            // 管理者や店舗などは全件取得可能
+            rows = await dbHelper.query.all('SELECT * FROM campaigns');
+        }
+        
         const formattedList = rows.map(c => ({
             id: c.id,
             name: c.name,
