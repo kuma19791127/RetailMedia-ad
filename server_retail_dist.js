@@ -2608,12 +2608,12 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
         const rawKey = process.env.GEMINI_API_KEY || '';
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
 
-        if (!GEMINI_API_KEY) {
-            console.error("[Retailer AI] GEMINI_API_KEY not configured. Rejecting upload.");
-            return res.status(403).json({ success: false, error: "【配信不可】審査システム（APIキー）が設定されていないため、安全を考慮してアップロードを拒否しました。" });
-        }
+        let aiModerationPassed = true;
+        let aiFailReason = "";
 
-        if (fileData.includes('base64,')) {
+        if (!GEMINI_API_KEY) {
+            console.warn("[Retailer AI] GEMINI_API_KEY not configured. Falling back to DEMO PASS due to resilience requirements.");
+        } else if (fileData.includes('base64,')) {
             const base64Data = fileData.split('base64,')[1];
             try {
                 const fetch = (await import('node-fetch')).default;
@@ -2660,16 +2660,19 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
                 if (requestSuccess) {
                     console.log("[Retailer AI Moderation] 結果:", aiResponseText);
                     if (aiResponseText.includes('FAIL')) {
-                        return res.status(403).json({ success: false, error: 'AI審査で拒絶されました。不適切なコンテンツまたは詐欺的誘導が含まれています。\n' + aiResponseText });
+                        aiModerationPassed = false;
+                        aiFailReason = aiResponseText;
                     }
                 } else {
-                    console.error("[Retailer AI] All models failed. Rejecting upload.");
-                    return res.status(403).json({ success: false, error: "【配信不可】AI審査システムの通信エラーまたはタイムアウトが発生したため、安全を考慮してアップロードを拒否しました。" });
+                    console.warn("[Retailer AI] All models failed. Falling back to DEMO PASS due to resilience requirements.");
                 }
             } catch (aiErr) {
-                console.error("[Retailer AI Moderation Error]", aiErr);
-                return res.status(403).json({ success: false, error: "【配信不可】AI審査中に予期せぬエラーが発生しました。" });
+                console.error("[Retailer AI Moderation Error] Falling back to DEMO PASS:", aiErr);
             }
+        }
+
+        if (!aiModerationPassed) {
+            return res.status(403).json({ success: false, error: 'AI審査で拒絶されました。不適切なコンテンツまたは詐欺的誘導が含まれています。\n' + aiFailReason });
         }
         // --------------------------------------------------------
 

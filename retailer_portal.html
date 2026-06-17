@@ -851,7 +851,7 @@
         }
 
         async function handleLogin(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-password').value.trim();
             
@@ -876,6 +876,7 @@
                 if (data.success) {
                     if (data.require2FA) {
                         console.log("[Auth] Require 2FA verification");
+                        Swal.close();
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証コード',
                             html: '認証アプリに表示される<br>6桁のコードを入力してください<br>最初にログインしたstore or retailerと共通',
@@ -931,6 +932,7 @@
                             loginSuccess(email, pass);
                             Swal.close();
                         } else {
+                            Swal.close();
                             Swal.fire({
                                 title: '認証エラー',
                                 text: verifyData.error || '認証コードが違います。',
@@ -960,6 +962,7 @@
 
                     if (data.require2FASetup) {
                         console.log("[Auth] Require 2FA Setup");
+                        Swal.close();
                         Swal.fire({ title: '2FA初期設定中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                         console.log("[Auth] Requesting 2FA setup details...");
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
@@ -971,6 +974,7 @@
                         console.log("[Auth] 2FA setup response:", setupData);
                         
                         console.log("[Auth] Opening 2FA setup modal directly (replacing loading spinner)...");
+                        Swal.close();
 
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証の有効化',
@@ -1003,6 +1007,7 @@
                             loginSuccess(email, pass);
                             Swal.close();
                         } else {
+                            Swal.close();
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
                         }
                         return;
@@ -1030,6 +1035,10 @@
                 document.getElementById('retailer-prefix-single').value = currentPrefix;
             }
             
+            // Set session storage credentials
+            sessionStorage.setItem('retailMediaAuth', 'true');
+            sessionStorage.setItem('retailUserEmail', email);
+
             const rememberMe = document.getElementById('remember-me').checked;
             if (rememberMe) {
                 localStorage.setItem('last_email', email);
@@ -1708,6 +1717,28 @@ function showAdPolicy() {
             }
             if (savedPass) {
                 document.getElementById('login-password').value = savedPass;
+            }
+
+            // Session check for persistence
+            const authState = sessionStorage.getItem('retailMediaAuth');
+            const isAuthenticated = authState === 'true' || (authState && authState.startsWith('{') && JSON.parse(authState).authenticated);
+            if (isAuthenticated) {
+                const email = sessionStorage.getItem('retailUserEmail') || (authState && authState.startsWith('{') ? JSON.parse(authState).email : savedEmail);
+                currentEmail = email;
+                currentPrefix = email;
+                if (document.getElementById('retailer-prefix')) {
+                    document.getElementById('retailer-prefix').value = currentPrefix;
+                }
+                if (document.getElementById('retailer-prefix-single')) {
+                    document.getElementById('retailer-prefix-single').value = currentPrefix;
+                }
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'flex';
+                loadVideos();
+                switchTab('dashboard');
+            } else if (savedEmail && savedPass) {
+                // If remember me is checked, auto login
+                handleLogin();
             }
         });
     </script>
