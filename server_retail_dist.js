@@ -2003,12 +2003,13 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
             // Insert into SQLite database
             let campaignId = Date.now();
             try {
+                const targetOrg = req.body.target_org || req.user.org || 'default_store';
                 const dbRes = await dbHelper.query.run(
-                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status, advertiser) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                    [name, start, end, appliedPrice, 0.0, 0, adStatus, ad_email]
+                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status, advertiser, target_org) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [name, start, end, appliedPrice, 0.0, 0, adStatus, ad_email, targetOrg]
                 );
                 campaignId = dbRes.lastID;
-                console.log(`[Campaign Database] Saved campaign ID: ${campaignId} into SQLite`);
+                console.log(`[Campaign Database] Saved campaign ID: ${campaignId} into SQLite. Target Org: ${targetOrg}`);
             } catch (dbErr) {
                 console.error("[Campaign Database] Save failed:", dbErr.message);
             }
@@ -2107,12 +2108,23 @@ app.get('/api/campaigns', requireAuth, async (req, res) => {
         const userEmail = req.user.email;
         let rows = [];
         
-        // セキュリティ・認可制御: 一般広告主は自分自身のキャンペーンのみ取得可能
-        if (userRole === 'advertiser') {
-            rows = await dbHelper.query.all('SELECT * FROM campaigns WHERE advertiser = ?', [userEmail]);
-        } else {
-            // 管理者や店舗などは全件取得可能
+        // セキュリティ・認可制御: 役割（ロール）に基づく厳格なデータフィルタリング
+        if (userRole === 'admin') {
+            // システム管理者のみ、全体監視のために全件を取得可能
             rows = await dbHelper.query.all('SELECT * FROM campaigns');
+        } else if (userRole === 'advertiser') {
+            // 一般広告主は本人が作成したキャンペーンのみ取得可能
+            rows = await dbHelper.query.all('SELECT * FROM campaigns WHERE advertiser = ?', [userEmail]);
+        } else if (userRole === 'store' || userRole === 'retailer') {
+            // 店舗オーナーやリテーラーは、自組織 (req.user.org) 宛て、または自ら登録したキャンペーンのみに限定
+            const userOrg = req.user.org || '';
+            rows = await dbHelper.query.all(
+                'SELECT * FROM campaigns WHERE target_org = ? OR advertiser = ?',
+                [userOrg, userEmail]
+            );
+        } else {
+            // その他のロールは権限なしとして空データを返す
+            rows = [];
         }
         
         const formattedList = rows.map(c => ({

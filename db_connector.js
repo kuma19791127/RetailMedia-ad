@@ -37,7 +37,8 @@ if (process.env.DATABASE_URL) {
                     spend DOUBLE PRECISION DEFAULT 0.0,
                     impressions INT DEFAULT 0,
                     status VARCHAR(50) DEFAULT 'pending',
-                    advertiser VARCHAR(255)
+                    advertiser VARCHAR(255),
+                    target_org VARCHAR(255)
                 );
 
                 CREATE TABLE IF NOT EXISTS stores (
@@ -120,6 +121,16 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ PostgreSQL campaigns.advertiser column added or already exists.');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns.advertiser migration error:', e.message);
+            }
+
+            // Migration path: Add target_org column to campaigns table if not exists
+            try {
+                await pool.query(`
+                    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_org VARCHAR(255);
+                `);
+                console.log('[DB] ✅ PostgreSQL campaigns.target_org column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL campaigns.target_org migration error:', e.message);
             }
 
             // Migration path: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
@@ -305,7 +316,8 @@ if (process.env.DATABASE_URL) {
                         spend REAL DEFAULT 0.0,
                         impressions INTEGER DEFAULT 0,
                         status TEXT DEFAULT 'pending',
-                        advertiser TEXT
+                        advertiser TEXT,
+                        target_org TEXT
                     )
                 `);
 
@@ -340,6 +352,23 @@ if (process.env.DATABASE_URL) {
                                 console.error('[SQLite] ALTER TABLE campaigns error:', alterErr.message);
                             } else {
                                 console.log('[SQLite] ✅ campaigns.advertiser column added successfully.');
+                            }
+                        });
+                    }
+                });
+                // SQLite Migration: Add target_org column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error:', err.message);
+                        return;
+                    }
+                    const hasTargetOrg = rows && rows.some(row => row.name === 'target_org');
+                    if (!hasTargetOrg) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN target_org TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error (target_org):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.target_org column added successfully.');
                             }
                         });
                     }
