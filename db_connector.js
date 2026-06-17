@@ -54,11 +54,16 @@ if (process.env.DATABASE_URL) {
                     monthly_adsense_revenue DOUBLE PRECISION DEFAULT 0.0
                 );
 
+                DROP TABLE IF EXISTS pos_transactions;
                 CREATE TABLE IF NOT EXISTS pos_transactions (
-                    id SERIAL PRIMARY KEY,
-                    store_id VARCHAR(255) REFERENCES stores(id) ON DELETE SET NULL,
-                    timestamp VARCHAR(100),
-                    total_amount DOUBLE PRECISION
+                    id VARCHAR(255) PRIMARY KEY,
+                    company_name VARCHAR(255),
+                    store_name VARCHAR(255),
+                    total_amount DOUBLE PRECISION,
+                    billing_email VARCHAR(255),
+                    items TEXT,
+                    status VARCHAR(50),
+                    timestamp BIGINT
                 );
 
                 CREATE TABLE IF NOT EXISTS sensor_logs (
@@ -259,6 +264,62 @@ if (process.env.DATABASE_URL) {
                         age INTEGER,
                         ad_id TEXT,
                         store_id TEXT
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS stores (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        billing_email TEXT,
+                        bank_name TEXT,
+                        branch_name TEXT,
+                        account_number TEXT,
+                        account_holder TEXT,
+                        total_pos_sales REAL DEFAULT 0.0,
+                        total_ad_revenue REAL DEFAULT 0.0,
+                        monthly_operating_cost REAL DEFAULT 0.0,
+                        monthly_labor_cost REAL DEFAULT 0.0,
+                        monthly_adsense_revenue REAL DEFAULT 0.0
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS campaigns (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        start_date TEXT,
+                        end_date TEXT,
+                        budget REAL DEFAULT 0.0,
+                        spend REAL DEFAULT 0.0,
+                        impressions INTEGER DEFAULT 0,
+                        status TEXT DEFAULT 'pending'
+                    )
+                `);
+
+                sqliteDb.run(`
+                    DROP TABLE IF EXISTS pos_transactions
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS pos_transactions (
+                        id TEXT PRIMARY KEY,
+                        company_name TEXT,
+                        store_name TEXT,
+                        total_amount REAL,
+                        billing_email TEXT,
+                        items TEXT,
+                        status TEXT,
+                        timestamp INTEGER
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS sensor_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TEXT,
+                        metric_name TEXT,
+                        metric_value REAL
                     )
                 `);
 

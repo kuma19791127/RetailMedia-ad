@@ -4684,8 +4684,17 @@ async function syncMemoryToDB() {
             if (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) {
                 for (const tx of posTransactions) {
                     await dbHelper.query.run(
-                        'INSERT INTO pos_transactions (store_id, timestamp, total_amount) VALUES (?, ?, ?)',
-                        [tx.storeId || 'STORE_001', tx.timestamp || new Date().toISOString(), tx.amount || 0.0]
+                        'INSERT INTO pos_transactions (id, company_name, store_name, total_amount, billing_email, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                        [
+                            tx.id,
+                            tx.companyName || '',
+                            tx.storeName || '',
+                            tx.totalAmount || 0.0,
+                            tx.billingEmail || '',
+                            JSON.stringify(tx.items || []),
+                            tx.status || 'completed',
+                            tx.timestamp || Date.now()
+                        ]
                     );
                 }
             }
@@ -4780,11 +4789,24 @@ setInterval(async () => {
             };
         });
 
-        const mappedPosTx = dbPosTx.map(tx => ({
-            storeId: tx.store_id,
-            timestamp: tx.timestamp,
-            amount: tx.total_amount
-        }));
+        const mappedPosTx = dbPosTx.map(tx => {
+            let parsedItems = [];
+            try {
+                parsedItems = tx.items ? JSON.parse(tx.items) : [];
+            } catch(e) {
+                console.error("Failed to parse items for pos_transaction id:", tx.id, e);
+            }
+            return {
+                id: tx.id,
+                companyName: tx.company_name,
+                storeName: tx.store_name,
+                totalAmount: tx.total_amount,
+                billingEmail: tx.billing_email,
+                items: parsedItems,
+                status: tx.status,
+                timestamp: Number(tx.timestamp)
+            };
+        });
 
         const dataStr = JSON.stringify({
             signageState: signageServer.getState ? signageServer.getState() : {}, 
@@ -4978,7 +5000,7 @@ app.get('/api/admin/payouts', (req, res) => {
 // ==========================================
 // どこでもレジ (モバイルPOS) 連携API
 // ==========================================
-app.post('/api/pos/checkout', (req, res) => {
+app.post('/api/pos/checkout', async (req, res) => {
     const { companyName, storeName, totalAmount, billingEmail, items } = req.body;
     
     if (!companyName || !totalAmount) {
@@ -4986,18 +5008,43 @@ app.post('/api/pos/checkout', (req, res) => {
     }
 
     const transactionId = 'pos_' + Date.now() + Math.floor(Math.random()*1000);
-    
-    setTimeout(saveFinanceDB, 100);
-    posTransactions.push({
+    const timestamp = Date.now();
+    const itemsData = items || [];
+    const status = 'completed';
+
+    const newTx = {
         id: transactionId,
         companyName,
         storeName: storeName || '未設定',
-        totalAmount,
+        totalAmount: Number(totalAmount),
         billingEmail: billingEmail || '',
-        items: items || [],
-        status: 'completed', // または 'pending_square'
-        timestamp: Date.now()
-    });
+        items: itemsData,
+        status,
+        timestamp
+    };
+
+    posTransactions.push(newTx);
+
+    try {
+        await dbHelper.query.run(
+            'INSERT INTO pos_transactions (id, company_name, store_name, total_amount, billing_email, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                transactionId,
+                companyName,
+                storeName || '未設定',
+                Number(totalAmount),
+                billingEmail || '',
+                JSON.stringify(itemsData),
+                status,
+                timestamp
+            ]
+        );
+        console.log(`[POS DB] 売上データをデータベースへ保存しました: ${transactionId}`);
+    } catch (dbErr) {
+        console.error(`[POS DB] データベースへの保存失敗:`, dbErr.message);
+    }
+
+    saveDatabase();
 
     console.log(`[POS] 売上登録: ${companyName} - ¥${totalAmount}`);
     res.json({ success: true, transactionId });
