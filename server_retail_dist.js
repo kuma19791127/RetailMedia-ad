@@ -93,6 +93,14 @@ const getCookieOptions = (req, maxAge = null) => {
         secure: isProd
     };
     if (maxAge) opts.maxAge = maxAge;
+
+    // 二重ドメイン・クロスサブドメインでのCORS認証Cookie共有対応
+    if (isProd && req && req.headers) {
+        const host = req.headers.host || '';
+        if (host.includes('retail-ad.com')) {
+            opts.domain = '.retail-ad.com';
+        }
+    }
     return opts;
 };
 

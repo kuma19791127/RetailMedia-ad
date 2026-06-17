@@ -624,6 +624,9 @@
                             if (verifyData.success) {
                                 Swal.fire('完了', '二段階認証を設定しました！', 'success').then(() => {
                                     const targetRedirect = data.redirect || 'store_portal.html';
+                                    if (verifyData.token) {
+                                        localStorage.setItem('retailMediaToken', verifyData.token);
+                                    }
                                     sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: data.role }));
                                     sessionStorage.setItem('retailUserEmail', email);
                                     sessionStorage.setItem('retailUserRole', data.role);
@@ -688,6 +691,9 @@
                             if (loginData.success) {
                                 btn.innerText = 'Redirecting...';
                                 const targetRedirect = loginData.redirect || 'store_portal.html';
+                                if (loginData.token) {
+                                    localStorage.setItem('retailMediaToken', loginData.token);
+                                }
                                 sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: data.role }));
                                 sessionStorage.setItem('retailUserEmail', email);
                                 sessionStorage.setItem('retailUserRole', data.role);
@@ -723,6 +729,9 @@
                     } else {
                         btn.innerText = 'Redirecting...';
                         const targetRedirect = data.redirect || 'store_portal.html';
+                        if (data.token) {
+                            localStorage.setItem('retailMediaToken', data.token);
+                        }
                         sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: data.role }));
                         sessionStorage.setItem('retailUserEmail', email);
                         sessionStorage.setItem('retailUserRole', data.role);
