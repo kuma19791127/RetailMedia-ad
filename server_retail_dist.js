@@ -1199,7 +1199,8 @@ app.post('/api/payment/square-charge', async (req, res) => {
         }
 
         // Store separate totals (SSoT Sync)
-        if (source.includes('anywhere-regi') || source.includes('anywhere_regi')) {
+        const isAnywhereRegi = source && typeof source === 'string' && (source.includes('anywhere-regi') || source.includes('anywhere_regi'));
+        if (isAnywhereRegi) {
             if(typeof storeData !== 'undefined' && storeData["default_store"]) {
                 storeData["default_store"].total_pos_sales += Number(amount);
                 console.log(`[Admin] POS Sales updated. Current pos total: ¥${storeData["default_store"].total_pos_sales}`);
@@ -1439,7 +1440,11 @@ app.post('/api/admin/sales', (req, res) => {
     try {
         const txData = req.body;
         console.log(`[POS Sync] ✅ Received New Transaction: ${txData.transactionId} (${txData.amount}円)`);
-        console.log(`[POS Sync] 🛒 Items:`, txData.items.map(i => `${i.name} (¥${i.price})`).join(', '));
+        
+        const itemsStr = (txData.items && Array.isArray(txData.items)) 
+            ? txData.items.map(i => `${i.name || '商品'} (¥${i.price || 0})`).join(', ')
+            : 'なし';
+        console.log(`[POS Sync] 🛒 Items:`, itemsStr);
         
         // Broadcast the purchase event so Signage and Ad Engine can see the Uplift
         broadcastEvent({
