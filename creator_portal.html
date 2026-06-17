@@ -73,34 +73,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Creator Portal - retail-ad</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">
-        function requestUnlock() {
-            Swal.fire({
-                title: 'アカウントロック解除申請',
-                text: 'AI審査により不適切と判定された動画を削除/修正しましたか？運営(Review)へ解除申請を送信します。',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'はい、申請します'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch(API_BASE + '/api/review/unlock', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ creatorId: 'クリエイター' })
-                    }).then(res => res.json()).then(data => {
-                        if (data.success) {
-                            Swal.fire('申請完了', '運営チーム(Review)へアカウントロック解除申請が送信されました。確認まで1〜2営業日お待ちください。', 'success');
-                        } else {
-                            Swal.fire('エラー', '申請の送信に失敗しました', 'error');
-                        }
-                    });
-                }
-            });
-        }
-
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .swal2-container {
@@ -374,25 +347,8 @@ h2 {
 
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-<script>if(window.customElements.get('budoux-ja')) { console.log('Already defined'); } else { /* loaded */ }</script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                // Apply to standard text elements avoiding breaking components
-                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
-                elements.forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
-
-
-
     
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
-    
     <style>
         h1, h2, h3, h4, h5 {
             text-wrap: balance !important;
@@ -411,17 +367,16 @@ h2 {
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            localStorage.setItem('last_active_service', 'creator_portal.html');
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
-                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li, .card p').forEach(el => {
                     parser.applyToElement(el);
                 });
             }
         });
     </script>
     <!-- END TYPOGRAPHY FIX -->
-
-
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
@@ -1290,36 +1245,6 @@ async function open2FASetup() {
     </script>
 
     <!-- Native 2FA Setup/Manage Overlays (Removed) -->
-<script>
-let current2FASecret = "";
-async function open2FASetup() {
-    const email = sessionStorage.getItem("retailUserEmail");
-    const qrRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/setup", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, role: "creator"})});
-    const qrData = await qrRes.json();
-    current2FASecret = qrData.secret;
-    document.getElementById("native-2fa-qr").src = qrData.qrcode;
-    document.getElementById("native-2fa-error").style.display = "none";
-    document.getElementById("native-2fa-code").value = "";
-    document.getElementById("native-2fa-setup-overlay").style.display = "flex";
-}
-
-async function submit2FASetup() {
-    const email = sessionStorage.getItem("retailUserEmail");
-    const code = document.getElementById("native-2fa-code").value.trim();
-    if(!code) return;
-    const vRes = await fetch(window.API_BASE_URL + "/api/auth/2fa/enable", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({email, token: code, secret: current2FASecret, role: "creator"})});
-    const vData = await vRes.json();
-    if(vData.success) {
-        Swal.fire("成功", "二段階認証を有効化しました。", "success");
-        document.getElementById("native-2fa-setup-overlay").style.display = "none";
-    } else {
-        document.getElementById("native-2fa-error").style.display = "block";
-    }
-}
-
-        // (requestWithdrawal function deleted)
-
-</script>
 
     <script>
     async function runCreatorAgent() {

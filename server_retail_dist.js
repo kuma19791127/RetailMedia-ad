@@ -619,12 +619,12 @@ app.get('/api/review/unlock', requireAuth, (req, res) => {
     res.json(CREATOR_STATE.unlockRequests);
 });
 
-app.post('/api/review/unlock', async (req, res) => {
+app.post('/api/review/unlock', requireAuth, async (req, res) => {
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     
     const proofFile = req.body.proofFile;
     const appealText = req.body.appealText;
-    const creatorId = req.body.creatorId || 'Creator_Main';
+    const creatorId = req.user.email;
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     
     let aiRiskScore = 15; // default low risk
@@ -784,8 +784,9 @@ const isDemoAccount = (email) => {
     if (!email) return true;
     return email.includes('demo') || email === 'admin';
 };
-app.post('/api/creator/request-unlock', (req, res) => {
-    const { email, appealText } = req.body;
+app.post('/api/creator/request-unlock', requireAuth, (req, res) => {
+    const { appealText } = req.body;
+    const email = req.user.email;
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     CREATOR_STATE.unlockRequests.push({
         id: Date.now().toString(),
@@ -3072,8 +3073,9 @@ app.post('/api/admin/agency-verify', requireAuth, (req, res) => {
 // --- CREATOR BANK DATA STORE ---
 const creatorBankData = creatorBanks;
 
-app.post('/api/creator/bank', async (req, res) => {
-    const { email, bankName, branchName, accountNum, holderName, idBase64 } = req.body;
+app.post('/api/creator/bank', requireAuth, async (req, res) => {
+    const email = req.user.email;
+    const { bankName, branchName, accountNum, holderName, idBase64 } = req.body;
     if (!email || !holderName) return res.status(400).json({ error: "必要な情報が不足しています" });
     if (!idBase64) return res.status(400).json({ error: "身分証画像が必要です" });
 
@@ -5822,7 +5824,7 @@ app.get('/api/analytics/pos-search', (req, res) => {
     res.json({ success: true, data: simulatedData });
 });
 
-app.get('/api/creator/match-ads', (req, res) => {
+app.get('/api/creator/match-ads', requireAuth, (req, res) => {
     const matchedAds = [
         { 
             id: "ad_beer_001", 
