@@ -97,7 +97,7 @@ const getCookieOptions = (req, maxAge = null) => {
     // 二重ドメイン・クロスサブドメインでのCORS認証Cookie共有対応
     if (isProd && req && req.headers) {
         const host = req.headers.host || '';
-        if (host.includes('retail-ad.com')) {
+        if (/(^|\.)retail-ad\.com$/.test(host)) {
             opts.domain = '.retail-ad.com';
         }
     }
