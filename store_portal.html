@@ -1936,7 +1936,7 @@
         // --- Revenue Logic ---
         async function loadRevenue() {
             try {
-                const res = await fetch(`${API_URL}/api/store/revenue`);
+                const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
                 const data = await res.json();
 
                 const ysEl = document.getElementById('your-share');
@@ -2146,7 +2146,7 @@
                 const speed = document.getElementById('voice-speed').value;
                 // Target Broadcast to THIS store only (Prevents global panic)
                 const storeId = "STORE_001";
-                await fetch(`/ api / ai / generate ? text = ${encodeURIComponent(text)}& speed=${speed}& storeId=${storeId} `);
+                await fetch(`${window.API_BASE_URL}/api/ai/generate?text=${encodeURIComponent(text)}&speed=${speed}&storeId=${storeId}`);
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Broadcast Live (Local Store)!', showConfirmButton: false, timer: 1500 });
             }, 1500);
         }
@@ -2371,26 +2371,6 @@
             });
         }
 
-        // Live Revenue Updates
-        async function fetchStoreRevenue() {
-            try {
-                const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
-                const json = await res.json();
-                if (json.success) {
-                    document.getElementById('your-share').innerText = '¥' + json.adnet.toLocaleString();
-                    document.getElementById('adsense-revenue').innerText = '¥' + json.adsense.toLocaleString();
-                    document.getElementById('ad-unit-a').innerText = json.unitA.toLocaleString();
-                    document.getElementById('ad-unit-b').innerText = json.unitB.toLocaleString();
-                }
-            } catch (e) {
-                console.error("Revenue Fetch Error", e);
-            }
-        }
-
-        window.addEventListener('load', () => {
-             fetchStoreRevenue();
-             setInterval(fetchStoreRevenue, 5000);
-        });
     </script>
 
 <!-- Context-Agnostic Profile Edit Modal -->

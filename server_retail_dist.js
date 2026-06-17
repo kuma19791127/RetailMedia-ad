@@ -2859,19 +2859,6 @@ app.post('/api/ai/tts', async (req, res) => {
     }
 });
 
-app.get('/api/store/revenue', (req, res) => {
-    const s = storeData["default_store"];
-    res.json({
-        totalRevenue: totalRevenue,
-        storeShare: totalRevenue * 0.5, // 50% split
-        transactions: transactions,
-        history: [50000, 120000, 250000, 310000, 450000, totalRevenue * 0.5],
-        // return saved settings
-        bank_info: s.bank_info,
-        billing_email: s.billing_email
-    });
-});
-
 app.get('/api/ad/analytics', requireAuth, async (req, res) => {
     const region = req.query.region || 'Tokyo';
     const lat = req.query.lat;
@@ -5781,9 +5768,27 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
             );
             store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
         }
+        
+        const adsenseRev = store ? store.total_ad_revenue : 20000;
+        
         res.json({
-            totalAdSpend: 150000, 
-            adsenseRevenue: store ? store.total_ad_revenue : 20000 
+            success: true,
+            totalRevenue: totalRevenue,
+            storeShare: totalRevenue * 0.5,
+            adsense: adsenseRev,
+            unitA: Math.round(adsenseRev * 0.6),
+            unitB: Math.round(adsenseRev * 0.4),
+            transactions: transactions || [],
+            history: [50000, 120000, 250000, 310000, 450000, totalRevenue * 0.5],
+            bank_info: {
+                bank_name: store.bank_name || '',
+                branch_name: store.branch_name || '',
+                account_number: store.account_number || '',
+                account_holder: store.account_holder || '',
+                email: store.billing_email || req.user.email
+            },
+            billing_email: store.billing_email || req.user.email,
+            adnet: totalRevenue * 0.5
         });
     } catch (e) {
         res.status(500).json({ error: e.message });
