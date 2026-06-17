@@ -426,27 +426,8 @@
 
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                // Apply to standard text elements avoiding breaking components
-                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
-                elements.forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
-
-    <!-- Security Check: Redirect to login if cache/session is cleared or app restarted -->
-    <script>
-        // Admin login is independent; Removed redirect restriction.
-    </script>
-
     
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
-    
     <style>
         h1, h2, h3, h4, h5 {
             text-wrap: balance !important;
@@ -465,9 +446,10 @@
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            localStorage.setItem('last_active_service', 'admin_portal.html');
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
-                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li, .card p, .card h3').forEach(el => {
                     parser.applyToElement(el);
                 });
             }
@@ -2187,13 +2169,13 @@
                 if (data.success) {
                     const rememberMe = document.getElementById('remember-me').checked;
                     if (rememberMe) {
-                        localStorage.setItem('admin_last_email', user);
-                        localStorage.setItem('admin_last_password', pass);
-                        localStorage.setItem('admin_last_active_service', window.location.href);
+                        localStorage.setItem('last_email', user);
+                        localStorage.setItem('last_password', pass);
+                        localStorage.setItem('last_active_service', 'admin_portal.html');
                     } else {
-                        localStorage.removeItem('admin_last_email');
-                        localStorage.removeItem('admin_last_password');
-                        localStorage.removeItem('admin_last_active_service');
+                        localStorage.removeItem('last_email');
+                        localStorage.removeItem('last_password');
+                        localStorage.removeItem('last_active_service');
                     }
 
                     if (window.PasswordCredential) {
@@ -2461,8 +2443,8 @@
 
         // Auto-fill admin login credentials and handle auto-login / session restore
         document.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('admin_last_email');
-            const savedPass = localStorage.getItem('admin_last_password');
+            const savedEmail = localStorage.getItem('last_email');
+            const savedPass = localStorage.getItem('last_password');
             if (savedEmail) {
                 document.getElementById('admin-user').value = savedEmail;
                 document.getElementById('remember-me').checked = true;

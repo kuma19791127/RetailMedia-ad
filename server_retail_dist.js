@@ -124,6 +124,59 @@ const requireAuth = (req, res, next) => {
     }
 };
 
+// Middleware: Admin, Bank, and freee APIs Authorization Reinforcement
+app.use((req, res, next) => {
+    const path = req.path;
+    
+    // Check if the path targets administrative, banking, or accounting APIs
+    const isAdminApi = path.startsWith('/api/admin/');
+    const isBankApi = path.startsWith('/api/bank/');
+    const isFreeeApi = path.startsWith('/api/freee/');
+    
+    if (isAdminApi || isBankApi || isFreeeApi) {
+        // Exclude endpoints that do not require admin session validation:
+        // - POS transaction sync endpoints (accessed by POS/AnyWhere Regi system)
+        // - Agency portals referrals submit/status endpoints (accessed by agencies)
+        // - Anywhere Regi password reset/billing email setting (accessed before authentication)
+        // - freee OAuth redirect callback (accessed by external redirect without headers)
+        const isSalesSync = path === '/api/admin/sales' || path === '/api/admin/sales/sync-batch';
+        const isAgencyApi = path === '/api/admin/agency-submit' || path === '/api/admin/agency';
+        const isBillingEmailSetup = path === '/api/admin/settings/billing-email';
+        const isFreeeCallback = path === '/api/freee/callback';
+        
+        if (isSalesSync || isAgencyApi || isBillingEmailSetup || isFreeeCallback) {
+            return next();
+        }
+        
+        // Execute requireAuth validation logic
+        let token = req.cookies.token;
+        const authHeader = req.headers.authorization;
+        if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+        }
+
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized: No token provided" });
+        }
+        
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            req.user = decoded; // { email, role }
+            
+            // Reinforce role validation: must be 'admin'
+            if (req.user.role !== 'admin') {
+                return res.status(403).json({ error: "管理者権限が必要です" });
+            }
+            
+            next();
+        } catch (err) {
+            return res.status(403).json({ error: "Forbidden: Invalid or expired token" });
+        }
+    } else {
+        next();
+    }
+});
+
 app.get('/api/db-status', async (req, res) => {
     if (!pool) {
         return res.send("<h2>[DB Status] DATABASE_URL is NOT set. Running in Memory mode.</h2>");
