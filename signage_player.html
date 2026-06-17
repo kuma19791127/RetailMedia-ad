@@ -354,18 +354,7 @@
 
     <!-- BudouX for Japanese Typography (Safari/iOS compatible) -->
     <script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                // Apply to standard text elements avoiding breaking components
-                const elements = document.querySelectorAll('h1, h2, h3, p, .card p, .subtitle');
-                elements.forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
+
 
     
     <!-- ULTIMATE JAPANESE TYPOGRAPHY FIX -->
@@ -386,16 +375,7 @@
             h2 { font-size: clamp(1.4rem, 5vw, 2rem) !important; line-height: 1.4 !important; }
         }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof budoux !== 'undefined') {
-                const parser = budoux.loadDefaultJapaneseParser();
-                document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {
-                    parser.applyToElement(el);
-                });
-            }
-        });
-    </script>
+
     <!-- END TYPOGRAPHY FIX -->
 
 
@@ -442,7 +422,7 @@
             if (yt) yt.style.cssText = cssText;
         }
         
-        document.addEventListener('DOMContentLoaded', applyPanelScaling);
+
 
     </script>
 </head>
@@ -611,12 +591,6 @@
         const POLL_INTERVAL = 3000;
 
         // Autoplay logic (Try unmuted first, fallback to muted if blocked)
-window.addEventListener('DOMContentLoaded', () => {
-    waiting.style.display = 'none';
-    window.isUserUnmuted = null; // null: 初期判定未完了
-    fetchPlaylist();
-    if (!cameraStream) toggleCamera();
-});
 
 // Allow unmuting by clicking anywhere later if needed
 document.body.addEventListener('click', () => {
@@ -1440,7 +1414,26 @@ document.body.addEventListener('click', () => {
             });
         }
 
+        // Integrated DOMContentLoaded listener to clean up multiple redundant event handlers
         window.addEventListener('DOMContentLoaded', () => {
+            // 1. BudouX Japanese typography parser
+            if (typeof budoux !== 'undefined') {
+                const parser = budoux.loadDefaultJapaneseParser();
+                document.querySelectorAll('h1, h2, h3, p, .subtitle, li, .card p').forEach(el => {
+                    parser.applyToElement(el);
+                });
+            }
+
+            // 2. LED panel auto-scaling
+            applyPanelScaling();
+
+            // 3. Playback initialization
+            waiting.style.display = 'none';
+            window.isUserUnmuted = null;
+            fetchPlaylist();
+            if (!cameraStream) toggleCamera();
+
+            // 4. Update terminal badge
             updateTerminalBadge();
         });
     </script>

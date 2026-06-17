@@ -2983,15 +2983,9 @@ app.get('/api/signage/playlist', (req, res) => {
     const storeId = req.query.storeId || 'STORE_001'; // 安全なデフォルトフォールバック
     let playlist = signageServer.getPlaylist(location, false, storeId);
 
-    // [Fix] Force Remove Default "Spaghetti" Demo Content if present
+    // [Fix] Handle Default "Spaghetti" Demo Content in Production Mode
     if (playlist && playlist.length > 0 && playlist[0].id === 'ad_default') {
-        playlist = []; // Send empty playlist instead of demo video
-    }
-
-    // [Production Mode Logic]
-    // If in Production, do NOT show the default "Spaghetti" demo.
-    // Show a "Waiting for Content" placeholder instead if no paid/store content exists.
-    if (playlist.length > 0 && playlist[0].id === 'ad_default') {
+        // Show a "Waiting for Content" placeholder instead of default demo video to prevent unapproved brand exposure in production
         playlist = [{
             id: 'placeholder_prod',
             title: 'Waiting for Content',
