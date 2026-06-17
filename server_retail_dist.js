@@ -1793,7 +1793,16 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
 
         // Handle Agency Commission Match
         let appliedPrice = parseInt(budget) || 10000;
-        let matchedAgency = agencyReferrals.find(r => r.advertise === ad_email && r.status === 'Pending');
+        let matchedAgency = null;
+        if (agencyReferrals) {
+            for (const email of Object.keys(agencyReferrals)) {
+                const foundRef = agencyReferrals[email].find(r => r.advertise === ad_email && r.status === 'Pending');
+                if (foundRef) {
+                    matchedAgency = foundRef;
+                    break;
+                }
+            }
+        }
         if (matchedAgency) {
             matchedAgency.status = '稼働中';
             matchedAgency.price = appliedPrice; // Update to actual budget
@@ -3009,7 +3018,7 @@ app.post('/api/admin/agency-submit', requireAuth, async (req, res) => {
     
     const newReferral = {
         date: req.body.date,
-        agency: req.body.agency || agencyEmail,
+        agency: agencyEmail, // ログイン代理店のメールアドレスに強制固定しなりすましを排除
         advertise: req.body.advertise,
         price: parseInt(req.body.price) || 0,
         status: 'Pending'
@@ -3047,6 +3056,10 @@ app.get('/api/admin/agency', requireAuth, (req, res) => {
 });
 
 app.post('/api/admin/agency-verify', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+    
     const { advertise } = req.body;
     let found = false;
     
@@ -4091,7 +4104,8 @@ app.get('/agency-portal', (req, res) => res.sendFile(path.join(__dirname, 'agenc
 // --- AGENCY API & STATE ---
 app.get('/api/agency/dashboard', (req, res) => {
     // Process existing agency referrals to build dashboard statistics
-    const totalGross = agencyReferrals.reduce((sum, c) => sum + (c.price || 0), 0);
+    const allReferrals = agencyReferrals ? Object.values(agencyReferrals).flat() : [];
+    const totalGross = allReferrals.reduce((sum, c) => sum + (c.price || 0), 0);
     const totalCommission = Math.floor(totalGross * 0.20); // 20% Margin
 
     res.json({
@@ -4834,7 +4848,8 @@ function loadFinanceDB() {
                     if (data.creatorBanks) creatorBanks = data.creatorBanks;
                     if (data.kycRequests) kycRequests = data.kycRequests;
                     if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
-                    console.log(`[Finance DB] Loaded from S3: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyReferrals.length} Agency Referrals.`);
+                    const agencyCount = agencyReferrals ? Object.values(agencyReferrals).flat().length : 0;
+                    console.log(`[Finance DB] Loaded from S3: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyCount} Agency Referrals.`);
                 })
                 .catch(e => {
                     console.log('[S3] Notice: No existing finance_database found on S3, fallback to local.');
@@ -4860,7 +4875,8 @@ function loadLocalFinanceDB() {
             if (data.creatorBanks) creatorBanks = data.creatorBanks;
             if (data.kycRequests) kycRequests = data.kycRequests;
             if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
-            console.log(`[Finance DB] Loaded from Local: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyReferrals.length} Agency Referrals.`);
+            const agencyCount = agencyReferrals ? Object.values(agencyReferrals).flat().length : 0;
+            console.log(`[Finance DB] Loaded from Local: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyCount} Agency Referrals.`);
         }
     } catch (e) {
         console.error("[Finance DB] Local Load Error", e);
