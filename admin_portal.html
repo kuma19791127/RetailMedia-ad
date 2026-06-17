@@ -44,7 +44,6 @@
                             if (!url.includes('/api/auth/login')) {
                                 console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                                 sessionStorage.clear();
-                                localStorage.removeItem('last_active_service');
                                 window.location.replace('index.html?logout=true');
                             }
                         }
@@ -2299,7 +2298,6 @@
         function logoutAdmin() {
             console.log('[F12 Debug] Admin Portal Logout initiated');
             sessionStorage.clear();
-            localStorage.removeItem('last_active_service');
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'flex';
             document.getElementById('admin-user').value = '';

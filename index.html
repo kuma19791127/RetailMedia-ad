@@ -14,13 +14,7 @@
         console.log("[F12 Debug] index.html loaded. Query parameters:", window.location.search);
         
         if (urlParams.has('logout')) {
-            console.log("[F12 Debug] Logout detected. Clearing localStorage credentials...");
-            localStorage.removeItem('retailMediaSavedEmail');
-            localStorage.removeItem('retailMediaSavedPassword');
-            localStorage.removeItem('retailMediaSavedRole');
-            localStorage.removeItem('last_active_service');
-            localStorage.removeItem('last_email');
-            localStorage.removeItem('last_password');
+            console.log("[F12 Debug] Logout detected. Clearing active session tokens (remembered credentials are kept)...");
             localStorage.removeItem('retailMediaToken');
         } else if (!urlParams.has('bypass_redirect')) {
             const lastService = localStorage.getItem('last_active_service');

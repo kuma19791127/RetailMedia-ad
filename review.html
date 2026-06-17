@@ -419,7 +419,6 @@ async function loadKYCReq() {
         function logout() {
             document.getElementById('login-pass').value = '';
             document.getElementById('login-overlay').style.display = 'flex';
-            localStorage.removeItem('last_active_service');
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     toast: true,

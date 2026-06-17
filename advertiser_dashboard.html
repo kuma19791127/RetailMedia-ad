@@ -44,7 +44,6 @@
                             if (!url.includes('/api/auth/login')) {
                                 console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                                 sessionStorage.clear();
-                                localStorage.removeItem('last_active_service');
                                 window.location.replace('index.html?logout=true');
                             }
                         }
