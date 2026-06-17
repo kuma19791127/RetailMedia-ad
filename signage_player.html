@@ -997,15 +997,19 @@ document.body.addEventListener('click', () => {
                 attention = 20; // Default baseline so it doesn't instantly zero out if camera is off
             }
 
-            console.log(`[Analytics API] Sending beacon data for Ad: ${adId} (Attention: ${attention}%, Skip: ${skip})`);
-            fetch(window.API_BASE_URL + `/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}`).then(r => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const storeId = urlParams.get('storeId') || 'STORE_001';
+
+            console.log(`[Analytics API] Sending beacon data for Store: ${storeId}, Ad: ${adId} (Attention: ${attention}%, Skip: ${skip})`);
+            fetch(window.API_BASE_URL + `/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}&storeId=${storeId}`).then(r => {
                 if(!r.ok) console.error(`[Analytics API] Beacon Failed! Status: ${r.status}`);
             }).catch(err => console.error(`[Analytics API] Network Error on endpoint /api/analytics/track! Error: ${err.message}`));
 
             // 送信用ペイロードの作成
             const sensorPayload = {
                 adId: adId,
-                images: currentAdStats.faceImages || []
+                images: currentAdStats.faceImages || [],
+                storeId: storeId
             };
 
             // カメラがオフ、または顔が一切検知されなかった場合はシミュレーション用に手動の仮値を渡す

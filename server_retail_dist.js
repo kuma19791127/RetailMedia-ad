@@ -602,7 +602,7 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy_pol
 
 // --- CREATOR API ---
 
-app.get('/api/review/unlock', (req, res) => {
+app.get('/api/review/unlock', requireAuth, (req, res) => {
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     res.json(CREATOR_STATE.unlockRequests);
 });
@@ -697,7 +697,10 @@ app.post('/api/review/unlock', async (req, res) => {
     res.json({ success: true, riskScore: aiRiskScore });
 });
 
-app.post('/api/review/unlock/:id/approve', (req, res) => {
+app.post('/api/review/unlock/:id/approve', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     if(!CREATOR_STATE.unlockRequests) CREATOR_STATE.unlockRequests = [];
     const item = CREATOR_STATE.unlockRequests.find(r => r.id == req.params.id);
     if(item) {
@@ -2461,9 +2464,10 @@ net user SignagePlayer /delete 2>nul
 });
 
 // --- Retailer Video Upload (S3 Direct) ---
-app.post('/api/retailer/upload', async (req, res) => {
+app.post('/api/retailer/upload', requireAuth, async (req, res) => {
     try {
-        const { fileData, filename, prefix, targetStore } = req.body;
+        const { fileData, filename, targetStore } = req.body;
+        const prefix = req.user.org || req.user.email; // Bodyのprefixを無視し、JWTから取得
         if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
 
         // --- AI Moderation for Retailer Videos (REST Gemini API with Model Fallback) ---
@@ -2572,6 +2576,7 @@ app.post('/api/retailer/upload', async (req, res) => {
                     time_limit: req.body.time_limit !== undefined ? req.body.time_limit : false
                 };
                 global.retailer_videos.push(newVideo);
+                if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: S3永続化
                 res.json({ success: true, video: newVideo });
             }).catch(err => {
                 console.error("[Retailer] S3 Upload Error:", err);
@@ -2621,17 +2626,30 @@ app.post('/api/retailer/upload', async (req, res) => {
     }
 });
 
-app.get('/api/retailer/videos', (req, res) => {
-    const prefix = req.query.prefix;
+app.get('/api/retailer/videos', requireAuth, (req, res) => {
+    const prefix = req.user.org || req.user.email; // Queryのprefixを無視し、JWTから取得
     if (!global.retailer_videos) global.retailer_videos = [];
     const vids = global.retailer_videos.filter(v => v.retailer_prefix === prefix);
     res.json(vids);
 });
 
-app.delete('/api/retailer/videos/:id', (req, res) => {
-    if (!global.retailer_videos) return res.json({success:false});
+app.delete('/api/retailer/videos/:id', requireAuth, (req, res) => {
+    if (!global.retailer_videos) return res.status(404).json({ success: false, error: "動画リストが初期化されていません" });
+    
+    const targetVideo = global.retailer_videos.find(v => v.id === req.params.id);
+    if (!targetVideo) {
+        return res.status(404).json({ success: false, error: "動画が見つかりません" });
+    }
+    
+    // 所有者検証 (他社の動画の不正削除防止)
+    const userPrefix = req.user.org || req.user.email;
+    if (targetVideo.retailer_prefix !== userPrefix) {
+        return res.status(403).json({ success: false, error: "他社の動画を削除する権限がありません" });
+    }
+    
     global.retailer_videos = global.retailer_videos.filter(v => v.id !== req.params.id);
-    res.json({success:true});
+    if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: S3永続化
+    res.json({ success: true });
 });
 
 app.post('/api/ad/upload', (req, res) => {
@@ -2831,7 +2849,7 @@ app.get('/api/ad/analytics', async (req, res) => {
 app.get('/api/signage/playlist', (req, res) => {
     console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
     const location = req.query.location || 'register_side';
-    let playlist = signageServer.getPlaylist(location);
+    let playlist = signageServer.getPlaylist(location, false, req.query.storeId);
 
     // [Fix] Force Remove Default "Spaghetti" Demo Content if present
     if (playlist && playlist.length > 0 && playlist[0].id === 'ad_default') {
@@ -3116,7 +3134,9 @@ app.get('/api/analytics/track', (req, res) => {
     const adId = req.query.adId;
     const attentionStr = req.query.attention;
     const skipStr = req.query.skip;
+    const storeId = req.query.storeId || 'Unknown';
 
+    console.log(`[Analytics Track] Request from Store: ${storeId}, Ad: ${adId}`);
     if (!adId) return res.status(400).json({ error: "adId required" });
 
     // 1. Process Synergy Data (Attention & Skip)
@@ -3341,8 +3361,8 @@ app.get('/api/analytics/ranking', (req, res) => {
 // 4. AI Sensor Data Receiver
 app.post('/api/sensor', async (req, res) => {
     try {
-        const { adId, images, gender, age } = req.body;
-        console.log(`[Sensor API] Request received for adId: ${adId}, images count: ${images ? images.length : 0}`);
+        const { adId, images, gender, age, storeId } = req.body;
+        console.log(`[Sensor API] Request received for Store: ${storeId || 'Unknown'}, adId: ${adId}, images count: ${images ? images.length : 0}`);
 
         let detectedGender = gender || 'unknown';
         let detectedAge = age ? parseInt(age) : 25;
@@ -3377,10 +3397,10 @@ You must output ONLY a valid JSON object matching the following structure:
 
         const timestampStr = new Date().toISOString();
 
-        // 1. SQLiteに非同期でインサート
+        // 1. SQLiteに非同期でインサート (店舗ID対応)
         await dbHelper.query.run(
-            'INSERT INTO face_sensor_logs (timestamp, gender, age, ad_id) VALUES (?, ?, ?, ?)',
-            [timestampStr, detectedGender, detectedAge, adId || 'unknown']
+            'INSERT INTO face_sensor_logs (timestamp, gender, age, ad_id, store_id) VALUES (?, ?, ?, ?, ?)',
+            [timestampStr, detectedGender, detectedAge, adId || 'unknown', storeId || 'Unknown']
         );
 
         // 2. インプレッションと売上（レベニュー）の更新

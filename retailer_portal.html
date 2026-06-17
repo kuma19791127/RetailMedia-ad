@@ -1475,6 +1475,7 @@ async function sendBulkEmail() {
         const res = await fetch((window.API_BASE_URL || '') + '/api/retailer/bulk-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 prefix: currentPrefix,
                 list: list,
@@ -1594,6 +1595,7 @@ async function handleUpload(file) {
             const res = await fetch(window.API_BASE_URL + '/api/retailer/upload', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     filename: file.name,
                     fileData: reader.result,
@@ -1623,7 +1625,9 @@ async function handleUpload(file) {
 
 async function loadVideos() {
     try {
-        const res = await fetch(window.API_BASE_URL + '/api/retailer/videos?prefix=' + currentPrefix);
+        const res = await fetch(window.API_BASE_URL + '/api/retailer/videos?prefix=' + currentPrefix, {
+            credentials: 'include'
+        });
         const videos = await res.json();
         let html = '';
         if(videos.length === 0) {
@@ -1648,7 +1652,10 @@ async function loadVideos() {
 
 async function deleteVideo(id) {
     if(confirm("この動画の配信を停止し、削除しますか？")) {
-        await fetch(window.API_BASE_URL + '/api/retailer/videos/' + id, { method: 'DELETE' });
+        await fetch(window.API_BASE_URL + '/api/retailer/videos/' + id, { 
+            method: 'DELETE',
+            credentials: 'include'
+        });
         loadVideos();
     }
 }

@@ -73,7 +73,8 @@ if (process.env.DATABASE_URL) {
                     timestamp VARCHAR(100),
                     gender VARCHAR(50),
                     age INT,
-                    ad_id TEXT
+                    ad_id TEXT,
+                    store_id VARCHAR(100)
                 );
 
                 CREATE TABLE IF NOT EXISTS products (
@@ -93,6 +94,16 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ Users constraint migrated to composite primary key (email, role).');
             } catch (e) {
                 // If migration fails because it is already composite, ignore
+            }
+
+            // Migration path: Add store_id column to face_sensor_logs if not exists
+            try {
+                await pool.query(`
+                    ALTER TABLE face_sensor_logs ADD COLUMN IF NOT EXISTS store_id VARCHAR(100);
+                `);
+                console.log('[DB] ✅ PostgreSQL face_sensor_logs.store_id column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL face_sensor_logs.store_id migration error:', e.message);
             }
 
             // Migration path: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
@@ -246,9 +257,28 @@ if (process.env.DATABASE_URL) {
                         timestamp TEXT,
                         gender TEXT,
                         age INTEGER,
-                        ad_id TEXT
+                        ad_id TEXT,
+                        store_id TEXT
                     )
                 `);
+
+                // Migration: Add store_id column to face_sensor_logs for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error:', err.message);
+                        return;
+                    }
+                    const hasStoreId = rows && rows.some(row => row.name === 'store_id');
+                    if (!hasStoreId) {
+                        sqliteDb.run("ALTER TABLE face_sensor_logs ADD COLUMN store_id TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE face_sensor_logs error:', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ face_sensor_logs.store_id column added successfully.');
+                            }
+                        });
+                    }
+                });
 
                 // Recreate users table to apply schema change dynamically
                 sqliteDb.run("DROP TABLE IF EXISTS users");
