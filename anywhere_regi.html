@@ -531,6 +531,10 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         // --- Global State ---
         let currentSession = null;
+        function getPosStorageKey(baseKey) {
+            const email = (currentSession && currentSession.email) ? currentSession.email : 'guest';
+            return `${baseKey}_${email}`;
+        }
         let currentStoreConfig = null;
 
         const API_URL = window.API_BASE_URL;
@@ -1029,7 +1033,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         function showSalesByCompany() {
-            const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
+            const key = getPosStorageKey('pos_company_sales');
+            const companySales = JSON.parse(localStorage.getItem(key) || '{}');
             let html = '<div style="text-align: left; margin-top: 10px;">';
             let grandTotal = 0;
             const keys = Object.keys(companySales);
@@ -1044,7 +1049,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 });
                 html += `<tr><td style="padding: 12px 8px; font-weight: bold; color:#1e293b;">総合計</td><td style="padding: 12px 8px; text-align: right; font-weight: 800; color: #2563EB; font-size: 18px;">¥${grandTotal.toLocaleString()}</td></tr>`;
                 html += '</table>';
-                html += `<div style="margin-top:20px; text-align:center;"><button onclick="if(confirm('売上データをリセットしますか？')) { localStorage.removeItem('pos_company_sales'); Swal.close(); }" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; text-decoration:underline;">売上データをリセット</button></div>`;
+                html += `<div style="margin-top:20px; text-align:center;"><button onclick="if(confirm('売上データをリセットしますか？')) { localStorage.removeItem('${key}'); Swal.close(); }" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; text-decoration:underline;">売上データをリセット</button></div>`;
             }
             html += '</div>';
 
@@ -1157,16 +1162,18 @@ function playBeep() {
                     }
 
                     // --- Organization Breakdown ---
-                    const companySales = JSON.parse(localStorage.getItem('pos_company_sales') || '{}');
+                    const salesKey = getPosStorageKey('pos_company_sales');
+                    const companySales = JSON.parse(localStorage.getItem(salesKey) || '{}');
                     const orgName = (currentSession && currentSession.storeName) ? currentSession.storeName : "未設定の組織";
                     companySales[orgName] = (companySales[orgName] || 0) + total;
-                    localStorage.setItem('pos_company_sales', JSON.stringify(companySales));
+                    localStorage.setItem(salesKey, JSON.stringify(companySales));
 
                     // --- Cross-Tab Sync for Local Demo ---
-                    const localLog = JSON.parse(localStorage.getItem('admin_pos_log') || '[]');
+                    const logKey = getPosStorageKey('admin_pos_log');
+                    const localLog = JSON.parse(localStorage.getItem(logKey) || '[]');
                     localLog.unshift({ type: 'LIVE_SALE', source: 'どこでもレジ端末', amount: total, time: new Date().toLocaleTimeString(), items: txData.items.map(i=>i.name).join(', ') });
                     if(localLog.length > 50) localLog.pop();
-                    localStorage.setItem('admin_pos_log', JSON.stringify(localLog));
+                    localStorage.setItem(logKey, JSON.stringify(localLog));
 
                     Swal.fire({
                         icon: 'success',

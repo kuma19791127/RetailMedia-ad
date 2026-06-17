@@ -2909,46 +2909,73 @@ let globalDashboardStats = {
 };
 
 let posTransactions = [];
-let manualChat = [];
-let manualhelpState = { manuals: [], logs: [] };
-let shiftState = { staff: [], chatHistory: [] };
+let manualChat = {};
+let manualhelpState = {};
+let shiftState = {};
 
 // --- AGENCY REFERRAL DATA STORE ---
-let agencyReferrals = [];
+let agencyReferrals = {};
 
-app.post('/api/admin/agency-submit', async (req, res) => {
-    setTimeout(saveFinanceDB, 100);
-    agencyReferrals.push({
+app.post('/api/admin/agency-submit', requireAuth, async (req, res) => {
+    const agencyEmail = req.user.email;
+    if (!agencyReferrals[agencyEmail]) {
+        agencyReferrals[agencyEmail] = [];
+    }
+    
+    const newReferral = {
         date: req.body.date,
-        agency: req.body.agency,
+        agency: req.body.agency || agencyEmail,
         advertise: req.body.advertise,
-        price: parseInt(req.body.price),
+        price: parseInt(req.body.price) || 0,
         status: 'Pending'
-    });
+    };
+    
+    agencyReferrals[agencyEmail].push(newReferral);
+    if (typeof saveFinanceDB === 'function') saveFinanceDB();
     
     // Notify the admin via SES
     try {
         const dateStr = new Date().toISOString().split("T")[0];
-        const subject = `【リテアド】新規の広告主紹介・登録申請がありました (${req.body.agency})`;
-        const body = `管理者 様\n\nAd Agency Proより、以下の通り新規の広告主（案件）登録申請がありました。\nAdmin Portalより承認（Verify）作業とアカウント発行を行ってください。\n\n--------------------------------\n[申請内容]\n申請日: ${req.body.date}\n代理店名: ${req.body.agency}\n紹介先広告主 (Email): ${req.body.advertise}\n予定予算額: ¥${parseInt(req.body.price).toLocaleString()}\n--------------------------------\n\nよろしくお願いいたします。`;
+        const subject = `【リテアド】新規の広告主紹介・登録申請がありました (${newReferral.agency})`;
+        const body = `管理者 様\n\nAd Agency Proより、以下の通り新規の広告主（案件）登録申請がありました。\nAdmin Portalより承認（Verify）作業とアカウント発行を行ってください。\n\n--------------------------------\n[申請内容]\n申請日: ${newReferral.date}\n代理店名: ${newReferral.agency}\n紹介先広告主 (Email): ${newReferral.advertise}\n予定予算額: ¥${newReferral.price.toLocaleString()}\n--------------------------------\n\nよろしくお願いいたします。`;
         await sendSESEmail("info@retail-ad.com", subject, body);
     } catch (e) {
         console.error("[Agency] Admin notification email failed", e);
     }
 
-    console.log(`[Agency] New Referral submitted by ${req.body.agency} for budget ¥${req.body.price}`);
+    console.log(`[Agency] New Referral submitted by ${newReferral.agency} for budget ¥${newReferral.price}`);
     res.json({ success: true });
 });
 
-app.get('/api/admin/agency', (req, res) => {
-    res.json(agencyReferrals);
+app.get('/api/admin/agency', requireAuth, (req, res) => {
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+    
+    if (userRole === 'admin') {
+        // Admin gets all referrals flattened
+        const allReferrals = Object.values(agencyReferrals).flat();
+        res.json(allReferrals);
+    } else {
+        // Normal agency gets only their own referrals
+        res.json(agencyReferrals[userEmail] || []);
+    }
 });
 
-app.post('/api/admin/agency-verify', (req, res) => {
+app.post('/api/admin/agency-verify', requireAuth, (req, res) => {
     const { advertise } = req.body;
-    const ref = agencyReferrals.find(r => r.advertise === advertise);
-    if (ref) {
-        ref.status = 'Verified';
+    let found = false;
+    
+    // Search across all agencies to find and verify the target advertise
+    for (const email of Object.keys(agencyReferrals)) {
+        const ref = agencyReferrals[email].find(r => r.advertise === advertise);
+        if (ref) {
+            ref.status = 'Verified';
+            found = true;
+            break;
+        }
+    }
+    
+    if (found) {
         if (typeof saveFinanceDB === 'function') saveFinanceDB();
         res.json({ success: true });
     } else {
@@ -3170,25 +3197,42 @@ app.get('/api/analytics/track', (req, res) => {
 
 // ManualHelp Chat API
 
-app.get('/api/manualhelp/state', (req, res) => {
-    res.json({ success: true, state: manualhelpState });
+// ManualHelp Chat API
+
+app.get('/api/manualhelp/state', requireAuth, (req, res) => {
+    const email = req.user.email;
+    if (!manualhelpState[email]) {
+        manualhelpState[email] = { manuals: [], logs: [] };
+    }
+    res.json({ success: true, state: manualhelpState[email] });
 });
-app.post('/api/manualhelp/state', express.json({limit: '10mb'}), (req, res) => {
+app.post('/api/manualhelp/state', requireAuth, express.json({limit: '10mb'}), (req, res) => {
     try {
-        if(req.body.manuals) manualhelpState.manuals = req.body.manuals;
-        if(req.body.logs) manualhelpState.logs = req.body.logs;
+        const email = req.user.email;
+        if (!manualhelpState[email]) {
+            manualhelpState[email] = { manuals: [], logs: [] };
+        }
+        if(req.body.manuals) manualhelpState[email].manuals = req.body.manuals;
+        if(req.body.logs) manualhelpState[email].logs = req.body.logs;
+        if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true });
     } catch(e) {
         res.status(500).json({ success: false });
     }
 });
-app.get('/api/manualhelp/chat', (req, res) => {
-    res.json({ success: true, chat: manualChat });
+app.get('/api/manualhelp/chat', requireAuth, (req, res) => {
+    const email = req.user.email;
+    if (!manualChat[email]) {
+        manualChat[email] = [];
+    }
+    res.json({ success: true, chat: manualChat[email] });
 });
-app.post('/api/manualhelp/chat', express.json({limit: '10mb'}), (req, res) => {
+app.post('/api/manualhelp/chat', requireAuth, express.json({limit: '10mb'}), (req, res) => {
     try {
+        const email = req.user.email;
         if(Array.isArray(req.body.chat)) {
-            manualChat = req.body.chat;
+            manualChat[email] = req.body.chat;
+            if (typeof saveDatabase === 'function') saveDatabase();
             res.json({ success: true });
         } else {
             res.status(400).json({ success: false, error: "Invalid data form" });
@@ -3197,13 +3241,22 @@ app.post('/api/manualhelp/chat', express.json({limit: '10mb'}), (req, res) => {
         res.status(500).json({ success: false });
     }
 });
-app.get('/api/shift/state', (req, res) => {
-    res.json({ success: true, state: shiftState });
+app.get('/api/shift/state', requireAuth, (req, res) => {
+    const email = req.user.email;
+    if (!shiftState[email]) {
+        shiftState[email] = { staff: [], chatHistory: [] };
+    }
+    res.json({ success: true, state: shiftState[email] });
 });
-app.post('/api/shift/state', express.json({limit: '10mb'}), (req, res) => {
+app.post('/api/shift/state', requireAuth, express.json({limit: '10mb'}), (req, res) => {
     try {
-        if(req.body.staff) shiftState.staff = req.body.staff;
-        if(req.body.chatHistory) shiftState.chatHistory = req.body.chatHistory;
+        const email = req.user.email;
+        if (!shiftState[email]) {
+            shiftState[email] = { staff: [], chatHistory: [] };
+        }
+        if(req.body.staff) shiftState[email].staff = req.body.staff;
+        if(req.body.chatHistory) shiftState[email].chatHistory = req.body.chatHistory;
+        if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true });
     } catch(e) {
         res.status(500).json({ success: false });
@@ -3536,10 +3589,17 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin_portal.
 // --- STORE SIDE API ---
 
 // Save Store Settings (Bank Info & Email)
-app.post('/api/store/settings', async (req, res) => {
+app.post('/api/store/settings', requireAuth, async (req, res) => {
     try {
-        const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', ['default_store']);
-        if (!store) return res.status(404).json({ error: "Store not found" });
+        const storeId = req.user.org || req.user.email;
+        let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
+        if (!store) {
+            await dbHelper.query.run(
+                'INSERT INTO stores (id, name, billing_email) VALUES (?, ?, ?)',
+                [storeId, storeId, req.user.email]
+            );
+            store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
+        }
 
         const billing_email = req.body.billing_email || store.billing_email;
         const bank = req.body.bank_info || {};
@@ -3548,15 +3608,16 @@ app.post('/api/store/settings', async (req, res) => {
             `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ? WHERE id = ?`,
             [
                 billing_email,
-                bank.bank_name || store.bank_name,
-                bank.branch_name || store.branch_name,
-                bank.account_number || store.account_number,
-                bank.account_holder || store.account_holder,
-                'default_store'
+                bank.bank_name || store.bank_name || '',
+                bank.branch_name || store.branch_name || '',
+                bank.account_number || store.account_number || '',
+                bank.account_holder || store.account_holder || '',
+                storeId
             ]
         );
 
-        console.log(`[Store] Settings Updated for default_store`);
+        console.log(`[Store] Settings Updated for ${storeId}`);
+        if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -4219,6 +4280,48 @@ const AWS_REGION = process.env.AWS_DEFAULT_REGION || 'us-east-1';
 const ddbClient = new DynamoDBClient({ region: AWS_REGION });
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 
+const migrateSharedState = (loadedState, type, defaultKey = 'store@demo.com') => {
+    if (!loadedState) return type === 'manualhelpState' || type === 'shiftState' ? {} : {};
+    
+    if (type === 'manualhelpState') {
+        if (Array.isArray(loadedState.manuals)) {
+            const newDict = {};
+            newDict[defaultKey] = loadedState;
+            return newDict;
+        }
+        return loadedState;
+    }
+    
+    if (type === 'manualChat') {
+        if (Array.isArray(loadedState)) {
+            const newDict = {};
+            newDict[defaultKey] = loadedState;
+            return newDict;
+        }
+        return loadedState;
+    }
+    
+    if (type === 'shiftState') {
+        if (Array.isArray(loadedState.staff)) {
+            const newDict = {};
+            newDict[defaultKey] = loadedState;
+            return newDict;
+        }
+        return loadedState;
+    }
+    
+    if (type === 'agencyReferrals') {
+        if (Array.isArray(loadedState)) {
+            const newDict = {};
+            newDict[defaultKey] = loadedState;
+            return newDict;
+        }
+        return loadedState;
+    }
+    
+    return loadedState;
+};
+
 function loadLocalDatabase() {
     try {
         const dbPath = require('path').join(__dirname, 'database.json');
@@ -4255,13 +4358,16 @@ function loadLocalDatabase() {
                 Object.assign(users, parsed.users);
             }
             if (parsed.manualhelpState) {
-                manualhelpState = parsed.manualhelpState;
+                manualhelpState = migrateSharedState(parsed.manualhelpState, 'manualhelpState');
             }
-            if (parsed.manualChat && Array.isArray(parsed.manualChat)) {
-                manualChat = parsed.manualChat;
+            if (parsed.manualChat) {
+                manualChat = migrateSharedState(parsed.manualChat, 'manualChat');
             }
-            if (parsed.shiftState && typeof parsed.shiftState === 'object') {
-                shiftState = parsed.shiftState;
+            if (parsed.shiftState) {
+                shiftState = migrateSharedState(parsed.shiftState, 'shiftState');
+            }
+            if (parsed.agencyReferrals) {
+                agencyReferrals = migrateSharedState(parsed.agencyReferrals, 'agencyReferrals');
             }
             if (parsed.posTransactions && Array.isArray(parsed.posTransactions)) {
                 posTransactions = parsed.posTransactions;
@@ -4332,13 +4438,16 @@ async function pullFromS3() {
             Object.assign(users, parsed.users);
         }
         if (parsed.manualhelpState) {
-            manualhelpState = parsed.manualhelpState;
+            manualhelpState = migrateSharedState(parsed.manualhelpState, 'manualhelpState');
         }
-        if (parsed.manualChat && Array.isArray(parsed.manualChat)) {
-            manualChat = parsed.manualChat;
+        if (parsed.manualChat) {
+            manualChat = migrateSharedState(parsed.manualChat, 'manualChat');
         }
-        if (parsed.shiftState && typeof parsed.shiftState === 'object') {
-            shiftState = parsed.shiftState;
+        if (parsed.shiftState) {
+            shiftState = migrateSharedState(parsed.shiftState, 'shiftState');
+        }
+        if (parsed.agencyReferrals) {
+            agencyReferrals = migrateSharedState(parsed.agencyReferrals, 'agencyReferrals');
         }
         if (parsed.posTransactions && Array.isArray(parsed.posTransactions)) {
             posTransactions = parsed.posTransactions;
@@ -4474,14 +4583,14 @@ const saveDatabase = () => {
             transactions: typeof transactions !== 'undefined' ? transactions : [],
             retailer_videos: global.retailer_videos || [],
             globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
-            agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
+            agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : {},
             productionStats: global.productionStats ? global.productionStats : null,
             creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
             users: typeof users !== 'undefined' ? users : {},
             posTransactions: typeof posTransactions !== 'undefined' ? posTransactions : [],
-            shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
-            manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
-            manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
+            shiftState: typeof shiftState !== 'undefined' ? shiftState : {},
+            manualChat: typeof manualChat !== 'undefined' ? manualChat : {},
+            manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : {},
             scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : [],
             accountStrikes: typeof accountStrikes !== 'undefined' ? accountStrikes : {}
         }, null, 2);
@@ -4559,14 +4668,14 @@ setInterval(async () => {
             transactions: typeof transactions !== 'undefined' ? transactions : [],
             retailer_videos: global.retailer_videos || [],
             globalDashboardStats: typeof globalDashboardStats !== 'undefined' ? globalDashboardStats : {},
-            agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : [],
+            agencyReferrals: typeof agencyReferrals !== 'undefined' ? agencyReferrals : {},
             productionStats: global.productionStats ? global.productionStats : null,
             creatorStats: typeof creatorStats !== 'undefined' ? creatorStats : {},
             users: mappedUsers,
             posTransactions: mappedPosTx,
-            shiftState: typeof shiftState !== 'undefined' ? shiftState : { staff: [], chatHistory: [] },
-            manualChat: typeof manualChat !== 'undefined' ? manualChat : [],
-            manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : { manuals: [], logs: [] },
+            shiftState: typeof shiftState !== 'undefined' ? shiftState : {},
+            manualChat: typeof manualChat !== 'undefined' ? manualChat : {},
+            manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : {},
             scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
         }, null, 2);
 
@@ -5574,9 +5683,17 @@ app.post('/api/freee/sales', async (req, res) => {
 
 
 // --- Store Portal Revenue Endpoint ---
-app.get('/api/store/revenue', async (req, res) => {
+app.get('/api/store/revenue', requireAuth, async (req, res) => {
     try {
-        const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', ['default_store']);
+        const storeId = req.user.org || req.user.email;
+        let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
+        if (!store) {
+            await dbHelper.query.run(
+                'INSERT INTO stores (id, name, billing_email) VALUES (?, ?, ?)',
+                [storeId, storeId, req.user.email]
+            );
+            store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
+        }
         res.json({
             totalAdSpend: 150000, 
             adsenseRevenue: store ? store.total_ad_revenue : 20000 
