@@ -377,7 +377,6 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
             aiDetails.push("【システムエラー】審査システムが未設定のため、安全を考慮して審査を却下しました。");
         } else if (docs.length > 0) {
             try {
-                const fetch = (await import('node-fetch')).default;
                 const imageParts = docs.map(doc => {
                     return {
                         inlineData: {
@@ -998,7 +997,6 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
             });
         }
 
-        const fetch = (await import('node-fetch')).default;
         const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
         let lastError = null;
         let aiResponseText = "";
@@ -1249,7 +1247,7 @@ app.post('/api/payment/square-charge', async (req, res) => {
     console.log(`[Square API] Using Production Key for actual charge.`);
     
     try {
-        const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
+        const customFetch = fetch;
         const crypto = require('crypto');
         
         // Execute Actual Production Charge via Square API
@@ -1329,7 +1327,7 @@ app.post('/api/payment/square-refund', requireAuth, async (req, res) => {
     }
 
     try {
-        const customFetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
+        const customFetch = fetch;
         const crypto = require('crypto');
         
         // Square Refund API をコール
@@ -1999,7 +1997,6 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
                             console.error("[AutoReview] GEMINI_API_KEY not configured. Failing review.");
                             adStatus = 'rejected';
                         } else {
-                            const fetch = (await import('node-fetch')).default;
                             const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
                             let requestSuccess = false;
                             let aiResponseText = "";
@@ -2709,7 +2706,6 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
         } else if (fileData.includes('base64,')) {
             const base64Data = fileData.split('base64,')[1];
             try {
-                const fetch = (await import('node-fetch')).default;
                 const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
                 let requestSuccess = false;
                 let aiResponseText = "";
@@ -3228,14 +3224,22 @@ app.post('/api/admin/agency-verify', requireAuth, (req, res) => {
 
 // --- CREATOR BANK DATA STORE ---
 const creatorBankData = creatorBanks;
+const processingCreatorBankUpdates = new Set();
 
 app.post('/api/creator/bank', requireAuth, async (req, res) => {
     const email = req.user.email;
-    const { bankName, branchName, accountNum, holderName, idBase64 } = req.body;
-    if (!email || !holderName) return res.status(400).json({ error: "必要な情報が不足しています" });
-    if (!idBase64) return res.status(400).json({ error: "身分証画像が必要です" });
+    if (!email) return res.status(400).json({ error: "必要な情報が不足しています" });
+
+    if (processingCreatorBankUpdates.has(email)) {
+        return res.status(429).json({ error: "現在、本人確認（KYC）及び口座情報の保存処理を実行中です。しばらくお待ちください。" });
+    }
+    processingCreatorBankUpdates.add(email);
 
     try {
+        const { bankName, branchName, accountNum, holderName, idBase64 } = req.body;
+        if (!holderName) return res.status(400).json({ error: "必要な情報が不足しています" });
+        if (!idBase64) return res.status(400).json({ error: "身分証画像が必要です" });
+
         let mimeType = 'image/jpeg';
         let base64Data = idBase64;
         const match = idBase64.match(/^data:(.*?);base64,(.*)$/);
@@ -3252,7 +3256,6 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
             return res.status(400).json({ error: "【システムエラー】本人確認（KYC）システムが未設定のため、安全を考慮して登録を拒否しました。" });
         }
 
-        const fetch = (await import('node-fetch')).default;
         const promptText = `モール銀行等も含めて、あなたは厳密なKYC（本人確認）AIです。
 以下の身分証画像を読み取り、書かれている「氏名（本名）」を抽出してください。
 その後、申請者が入力した口座名義（カタカナ）「${holderName}」と同一人物であるか厳密に判定してください。
@@ -3318,6 +3321,8 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
     } catch (e) {
         console.error("KYC Error:", e);
         res.status(500).json({ error: "本人確認システムの処理に失敗しました。画像が不鮮明な可能性があります。" });
+    } finally {
+        processingCreatorBankUpdates.delete(email);
     }
 });
 
@@ -4420,7 +4425,6 @@ app.post('/api/manualhelp/translate-steps', requireAuth, async (req, res) => {
             return res.json({ data: { translations: mockTranslations } });
         }
 
-        const fetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: f}) => f(...args)));
         const gcpRes = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -5387,7 +5391,6 @@ async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction 
         throw new Error('GEMINI_API_KEY not configured');
     }
 
-    const fetch = (await import('node-fetch')).default;
     let lastError = null;
 
     for (const model of GEMINI_MODELS_PRIORITY) {

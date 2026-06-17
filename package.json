@@ -4,6 +4,7 @@
   "description": "Middleware prototype connecting Legacy POS, Mobile App, and Amazon SP-API",
   "main": "server_retail_dist.js",
   "scripts": {
+    "prestart": "npm rebuild --build-from-source",
     "start": "node server_retail_dist.js",
     "dev": "nodemon server_retail_dist.js"
   },
