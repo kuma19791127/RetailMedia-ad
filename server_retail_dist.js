@@ -4176,6 +4176,7 @@ app.post('/api/admin/settings', requireAuth, (req, res) => {
     if (req.body.accounting_email) {
         adminSettings.accounting_email = req.body.accounting_email;
         console.log(`[Admin] Accounting Email Updated: ${adminSettings.accounting_email}`);
+        if (typeof saveDatabase === 'function') saveDatabase();
     }
     res.json({ success: true });
 });
@@ -4355,14 +4356,18 @@ app.get('/api/admin/dashboard', requireAuth, async (req, res) => {
     }
 });
 
-app.post("/api/admin/invite", async (req, res) => {
+app.post("/api/admin/invite", requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     const { name, email, budget, ccEmail } = req.body;
     const tempPassword = Math.random().toString(36).slice(-8); // 8-char random password
     
     try {
+        const hashedPassword = hashPassword(tempPassword);
         await dbHelper.query.run(
             'INSERT OR REPLACE INTO users (email, password, role, name, org) VALUES (?, ?, ?, ?, ?)',
-            [email, tempPassword, "advertiser", name, name]
+            [email, hashedPassword, "advertiser", name, name]
         );
         const dateStr = new Date().toISOString().split("T")[0];
         const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 (${dateStr})`;
@@ -4987,6 +4992,9 @@ function loadLocalDatabase() {
             if (parsed.agencyReferrals) {
                 agencyReferrals = migrateSharedState(parsed.agencyReferrals, 'agencyReferrals');
             }
+            if (parsed.adminSettings && typeof adminSettings !== 'undefined') {
+                Object.assign(adminSettings, parsed.adminSettings);
+            }
             if (parsed.posTransactions && Array.isArray(parsed.posTransactions)) {
                 posTransactions = parsed.posTransactions;
             }
@@ -5068,6 +5076,9 @@ async function pullFromS3() {
         }
         if (parsed.agencyReferrals) {
             agencyReferrals = migrateSharedState(parsed.agencyReferrals, 'agencyReferrals');
+        }
+        if (parsed.adminSettings && typeof adminSettings !== 'undefined') {
+            Object.assign(adminSettings, parsed.adminSettings);
         }
         if (parsed.posTransactions && Array.isArray(parsed.posTransactions)) {
             posTransactions = parsed.posTransactions;
@@ -5221,7 +5232,8 @@ const saveDatabase = () => {
             manualChat: typeof manualChat !== 'undefined' ? manualChat : {},
             manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : {},
             scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : [],
-            accountStrikes: typeof accountStrikes !== 'undefined' ? accountStrikes : {}
+            accountStrikes: typeof accountStrikes !== 'undefined' ? accountStrikes : {},
+            adminSettings: typeof adminSettings !== 'undefined' ? adminSettings : {}
         }, null, 2);
         require('fs').writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
         pushToS3(dataStr);
@@ -5318,7 +5330,8 @@ setInterval(async () => {
             shiftState: typeof shiftState !== 'undefined' ? shiftState : {},
             manualChat: typeof manualChat !== 'undefined' ? manualChat : {},
             manualhelpState: typeof manualhelpState !== 'undefined' ? manualhelpState : {},
-            scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : []
+            scheduledBroadcasts: typeof scheduledBroadcasts !== 'undefined' ? scheduledBroadcasts : [],
+            adminSettings: typeof adminSettings !== 'undefined' ? adminSettings : {}
         }, null, 2);
 
         fs.writeFileSync(require('path').join(__dirname, 'database.json'), dataStr, 'utf8');
