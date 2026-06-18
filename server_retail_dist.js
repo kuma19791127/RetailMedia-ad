@@ -1826,6 +1826,65 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
     }
 });
 
+app.post('/api/auth/reset-2fa', async (req, res) => {
+    const { email, password, role } = req.body;
+    if (!email) return res.status(400).json({ error: "Email required" });
+
+    try {
+        const targetRole = getDatabaseRole(role || 'store');
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
+        if (!user) {
+            return res.status(404).json({ error: "ユーザーが見つかりません" });
+        }
+
+        // 管理者権限チェック (トークンがクッキーまたはヘッダーにある場合)
+        let isAdmin = false;
+        let token = req.cookies ? req.cookies.token : null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                if (decoded && decoded.role === 'admin') {
+                    isAdmin = true;
+                }
+            } catch (jwtErr) {
+                // トークン無効時はパスワード検証に委ねる
+            }
+        }
+
+        // 管理者でない場合は、正しいパスワードの入力を必須とする
+        if (!isAdmin) {
+            if (!password) {
+                return res.status(400).json({ error: "セキュリティ保護のため、2FAの再設定にはパスワードの入力が必要です。" });
+            }
+            if (!verifyPassword(password, user.password)) {
+                return res.status(401).json({ error: "パスワードが間違っています。二段階認証のリセットは拒否されました。" });
+            }
+        }
+
+        await dbHelper.query.run(
+            'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
+            [email, targetRole]
+        );
+        
+        // メモリ同期
+        const userKey = `${email}:${targetRole}`;
+        if (typeof users !== 'undefined' && users && users[userKey]) {
+            users[userKey].twoFactorSecret = null;
+        } else if (typeof users !== 'undefined' && users && users[email]) {
+            users[email].twoFactorSecret = null;
+        }
+        console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${targetRole}) - Authorized (Admin: ${isAdmin})`);
+        
+        res.json({ success: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.post('/api/auth/login', async (req, res) => {
     console.log("[API /api/auth/login] Request body:", req.body);
     const { email, password, role, name, org, totpCode } = req.body;
@@ -1962,47 +2021,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
     }
 });
 
-app.post('/api/auth/reset-2fa', async (req, res) => {
-    const { email, role } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
-
-    try {
-        if (role) {
-            const targetRole = getDatabaseRole(role);
-            await dbHelper.query.run(
-                'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
-                [email, targetRole]
-            );
-            
-            // メモリ同期
-            const userKey = `${email}:${targetRole}`;
-            if (typeof users !== 'undefined' && users && users[userKey]) {
-                users[userKey].twoFactorSecret = null;
-            } else if (typeof users !== 'undefined' && users && users[email]) {
-                users[email].twoFactorSecret = null;
-            }
-            console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${targetRole})`);
-        } else {
-            await dbHelper.query.run(
-                'UPDATE users SET two_factor_secret = NULL WHERE email = ?',
-                [email]
-            );
-            // メモリ同期
-            if (typeof users !== 'undefined' && users) {
-                for (const key in users) {
-                    if (key === email || key.startsWith(email + ':')) {
-                        users[key].twoFactorSecret = null;
-                    }
-                }
-            }
-            console.log(`[Auth] 🔐 2FA Secret Reset for all roles of: ${email}`);
-        }
-        res.json({ success: true });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
-    }
-});
 
 app.get('/api/user/me', requireAuth, (req, res) => {
     res.json({ success: true, user: req.user });

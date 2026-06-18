@@ -882,6 +882,7 @@
         async function resetCurrent2FA() {
             const email = document.getElementById('email').value.trim();
             const role = document.getElementById('login-role').value;
+            const password = document.getElementById('password').value;
             
             console.log("[F12 Debug] resetCurrent2FA triggered. Email:", email, "Role:", role);
 
@@ -893,10 +894,14 @@
                 Swal.fire('エラー', '先に役割（ロール）を選択してください。', 'warning');
                 return;
             }
+            if (!password) {
+                Swal.fire('エラー', 'セキュリティ保護のため、先にパスワードを入力してください。', 'warning');
+                return;
+            }
 
             const confirmReset = await Swal.fire({
                 title: '2FAの再設定',
-                text: '現在の二段階認証設定を削除し、新しいQRコードを発行しますか？',
+                text: '安全のため現在のパスワードで本人確認を行います。二段階認証設定を削除し、新しいQRコードを発行しますか？',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'はい、再設定する',
@@ -910,7 +915,7 @@
                     const res = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, role })
+                        body: JSON.stringify({ email, password, role })
                     });
                     const data = await res.json();
                     console.log("[F12 Debug] 2FA Reset response:", data);
@@ -921,7 +926,7 @@
                             if(btn) btn.innerText = '新規登録またはメールアドレスでログイン';
                         });
                     } else {
-                        Swal.fire('エラー', 'リセットに失敗しました。', 'error');
+                        Swal.fire('エラー', data.error || 'リセットに失敗しました。', 'error');
                     }
                 } catch(e) {
                     console.error("[F12 Debug] Error in resetCurrent2FA:", e);
