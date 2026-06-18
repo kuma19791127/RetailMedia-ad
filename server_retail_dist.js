@@ -3144,6 +3144,11 @@ app.post('/api/ai/tts', requireAuth, async (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'advertiser' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "音声生成権限が必要です" });
     }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     
     // BANチェック
     const ad_email = req.user.email;
@@ -3323,6 +3328,33 @@ let globalDashboardStats = {
 let posTransactions = [];
 let manualChat = {};
 let manualhelpState = {};
+let aiUsageTracker = {};
+
+function checkAIUsageLimit(org, role) {
+    if (role === 'admin') return { allowed: true };
+    const now = Date.now();
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (!aiUsageTracker[org]) {
+        aiUsageTracker[org] = { timestamps: [], dailyCount: 0, lastResetDate: todayStr };
+    }
+    const tracker = aiUsageTracker[org];
+    if (tracker.lastResetDate !== todayStr) {
+        tracker.dailyCount = 0;
+        tracker.lastResetDate = todayStr;
+    }
+    const oneMinuteAgo = now - 60000;
+    tracker.timestamps = tracker.timestamps.filter(ts => ts > oneMinuteAgo);
+    if (tracker.timestamps.length >= 5) {
+        return { allowed: false, error: "AIリクエストの頻度が早すぎます。しばらく時間をおいて再試行してください。" };
+    }
+    if (tracker.dailyCount >= 100) {
+        return { allowed: false, error: "AI機能の1日の利用上限（100回）に達しました。明日再度ご利用ください。" };
+    }
+    tracker.timestamps.push(now);
+    tracker.dailyCount++;
+    return { allowed: true };
+}
+
 let shiftState = {};
 
 // --- AGENCY REFERRAL DATA STORE ---
@@ -4547,6 +4579,11 @@ app.post('/api/manualhelp/pdf-to-steps', requireAuth, express.json({limit: '50mb
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "マニュアル解析を実行する権限がありません" });
     }
+    const org = req.user.org || 'default_org';
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     try {
         console.log("[ManualHelp AI] Processing PDF via Google Gemini API (with priority fallback)...");
         let pdfData = req.body.pdf_base64;
@@ -4592,6 +4629,11 @@ app.post('/api/manualhelp/video-to-steps', requireAuth, async (req, res) => {
     // ロールチェック (店舗または管理者のみ許可)
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "マニュアル解析を実行する権限がありません" });
+    }
+    const org = req.user.org || 'default_org';
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
     }
     try {
         console.log("[ManualHelp AI] Processing video via Google Gemini API (with priority fallback)...");
@@ -5601,6 +5643,11 @@ app.post('/api/agent/regi', requireAuth, async (req, res) => {
     // ロールチェック (店舗オーナーまたは管理者のみ許可)
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "レジエージェント機能を利用する権限がありません" });
+    }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
     }
     
     const { message } = req.body;
