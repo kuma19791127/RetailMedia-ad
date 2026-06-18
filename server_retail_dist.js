@@ -282,6 +282,10 @@ setInterval(() => {
 
 // --- ⏰ Schedule / Broadcast Voice via AI Voice Studio ---
 app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "音声予約配信権限が必要です" });
+    }
     // ユーザー情報の取得 (JWTデコードされた結果が req.user に入っている)
     const ad_email = req.user.email;
 
@@ -3087,7 +3091,11 @@ app.post('/api/ad/upload', requireAuth, (req, res) => {
     });
 });
 
-app.get('/api/ai/generate', (req, res) => {
+app.get('/api/ai/generate', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     const text = req.query.text || "Special Sale";
     const speed = req.query.speed || 1.0;
     console.log(`[AI Studio] Generating video for: "${text}" (Speed: ${speed}x)`);
@@ -3101,7 +3109,11 @@ app.get('/api/ai/generate', (req, res) => {
 // pointing to your downloaded Service Account JSON key file.
 let TextToSpeechClient = null;
 
-app.post('/api/ai/tts', async (req, res) => {
+app.post('/api/ai/tts', requireAuth, async (req, res) => {
+    // ロールチェック (店舗、広告主、管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'advertiser' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "音声生成権限が必要です" });
+    }
     try {
         const { text, speed, voiceEngine } = req.body;
         if (!text) return res.status(400).json({ error: "Text required" });
@@ -4617,6 +4629,10 @@ app.post('/api/manualhelp/translate-steps', requireAuth, async (req, res) => {
 
 
 app.post('/api/voice/synthesize', requireAuth, async (req, res) => {
+    // ロールチェック (店舗、広告主、管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'advertiser' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "音声生成権限が必要です" });
+    }
     try {
         const { text, voiceName, stylePrompt } = req.body;
         const rawKey = process.env.GEMINI_API_KEY || '';
