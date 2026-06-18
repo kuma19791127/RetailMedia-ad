@@ -70,6 +70,10 @@ app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
+// 金融・審査系グローバル変数（TDZ防止のため先頭で定義）
+let withdrawalRequests = [];
+let creatorBanks = {};
+
 const getDatabaseRole = (role) => {
     return role || 'store';
 };
@@ -4898,8 +4902,6 @@ async function executeGMOBankTransfer(bankCode, branchCode, accountType, account
 }
 
 // 出金リクエスト（クリエイターから）
-let withdrawalRequests = [];
-let creatorBanks = {};
 
 // ==========================================
 // お金・KYC関連データのローカルJSON永続化 (A案)
