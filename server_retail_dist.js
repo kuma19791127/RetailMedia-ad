@@ -3400,7 +3400,10 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/admin/creators', (req, res) => {
+app.get('/api/admin/creators', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     // Merge stats with bank data for Admin view
     // For demo, we just match mock stats to registered bank info conceptually
     const list = Object.keys(creatorBanks).map(email => {
@@ -3981,7 +3984,10 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
 });
 
 // Save Admin Settings (Sender Email)
-app.post('/api/admin/settings', (req, res) => {
+app.post('/api/admin/settings', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     if (req.body.accounting_email) {
         adminSettings.accounting_email = req.body.accounting_email;
         console.log(`[Admin] Accounting Email Updated: ${adminSettings.accounting_email}`);
@@ -3990,7 +3996,10 @@ app.post('/api/admin/settings', (req, res) => {
 });
 
 // Update Store Operating Cost (Expenses)
-app.post('/api/admin/store/operating-cost', async (req, res) => {
+app.post('/api/admin/store/operating-cost', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     const { storeId, operatingCost, laborCost, adsenseRevenue } = req.body;
     if (!storeId) return res.status(400).json({ error: "storeId is required" });
     
@@ -4016,7 +4025,10 @@ app.post('/api/admin/store/operating-cost', async (req, res) => {
 });
 
 // Fetch AWS Cost (Cost Explorer API) for the previous month
-app.get('/api/admin/aws-cost', async (req, res) => {
+app.get('/api/admin/aws-cost', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     console.log('[AWS SDK] Request to fetch AWS Cost received.');
     
     // AWS Cost Explorer API requires dates in YYYY-MM-DD format
@@ -4099,7 +4111,10 @@ app.post('/api/admin/settings/billing-email', async (req, res) => {
 });
 
 // Get Unified Dashboard Data
-app.get('/api/admin/dashboard', async (req, res) => {
+app.get('/api/admin/dashboard', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     try {
         const billingData = [];
         const payoutData = [];
@@ -4290,12 +4305,16 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
 });
 
 // Square SSoT Validation Endpoint
-app.get('/api/admin/system/validate-square', (req, res) => {
+app.get('/api/admin/system/validate-square', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     // In a real scenario, this would call Square's ListTransactions/ListPayments API
     // and sum the accepted payments, then compare to our local `totalRevenue` & `total_pos_sales`.
     
     const localAd = totalRevenue || 0;
-    const localPos = storeData["default_store"].total_pos_sales || 0;
+    const s = storeData && storeData["default_store"];
+    const localPos = s ? (s.total_pos_sales || 0) : 0;
     
     // Simulating that Square's record perfectly matches our SSoT records
     const squareAdAmount = localAd; 
@@ -4312,8 +4331,14 @@ app.get('/api/admin/system/validate-square', (req, res) => {
 });
 
 // Generate Excel (Updated to use Store Data)
-app.get('/api/admin/invoice/excel', (req, res) => {
-    const s = storeData["default_store"];
+app.get('/api/admin/invoice/excel', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send("管理者権限が必要です");
+    }
+    const s = storeData && storeData["default_store"];
+    if (!s) {
+        return res.status(404).send("Default store data not found in system.");
+    }
     const sales = s.total_pos_sales || 0;
     const fee = Math.floor(sales * 0.004);
     const tax = Math.floor(fee * 0.1);
@@ -6329,7 +6354,10 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // --- [NEW] Admin API: Register Device to Store ---
-app.post('/api/admin/devices', (req, res) => {
+app.post('/api/admin/devices', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     const { deviceId, storeId } = req.body;
     if (!deviceId || !storeId) return res.status(400).json({ error: "Missing parameters" });
     
