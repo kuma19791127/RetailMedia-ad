@@ -224,9 +224,14 @@ app.get('/api/products/master', requireAuth, async (req, res) => {
 });
 
 // --- Profile Management ---
-app.post('/api/profile', async (req, res) => {
+app.post('/api/profile', requireAuth, async (req, res) => {
     const { email, org, name, type } = req.body;
     if(!email) return res.json({success: false, error: "Email is required"});
+    
+    // 所有者検証 (本人のメールアドレス、または管理者のみ許可)
+    if (req.user.email !== email && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "他人のプロフィールを更新する権限がありません" });
+    }
     try {
         const key = `profiles/${email}.json`;
         await s3Client.send(new PutObjectCommand({
@@ -242,9 +247,14 @@ app.post('/api/profile', async (req, res) => {
     }
 });
 
-app.get('/api/profile', async (req, res) => {
+app.get('/api/profile', requireAuth, async (req, res) => {
     const { email } = req.query;
     if(!email) return res.json({success: false, error: "Email is required"});
+    
+    // 所有者検証 (本人のメールアドレス、または管理者のみ許可)
+    if (req.user.email !== email && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "他人のプロフィールを閲覧する権限がありません" });
+    }
     try {
         const key = `profiles/${email}.json`;
         const data = await s3Client.send(new GetObjectCommand({
