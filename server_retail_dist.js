@@ -4543,6 +4543,10 @@ let clients = [];
 
 // --- AI PDF to Manual Steps ---
 app.post('/api/manualhelp/pdf-to-steps', requireAuth, express.json({limit: '50mb'}), async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "マニュアル解析を実行する権限がありません" });
+    }
     try {
         console.log("[ManualHelp AI] Processing PDF via Google Gemini API (with priority fallback)...");
         let pdfData = req.body.pdf_base64;
@@ -4585,6 +4589,10 @@ app.post('/api/manualhelp/pdf-to-steps', requireAuth, express.json({limit: '50mb
 });
 
 app.post('/api/manualhelp/video-to-steps', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "マニュアル解析を実行する権限がありません" });
+    }
     try {
         console.log("[ManualHelp AI] Processing video via Google Gemini API (with priority fallback)...");
         
@@ -4628,6 +4636,10 @@ app.post('/api/manualhelp/video-to-steps', requireAuth, async (req, res) => {
 });
 
 app.post('/api/manualhelp/translate-steps', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "マニュアル翻訳を実行する権限がありません" });
+    }
     try {
         const { texts, target } = req.body;
         if (!texts || !Array.isArray(texts)) {
