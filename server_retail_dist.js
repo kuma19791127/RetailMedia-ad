@@ -1563,7 +1563,11 @@ app.post('/api/retailer/settings', requireAuth, (req, res) => {
 });
 
 // --- ANYWHERE REGI POS SYNC API ---
-app.post('/api/admin/sales', async (req, res) => {
+app.post('/api/admin/sales', requireAuth, async (req, res) => {
+    // ロールチェック (店舗オーナーまたは管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "同期処理を行う権限がありません" });
+    }
     try {
         const txData = req.body;
         console.log(`[POS Sync] ✅ Received New Transaction: ${txData.transactionId} (${txData.amount}円)`);
@@ -3268,6 +3272,10 @@ let shiftState = {};
 let agencyReferrals = {};
 
 app.post('/api/admin/agency-submit', requireAuth, async (req, res) => {
+    // ロールチェック (代理店または管理者のみ許可)
+    if (req.user.role !== 'agency' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "代理店権限が必要です" });
+    }
     const agencyEmail = req.user.email;
     if (!agencyReferrals[agencyEmail]) {
         agencyReferrals[agencyEmail] = [];
@@ -3299,6 +3307,10 @@ app.post('/api/admin/agency-submit', requireAuth, async (req, res) => {
 });
 
 app.get('/api/admin/agency', requireAuth, (req, res) => {
+    // ロールチェック (代理店または管理者のみ許可)
+    if (req.user.role !== 'agency' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "代理店権限が必要です" });
+    }
     const userEmail = req.user.email;
     const userRole = req.user.role;
     
@@ -4121,7 +4133,11 @@ app.get('/api/admin/aws-cost', requireAuth, async (req, res) => {
 });
 
 // AnyWhere Regi Forgot Password => Billing Email mapping
-app.post('/api/admin/settings/billing-email', async (req, res) => {
+app.post('/api/admin/settings/billing-email', requireAuth, async (req, res) => {
+    // ロールチェック (管理者または店舗権限が必要です)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者または店舗権限が必要です" });
+    }
     if (req.body.email) {
         try {
             await dbHelper.query.run('UPDATE stores SET billing_email = ? WHERE id = ?', [req.body.email, 'default_store']);
@@ -5282,7 +5298,10 @@ loadFinanceDB();
 
 
 // クリエイター手動出金申請機能は廃止され、翌月末自動支払い（一括振込）へ一本化されました。
-app.get('/api/admin/payouts', (req, res) => {
+app.get('/api/admin/payouts', requireAuth, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     res.json([]);
 });
 
