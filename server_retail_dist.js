@@ -3481,20 +3481,20 @@ app.get('/api/analytics/track', (req, res) => {
 // ManualHelp Chat API
 
 app.get('/api/manualhelp/state', requireAuth, (req, res) => {
-    const email = req.user.email;
-    if (!manualhelpState[email]) {
-        manualhelpState[email] = { manuals: [], logs: [] };
+    const org = req.user.org || 'default_org';
+    if (!manualhelpState[org]) {
+        manualhelpState[org] = { manuals: [], logs: [] };
     }
-    res.json({ success: true, state: manualhelpState[email] });
+    res.json({ success: true, state: manualhelpState[org] });
 });
 app.post('/api/manualhelp/state', requireAuth, express.json({limit: '10mb'}), (req, res) => {
     try {
-        const email = req.user.email;
-        if (!manualhelpState[email]) {
-            manualhelpState[email] = { manuals: [], logs: [] };
+        const org = req.user.org || 'default_org';
+        if (!manualhelpState[org]) {
+            manualhelpState[org] = { manuals: [], logs: [] };
         }
-        if(req.body.manuals) manualhelpState[email].manuals = req.body.manuals;
-        if(req.body.logs) manualhelpState[email].logs = req.body.logs;
+        if(req.body.manuals) manualhelpState[org].manuals = req.body.manuals;
+        if(req.body.logs) manualhelpState[org].logs = req.body.logs;
         if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true });
     } catch(e) {
@@ -3502,17 +3502,17 @@ app.post('/api/manualhelp/state', requireAuth, express.json({limit: '10mb'}), (r
     }
 });
 app.get('/api/manualhelp/chat', requireAuth, (req, res) => {
-    const email = req.user.email;
-    if (!manualChat[email]) {
-        manualChat[email] = [];
+    const org = req.user.org || 'default_org';
+    if (!manualChat[org]) {
+        manualChat[org] = [];
     }
-    res.json({ success: true, chat: manualChat[email] });
+    res.json({ success: true, chat: manualChat[org] });
 });
 app.post('/api/manualhelp/chat', requireAuth, express.json({limit: '10mb'}), (req, res) => {
     try {
-        const email = req.user.email;
+        const org = req.user.org || 'default_org';
         if(Array.isArray(req.body.chat)) {
-            manualChat[email] = req.body.chat;
+            manualChat[org] = req.body.chat;
             if (typeof saveDatabase === 'function') saveDatabase();
             res.json({ success: true });
         } else {
@@ -4620,6 +4620,59 @@ const migrateSharedState = (loadedState, type, defaultKey = 'store@demo.com') =>
     return loadedState;
 };
 
+const migrateEmailKeysToOrg = (stateObj) => {
+    if (!stateObj || typeof stateObj !== 'object') return;
+    const keys = Object.keys(stateObj);
+    for (const key of keys) {
+        if (key.includes('@')) {
+            const email = key;
+            let org = 'default_org';
+            
+            if (typeof users !== 'undefined' && users && users[email] && users[email].org) {
+                org = users[email].org;
+            } else if (email === 'store@demo.com') {
+                org = 'demo_store.inc';
+            } else if (email === 'advertiser@demo.com') {
+                org = 'demo_adv.inc';
+            }
+            
+            if (!stateObj[org]) {
+                stateObj[org] = stateObj[email];
+            } else {
+                const target = stateObj[org];
+                const source = stateObj[email];
+                
+                if (source.manuals && Array.isArray(source.manuals)) {
+                    target.manuals = target.manuals || [];
+                    source.manuals.forEach(item => {
+                        if (!target.manuals.some(m => m.id === item.id || m.title === item.title)) {
+                            target.manuals.push(item);
+                        }
+                    });
+                }
+                if (source.logs && Array.isArray(source.logs)) {
+                    target.logs = target.logs || [];
+                    source.logs.forEach(item => {
+                        if (!target.logs.some(l => l.text === item.text)) {
+                            target.logs.push(item);
+                        }
+                    });
+                }
+                
+                if (Array.isArray(source)) {
+                    stateObj[org] = Array.isArray(target) ? target : [];
+                    source.forEach(msg => {
+                        if (!stateObj[org].some(m => m.time === msg.time && m.text === msg.text)) {
+                            stateObj[org].push(msg);
+                        }
+                    });
+                }
+            }
+            delete stateObj[email];
+        }
+    }
+};
+
 function loadLocalDatabase() {
     try {
         const dbPath = require('path').join(__dirname, 'database.json');
@@ -4657,9 +4710,11 @@ function loadLocalDatabase() {
             }
             if (parsed.manualhelpState) {
                 manualhelpState = migrateSharedState(parsed.manualhelpState, 'manualhelpState');
+                migrateEmailKeysToOrg(manualhelpState);
             }
             if (parsed.manualChat) {
                 manualChat = migrateSharedState(parsed.manualChat, 'manualChat');
+                migrateEmailKeysToOrg(manualChat);
             }
             if (parsed.shiftState) {
                 shiftState = migrateSharedState(parsed.shiftState, 'shiftState');
@@ -4737,9 +4792,11 @@ async function pullFromS3() {
         }
         if (parsed.manualhelpState) {
             manualhelpState = migrateSharedState(parsed.manualhelpState, 'manualhelpState');
+            migrateEmailKeysToOrg(manualhelpState);
         }
         if (parsed.manualChat) {
             manualChat = migrateSharedState(parsed.manualChat, 'manualChat');
+            migrateEmailKeysToOrg(manualChat);
         }
         if (parsed.shiftState) {
             shiftState = migrateSharedState(parsed.shiftState, 'shiftState');
