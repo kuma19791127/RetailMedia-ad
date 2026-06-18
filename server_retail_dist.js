@@ -68,6 +68,9 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
+// ルートディレクトリの静的ファイル（HTML, 画像, CSS 等）を配信
+app.use(express.static(__dirname));
+
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
 // 金融・審査系グローバル変数（TDZ防止のため先頭で定義）
