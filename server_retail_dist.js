@@ -360,6 +360,35 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
     res.json({ success: true, message: "サイネージへ即時配信しました" });
 });
 
+app.post('/api/signage/interrupt', requireAuth, (req, res) => {
+    try {
+        const { message, type } = req.body;
+        if (!message) {
+            return res.status(400).json({ error: "メッセージがありません" });
+        }
+        
+        const metadata = {
+            title: "緊急割り込み放送",
+            format: "text",
+            text_content: message,
+            target_store_id: req.user.org || 'all'
+        };
+        
+        console.log(`[Signage Interruption] Immediate interrupt broadcast: ${JSON.stringify(metadata)}`);
+        
+        if (signageServer && signageServer.injectCampaign) {
+            signageServer.injectCampaign('16:9', metadata, 'INTERRUPT');
+        }
+        
+        if (typeof saveDatabase === 'function') saveDatabase();
+        
+        res.json({ success: true, message: "サイネージに割り込み放送を行いました。" });
+    } catch (e) {
+        console.error("[Signage Interruption] Error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- Advertiser KYC (Review) System ---
 let kycRequests = [];
 const processingKycRequests = new Set();
@@ -1390,12 +1419,23 @@ app.post('/api/pos/transaction', async (req, res) => {
 
         // 2. メモリ (posTransactions) への追加
         const itemsData = items || [];
+        
+        let billingEmail = 'store@demo.com';
+        try {
+            const store = await dbHelper.query.get('SELECT billing_email FROM stores WHERE id = ?', [store_id]);
+            if (store && store.billing_email) {
+                billingEmail = store.billing_email;
+            }
+        } catch (dbErr) {
+            console.error("[POS Transaction] Failed to fetch billing_email for store:", store_id, dbErr.message);
+        }
+
         const newTx = {
             id: transaction_id,
             companyName: store_id,
             storeName: store_id,
             totalAmount: Number(total_amount) || 0,
-            billingEmail: 'store@demo.com',
+            billingEmail: billingEmail,
             items: itemsData,
             status: 'completed',
             timestamp: timestamp
@@ -1412,7 +1452,7 @@ app.post('/api/pos/transaction', async (req, res) => {
                     store_id,
                     store_id,
                     Number(total_amount) || 0,
-                    'store@demo.com',
+                    billingEmail,
                     JSON.stringify(itemsData),
                     'completed',
                     timestamp
@@ -3425,8 +3465,34 @@ app.post('/api/shift/state', requireAuth, express.json({limit: '10mb'}), (req, r
         res.status(500).json({ success: false });
     }
 });
-app.get('/api/admin/sales-history', (req, res) => {
-    res.json({ success: true, transactions: typeof posTransactions !== 'undefined' ? posTransactions : [] });
+app.get('/api/admin/sales-history', requireAuth, (req, res) => {
+    try {
+        const userRole = req.user.role;
+        const userOrg = req.user.org || '';
+        const userEmail = req.user.email;
+        console.log(`[Auth /api/admin/sales-history] Request from user: ${userEmail}, Role: ${userRole}, Org: ${userOrg}`);
+        
+        let list = (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) ? posTransactions : [];
+        
+        if (userRole === 'admin') {
+            // 管理者は全体監視のために全件を取得可能
+            return res.json({ success: true, transactions: list });
+        } else if (userRole === 'store' || userRole === 'retailer') {
+            // 店舗・小売ユーザーは自組織宛て、または自ら登録した売上データのみに限定
+            const filtered = list.filter(tx => 
+                (tx.companyName && tx.companyName.toLowerCase() === userOrg.toLowerCase()) || 
+                (tx.storeName && tx.storeName.toLowerCase() === userOrg.toLowerCase()) || 
+                (tx.billingEmail && tx.billingEmail.toLowerCase() === userEmail.toLowerCase())
+            );
+            return res.json({ success: true, transactions: filtered });
+        } else {
+            // その他のロールは権限なしとして空配列を返す
+            return res.json({ success: true, transactions: [] });
+        }
+    } catch (e) {
+        console.error("[Auth /api/admin/sales-history] Error:", e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 app.get('/api/analytics/global', (req, res) => {
@@ -3648,11 +3714,13 @@ app.post('/api/external/v1/event', (req, res) => {
         // Attribution: Check if we are running an ad (demoBoostMultiplier > 1 means ad active)
         if (demoBoostMultiplier > 1.0) {
             // High correlation assumption
+            const txStoreId = event.store_id || event.storeId || 'default_store';
             transactions.push({
                 time: new Date().toISOString(),
                 brand: "POS External",
                 slot: "API",
-                amount: event.amount
+                amount: event.amount,
+                storeId: txStoreId
             });
             // Update Global Stats
             // In this demo, 'totalRevenue' tracks ad fees, so maybe we don't add sale amount to totalRevenue directly?
@@ -5073,8 +5141,34 @@ app.post('/api/pos/checkout', async (req, res) => {
     res.json({ success: true, transactionId });
 });
 
-app.get('/api/pos/transactions', (req, res) => {
-    res.json(posTransactions);
+app.get('/api/pos/transactions', requireAuth, (req, res) => {
+    try {
+        const userRole = req.user.role;
+        const userOrg = req.user.org || '';
+        const userEmail = req.user.email;
+        console.log(`[Auth /api/pos/transactions] Request from user: ${userEmail}, Role: ${userRole}, Org: ${userOrg}`);
+        
+        let list = (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) ? posTransactions : [];
+        
+        if (userRole === 'admin') {
+            // 管理者は全件取得可能
+            return res.json(list);
+        } else if (userRole === 'store' || userRole === 'retailer') {
+            // 店舗・小売ユーザーは自組織宛て、または自ら登録した売上データのみに限定
+            const filtered = list.filter(tx => 
+                (tx.companyName && tx.companyName.toLowerCase() === userOrg.toLowerCase()) || 
+                (tx.storeName && tx.storeName.toLowerCase() === userOrg.toLowerCase()) || 
+                (tx.billingEmail && tx.billingEmail.toLowerCase() === userEmail.toLowerCase())
+            );
+            return res.json(filtered);
+        } else {
+            // その他のロールは権限なしとして空配列を返す
+            return res.json([]);
+        }
+    } catch (e) {
+        console.error("[Auth /api/pos/transactions] Error:", e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 
@@ -5913,17 +6007,25 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
             store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
         }
         
-        const adsenseRev = store ? store.total_ad_revenue : 20000;
+        const storeAdNet = store ? (store.total_ad_revenue || 0) : 0;
+        const storeAdsense = store ? (store.monthly_adsense_revenue || 20000) : 20000;
+        
+        const storeTotalRevenue = storeAdNet + storeAdsense;
+        const storeShare = (storeAdNet * 0.5) + storeAdsense;
+        
+        const filteredTransactions = (typeof transactions !== 'undefined' && Array.isArray(transactions))
+            ? transactions.filter(tx => tx.storeId && tx.storeId.toLowerCase() === storeId.toLowerCase())
+            : [];
         
         res.json({
             success: true,
-            totalRevenue: totalRevenue,
-            storeShare: totalRevenue * 0.5,
-            adsense: adsenseRev,
-            unitA: Math.round(adsenseRev * 0.6),
-            unitB: Math.round(adsenseRev * 0.4),
-            transactions: transactions || [],
-            history: [50000, 120000, 250000, 310000, 450000, totalRevenue * 0.5],
+            totalRevenue: storeTotalRevenue,
+            storeShare: storeShare,
+            adsense: storeAdsense,
+            unitA: Math.round(storeAdsense * 0.6),
+            unitB: Math.round(storeAdsense * 0.4),
+            transactions: filteredTransactions,
+            history: [50000, 120000, 250000, 310000, 450000, storeShare],
             bank_info: {
                 bank_name: store.bank_name || '',
                 branch_name: store.branch_name || '',
@@ -5932,7 +6034,7 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
                 email: store.billing_email || req.user.email
             },
             billing_email: store.billing_email || req.user.email,
-            adnet: totalRevenue * 0.5
+            adnet: storeAdNet * 0.5
         });
     } catch (e) {
         res.status(500).json({ error: e.message });

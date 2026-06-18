@@ -299,10 +299,25 @@
             document.getElementById('user-email-display').innerText = email;
         }
     }
-    function doLogout() {
-        document.getElementById('page-login').style.display = 'flex';
-        document.getElementById('page-portal').style.display = 'none';
-        document.getElementById('input-pass').value = '';
+    async function doLogout() {
+        console.log("[F12 Debug] doLogout called from anywhere_retail.html");
+        sessionStorage.clear();
+        localStorage.setItem('logged_out', 'true');
+        
+        try {
+            console.log("[F12 Debug] Sending logout request to backend API...");
+            const res = await fetch(`${window.API_BASE_URL}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json();
+            console.log("[F12 Debug] Backend logout response:", data);
+        } catch (e) {
+            console.error("[F12 Debug] Backend logout API failed:", e);
+        }
+        
+        console.log("[F12 Debug] Redirecting to index.html?logout=true");
+        window.location.replace('index.html?logout=true');
     }
     document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('last_active_service', 'anywhere_retail.html');
