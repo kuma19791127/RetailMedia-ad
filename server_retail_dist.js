@@ -2287,49 +2287,102 @@ app.get('/api/campaigns', requireAuth, async (req, res) => {
     }
 });
 
-// Update Campaign Status Endpoint (for Approval)
+// Update Campaign Status Endpoint (for Approval & Advertiser Toggle)
 app.post('/api/campaigns/:id/status', requireAuth, async (req, res) => {
-    // ロールチェック (管理者/店舗オーナー/リテーラーのみ許可)
-    const userRole = req.user.role;
-    if (userRole !== 'admin' && userRole !== 'store' && userRole !== 'retailer') {
-        return res.status(403).json({ success: false, error: 'この操作を実行する権限がありません' });
-    }
     const id = req.params.id;
     const { status } = req.body;
+    const userRole = req.user.role;
+    const userEmail = req.user.email;
+
     try {
+        const campaign = await dbHelper.query.get('SELECT * FROM campaigns WHERE id = ?', [id]);
+        if (!campaign) {
+            return res.status(404).json({ success: false, error: 'キャンペーンが見つかりません' });
+        }
+
+        // 認可チェック:
+        // 1. admin ロールはすべて許可
+        // 2. store/retailer ロールは、キャンペーンの target_org が自組織と一致するか、自身が作成者の場合に許可
+        // 3. advertiser ロールは、自身が作成したキャンペーン (campaign.advertiser === userEmail) の場合のみ許可
+        let isAuthorized = false;
+        if (userRole === 'admin') {
+            isAuthorized = true;
+        } else if (userRole === 'store' || userRole === 'retailer') {
+            const userOrg = req.user.org || '';
+            if (campaign.target_org === userOrg || campaign.advertiser === userEmail) {
+                isAuthorized = true;
+            }
+        } else if (userRole === 'advertiser') {
+            if (campaign.advertiser === userEmail) {
+                isAuthorized = true;
+            }
+        }
+
+        if (!isAuthorized) {
+            return res.status(403).json({ success: false, error: 'この操作を実行する権限がありません' });
+        }
+
         await dbHelper.query.run('UPDATE campaigns SET status = ? WHERE id = ?', [status, id]);
         
-        if (signageServer && signageServer.updateCampaignStatus) {
-            const success = signageServer.updateCampaignStatus(id, status);
-            if (success) {
-                res.json({ success: true, message: 'Status updated' });
-            } else {
-                res.status(404).json({ error: 'Campaign not found on signage server' });
-            }
-        } else {
-            res.json({ success: true, message: 'Status updated in DB only' });
+        // 必須ルール1: データ永続化 (S3保存) を行う
+        if (typeof saveDatabase === 'function') {
+            saveDatabase();
         }
+
+        // signageServer への状態更新通知
+        let found = false;
+        if (signageServer && signageServer.updateCampaignStatus) {
+            found = signageServer.updateCampaignStatus(id, status);
+        }
+        
+        // 念のため legacy の campaigns 配列も更新（もしあれば）
+        if (typeof campaigns !== 'undefined' && Array.isArray(campaigns)) {
+            const cp = campaigns.find(c => c.id.toString() === id.toString());
+            if (cp) {
+                cp.status = status;
+            }
+        }
+
+        res.json({ success: true, message: 'Status updated successfully', status: status });
     } catch (e) {
+        console.error("[Campaign Status Update Error]", e);
         res.status(500).json({ error: e.message });
     }
 });
 
 // CSV Export Endpoint
-app.get('/api/reports/csv', (req, res) => {
-    let list = [];
-    if (signageServer && signageServer.getAllCampaigns) {
-        list = signageServer.getAllCampaigns();
+app.get('/api/reports/csv', requireAuth, async (req, res) => {
+    try {
+        const userRole = req.user.role;
+        const userEmail = req.user.email;
+        let rows = [];
+        
+        if (userRole === 'admin') {
+            rows = await dbHelper.query.all('SELECT * FROM campaigns');
+        } else if (userRole === 'advertiser') {
+            rows = await dbHelper.query.all('SELECT * FROM campaigns WHERE advertiser = ?', [userEmail]);
+        } else if (userRole === 'store' || userRole === 'retailer') {
+            const userOrg = req.user.org || '';
+            rows = await dbHelper.query.all(
+                'SELECT * FROM campaigns WHERE target_org = ? OR advertiser = ?',
+                [userOrg, userEmail]
+            );
+        } else {
+            rows = [];
+        }
+
+        const headers = "ID,キャンペーン名,プラン,ステータス,予算(円),消化(円),インプレッション,開始日,終了日\n";
+        const csvRows = rows.map(c => 
+            `"${c.id}","${c.name || ''}","CPM","${c.status}","${c.budget}","${c.spend || 0}","${c.impressions || 0}","${c.start_date || ''}","${c.end_date || ''}"`
+        ).join('\n');
+        
+        const bom = '\uFEFF';
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="retail_media_report.csv"');
+        res.send(bom + headers + csvRows);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
-    
-    const headers = "ID,キャンペーン名,プラン,ステータス,予算(円),消化(円),インプレッション,開始日,終了日\n";
-    const rows = list.map(c => 
-        `"${c.id}","${c.name || ''}","${c.plan}","${c.status}","${c.budget}","${c.spend || 0}","${c.imp}","${c.start || ''}","${c.end || ''}"`
-    ).join('\n');
-    
-    const bom = '\uFEFF';
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="retail_media_report.csv"');
-    res.send(bom + headers + rows);
 });
 
 // Real Upload Endpoint (Production Mode)
@@ -4348,33 +4401,7 @@ let clients = [];
 
 
 
-app.post('/api/campaigns/:id/status', (req, res) => {
-    const cpId = req.params.id;
-    const { status } = req.body;
-    
-    let found = false;
-    // Check CMS (Signage Server)
-    if (signageServer && signageServer.updateCampaignStatus) {
-        found = signageServer.updateCampaignStatus(cpId, status);
-        if (found) {
-             console.log(`[Campaign Status Update - CMS] ${cpId} -> ${status}`);
-        }
-    }
-
-    // Also check legacy campaigns array
-    const cp = campaigns.find(c => c.id.toString() === cpId.toString());
-    if (cp) {
-        cp.status = status;
-        console.log(`[Campaign Status Update - Legacy] ${cp.name} -> ${status}`);
-        found = true;
-    }
-
-    if (found) {
-        res.json({ success: true, status: status });
-    } else {
-        res.status(404).json({ error: "Campaign not found" });
-    }
-});
+// Duplicated Campaign Status Update Endpoint (Removed to prevent auth bypass)
 
 // --- AWS & Google Cloud Video to Steps AI (ManualHelp) ---
 
