@@ -2,6 +2,17 @@
 <html lang="ja">
 
 <head>
+    <script>
+        // Security Check: Redirect to login if explicitly logged out or token is missing
+        (function() {
+            const loggedOut = localStorage.getItem('logged_out') === 'true';
+            const token = localStorage.getItem('retailMediaToken');
+            if (loggedOut || !token) {
+                console.log("[F12 Debug] Unauthorized access detected. Redirecting to index.html...");
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>リテアド | Store Portal</title>
@@ -602,8 +613,30 @@
                         if (!url.includes('/api/auth/login')) {
                             console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                             sessionStorage.clear();
-                            localStorage.removeItem('last_active_service');
-                            window.location.replace('index.html?logout=true');
+                            
+                            if (!window.isRedirectingToLogout) {
+                                window.isRedirectingToLogout = true;
+                                
+                                // Save error log to buffer
+                                const errorLog = `[${new Date().toISOString()}] 401/403 Auth Error on fetching: ${url}`;
+                                localStorage.setItem('debug_log_buffer', errorLog);
+                                
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        title: '⚠️ セッションタイムアウト',
+                                        html: `認証エラー (401/403) を検知したため、ログアウトします。<br>F12開発者ツールでログを確認する場合は、このダイアログを開いたまま確認してください。<br><br><span style="font-size:12px; color:#64748b;">OKを押すとログイン画面へ移動します。</span>`,
+                                        icon: 'warning',
+                                        confirmButtonText: 'OK',
+                                        allowOutsideClick: false,
+                                        allowEscapeKey: false
+                                    }).then(() => {
+                                        window.location.replace('index.html?logout=true');
+                                    });
+                                } else {
+                                    alert("セッションがタイムアウトしました。OKを押すとログイン画面へ戻ります。");
+                                    window.location.replace('index.html?logout=true');
+                                }
+                            }
                         }
                     }
                     return response;
@@ -2419,6 +2452,7 @@
         sessionStorage.clear();
         localStorage.setItem('logged_out', 'true');
         
+        let logoutErr = null;
         try {
             console.log("[F12 Debug] Sending logout request to backend API...");
             const res = await fetch(`${window.API_BASE_URL}/api/auth/logout`, {
@@ -2429,6 +2463,25 @@
             console.log("[F12 Debug] Backend logout response:", data);
         } catch (e) {
             console.error("[F12 Debug] Backend logout API failed:", e);
+            logoutErr = e.message;
+        }
+        
+        // Save manual logout event to buffer
+        const logMsg = `[${new Date().toISOString()}] Manual logout from store_portal.html. Backend status: ${logoutErr ? 'Failed (' + logoutErr + ')' : 'Success'}`;
+        localStorage.setItem('debug_log_buffer', logMsg);
+        
+        console.log("[F12 Debug] Showing debug confirmation before redirect...");
+        if (typeof Swal !== 'undefined') {
+            await Swal.fire({
+                title: '🚪 ログアウト完了',
+                html: `ログアウトしました。<br>F12開発者ツールでエラーや通信ログを確認する場合は、このダイアログを開いたまま確認してください。<br><br><span style="font-size:12px; color:#64748b;">OKを押すとトップページへ移動します。</span>`,
+                icon: 'info',
+                confirmButtonText: 'OK',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+        } else {
+            alert("ログアウトが完了しました。OKを押すとトップページへ戻ります。");
         }
         
         console.log("[F12 Debug] Redirecting to index.html?logout=true");

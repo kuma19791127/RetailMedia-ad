@@ -44,7 +44,30 @@
                             if (!url.includes('/api/auth/login')) {
                                 console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                                 sessionStorage.clear();
-                                window.location.replace('index.html?logout=true');
+                                
+                                if (!window.isRedirectingToLogout) {
+                                    window.isRedirectingToLogout = true;
+                                    
+                                    // Save error log to buffer
+                                    const errorLog = `[${new Date().toISOString()}] 401/403 Auth Error on fetching: ${url}`;
+                                    localStorage.setItem('debug_log_buffer', errorLog);
+                                    
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            title: '⚠️ セッションタイムアウト',
+                                            html: `認証エラー (401/403) を検知したため、ログアウトします。<br>F12開発者ツールでログを確認する場合は、このダイアログを開いたまま確認してください。<br><br><span style="font-size:12px; color:#64748b;">OKを押すとログイン画面へ移動します。</span>`,
+                                            icon: 'warning',
+                                            confirmButtonText: 'OK',
+                                            allowOutsideClick: false,
+                                            allowEscapeKey: false
+                                        }).then(() => {
+                                            window.location.replace('index.html?logout=true');
+                                        });
+                                    } else {
+                                        alert("セッションがタイムアウトしました。OKを押すとログイン画面へ戻ります。");
+                                        window.location.replace('index.html?logout=true');
+                                    }
+                                }
                             }
                         }
                         return response;
@@ -56,11 +79,17 @@
         }
 
         // Security Check: Redirect to login if cache/session is cleared or app restarted
+        const loggedOut = localStorage.getItem('logged_out') === 'true';
+        const token = localStorage.getItem('retailMediaToken');
         const sessionAuth = sessionStorage.getItem('retailMediaAuth');
         const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
-        if (!sessionAuth) {
+
+        if (loggedOut || !token) {
+            console.log("[F12 Debug] User explicitly logged out or token is missing. Redirecting to login portal.");
+            window.location.replace('index.html');
+        } else if (!sessionAuth) {
             if (savedEmail) {
-                sessionStorage.setItem('retailMediaAuth', 'true');
+                sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: savedEmail }));
                 sessionStorage.setItem('retailUserEmail', savedEmail);
             } else {
                 window.location.replace('index.html');
@@ -3370,6 +3399,7 @@ async function open2FASetup() {
         sessionStorage.clear();
         localStorage.setItem('logged_out', 'true');
         
+        let logoutErr = null;
         try {
             console.log("[F12 Debug] Sending logout request to backend API...");
             const res = await fetch(`${window.API_BASE_URL}/api/auth/logout`, {
@@ -3380,6 +3410,25 @@ async function open2FASetup() {
             console.log("[F12 Debug] Backend logout response:", data);
         } catch (e) {
             console.error("[F12 Debug] Backend logout API failed:", e);
+            logoutErr = e.message;
+        }
+        
+        // Save manual logout event to buffer
+        const logMsg = `[${new Date().toISOString()}] Manual logout from ad_dashboard.html. Backend status: ${logoutErr ? 'Failed (' + logoutErr + ')' : 'Success'}`;
+        localStorage.setItem('debug_log_buffer', logMsg);
+        
+        console.log("[F12 Debug] Showing debug confirmation before redirect...");
+        if (typeof Swal !== 'undefined') {
+            await Swal.fire({
+                title: '🚪 ログアウト完了',
+                html: `ログアウトしました。<br>F12開発者ツールでエラーや通信ログを確認する場合は、このダイアログを開いたまま確認してください。<br><br><span style="font-size:12px; color:#64748b;">OKを押すとトップページへ移動します。</span>`,
+                icon: 'info',
+                confirmButtonText: 'OK',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+        } else {
+            alert("ログアウトが完了しました。OKを押すとトップページへ戻ります。");
         }
         
         console.log("[F12 Debug] Redirecting to index.html?logout=true");
