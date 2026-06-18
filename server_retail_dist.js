@@ -1390,88 +1390,143 @@ app.get('/api/retailer/dashboard', requireAuth, async (req, res) => {
 });
 
 
+// --- Helper Function: Save POS Transaction with Duplicate Checking ---
+async function savePosTransactionInternal(txData) {
+    const transactionId = txData.transaction_id || txData.transactionId || `tx_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+    const storeId = txData.store_id || txData.storeId || "default_store";
+    const amount = Number(txData.total_amount !== undefined ? txData.total_amount : (txData.amount || 0));
+    const items = txData.items || [];
+    const timestampVal = txData.timestamp ? (isNaN(Date.parse(txData.timestamp)) ? (isNaN(Number(txData.timestamp)) ? Date.now() : Number(txData.timestamp)) : Date.parse(txData.timestamp)) : Date.now();
+
+    // 1. 重複チェック (メモリ配列)
+    if (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) {
+        const existsInMemory = posTransactions.some(tx => tx.id === transactionId);
+        if (existsInMemory) {
+            console.log(`[POS Sync] Transaction already exists in memory: ${transactionId}`);
+            return { success: true, transaction_id: transactionId, message: "Already synced (memory)" };
+        }
+    }
+
+    // 2. 重複チェック (データベース)
+    try {
+        const dbExist = await dbHelper.query.get('SELECT 1 FROM pos_transactions WHERE id = ?', [transactionId]);
+        if (dbExist) {
+            console.log(`[POS Sync] Transaction already exists in DB: ${transactionId}`);
+            // メモリ配列に載っていなければ同期しておく
+            if (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) {
+                let billingEmail = 'store@demo.com';
+                const store = await dbHelper.query.get('SELECT billing_email FROM stores WHERE id = ?', [storeId]);
+                if (store && store.billing_email) {
+                    billingEmail = store.billing_email;
+                }
+                posTransactions.push({
+                    id: transactionId,
+                    companyName: storeId,
+                    storeName: storeId,
+                    totalAmount: amount,
+                    billingEmail: billingEmail,
+                    items: items,
+                    status: 'completed',
+                    timestamp: timestampVal
+                });
+            }
+            return { success: true, transaction_id: transactionId, message: "Already synced (DB)" };
+        }
+    } catch (dbErr) {
+        console.error("[POS Sync DB Check Error]", dbErr.message);
+    }
+
+    // 3. DynamoDB への保存処理 (失敗しても決済全体を落とさないよう個別 try-catch)
+    try {
+        const params = {
+            TableName: 'RetailMediaTransactions',
+            Item: {
+                store_id: storeId,
+                timestamp: timestampVal.toString(),
+                transaction_id: transactionId,
+                total_amount: amount,
+                items: items,
+                created_at: new Date(timestampVal).toISOString()
+            }
+        };
+        await docClient.send(new PutCommand(params));
+        console.log(`[DynamoDB] 保存成功: ${transactionId} (store: ${storeId})`);
+    } catch (dynamoErr) {
+        console.error("[DynamoDB Error] 保存失敗 (フォールバックしてローカルDBに保存します):", dynamoErr.message);
+    }
+
+    // 4. メモリ (posTransactions) への追加
+    let billingEmail = 'store@demo.com';
+    try {
+        const store = await dbHelper.query.get('SELECT billing_email FROM stores WHERE id = ?', [storeId]);
+        if (store && store.billing_email) {
+            billingEmail = store.billing_email;
+        }
+    } catch (dbErr) {
+        console.error("[POS Transaction] Failed to fetch billing_email for store:", storeId, dbErr.message);
+    }
+
+    const newTx = {
+        id: transactionId,
+        companyName: storeId,
+        storeName: storeId,
+        totalAmount: amount,
+        billingEmail: billingEmail,
+        items: items,
+        status: 'completed',
+        timestamp: timestampVal
+    };
+    if (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) {
+        posTransactions.push(newTx);
+        console.log("[POS Memory] トランザクションを追加しました:", transactionId);
+    }
+
+    // 5. ローカルデータベース (SQLite / PostgreSQL) への保存
+    try {
+        await dbHelper.query.run(
+            'INSERT INTO pos_transactions (id, company_name, store_name, total_amount, billing_email, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                transactionId,
+                storeId,
+                storeId,
+                amount,
+                billingEmail,
+                JSON.stringify(items),
+                'completed',
+                timestampVal
+            ]
+        );
+        console.log(`[POS DB] トランザクションをデータベースに保存しました: ${transactionId}`);
+    } catch (dbErr) {
+        console.error(`[POS DB] データベース保存失敗:`, dbErr.message);
+    }
+
+    // 6. S3 への即時保存の徹底 (必須ルール1)
+    if (typeof saveDatabase === 'function') {
+        saveDatabase();
+    }
+
+    return { success: true, transaction_id: transactionId };
+}
+
 // --- DynamoDB POS Transaction API ---
 app.post('/api/pos/transaction', async (req, res) => {
     console.log("[API POST /api/pos/transaction] 受信データ:", JSON.stringify(req.body));
     try {
-        const { store_id, total_amount, items } = req.body;
+        const { store_id, total_amount, items, transaction_id } = req.body;
         if (!store_id) {
             console.error("[API POST /api/pos/transaction] エラー: store_id がありません");
             return res.status(400).json({ success: false, error: "store_id is required" });
         }
         
-        const timestamp = Date.now();
-        const transaction_id = `tx_${timestamp}_${Math.floor(Math.random()*1000)}`;
+        const result = await savePosTransactionInternal({
+            transaction_id: transaction_id || req.body.transactionId,
+            store_id,
+            total_amount,
+            items
+        });
         
-        // 1. DynamoDB への保存処理 (失敗しても決済全体を落とさないよう個別 try-catch)
-        try {
-            const params = {
-                TableName: 'RetailMediaTransactions',
-                Item: {
-                    store_id: store_id,
-                    timestamp: timestamp.toString(),
-                    transaction_id: transaction_id,
-                    total_amount: total_amount || 0,
-                    items: items || [],
-                    created_at: new Date().toISOString()
-                }
-            };
-            await docClient.send(new PutCommand(params));
-            console.log(`[DynamoDB] 保存成功: ${transaction_id} (store: ${store_id})`);
-        } catch (dynamoErr) {
-            console.error("[DynamoDB Error] 保存失敗 (フォールバックしてローカルDBに保存します):", dynamoErr.message);
-        }
-
-        // 2. メモリ (posTransactions) への追加
-        const itemsData = items || [];
-        
-        let billingEmail = 'store@demo.com';
-        try {
-            const store = await dbHelper.query.get('SELECT billing_email FROM stores WHERE id = ?', [store_id]);
-            if (store && store.billing_email) {
-                billingEmail = store.billing_email;
-            }
-        } catch (dbErr) {
-            console.error("[POS Transaction] Failed to fetch billing_email for store:", store_id, dbErr.message);
-        }
-
-        const newTx = {
-            id: transaction_id,
-            companyName: store_id,
-            storeName: store_id,
-            totalAmount: Number(total_amount) || 0,
-            billingEmail: billingEmail,
-            items: itemsData,
-            status: 'completed',
-            timestamp: timestamp
-        };
-        posTransactions.push(newTx);
-        console.log("[POS Memory] トランザクションを追加しました:", transaction_id);
-
-        // 3. ローカルデータベース (SQLite / PostgreSQL) への保存
-        try {
-            await dbHelper.query.run(
-                'INSERT INTO pos_transactions (id, company_name, store_name, total_amount, billing_email, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    transaction_id,
-                    store_id,
-                    store_id,
-                    Number(total_amount) || 0,
-                    billingEmail,
-                    JSON.stringify(itemsData),
-                    'completed',
-                    timestamp
-                ]
-            );
-            console.log(`[POS DB] トランザクションをデータベースに保存しました: ${transaction_id}`);
-        } catch (dbErr) {
-            console.error(`[POS DB] データベース保存失敗:`, dbErr.message);
-        }
-
-        // 4. S3 への即時保存の徹底 (必須ルール1)
-        saveDatabase();
-
-        res.json({ success: true, transaction_id });
+        res.json(result);
     } catch (err) {
         console.error("[API POST /api/pos/transaction] 致命的エラー:", err);
         res.status(500).json({ success: false, error: err.message });
@@ -1499,7 +1554,7 @@ app.post('/api/retailer/settings', requireAuth, (req, res) => {
 });
 
 // --- ANYWHERE REGI POS SYNC API ---
-app.post('/api/admin/sales', (req, res) => {
+app.post('/api/admin/sales', async (req, res) => {
     try {
         const txData = req.body;
         console.log(`[POS Sync] ✅ Received New Transaction: ${txData.transactionId} (${txData.amount}円)`);
@@ -1517,6 +1572,15 @@ app.post('/api/admin/sales', (req, res) => {
         
         // 独立したモジュールであるため、POS決済データとCreator（サイネージ広告枠）の直接的なコミッション連動は行いません
 
+        // 共通保存関数を呼び出して永続化と重複防止を行う
+        await savePosTransactionInternal({
+            transaction_id: txData.transactionId || txData.transaction_id,
+            store_id: txData.storeId || txData.store_id,
+            total_amount: txData.amount || txData.total_amount,
+            items: txData.items,
+            timestamp: txData.timestamp
+        });
+
         res.json({ success: true, message: "Synced to Admin Server" });
     } catch (e) {
         console.error("[POS Sync Error]", e);
@@ -1524,18 +1588,27 @@ app.post('/api/admin/sales', (req, res) => {
     }
 });
 
-app.post('/api/admin/sales/sync-batch', (req, res) => {
+app.post('/api/admin/sales/sync-batch', async (req, res) => {
     try {
         const { storeId, syncTimestamp, records } = req.body;
         console.log(`[POS Batch Sync] Received batch sync request from Store: ${storeId} at ${syncTimestamp}, count: ${records ? records.length : 0}`);
         
         if (records && records.length > 0) {
-            records.forEach(txData => {
+            for (const txData of records) {
                 broadcastEvent({
                     type: 'pos_purchase_sync',
                     transaction: txData
                 });
-            });
+
+                // 永続化と重複防止
+                await savePosTransactionInternal({
+                    transaction_id: txData.transactionId || txData.transaction_id,
+                    store_id: txData.storeId || txData.store_id || storeId,
+                    total_amount: txData.amount || txData.total_amount,
+                    items: txData.items,
+                    timestamp: txData.timestamp || syncTimestamp
+                });
+            }
         }
         res.json({ success: true, message: "Batch synced successfully to Admin Server" });
     } catch (e) {
@@ -1620,7 +1693,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
                 const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
                 res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
-                res.json({ success: true, token: jwtToken });
+                res.json({ success: true, token: jwtToken, user: { email, role: user.role, name: user.name, org: user.org } });
             } else {
                 res.json({ success: false, error: "コードが違います" });
             }
@@ -1658,7 +1731,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
             const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
             res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
-            res.json({ success: true, token: jwtToken });
+            res.json({ success: true, token: jwtToken, user: { email, role: user.role, name: user.name, org: user.org } });
         } else {
             res.json({ success: false, error: "無効なコードです" });
         }

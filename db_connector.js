@@ -321,6 +321,19 @@ if (process.env.DATABASE_URL) {
                     )
                 `);
 
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS pos_transactions (
+                        id TEXT PRIMARY KEY,
+                        company_name TEXT,
+                        store_name TEXT,
+                        total_amount REAL,
+                        billing_email TEXT,
+                        items TEXT,
+                        status TEXT,
+                        timestamp INTEGER
+                    )
+                `);
+
                 // Migration: Add store_id column to face_sensor_logs for SQLite if not exists
                 sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {
                     if (err) {

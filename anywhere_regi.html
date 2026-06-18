@@ -830,7 +830,7 @@ window.addEventListener('DOMContentLoaded', () => {
                         
                         if (verifyData.success) {
                             Swal.close();
-                            loginSuccess(email, password, orgName);
+                            loginSuccess(email, password, (verifyData.user && verifyData.user.org) ? verifyData.user.org : orgName);
                         } else {
                             Swal.fire({
                                 title: '認証エラー',
@@ -897,14 +897,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
                         if (verifyData.success) {
                             Swal.close();
-                            loginSuccess(email, password, orgName);
+                            loginSuccess(email, password, (verifyData.user && verifyData.user.org) ? verifyData.user.org : orgName);
                         } else {
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
                         }
                         return;
                     }
 
-                    loginSuccess(email, password, orgName);
+                    loginSuccess(email, password, (data.user && data.user.org) ? data.user.org : orgName);
                 } else {
                     alert(data.error || "Login Failed");
                 }
@@ -1159,6 +1159,7 @@ function playBeep() {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
+                                transaction_id: txData.transactionId,
                                 store_id: txData.storeId,
                                 total_amount: txData.amount,
                                 items: txData.items
