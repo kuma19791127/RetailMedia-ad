@@ -1586,8 +1586,17 @@ app.post('/api/admin/sales', requireAuth, async (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "同期処理を行う権限がありません" });
     }
+    
+    const txData = req.body;
+    const sId = txData.storeId || txData.store_id;
+    const userPrefix = req.user.org || req.user.email;
+    
+    // 所有者検証 (本人の店舗ID、または管理者のみ許可)
+    if (req.user.role !== 'admin' && sId !== userPrefix) {
+        return res.status(403).json({ success: false, error: "他店舗の売上を同期する権限がありません" });
+    }
+    
     try {
-        const txData = req.body;
         console.log(`[POS Sync] ✅ Received New Transaction: ${txData.transactionId} (${txData.amount}円)`);
         
         const itemsStr = (txData.items && Array.isArray(txData.items)) 
@@ -1624,8 +1633,15 @@ app.post('/api/admin/sales/sync-batch', requireAuth, async (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "同期処理を行う権限がありません" });
     }
+    
+    const { storeId, syncTimestamp, records } = req.body;
+    const userPrefix = req.user.org || req.user.email;
+    
+    // 所有者検証 (本人の店舗ID、または管理者のみ許可)
+    if (req.user.role !== 'admin' && storeId !== userPrefix) {
+        return res.status(403).json({ success: false, error: "他店舗の売上を同期する権限がありません" });
+    }
     try {
-        const { storeId, syncTimestamp, records } = req.body;
         console.log(`[POS Batch Sync] Received batch sync request from Store: ${storeId} at ${syncTimestamp}, count: ${records ? records.length : 0}`);
         
         if (records && records.length > 0) {
