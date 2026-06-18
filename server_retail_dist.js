@@ -6082,7 +6082,15 @@ ${fallbackResult.analysis}
 
 // --- 2. Shift & Manual Linking Agent ---
 app.post('/api/agent/shift-manual-sync', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "シフト＆マニュアル同期を実行する権限がありません" });
+    }
     const org = req.user.org || 'default_org';
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
