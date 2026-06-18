@@ -6009,7 +6009,11 @@ Return ONLY a JSON object:
 // ==========================================
 const gmoBankMock = require('./gmo_bank_mock');
 
-app.get('/api/bank/accounts', async (req, res) => {
+app.get('/api/bank/accounts', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     try {
         const result = await gmoBankMock.getAccounts();
         res.json(result);
@@ -6018,7 +6022,11 @@ app.get('/api/bank/accounts', async (req, res) => {
     }
 });
 
-app.get('/api/bank/balance', async (req, res) => {
+app.get('/api/bank/balance', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     try {
         const result = await gmoBankMock.getBalance(req.query.accountId);
         res.json(result);
@@ -6027,7 +6035,11 @@ app.get('/api/bank/balance', async (req, res) => {
     }
 });
 
-app.get('/api/bank/deposits', async (req, res) => {
+app.get('/api/bank/deposits', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     try {
         const result = await gmoBankMock.getDepositTransactions(req.query.accountId, req.query.dateFrom, req.query.dateTo);
         res.json(result);
@@ -6036,7 +6048,11 @@ app.get('/api/bank/deposits', async (req, res) => {
     }
 });
 
-app.post('/api/bank/transfer', async (req, res) => {
+app.post('/api/bank/transfer', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     try {
         const result = await gmoBankMock.requestTransfer(req.body);
         res.json(result);
@@ -6069,7 +6085,11 @@ module.exports.getFreeeToken = () => {
 };
 
 // Get freee connection status
-app.get('/api/freee/status', (req, res) => {
+app.get('/api/freee/status', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     console.log("[freee OAuth] Checking status. Token exists:", !!currentFreeeToken);
     res.json({
         connected: !!currentFreeeToken,
@@ -6078,7 +6098,11 @@ app.get('/api/freee/status', (req, res) => {
 });
 
 // Start freee OAuth Connection
-app.get('/api/freee/connect', (req, res) => {
+app.get('/api/freee/connect', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
     const freeeAuthUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=${FREEE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
     
@@ -6087,7 +6111,11 @@ app.get('/api/freee/connect', (req, res) => {
 });
 
 // OAuth Manual (OOB) Callback Endpoint for urn:ietf:wg:oauth:2.0:oob
-app.post('/api/freee/callback-manual', async (req, res) => {
+app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     const code = req.body.code;
     const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
     
@@ -6180,13 +6208,21 @@ app.get('/api/freee/callback', async (req, res) => {
 });
 
 // Disconnect/Revoke freee OAuth
-app.post('/api/freee/disconnect', (req, res) => {
+app.post('/api/freee/disconnect', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     console.log("[freee OAuth] Disconnecting freee Integration...");
     currentFreeeToken = null;
     res.json({ success: true });
 });
 
-app.get('/api/freee/companies', async (req, res) => {
+app.get('/api/freee/companies', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const result = await freeeApi.getCompanies();
         res.json(result);
@@ -6199,7 +6235,11 @@ app.get('/api/freee/companies', async (req, res) => {
     }
 });
 
-app.get('/api/freee/accounts', async (req, res) => {
+app.get('/api/freee/accounts', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const companyId = req.query.companyId || undefined;
         const result = await freeeApi.getAccountItems(companyId);
@@ -6212,7 +6252,11 @@ app.get('/api/freee/accounts', async (req, res) => {
     }
 });
 
-app.post('/api/freee/sales', async (req, res) => {
+app.post('/api/freee/sales', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const companyId = req.body.companyId || undefined;
         const result = await freeeApi.createSalesEntry(companyId, req.body);
