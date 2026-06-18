@@ -2303,7 +2303,7 @@
                     <div style="display:grid; grid-template-columns:1fr; gap:10px; border-top:1px solid #eee; padding-top:15px;">
 
                         <button onclick="showPanel('inventory'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
-                        <button onclick="console.log('[F12 Debug] Store Portal Logout clicked'); sessionStorage.clear(); localStorage.removeItem('last_active_service'); location.href='index.html?logout=true';" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
+                        <button onclick="executeLogout()" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
                     </div>
                 `,
                 showConfirmButton: false,
@@ -2412,6 +2412,27 @@
         
         btn.innerHTML = '<i class="fas fa-search-dollar"></i> 分析を開始';
         btn.disabled = false;
+    }
+
+    async function executeLogout() {
+        console.log("[F12 Debug] executeLogout called from store_portal.html");
+        sessionStorage.clear();
+        localStorage.setItem('logged_out', 'true');
+        
+        try {
+            console.log("[F12 Debug] Sending logout request to backend API...");
+            const res = await fetch(`${window.API_BASE_URL}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json();
+            console.log("[F12 Debug] Backend logout response:", data);
+        } catch (e) {
+            console.error("[F12 Debug] Backend logout API failed:", e);
+        }
+        
+        console.log("[F12 Debug] Redirecting to index.html?logout=true");
+        window.location.replace('index.html?logout=true');
     }
     </script>
 </body>

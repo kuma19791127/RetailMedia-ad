@@ -1810,7 +1810,26 @@ app.get('/api/user/me', (req, res) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
-    res.clearCookie('token');
+    const email = req.user ? req.user.email : 'Unknown';
+    console.log(`[Auth /api/auth/logout] Logout requested for user: ${email}`);
+    
+    const isProd = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const opts = {
+        httpOnly: true,
+        sameSite: isProd ? 'none' : 'lax',
+        secure: isProd
+    };
+    
+    // サブドメインのCORS認証Cookieクリア用ドメイン指定
+    if (isProd && req && req.headers) {
+        const host = req.headers.host || '';
+        if (/(^|\.)retail-ad\.com$/.test(host)) {
+            opts.domain = '.retail-ad.com';
+        }
+    }
+    
+    res.clearCookie('token', opts);
+    console.log(`[Auth /api/auth/logout] Cookie 'token' cleared successfully with options: ${JSON.stringify(opts)}`);
     res.json({ success: true });
 });
 

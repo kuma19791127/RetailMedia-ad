@@ -14,8 +14,17 @@
         console.log("[F12 Debug] index.html loaded. Query parameters:", window.location.search);
         
         if (urlParams.has('logout')) {
-            console.log("[F12 Debug] Logout detected. Clearing active session tokens (remembered credentials are kept)...");
+            console.log("[F12 Debug] Logout URL parameter detected. Setting logged_out=true in localStorage and clearing tokens...");
+            localStorage.setItem('logged_out', 'true');
             localStorage.removeItem('retailMediaToken');
+            sessionStorage.clear();
+        }
+        
+        const loggedOut = localStorage.getItem('logged_out') === 'true';
+        console.log("[F12 Debug] Current logged_out state in localStorage:", loggedOut);
+        
+        if (loggedOut) {
+            console.log("[F12 Debug] User explicitly logged out. Skipping auto-redirect to last_active_service.");
         } else if (!urlParams.has('bypass_redirect')) {
             const lastService = localStorage.getItem('last_active_service');
             const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
@@ -23,7 +32,6 @@
             console.log("[F12 Debug] Checking auto-redirect. lastService:", lastService, "savedEmail:", savedEmail);
             
             if (lastService) {
-                // セッションが切れているが、維持情報がある場合は自動的にsessionStorageに復旧キーをセットして無限ループを防ぐ
                 console.log("[F12 Debug] Auto-redirecting to last active service:", lastService);
                 const roleStr = localStorage.getItem('retailMediaSavedRole') || '';
                 sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: savedEmail, role: roleStr }));
@@ -819,7 +827,8 @@
                 }
 
                 if (data.success) {
-                    console.log("[F12 Debug] Login process completed successfully. Redirecting to:", data.redirect);
+                    console.log("[F12 Debug] Login process completed successfully. Clearing logged_out flag. Redirecting to:", data.redirect);
+                    localStorage.removeItem('logged_out');
                     if (data.token) {
                         localStorage.setItem('retailMediaToken', data.token);
                     }

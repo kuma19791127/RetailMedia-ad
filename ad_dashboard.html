@@ -1096,7 +1096,7 @@
 
         <!-- Removed LP link from sidebar as per request -->
         <div style="margin-top:10px; text-align:center;">
-            <a href="index.html?bypass_redirect=true" onclick="sessionStorage.clear();"
+            <a href="javascript:void(0)" onclick="executeLogout()"
                 style="display:block; background:#c0392b; color:white; padding:10px; border-radius:6px; text-decoration:none; font-weight:bold; border:1px solid #e74c3c;">
                 🚪 ログアウト
             </a>
@@ -2883,7 +2883,7 @@
                         <button onclick="handleSupport(); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#8e44ad;">📞 お問い合わせ</button>
                     </div>
                     <div style="margin-top:15px;">
-                         <button onclick="sessionStorage.clear(); location.href='index.html?bypass_redirect=true';" class="swal2-cancel swal2-styled" style="background:#555;">🚪 ログアウト</button>
+                         <button onclick="executeLogout()" class="swal2-cancel swal2-styled" style="background:#555;">🚪 ログアウト</button>
                     </div>
                 `,
                 showConfirmButton: false,
@@ -2979,7 +2979,7 @@
         <div class="nav-btn" onclick="registerCreditCard()">
             <i>💳</i><span>お支払い</span>
         </div>
-        <a href="index.html?bypass_redirect=true" onclick="sessionStorage.clear();" class="nav-btn" style="text-decoration:none;">
+        <a href="javascript:void(0)" onclick="executeLogout()" class="nav-btn" style="text-decoration:none;">
             <i style="color:#f43f5e; font-style:normal;">🚪</i><span style="color:#f43f5e; font-weight:bold;">ログアウト</span>
         </a>
     </div>
@@ -3363,6 +3363,27 @@ async function open2FASetup() {
         
         btn.innerHTML = '<i class="fas fa-paper-plane"></i> 指示を送信';
         btn.disabled = false;
+    }
+
+    async function executeLogout() {
+        console.log("[F12 Debug] executeLogout called from ad_dashboard.html");
+        sessionStorage.clear();
+        localStorage.setItem('logged_out', 'true');
+        
+        try {
+            console.log("[F12 Debug] Sending logout request to backend API...");
+            const res = await fetch(`${window.API_BASE_URL}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json();
+            console.log("[F12 Debug] Backend logout response:", data);
+        } catch (e) {
+            console.error("[F12 Debug] Backend logout API failed:", e);
+        }
+        
+        console.log("[F12 Debug] Redirecting to index.html?logout=true");
+        window.location.replace('index.html?logout=true');
     }
     </script>
 </body>
