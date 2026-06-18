@@ -3060,9 +3060,9 @@ app.delete('/api/retailer/videos/:id', requireAuth, (req, res) => {
         return res.status(404).json({ success: false, error: "動画が見つかりません" });
     }
     
-    // 所有者検証 (他社の動画の不正削除防止)
+    // 所有者検証 (他社の動画の不正削除防止。管理者はパス)
     const userPrefix = req.user.org || req.user.email;
-    if (targetVideo.retailer_prefix !== userPrefix) {
+    if (req.user.role !== 'admin' && targetVideo.retailer_prefix !== userPrefix) {
         return res.status(403).json({ success: false, error: "他社の動画を削除する権限がありません" });
     }
     
