@@ -150,8 +150,9 @@ app.use((req, res, next) => {
         const isAgencyApi = path === '/api/admin/agency-submit' || path === '/api/admin/agency';
         const isBillingEmailSetup = path === '/api/admin/settings/billing-email';
         const isFreeeCallback = path === '/api/freee/callback';
+        const isSalesHistory = path === '/api/admin/sales-history';
         
-        if (isSalesSync || isAgencyApi || isBillingEmailSetup || isFreeeCallback) {
+        if (isSalesSync || isAgencyApi || isBillingEmailSetup || isFreeeCallback || isSalesHistory) {
             return next();
         }
         
@@ -1914,20 +1915,8 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
     }
 });
 
-app.get('/api/user/me', (req, res) => {
-    console.log("[API /api/user/me] Cookies received:", req.cookies);
-    const token = req.cookies.token;
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, JWT_SECRET);
-            res.json({ success: true, user: decoded });
-            return;
-        } catch (e) {
-            console.error('[Auth] Token verification failed in /me');
-        }
-    }
-    // Default fall-back: Return 401 Unauthorized instead of silent demo bypass
-    res.status(401).json({ error: "Unauthorized: Active session required" });
+app.get('/api/user/me', requireAuth, (req, res) => {
+    res.json({ success: true, user: req.user });
 });
 
 app.post('/api/auth/logout', (req, res) => {
