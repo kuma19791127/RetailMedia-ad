@@ -712,10 +712,7 @@ app.post('/api/review/unlock', requireAuth, async (req, res) => {
         try {
             const rawKey = process.env.GEMINI_API_KEY || '';
             const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
-            
-            if (GEMINI_API_KEY) {
-                const FIXED_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                const promptText = `あなたはリテールメディアプラットフォームの不正検知（KYC）AIアシスタントです。
+            const promptText = `あなたはリテールメディアプラットフォームの不正検知（KYC）AIアシスタントです。
 以下の申請情報から、このユーザーがスパム、過去のBAN回避、または悪意のあるボットである可能性（リスクスコア）を0〜100の数値で判定し、その理由を簡潔に回答してください。
 （0=極めて安全、100=極めて危険なスパム/違反者）
 
@@ -730,19 +727,26 @@ app.post('/api/review/unlock', requireAuth, async (req, res) => {
   "reason": "判定理由の簡潔な説明"
 }`;
 
-                const response = await fetch(FIXED_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ role: "user", parts: [{ text: promptText }] }],
-                        generationConfig: { response_mime_type: "application/json" }
-                    })
-                });
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    const aiResponse = JSON.parse(data.candidates[0].content.parts[0].text);
-                    aiRiskScore = aiResponse.score || 15;
-                    aiReason = `Gemini不正検知AI: ${aiResponse.reason} (Score: ${aiRiskScore})`;
+            if (GEMINI_API_KEY) {
+                let aiResponseText = "";
+                let requestSuccess = false;
+                try {
+                    aiResponseText = await callGeminiAPI(promptText, 'application/json', null, null, null);
+                    requestSuccess = true;
+                } catch (err) {
+                    console.warn("[Unlock AI] callGeminiAPI failed:", err.message);
+                }
+
+                if (requestSuccess) {
+                    const cleanJson = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const jsonMatch = cleanJson.match(/\{[\s\S]*?\}/);
+                    if (jsonMatch) {
+                        const aiResponse = JSON.parse(jsonMatch[0]);
+                        aiRiskScore = aiResponse.score || 15;
+                        aiReason = `Gemini不正検知AI: ${aiResponse.reason} (Score: ${aiRiskScore})`;
+                    }
+                } else {
+                    console.warn("[Unlock AI] All models failed. Falling back to DEMO values.");
                 }
             } else {
                 console.log("[Gemini] API Key not configured. Running fallback logic.");
