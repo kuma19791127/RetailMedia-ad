@@ -4221,8 +4221,10 @@ app.post('/api/admin/settings/billing-email', requireAuth, async (req, res) => {
     }
     if (req.body.email) {
         try {
-            await dbHelper.query.run('UPDATE stores SET billing_email = ? WHERE id = ?', [req.body.email, 'default_store']);
-            console.log(`[Admin] Billing Email Updated from AnyWhere Regi: ${req.body.email}`);
+            // 所有者検証: 店舗オーナーは自身の組織IDのみ、管理者は任意の店舗ID
+            const targetStoreId = (req.user.role === 'admin') ? (req.body.storeId || 'default_store') : (req.user.org || 'default_store');
+            await dbHelper.query.run('UPDATE stores SET billing_email = ? WHERE id = ?', [req.body.email, targetStoreId]);
+            console.log(`[Admin] Billing Email Updated from AnyWhere Regi: ${req.body.email} for store ${targetStoreId}`);
         } catch (e) {
             return res.status(500).json({ error: e.message });
         }
@@ -5583,7 +5585,12 @@ Return ONLY a JSON object:
 
 
 // --- 3. Anywhere Register Customer Agent (レジ顧客向け レシピ＆提案エージェント) ---
-app.post('/api/agent/regi', async (req, res) => {
+app.post('/api/agent/regi', requireAuth, async (req, res) => {
+    // ロールチェック (店舗オーナーまたは管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "レジエージェント機能を利用する権限がありません" });
+    }
+    
     const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
