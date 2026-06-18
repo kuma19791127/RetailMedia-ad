@@ -205,7 +205,7 @@ const PORT = 3000;
 
 
 // --- Product Master API ---
-app.get('/api/products/master', async (req, res) => {
+app.get('/api/products/master', requireAuth, async (req, res) => {
     try {
         const rows = await dbHelper.query.all('SELECT * FROM products');
         const master = {};
@@ -3565,6 +3565,10 @@ app.get('/api/analytics/track', (req, res) => {
 // ManualHelp Chat API
 
 app.get('/api/manualhelp/state', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     const org = req.user.org || 'default_org';
     if (!manualhelpState[org]) {
         manualhelpState[org] = { manuals: [], logs: [] };
@@ -3572,6 +3576,10 @@ app.get('/api/manualhelp/state', requireAuth, (req, res) => {
     res.json({ success: true, state: manualhelpState[org] });
 });
 app.post('/api/manualhelp/state', requireAuth, express.json({limit: '10mb'}), (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const org = req.user.org || 'default_org';
         if (!manualhelpState[org]) {
@@ -3586,6 +3594,10 @@ app.post('/api/manualhelp/state', requireAuth, express.json({limit: '10mb'}), (r
     }
 });
 app.get('/api/manualhelp/chat', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     const org = req.user.org || 'default_org';
     if (!manualChat[org]) {
         manualChat[org] = [];
@@ -3593,6 +3605,10 @@ app.get('/api/manualhelp/chat', requireAuth, (req, res) => {
     res.json({ success: true, chat: manualChat[org] });
 });
 app.post('/api/manualhelp/chat', requireAuth, express.json({limit: '10mb'}), (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const org = req.user.org || 'default_org';
         if(Array.isArray(req.body.chat)) {
@@ -3607,6 +3623,10 @@ app.post('/api/manualhelp/chat', requireAuth, express.json({limit: '10mb'}), (re
     }
 });
 app.get('/api/shift/state', requireAuth, (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     const org = req.user.org || 'default_org';
     if (!shiftState[org]) {
         shiftState[org] = { staff: [], chatHistory: [] };
@@ -3614,6 +3634,10 @@ app.get('/api/shift/state', requireAuth, (req, res) => {
     res.json({ success: true, state: shiftState[org] });
 });
 app.post('/api/shift/state', requireAuth, express.json({limit: '10mb'}), (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const org = req.user.org || 'default_org';
         if (!shiftState[org]) {
