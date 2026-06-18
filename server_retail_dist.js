@@ -326,12 +326,17 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
         return res.status(400).json({ error: "Missing audio data or text" });
     }
 
+    let targetStoreId = target_store_id || req.user.org || 'all';
+    if (req.user.role !== 'admin') {
+        targetStoreId = req.user.org || req.user.email || 'default_store';
+    }
+
     const metadata = {
         title: title || "館内放送",
         format: "audio",
         url: audio_url,
         text_content: text,
-        target_store_id: target_store_id || 'all'
+        target_store_id: targetStoreId
     };
 
     if (schedule_time) {

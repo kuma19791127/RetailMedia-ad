@@ -8,6 +8,51 @@
             ? 'http://localhost:3000' 
             : 'https://api.retail-ad.com'; // TODO: 本番環境のバックエンドURLに変更してください
     </script>
+    <script>
+        // Global Fetch Hook to inject credentials and Authorization header
+        const originalFetch = window.fetch;
+        if (typeof originalFetch === 'function') {
+            try {
+                window.fetch = function (input, init) {
+                    init = init || {};
+                    const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+                    if (url.includes('localhost:3000') || url.includes('awsapprunner.com') || url.includes('retail-ad.com') || url.startsWith('/api/')) {
+                        init.credentials = 'include';
+                        const token = localStorage.getItem('retailMediaToken');
+                        if (token) {
+                            init.headers = init.headers || {};
+                            if (init.headers instanceof Headers) {
+                                if (!init.headers.has('Authorization')) {
+                                    init.headers.append('Authorization', `Bearer ${token}`);
+                                }
+                            } else if (Array.isArray(init.headers)) {
+                                const hasAuth = init.headers.some(h => h[0].toLowerCase() === 'authorization');
+                                if (!hasAuth) {
+                                    init.headers.push(['Authorization', `Bearer ${token}`]);
+                                }
+                            } else {
+                                if (!init.headers['Authorization'] && !init.headers['authorization']) {
+                                    init.headers['Authorization'] = `Bearer ${token}`;
+                                }
+                            }
+                        }
+                    }
+                    return originalFetch(input, init).then(response => {
+                        if (response.status === 401 || response.status === 403) {
+                            if (!url.includes('/api/auth/login')) {
+                                console.warn("[Global Auth Hook] 401/403 detected. Redirecting to login. URL:", url);
+                                sessionStorage.clear();
+                                window.location.replace('index.html?logout=true');
+                            }
+                        }
+                        return response;
+                    });
+                };
+            } catch (e) {
+                console.warn("[Auth] window.fetch hook failed:", e);
+            }
+        }
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +171,11 @@
             <div class="flex-col" style="flex:1;">
                 <label for="voice-model">Voice Model (Engine)</label>
                 <select id="voice-model">
-                    <option selected>🌟 Gemini 2.5 Flash (Kore)</option>
+                    <option value="gemini_Kore" selected>🌟 Gemini 2.5 Flash (Kore)</option>
+                    <option value="gemini_Zephyr">🌟 Gemini 2.5 Flash (Zephyr)</option>
+                    <option value="gemini_Puck">🌟 Gemini 2.5 Flash (Puck)</option>
+                    <option value="gemini_Charon">🌟 Gemini 2.5 Flash (Charon)</option>
+                    <option value="gemini_Fenrir">🌟 Gemini 2.5 Flash (Fenrir)</option>
                 </select>
             </div>
             <div class="flex-col" style="flex:1;">
@@ -143,6 +192,7 @@
     </div>
     <div class="card">
         <h2>💾 保存 (原稿 & MP3)</h2>
+        <button class="btn" id="generate-btn" style="background:#e67e22; margin-right:10px;">音声を生成</button>
         <button class="btn" id="save-btn">保存</button>
     </div>
     <div class="card">
@@ -339,6 +389,58 @@
                 }
             }
 
+            async function generateVoice() {
+                const text = document.getElementById('campaign-text').value;
+                if (!text) {
+                    Swal.fire('エラー', '放送原稿を入力してください。', 'error');
+                    return;
+                }
+                
+                const voiceModel = document.getElementById('voice-model').value;
+                const voiceSpeed = parseFloat(document.getElementById('voice-speed').value || 1.0);
+                const voicePitch = parseFloat(document.getElementById('voice-pitch') ? document.getElementById('voice-pitch').value : 0.0);
+                const voiceStyle = document.getElementById('voice-style').value;
+                
+                const generateBtn = document.getElementById('generate-btn');
+                generateBtn.disabled = true;
+                generateBtn.innerText = "生成中...";
+                
+                try {
+                    const res = await fetch(window.API_BASE_URL + '/api/voice/synthesize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            text: text, 
+                            voiceName: voiceModel.includes('gemini_') ? voiceModel.replace('gemini_', '') : voiceModel, 
+                            stylePrompt: voiceStyle,
+                            speed: voiceSpeed,
+                            pitch: voicePitch
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success && data.audioBase64) {
+                        const audioPlayer = document.getElementById('ai-audio-player');
+                        audioPlayer.src = `data:audio/mp3;base64,${data.audioBase64}`;
+                        audioPlayer.style.display = 'block';
+                        audioPlayer.play();
+                        Swal.fire('成功', '音声の生成が完了しました。試聴できます。', 'success');
+                    } else {
+                        Swal.fire('エラー', data.error || '音声生成に失敗しました', 'error');
+                    }
+                } catch (e) {
+                    console.error("[Voice Generation] Error:", e);
+                    Swal.fire('エラー', '音声合成APIの呼び出しに失敗しました。', 'error');
+                } finally {
+                    generateBtn.disabled = false;
+                    generateBtn.innerText = "音声を生成";
+                }
+            }
+
+            document.getElementById('generate-btn').addEventListener('click', () => {
+                generateVoice();
+            });
+
             document.getElementById('save-btn').addEventListener('click', () => {
                 sendToSignage(false);
             });
@@ -363,6 +465,7 @@
         <h2>Preview Area</h2>
         <div class="preview" id="preview-area">
             「3.5mmステレオピンプラグ&lt;-&gt;RCAピンプラグｘ２」のケーブル（写真）または「3.5mmステレオピンプラグ&lt;-&gt;3.5mmステレオピンプラグ」のケーブルを使って、オーディオ機器のAUX IN端子に、パソコンのヘッドフォン端子（緑色）から接続すれば、パソコンの音をオーディオ機器から再生することができます。
+            <audio id="ai-audio-player" controls style="margin-top: 15px; width: 100%; display: none;"></audio>
         </div>
     </div>
 <!-- GENERIC PROFILE MODAL INJECTED -->
@@ -418,7 +521,7 @@
         
         // Push sync to server (DB background)
         try {
-            await fetch(window.API_BASE_URL + '/api/user/profile', {
+            await fetch(window.API_BASE_URL + '/api/profile', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({email, name, org})
