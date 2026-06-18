@@ -2955,7 +2955,10 @@ app.get('/api/retailer/videos', requireAuth, (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
         return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
     }
-    const prefix = req.user.org || req.user.email; // Queryのprefixを無視し、JWTから取得
+    let prefix = req.user.org || req.user.email; // 一般ユーザーはJWT値に強制固定
+    if (req.user.role === 'admin' && req.query.prefix) {
+        prefix = req.query.prefix; // 管理者のみクエリの絞り込みを許可
+    }
     if (!global.retailer_videos) global.retailer_videos = [];
     const vids = global.retailer_videos.filter(v => v.retailer_prefix === prefix);
     res.json(vids);
@@ -2984,7 +2987,11 @@ app.delete('/api/retailer/videos/:id', requireAuth, (req, res) => {
     res.json({ success: true });
 });
 
-app.post('/api/ad/upload', (req, res) => {
+app.post('/api/ad/upload', requireAuth, (req, res) => {
+    // ロールチェック (管理者または一般広告主のみ許可)
+    if (req.user.role !== 'admin' && req.user.role !== 'advertiser') {
+        return res.status(403).json({ error: "この操作を実行する権限がありません" });
+    }
     // Determine extension from original filename
     const originalName = req.query.filename || "upload.mp4";
     const ext = path.extname(originalName) || ".mp4";
