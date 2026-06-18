@@ -3124,6 +3124,13 @@ app.post('/api/ai/tts', requireAuth, async (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'advertiser' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "音声生成権限が必要です" });
     }
+    
+    // BANチェック
+    const ad_email = req.user.email;
+    if (ad_email && accountStrikes[ad_email] >= 3) {
+        console.log(`[AI-Voice] Request rejected: Account ${ad_email} is BANNED.`);
+        return res.status(403).json({ success: false, error: "アカウントが規約違反（3ストライク）により凍結されています。" });
+    }
     try {
         const { text, speed, voiceEngine } = req.body;
         if (!text) return res.status(400).json({ error: "Text required" });
@@ -4642,6 +4649,13 @@ app.post('/api/voice/synthesize', requireAuth, async (req, res) => {
     // ロールチェック (店舗、広告主、管理者のみ許可)
     if (req.user.role !== 'store' && req.user.role !== 'advertiser' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "音声生成権限が必要です" });
+    }
+    
+    // BANチェック
+    const ad_email = req.user.email;
+    if (ad_email && accountStrikes[ad_email] >= 3) {
+        console.log(`[AI-Voice] Request rejected: Account ${ad_email} is BANNED.`);
+        return res.status(403).json({ success: false, error: "アカウントが規約違反（3ストライク）により凍結されています。" });
     }
     try {
         const { text, voiceName, stylePrompt } = req.body;
