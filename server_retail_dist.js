@@ -3523,20 +3523,20 @@ app.post('/api/manualhelp/chat', requireAuth, express.json({limit: '10mb'}), (re
     }
 });
 app.get('/api/shift/state', requireAuth, (req, res) => {
-    const email = req.user.email;
-    if (!shiftState[email]) {
-        shiftState[email] = { staff: [], chatHistory: [] };
+    const org = req.user.org || 'default_org';
+    if (!shiftState[org]) {
+        shiftState[org] = { staff: [], chatHistory: [] };
     }
-    res.json({ success: true, state: shiftState[email] });
+    res.json({ success: true, state: shiftState[org] });
 });
 app.post('/api/shift/state', requireAuth, express.json({limit: '10mb'}), (req, res) => {
     try {
-        const email = req.user.email;
-        if (!shiftState[email]) {
-            shiftState[email] = { staff: [], chatHistory: [] };
+        const org = req.user.org || 'default_org';
+        if (!shiftState[org]) {
+            shiftState[org] = { staff: [], chatHistory: [] };
         }
-        if(req.body.staff) shiftState[email].staff = req.body.staff;
-        if(req.body.chatHistory) shiftState[email].chatHistory = req.body.chatHistory;
+        if(req.body.staff) shiftState[org].staff = req.body.staff;
+        if(req.body.chatHistory) shiftState[org].chatHistory = req.body.chatHistory;
         if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true });
     } catch(e) {
@@ -5318,8 +5318,9 @@ Return ONLY a JSON object:
             console.error('[DB Error] Failed to insert campaign from retailer agent:', dbErr.message);
         }
 
-        if (!database.campaigns) database.campaigns = [];
-        database.campaigns.push(newPromo);
+        if (typeof campaigns !== 'undefined' && Array.isArray(campaigns)) {
+            campaigns.push(newPromo);
+        }
         saveDatabase(); 
 
         let responseHtml = `
@@ -5665,8 +5666,9 @@ Return ONLY a JSON object:
             agentData: result
         };
 
-        if (!database.campaigns) database.campaigns = [];
-        database.campaigns.push(newCampaign);
+        if (typeof campaigns !== 'undefined' && Array.isArray(campaigns)) {
+            campaigns.push(newCampaign);
+        }
         saveDatabase(); // Ensure saved
 
         const responseHtml = `
@@ -5698,8 +5700,9 @@ Return ONLY a JSON object:
             uploadedAt: new Date().toISOString(),
             agentData: fallbackResult
         };
-        if (!database.campaigns) database.campaigns = [];
-        database.campaigns.push(newCampaign);
+        if (typeof campaigns !== 'undefined' && Array.isArray(campaigns)) {
+            campaigns.push(newCampaign);
+        }
         saveDatabase();
 
         const responseHtmlFallback = `
@@ -5781,14 +5784,15 @@ ${fallbackResult.analysis}
 
 // --- 2. Shift & Manual Linking Agent ---
 app.post('/api/agent/shift-manual-sync', requireAuth, async (req, res) => {
+    const org = req.user.org || 'default_org';
     try {
         const rawKey = process.env.GEMINI_API_KEY || '';
         const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
         if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
 
-        // Read shift data and manuals
-        const shifts = database.shifts || [];
-        const manuals = database.manuals || [];
+        // Read shift data and manuals dynamically using the user's organization key
+        const shifts = (shiftState[org] && shiftState[org].staff) ? shiftState[org].staff : [];
+        const manuals = (manualhelpState[org] && manualhelpState[org].manuals) ? manualhelpState[org].manuals : [];
 
         // Simple mock of detecting a "newbie" (e.g. someone scheduled tomorrow)
         // In reality, filter by employee start date or shift count.
@@ -5798,12 +5802,12 @@ app.post('/api/agent/shift-manual-sync', requireAuth, async (req, res) => {
 You are a Shift & Manual Management AI Agent.
 We have a new employee scheduled for tomorrow: ${targetEmployee}.
 Available manuals:
-${manuals.map(m => `- [ID: ${m.id}] ${m.title}`).join('\n')}
+${manuals.map(m => `- [ID: ${m.id || m.name}] ${m.name || m.title}`).join('\n')}
 
-Which manual ID is the most critical for a new employee to read before their shift?
+Which manual ID or Name is the most critical for a new employee to read before their shift?
 Return ONLY a JSON object:
 {
-    "recommendedManualId": "ID of the manual",
+    "recommendedManualId": "ID or name of the manual",
     "reason": "Brief reason why"
 }
 `;
@@ -5811,9 +5815,14 @@ Return ONLY a JSON object:
         const responseText = await callGeminiAPI(prompt, "application/json");
         const result = JSON.parse(responseText);
 
-        // Add to notifications
-        if (!database.notifications) database.notifications = [];
-        database.notifications.push({
+        // Add to notifications in shiftState[org]
+        if (!shiftState[org]) {
+            shiftState[org] = { staff: [], chatHistory: [], notifications: [] };
+        }
+        if (!shiftState[org].notifications) {
+            shiftState[org].notifications = [];
+        }
+        shiftState[org].notifications.push({
             id: 'notif_' + Date.now(),
             user: targetEmployee,
             message: `【AIからのオススメ】明日のシフトに向けて、マニュアル「${result.recommendedManualId}」を読んでおきましょう！理由: ${result.reason}`,
@@ -5829,8 +5838,13 @@ Return ONLY a JSON object:
         const recommendedManualId = "レジ操作マニュアル";
         const reason = "明日は新人スタッフ（田中さん）の初めてのレジ締めシフトが予定されているため、事前の手順確認が推奨されます。";
         
-        if (!database.notifications) database.notifications = [];
-        database.notifications.push({
+        if (!shiftState[org]) {
+            shiftState[org] = { staff: [], chatHistory: [], notifications: [] };
+        }
+        if (!shiftState[org].notifications) {
+            shiftState[org].notifications = [];
+        }
+        shiftState[org].notifications.push({
             id: 'notif_' + Date.now(),
             user: targetEmployeeFallback,
             message: `【AIからのオススメ】明日のシフトに向けて、マニュアル「${recommendedManualId}」を読んでおきましょう！(フォールバック動作) 理由: ${reason}`,
