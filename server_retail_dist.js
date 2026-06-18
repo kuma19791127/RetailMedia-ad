@@ -3488,6 +3488,10 @@ const creatorBankData = creatorBanks;
 const processingCreatorBankUpdates = new Set();
 
 app.post('/api/creator/bank', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'creator' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "クリエイター権限が必要です" });
+    }
     const email = req.user.email;
     if (!email) return res.status(400).json({ error: "必要な情報が不足しています" });
     const org = req.user.org || email;
@@ -4601,7 +4605,11 @@ function getLocalIp() {
 app.get('/agency-portal', (req, res) => res.sendFile(path.join(__dirname, 'agency_portal.html')));
 
 // --- AGENCY API & STATE ---
-app.get('/api/agency/dashboard', (req, res) => {
+app.get('/api/agency/dashboard', requireAuth, (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'agency' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "代理店権限が必要です" });
+    }
     // Process existing agency referrals to build dashboard statistics
     const allReferrals = agencyReferrals ? Object.values(agencyReferrals).flat() : [];
     const totalGross = allReferrals.reduce((sum, c) => sum + (c.price || 0), 0);
@@ -4791,6 +4799,14 @@ app.post('/api/voice/synthesize', requireAuth, async (req, res) => {
         console.log(`[AI-Voice] Request rejected: Account ${ad_email} is BANNED.`);
         return res.status(403).json({ success: false, error: "アカウントが規約違反（3ストライク）により凍結されています。" });
     }
+
+    // AI利用上限・頻度制限ガードの適用
+    const org = req.user.org || ad_email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
+
     try {
         const { text, voiceName, stylePrompt } = req.body;
         const rawKey = process.env.GEMINI_API_KEY || '';
@@ -5523,12 +5539,36 @@ app.get('/api/admin/payouts', requireAuth, (req, res) => {
 // ==========================================
 // どこでもレジ (モバイルPOS) 連携API
 // ==========================================
+const processingPosCheckouts = new Set();
+const checkoutLimitTracker = {};
+
 app.post('/api/pos/checkout', async (req, res) => {
-    const { companyName, storeName, totalAmount, billingEmail, items } = req.body;
-    
-    if (!companyName || !totalAmount) {
-        return res.status(400).json({ error: "必須データが不足しています" });
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+
+    // 1. レートリミット (1分間30回制限)
+    if (!checkoutLimitTracker[clientIp]) {
+        checkoutLimitTracker[clientIp] = [];
     }
+    checkoutLimitTracker[clientIp] = checkoutLimitTracker[clientIp].filter(ts => now - ts < 60000);
+    if (checkoutLimitTracker[clientIp].length >= 30) {
+        return res.status(429).json({ error: "決済リクエストの頻度が早すぎます。しばらく時間をおいて再試行してください。" });
+    }
+    checkoutLimitTracker[clientIp].push(now);
+
+    // 2. Mutex排他制御 (同時送信・二重処理防止)
+    if (processingPosCheckouts.has(clientIp)) {
+        return res.status(409).json({ error: "現在、決済処理を実行中です。しばらくお待ちください。" });
+    }
+    processingPosCheckouts.add(clientIp);
+
+    try {
+        const { companyName, storeName, totalAmount, billingEmail, items } = req.body;
+        
+        if (!companyName || !totalAmount) {
+            processingPosCheckouts.delete(clientIp);
+            return res.status(400).json({ error: "必須データが不足しています" });
+        }
 
     const transactionId = 'pos_' + Date.now() + Math.floor(Math.random()*1000);
     const timestamp = Date.now();
@@ -5571,6 +5611,12 @@ app.post('/api/pos/checkout', async (req, res) => {
 
     console.log(`[POS] 売上登録: ${companyName} - ¥${totalAmount}`);
     res.json({ success: true, transactionId });
+    } catch (err) {
+        console.error(`[POS Error]`, err);
+        res.status(500).json({ error: "決済処理中にサーバーエラーが発生しました。" });
+    } finally {
+        processingPosCheckouts.delete(clientIp);
+    }
 });
 
 app.get('/api/pos/transactions', requireAuth, (req, res) => {
