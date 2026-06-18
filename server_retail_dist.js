@@ -367,6 +367,10 @@ app.post('/api/signage/schedule_voice', requireAuth, (req, res) => {
 });
 
 app.post('/api/signage/interrupt', requireAuth, (req, res) => {
+    // ロールチェック (店舗、リテーラー、管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "サイネージ割り込み配信権限がありません" });
+    }
     try {
         const { message, type } = req.body;
         if (!message) {
@@ -1593,7 +1597,11 @@ app.post('/api/admin/sales', async (req, res) => {
     }
 });
 
-app.post('/api/admin/sales/sync-batch', async (req, res) => {
+app.post('/api/admin/sales/sync-batch', requireAuth, async (req, res) => {
+    // ロールチェック (店舗オーナーまたは管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "同期処理を行う権限がありません" });
+    }
     try {
         const { storeId, syncTimestamp, records } = req.body;
         console.log(`[POS Batch Sync] Received batch sync request from Store: ${storeId} at ${syncTimestamp}, count: ${records ? records.length : 0}`);
@@ -3960,6 +3968,10 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin_portal.
 
 // Save Store Settings (Bank Info & Email)
 app.post('/api/store/settings', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const storeId = req.user.org || req.user.email;
         let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
@@ -6197,6 +6209,10 @@ app.post('/api/freee/sales', async (req, res) => {
 
 // --- Store Portal Revenue Endpoint ---
 app.get('/api/store/revenue', requireAuth, async (req, res) => {
+    // ロールチェック (店舗または管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
     try {
         const storeId = req.user.org || req.user.email;
         let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
