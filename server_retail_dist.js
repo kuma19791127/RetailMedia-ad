@@ -185,7 +185,11 @@ app.use((req, res, next) => {
     }
 });
 
-app.get('/api/db-status', async (req, res) => {
+app.get('/api/db-status', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     if (!pool) {
         return res.send("<h2>[DB Status] DATABASE_URL is NOT set. Running in Memory mode.</h2>");
     }
@@ -1855,7 +1859,11 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.get('/api/auth/users', async (req, res) => {
+app.get('/api/auth/users', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
     try {
         const rows = await dbHelper.query.all('SELECT * FROM users');
         const userList = rows.map(user => ({
