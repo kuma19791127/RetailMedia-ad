@@ -974,12 +974,26 @@ async function downloadYoutubeVideo(url) {
     });
 }
 
+const processingCreatorReviewRequests = new Set(); // クリエイター動画審査のMutexロック
+
 app.post('/api/creator/review-content', requireAuth, async (req, res) => {
-    const org = req.user.org || req.user.email;
+    // ロールチェック
+    if (req.user.role !== 'creator' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "クリエイター権限が必要です" });
+    }
+    const email = req.user.email;
+    const org = req.user.org || email;
     const limitCheck = checkAIUsageLimit(org, req.user.role);
     if (!limitCheck.allowed) {
         return res.status(429).json({ error: limitCheck.error });
     }
+
+    // Mutex排他制御 (二重送信防止)
+    if (processingCreatorReviewRequests.has(email)) {
+        return res.status(429).json({ error: "現在、動画のAI審査処理を実行中です。完了するまでお待ちください。" });
+    }
+    processingCreatorReviewRequests.add(email);
+
     try {
         const { video_base64, ytUrl, title } = req.body;
         console.log("クリエイター動画審査開始: Gemini 1.5 Pro / Flash Fallback");
@@ -1094,6 +1108,8 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
         console.error('コンテンツ審査エラー:', error);
         // エラー時はフェイルクローズ（安全ではない）とする
         res.status(500).json({ error: '審査中にエラーが発生しました。ファイルサイズが大きすぎる可能性があります。', safe: false });
+    } finally {
+        processingCreatorReviewRequests.delete(email); // ロックの確実な解除
     }
 });
 
