@@ -14,24 +14,9 @@
         console.log("[F12 Debug] index.html loaded. Query parameters:", window.location.search);
         
         if (urlParams.has('logout')) {
-            console.log("[F12 Debug] Logout URL parameter detected. Setting logged_out=true in localStorage and clearing tokens...");
-            localStorage.setItem('logged_out', 'true');
+            console.log("[F12 Debug] Logout detected. Clearing active session tokens (remembered credentials are kept)...");
             localStorage.removeItem('retailMediaToken');
             sessionStorage.clear();
-            
-            // Retrieve and output stored debug log if present
-            const debugLog = localStorage.getItem('debug_log_buffer');
-            if (debugLog) {
-                console.log("%c[F12 Debug] Last Session Debug Log retrieved:", "color: #ff3366; font-weight: bold; font-size: 14px;");
-                console.log(`%c${debugLog}`, "color: #333; background: #ffe6eb; padding: 5px; border-left: 4px solid #ff3366;");
-            }
-        }
-        
-        const loggedOut = localStorage.getItem('logged_out') === 'true';
-        console.log("[F12 Debug] Current logged_out state in localStorage:", loggedOut);
-        
-        if (loggedOut) {
-            console.log("[F12 Debug] User explicitly logged out. Skipping auto-redirect to last_active_service.");
         } else if (!urlParams.has('bypass_redirect')) {
             const lastService = localStorage.getItem('last_active_service');
             const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
@@ -834,8 +819,7 @@
                 }
 
                 if (data.success) {
-                    console.log("[F12 Debug] Login process completed successfully. Clearing logged_out flag. Redirecting to:", data.redirect);
-                    localStorage.removeItem('logged_out');
+                    console.log("[F12 Debug] Login process completed successfully. Redirecting to:", data.redirect);
                     if (data.token) {
                         localStorage.setItem('retailMediaToken', data.token);
                     }
@@ -947,47 +931,6 @@
         }
     </script>
     
-    <!-- Debug Log Utility for Mobile/F12-less environments -->
-    <div id="debug-log-trigger" style="position:fixed; bottom:20px; right:20px; z-index:9999; display:none;">
-        <button onclick="showStoredDebugLog()" style="background:#0f172a; color:#fff; border:1px solid #334155; padding:10px 15px; border-radius:50px; font-weight:bold; font-size:12px; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.1); display:flex; align-items:center; gap:5px;">
-            🔧 デバッグログ確認
-        </button>
-    </div>
-    <script>
-        // Show debug log trigger button if log buffer is present
-        document.addEventListener('DOMContentLoaded', () => {
-            const debugLog = localStorage.getItem('debug_log_buffer');
-            if (debugLog) {
-                document.getElementById('debug-log-trigger').style.display = 'block';
-            }
-        });
 
-        function showStoredDebugLog() {
-            const debugLog = localStorage.getItem('debug_log_buffer');
-            if (debugLog) {
-                Swal.fire({
-                    title: '🔧 最終ログアウト直前デバッグログ',
-                    html: `
-                        <div style="text-align:left; font-size:12px; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #cbd5e1; overflow-x:auto;">
-                            <pre style="margin:0; white-space:pre-wrap; font-family:monospace;">${debugLog}</pre>
-                        </div>
-                        <p style="font-size:11px; color:#64748b; margin-top:10px; text-align:left;">※このログは遷移直前のログアウト実行・またはセッションエラー時の情報を一時記憶したものです。</p>
-                    `,
-                    icon: 'info',
-                    confirmButtonText: '閉じる',
-                    showDenyButton: true,
-                    denyButtonText: 'ログを消去'
-                }).then((result) => {
-                    if (result.isDenied) {
-                        localStorage.removeItem('debug_log_buffer');
-                        document.getElementById('debug-log-trigger').style.display = 'none';
-                        Swal.fire('消去完了', 'ログバッファをクリアしました', 'success');
-                    }
-                });
-            } else {
-                Swal.fire('情報', '現在保存されているデバッグログはありません。', 'info');
-            }
-        }
-    </script>
 </body>
 </html>
