@@ -1231,7 +1231,11 @@ app.post('/api/creator/upload', requireAuth, (req, res) => {
 });
 
 // --- SQUARE PAYMENT API (Sync to Admin Portal) ---
-app.post('/api/payment/square-charge', async (req, res) => {
+app.post('/api/payment/square-charge', requireAuth, async (req, res) => {
+    // ロールチェック (店舗オーナーまたは管理者のみ許可)
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "決済処理を行う権限がありません" });
+    }
     const { token, amount, source, email, buyer_name } = req.body;
     console.log(`[Admin Portal Hook] 💳 Square Payment Detected! Amount: ¥${amount} from ${source}. Email: ${email || 'none'}, Name: ${buyer_name || 'none'}`);
     
