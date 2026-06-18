@@ -424,6 +424,11 @@ const processingKycStatusUpdates = new Set();
 
 app.post('/api/kyc', requireAuth, async (req, res) => {
     const userEmail = req.user.email;
+    const org = req.user.org || userEmail;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     if (processingKycRequests.has(userEmail)) {
         return res.status(409).json({ error: "現在、KYC申請の解析処理を実行中です。しばらくお待ちください。" });
     }
@@ -715,6 +720,11 @@ const processingCreatorUnlockRequests = new Set();
 
 app.post('/api/review/unlock', requireAuth, async (req, res) => {
     const creatorId = req.user.email;
+    const org = req.user.org || creatorId;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     if (processingUnlockRequests.has(creatorId)) {
         return res.status(409).json({ error: "現在、ロック解除申請を処理中です。しばらくお待ちください。" });
     }
@@ -965,6 +975,11 @@ async function downloadYoutubeVideo(url) {
 }
 
 app.post('/api/creator/review-content', requireAuth, async (req, res) => {
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     try {
         const { video_base64, ytUrl, title } = req.body;
         console.log("クリエイター動画審査開始: Gemini 1.5 Pro / Flash Fallback");
@@ -2038,6 +2053,12 @@ function getRedirectUrl(role) {
 
 // Official Campaign Creation Endpoint (Dashboard)
 app.post('/api/campaigns', requireAuth, async (req, res) => {
+    const ad_email = req.user.email;
+    const org = req.user.org || ad_email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
         const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ytUrl, fileUrl } = req.body;
@@ -2871,6 +2892,11 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
         if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
             return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
         }
+        const org = req.user.org || req.user.email;
+        const limitCheck = checkAIUsageLimit(org, req.user.role);
+        if (!limitCheck.allowed) {
+            return res.status(429).json({ success: false, error: limitCheck.error });
+        }
         const { fileData, filename, targetStore } = req.body;
         const prefix = req.user.org || req.user.email; // Bodyのprefixを無視し、JWTから取得
         if (!fileData || !filename) return res.status(400).json({ success: false, error: "No file data" });
@@ -3448,6 +3474,11 @@ const processingCreatorBankUpdates = new Set();
 app.post('/api/creator/bank', requireAuth, async (req, res) => {
     const email = req.user.email;
     if (!email) return res.status(400).json({ error: "必要な情報が不足しています" });
+    const org = req.user.org || email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
 
     if (processingCreatorBankUpdates.has(email)) {
         return res.status(429).json({ error: "現在、本人確認（KYC）及び口座情報の保存処理を実行中です。しばらくお待ちください。" });
@@ -3836,8 +3867,14 @@ app.get('/api/analytics/ranking', (req, res) => {
 
 // 4. AI Sensor Data Receiver
 app.post('/api/sensor', async (req, res) => {
+    const { adId, images, gender, age, storeId } = req.body;
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const limitKey = storeId || clientIp;
+    const limitCheck = checkAIUsageLimit(limitKey, 'anonymous');
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     try {
-        const { adId, images, gender, age, storeId } = req.body;
         console.log(`[Sensor API] Request received for Store: ${storeId || 'Unknown'}, adId: ${adId}, images count: ${images ? images.length : 0}`);
 
         let detectedGender = gender || 'unknown';
@@ -5545,7 +5582,16 @@ app.get('/api/pos/transactions', requireAuth, (req, res) => {
 
 
 // --- 2. Retailer Marketing Agent (小売マーケティング向け 自社販促エージェント) ---
-app.post('/api/agent/retailer', async (req, res) => {
+app.post('/api/agent/retailer', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "小売エージェント機能を利用する権限がありません" });
+    }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     const { message, image } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
@@ -5708,7 +5754,16 @@ Return ONLY a JSON object:
 
 
 // --- 4. Creator Assistant Agent (クリエイター向け 制作アシスタント) ---
-app.post('/api/agent/creator', async (req, res) => {
+app.post('/api/agent/creator', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'creator' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "クリエイターアシスタントを利用する権限がありません" });
+    }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
@@ -5861,7 +5916,16 @@ async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction 
 }
 
 // --- 5. Store Owner Agent (店舗オーナー向け 競合分析・経営支援エージェント) ---
-app.post('/api/agent/store', async (req, res) => {
+app.post('/api/agent/store', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗経営支援エージェントを利用する権限がありません" });
+    }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
@@ -5918,7 +5982,16 @@ Return ONLY a JSON object:
 });
 
 // --- 1. Advertiser Agent (広告主向け 自動運用エージェント) ---
-app.post('/api/agent/advertiser', async (req, res) => {
+app.post('/api/agent/advertiser', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'advertiser' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "広告運用エージェントを利用する権限がありません" });
+    }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     const { message, email } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
@@ -6015,7 +6088,16 @@ Return ONLY a JSON object:
 });
 
 // --- 1. Ad Operations Agent ---
-app.post('/api/agent/ad-ops', async (req, res) => {
+app.post('/api/agent/ad-ops', requireAuth, async (req, res) => {
+    // ロールチェック
+    if (req.user.role !== 'advertiser' && req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "広告自動運用エージェントを利用する権限がありません" });
+    }
+    const org = req.user.org || req.user.email;
+    const limitCheck = checkAIUsageLimit(org, req.user.role);
+    if (!limitCheck.allowed) {
+        return res.status(429).json({ error: limitCheck.error });
+    }
     const { message } = req.body;
     if (detectPromptInjection(message)) {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
