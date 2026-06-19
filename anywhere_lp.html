@@ -63,6 +63,10 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
         }
 
         .nav-links {
@@ -228,6 +232,10 @@
                 padding: 15px !important;
             }
             .mobile-nav .logo {
+                position: relative !important;
+                left: auto !important;
+                transform: none !important;
+                z-index: auto !important;
                 margin-bottom: 20px !important;
             }
             .mobile-nav .nav-links {
@@ -235,6 +243,7 @@
                 width: 100% !important;
                 text-align: center !important;
                 gap: 15px !important;
+                margin-left: 0 !important;
             }
             .mobile-nav .nav-links a {
                 display: block !important;
@@ -255,7 +264,7 @@
     <nav style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; backdrop-filter: blur(10px); position: fixed; width: 100%; top: 0; z-index: 1000; box-sizing: border-box; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(0, 0, 0, 0.1);" class="mobile-nav">
         <a href="business_lp.html" class="logo" style="text-decoration: none; color: #0f172a; font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; display: flex; align-items: center;">retail-ad<span style="color: #2ecc71;">Store</span></a>
         <a href="javascript:void(0)" onclick="goBackToPortal()" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
-        <div class="nav-links" style="display: flex; gap: 25px; align-items: center;">
+        <div class="nav-links" style="display: flex; gap: 25px; align-items: center; margin-left: auto;">
             <a href="business_lp.html#benefits" style="text-decoration: none; color: #64748b; font-weight: 700; font-size: 14px;">導入メリット</a>
             <a href="business_lp.html#revenue" style="text-decoration: none; color: #64748b; font-weight: 700; font-size: 14px;">収益モデル</a>
             <a href="store_portal.html" style="background: #2ecc71; padding: 10px 20px; border-radius: 30px; color: white !important; font-weight: 600; text-decoration: none; font-size: 14px;">売上センターへログイン</a>
