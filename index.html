@@ -14,16 +14,18 @@
         console.log("[F12 Debug] index.html loaded. Query parameters:", window.location.search);
         
         if (urlParams.has('logout')) {
-            console.log("[F12 Debug] Logout detected. Clearing active session tokens (remembered credentials are kept)...");
+            console.log("[F12 Debug] Logout detected. Setting logged_out=true in localStorage and clearing active tokens...");
+            localStorage.setItem('logged_out', 'true');
             localStorage.removeItem('retailMediaToken');
             sessionStorage.clear();
         } else if (!urlParams.has('bypass_redirect')) {
+            const loggedOut = localStorage.getItem('logged_out') === 'true';
             const lastService = localStorage.getItem('last_active_service');
             const savedEmail = localStorage.getItem('retailMediaSavedEmail') || localStorage.getItem('last_email');
             
-            console.log("[F12 Debug] Checking auto-redirect. lastService:", lastService, "savedEmail:", savedEmail);
+            console.log("[F12 Debug] Checking auto-redirect. loggedOut:", loggedOut, "lastService:", lastService, "savedEmail:", savedEmail);
             
-            if (lastService) {
+            if (lastService && !loggedOut) {
                 console.log("[F12 Debug] Auto-redirecting to last active service:", lastService);
                 const roleStr = localStorage.getItem('retailMediaSavedRole') || '';
                 sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: savedEmail, role: roleStr }));
@@ -31,6 +33,8 @@
                     sessionStorage.setItem('retailUserEmail', savedEmail);
                 }
                 window.location.href = lastService;
+            } else {
+                console.log("[F12 Debug] Auto-redirect skipped. lastService:", lastService, "loggedOut:", loggedOut);
             }
         }
     </script>
@@ -827,9 +831,13 @@
                 }
 
                 if (data.success) {
-                    console.log("[F12 Debug] Login process completed successfully. Redirecting to:", data.redirect);
+                    console.log("[F12 Debug] Login process completed successfully. Removing logged_out flag and setting token...");
+                    localStorage.removeItem('logged_out');
                     if (data.token) {
+                        console.log("[F12 Debug] Setting retailMediaToken in localStorage. token length:", data.token.length);
                         localStorage.setItem('retailMediaToken', data.token);
+                    } else {
+                        console.warn("[F12 Debug] token is missing in response!");
                     }
                     sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: role }));
                     sessionStorage.setItem('retailUserEmail', email);

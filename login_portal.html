@@ -588,6 +588,8 @@
                 const data = await res.json();
 
                 if (data.success) {
+                    console.log("[F12 Debug] Login success in login_portal.html. Removing logged_out flag...");
+                    localStorage.removeItem('logged_out');
                     if (data.require2FASetup) {
                         btn.innerText = 'Login';
                         btn.style.opacity = '1';
@@ -745,6 +747,8 @@
                 }
             } catch (err) {
                 console.error(err);
+                console.log("[F12 Debug] Connection failed. Fallback to demo mode. Removing logged_out flag...");
+                localStorage.removeItem('logged_out');
                 // Fallback for demo without server if needed
                 let redirect = 'store_portal.html';
                 let roleStr = 'store';
