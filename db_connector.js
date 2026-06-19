@@ -14,6 +14,11 @@ if (process.env.DATABASE_URL) {
         ssl: { rejectUnauthorized: false } // RDS等のクラウドDB必須設定
     });
 
+    // Prevent uncaught connection errors from crashing the Node.js process (idle client errors)
+    pool.on('error', (err) => {
+        console.error('[DB PG Pool] Unexpected error on idle PostgreSQL client:', err.message || err);
+    });
+
     // 起動時にテーブルを自動作成
     const initDB = async () => {
         try {

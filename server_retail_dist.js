@@ -1,3 +1,11 @@
+// Global exception safety net to prevent server crashes on AWS App Runner
+process.on('uncaughtException', (err) => {
+    console.error('[Uncaught Exception Alert] Critical Server Error:', err.stack || err.message || err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Unhandled Rejection Alert] Unhandled promise rejection at:', promise, 'reason:', reason ? (reason.stack || reason.message || reason) : 'unknown');
+});
+
 const dbHelper = require('./db_connector');
 const pool = dbHelper.pool;
 const express = require('express');
