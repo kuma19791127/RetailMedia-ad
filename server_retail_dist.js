@@ -75,9 +75,7 @@ app.use(express.static(__dirname));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only_replace_in_prod';
 
-// 金融・審査系グローバル変数（TDZ防止のため先頭で定義）
-let withdrawalRequests = [];
-let creatorBanks = {};
+
 
 const getDatabaseRole = (role) => {
     return role || 'store';
@@ -420,7 +418,6 @@ app.post('/api/signage/interrupt', requireAuth, (req, res) => {
 });
 
 // --- Advertiser KYC (Review) System ---
-let kycRequests = [];
 const processingKycRequests = new Set();
 const processingKycStatusUpdates = new Set();
 
@@ -506,24 +503,29 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
             }
         }
 
-        const newReq = {
-            id: 'kyc_' + Date.now(),
-            userEmail: req.user.email,
-            orgName: orgName,
-            personName: personName,
-            corpId: corpId,
-            duns: req.body.duns || '',
-            documents: uploadedUrls,
-            aiScore: aiScore,
-            aiDetails: aiDetails,
-            createdAt: Date.now(),
-            status: 'pending'
-        };
+        const newReqId = 'kyc_' + Date.now();
+        const timestampVal = Date.now();
         
-        kycRequests.push(newReq);
-        saveFinanceDB();
-        console.log(`[KYC] New request from ${newReq.userEmail}. AI Score: ${aiScore}%`);
-        res.json({ success: true, id: newReq.id, aiScore: aiScore });
+        await dbHelper.query.run(
+            `INSERT INTO kyc_requests (id, email, org_name, person_name, corp_id, duns, documents, ai_score, ai_details, timestamp, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                newReqId,
+                req.user.email,
+                orgName,
+                personName,
+                corpId,
+                req.body.duns || '',
+                JSON.stringify(uploadedUrls),
+                aiScore,
+                JSON.stringify(aiDetails),
+                timestampVal,
+                'pending'
+            ]
+        );
+
+        console.log(`[KYC] New request from ${req.user.email} saved to DB. AI Score: ${aiScore}%`);
+        res.json({ success: true, id: newReqId, aiScore: aiScore });
     } catch(err) {
         console.error(err);
         res.status(500).json({ error: "Internal Server Error" });
@@ -532,15 +534,35 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/kyc', requireAuth, (req, res) => {
+app.get('/api/kyc', requireAuth, async (req, res) => {
     // 管理者および審査担当者
     if (req.user.role !== 'admin' && req.user.role !== 'review') {
         return res.status(403).json({ error: "Forbidden: Admin or Reviewer access required" });
     }
-    res.json(kycRequests);
+    
+    try {
+        const rows = await dbHelper.query.all('SELECT * FROM kyc_requests');
+        const mapped = rows.map(r => ({
+            id: r.id,
+            userEmail: r.email,
+            orgName: r.org_name,
+            personName: r.person_name,
+            corpId: r.corp_id,
+            duns: r.duns,
+            documents: r.documents ? JSON.parse(r.documents) : [],
+            aiScore: r.ai_score,
+            aiDetails: r.ai_details ? JSON.parse(r.ai_details) : [],
+            createdAt: Number(r.timestamp),
+            status: r.status
+        }));
+        res.json(mapped);
+    } catch(err) {
+        console.error("Failed to fetch KYC requests from DB:", err);
+        res.status(500).json({ error: "審査データの取得に失敗しました" });
+    }
 });
 
-app.post('/api/kyc/:id/status', requireAuth, (req, res) => {
+app.post('/api/kyc/:id/status', requireAuth, async (req, res) => {
     // 管理者および審査担当者
     if (req.user.role !== 'admin' && req.user.role !== 'review') {
         return res.status(403).json({ error: "Forbidden: Admin or Reviewer access required" });
@@ -554,33 +576,59 @@ app.post('/api/kyc/:id/status', requireAuth, (req, res) => {
     processingKycStatusUpdates.add(reqId);
 
     try {
-        const target = kycRequests.find(r => r.id === reqId);
-        if (target) {
-            target.status = status;
-            console.log(`[KYC] Request ${reqId} status updated to ${status} by admin ${req.user.email}`);
-            if (typeof saveFinanceDB === 'function') saveFinanceDB();
+        const result = await dbHelper.query.run(
+            'UPDATE kyc_requests SET status = ? WHERE id = ?',
+            [status, reqId]
+        );
+        const updated = result.changes || result.rowCount;
+        if (updated > 0) {
+            console.log(`[KYC] Request ${reqId} status updated to ${status} by admin ${req.user.email} in DB`);
             res.json({ success: true });
         } else {
             res.status(404).json({ error: "Not found" });
         }
+    } catch(err) {
+        console.error("Failed to update KYC status in DB:", err);
+        res.status(500).json({ error: "ステータスの更新に失敗しました" });
     } finally {
         processingKycStatusUpdates.delete(reqId);
     }
 });
 
 // --- User Profile/KYC check endpoint for polling ---
-app.get('/api/kyc/status', requireAuth, (req, res) => {
+app.get('/api/kyc/status', requireAuth, async (req, res) => {
     const userEmail = req.query.email;
     // 自身のステータスのみ取得可能（管理者はすべて閲覧可能）
     if (userEmail !== req.user.email && req.user.role !== 'admin') {
         return res.status(403).json({ error: "Forbidden: Unauthorized access to other users KYC status" });
     }
-    const reqs = kycRequests.filter(r => r.userEmail === userEmail);
-    if (reqs.length > 0) {
-        // Return latest
-        res.json(reqs[reqs.length - 1]);
-    } else {
-        res.json({ status: 'unsubmitted' });
+    
+    try {
+        const rows = await dbHelper.query.all(
+            'SELECT * FROM kyc_requests WHERE email = ? ORDER BY timestamp ASC',
+            [userEmail]
+        );
+        if (rows.length > 0) {
+            const latest = rows[rows.length - 1];
+            res.json({
+                id: latest.id,
+                userEmail: latest.email,
+                orgName: latest.org_name,
+                personName: latest.person_name,
+                corpId: latest.corp_id,
+                duns: latest.duns,
+                documents: latest.documents ? JSON.parse(latest.documents) : [],
+                aiScore: latest.ai_score,
+                aiDetails: latest.ai_details ? JSON.parse(latest.ai_details) : [],
+                createdAt: Number(latest.timestamp),
+                status: latest.status
+            });
+        } else {
+            res.json({ status: 'unsubmitted' });
+        }
+    } catch(err) {
+        console.error("Failed to fetch user KYC status from DB:", err);
+        res.status(500).json({ error: "KYCステータスの取得に失敗しました" });
     }
 });
 
@@ -5330,47 +5378,7 @@ async function syncMemoryToDB() {
                 }
             }
 
-            // 5. Withdrawal Requests
-            if (typeof withdrawalRequests !== 'undefined' && Array.isArray(withdrawalRequests)) {
-                for (const wr of withdrawalRequests) {
-                    await dbHelper.query.run(
-                        'INSERT INTO withdrawal_requests (id, email, amount, status, timestamp, details) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
-                        [wr.id || wr.withdrawalId, wr.email, wr.amount, wr.status, wr.timestamp, JSON.stringify(wr.details || {})]
-                    );
-                }
-            }
 
-            // 6. Creator Banks
-            if (typeof creatorBanks !== 'undefined' && creatorBanks) {
-                for (const [email, cb] of Object.entries(creatorBanks)) {
-                    await dbHelper.query.run(
-                        'INSERT INTO creator_banks (email, bank_name, branch_name, account_number, account_holder, id_base64, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
-                        [email, cb.bankName, cb.branchName, cb.accountNum, cb.holderName, cb.idBase64, cb.timestamp || Date.now()]
-                    );
-                }
-            }
-
-            // 7. KYC Requests
-            if (typeof kycRequests !== 'undefined' && Array.isArray(kycRequests)) {
-                for (const kyc of kycRequests) {
-                    await dbHelper.query.run(
-                        'INSERT INTO kyc_requests (id, email, org_name, person_name, corp_id, duns, documents, ai_score, ai_details, timestamp, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
-                        [
-                            kyc.id || ('kyc_' + Date.now() + Math.random()),
-                            kyc.userEmail || kyc.email,
-                            kyc.orgName || '',
-                            kyc.personName || '',
-                            kyc.corpId || '',
-                            kyc.duns || '',
-                            JSON.stringify(kyc.documents || []),
-                            kyc.aiScore || 0,
-                            JSON.stringify(kyc.aiDetails || []),
-                            kyc.timestamp || kyc.createdAt || Date.now(),
-                            kyc.status || 'pending'
-                        ]
-                    );
-                }
-            }
 
             // 8. Agency Referrals
             if (typeof agencyReferrals !== 'undefined' && agencyReferrals) {
@@ -5631,92 +5639,16 @@ async function executeGMOBankTransfer(bankCode, branchCode, accountType, account
 // 出金リクエスト（クリエイターから）
 
 // ==========================================
-// お金・KYC関連データのローカルJSON永続化 (A案)
 // ==========================================
-const financeDbPath = require('path').join(__dirname, 'finance_database.json');
-
+// お金・KYC関連データのローカルJSON永続化 (SQLite / PostgreSQLへの移行により廃止)
+// ==========================================
 function loadFinanceDB() {
-    try {
-        let loadedFromS3 = false;
-        if (typeof bucketName !== 'undefined' && bucketName && typeof s3Client !== 'undefined' && s3Client) {
-            const { GetObjectCommand } = require('@aws-sdk/client-s3');
-            s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: 'finance_database.json' }))
-                .then(async (response) => {
-                    const str = await response.Body.transformToString();
-                    const data = JSON.parse(str);
-                    if (data.withdrawalRequests) withdrawalRequests = data.withdrawalRequests;
-                    if (data.creatorBanks) creatorBanks = data.creatorBanks;
-                    if (data.kycRequests) kycRequests = data.kycRequests;
-                    if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
-                    const agencyCount = agencyReferrals ? Object.values(agencyReferrals).flat().length : 0;
-                    console.log(`[Finance DB] Loaded from S3: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyCount} Agency Referrals.`);
-                })
-                .catch(e => {
-                    console.log('[S3] Notice: No existing finance_database found on S3, fallback to local.');
-                    loadLocalFinanceDB();
-                });
-            loadedFromS3 = true;
-        }
-        
-        if (!loadedFromS3) {
-            loadLocalFinanceDB();
-        }
-    } catch (e) {
-        console.error("[Finance DB] Load Error", e);
-    }
+    console.log("[Finance DB] Deprecated: Finance data is now fully managed by SQLite/PostgreSQL database.");
 }
-
-function loadLocalFinanceDB() {
-    try {
-        if (require('fs').existsSync(financeDbPath)) {
-            const dataStr = require('fs').readFileSync(financeDbPath, 'utf8');
-            const data = JSON.parse(dataStr);
-            if (data.withdrawalRequests) withdrawalRequests = data.withdrawalRequests;
-            if (data.creatorBanks) creatorBanks = data.creatorBanks;
-            if (data.kycRequests) kycRequests = data.kycRequests;
-            if (data.agencyReferrals) agencyReferrals = data.agencyReferrals;
-            const agencyCount = agencyReferrals ? Object.values(agencyReferrals).flat().length : 0;
-            console.log(`[Finance DB] Loaded from Local: ${withdrawalRequests.length} withdrawals, ${Object.keys(creatorBanks).length} banks, ${kycRequests.length} KYCs, ${agencyCount} Agency Referrals.`);
-        }
-    } catch (e) {
-        console.error("[Finance DB] Local Load Error", e);
-    }
-}
-
-async function pushFinanceToS3(dataStr) {
-    if (typeof bucketName === 'undefined' || !bucketName || typeof s3Client === 'undefined' || !s3Client) return;
-    try {
-        const { PutObjectCommand } = require('@aws-sdk/client-s3');
-        await s3Client.send(new PutObjectCommand({
-            Bucket: bucketName,
-            Key: 'finance_database.json',
-            Body: dataStr,
-            ContentType: 'application/json'
-        }));
-        console.log('[S3] Uploaded latest finance_database.json to cloud');
-    } catch(e) {
-        console.error('[S3] Finance Sync failed:', e.message);
-    }
-}
-
 function saveFinanceDB() {
-    try {
-        const data = {
-            withdrawalRequests,
-            creatorBanks,
-            kycRequests,
-            agencyReferrals
-        };
-        const dataStr = JSON.stringify(data, null, 2);
-        require('fs').writeFileSync(financeDbPath, dataStr, 'utf8');
-        pushFinanceToS3(dataStr);
-    } catch (e) {
-        console.error("[Finance DB] Save Error", e);
-    }
+    // Deprecated: Finance data is now fully managed by SQLite/PostgreSQL database.
 }
-
-// サーバー起動時に読み込み
-loadFinanceDB();
+// loadFinanceDB();
 
 
 // クリエイター手動出金申請機能は廃止され、翌月末自動支払い（一括振込）へ一本化されました。
