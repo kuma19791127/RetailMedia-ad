@@ -623,7 +623,7 @@
                             const verifyData = await verifyRes.json();
                             if (verifyData.success) {
                                 Swal.fire('完了', '二段階認証を設定しました！', 'success').then(() => {
-                                    const targetRedirect = data.redirect || 'store_portal.html';
+                                    const targetRedirect = verifyData.redirect || data.redirect || 'store_portal.html';
                                     if (verifyData.token) {
                                         localStorage.setItem('retailMediaToken', verifyData.token);
                                     }
