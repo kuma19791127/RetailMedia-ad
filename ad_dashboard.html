@@ -52,8 +52,6 @@
                                     const errorLog = `[${new Date().toISOString()}] 401/403 Auth Error on fetching: ${url}`;
                                     localStorage.setItem('debug_log_buffer', errorLog);
                                     
-                                    alert("[F12 Debug Alert] AdDashboard Global Auth Hook - 401/403 detected!\nURL: " + url + "\nStatus: " + response.status + "\n\nPress OK to redirect to index.html");
-                                    
                                     if (typeof Swal !== 'undefined') {
                                         Swal.fire({
                                             title: '⚠️ セッションタイムアウト',
@@ -66,6 +64,7 @@
                                             window.location.replace('index.html?logout=true');
                                         });
                                     } else {
+                                        alert("セッションがタイムアウトしました。OKを押すとログイン画面へ戻ります。");
                                         window.location.replace('index.html?logout=true');
                                     }
                                 }
@@ -87,14 +86,12 @@
 
         if (loggedOut || !token) {
             console.log("[F12 Debug] User explicitly logged out or token is missing. Redirecting to login portal.");
-            alert("[F12 Debug Alert] AdDashboard - Explicitly logged out or token is missing.\nloggedOut: " + loggedOut + "\ntoken: " + (token ? "exists" : "missing") + "\n\nPress OK to redirect to index.html");
             window.location.replace('index.html');
         } else if (!sessionAuth) {
             if (savedEmail) {
                 sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: savedEmail }));
                 sessionStorage.setItem('retailUserEmail', savedEmail);
             } else {
-                alert("[F12 Debug Alert] AdDashboard - sessionAuth is missing and no savedEmail.\nPress OK to redirect to index.html");
                 window.location.replace('index.html');
             }
         }

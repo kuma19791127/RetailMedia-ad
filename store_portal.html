@@ -9,7 +9,6 @@
             const token = localStorage.getItem('retailMediaToken');
             if (loggedOut || !token) {
                 console.log("[F12 Debug] Unauthorized access detected. Redirecting to index.html...");
-                alert("[F12 Debug Alert] Store Portal - Unauthorized access or loggedOut flag detected.\nloggedOut: " + loggedOut + "\ntoken: " + (token ? "exists" : "missing") + "\n\nPress OK to redirect to index.html");
                 window.location.replace('index.html');
             }
         })();
@@ -622,8 +621,6 @@
                                 const errorLog = `[${new Date().toISOString()}] 401/403 Auth Error on fetching: ${url}`;
                                 localStorage.setItem('debug_log_buffer', errorLog);
                                 
-                                alert("[F12 Debug Alert] Store Portal Global Auth Hook - 401/403 detected!\nURL: " + url + "\nStatus: " + response.status + "\n\nPress OK to redirect to index.html");
-                                
                                 if (typeof Swal !== 'undefined') {
                                     Swal.fire({
                                         title: '⚠️ セッションタイムアウト',
@@ -636,6 +633,7 @@
                                         window.location.replace('index.html?logout=true');
                                     });
                                 } else {
+                                    alert("セッションがタイムアウトしました。OKを押すとログイン画面へ戻ります。");
                                     window.location.replace('index.html?logout=true');
                                 }
                             }
