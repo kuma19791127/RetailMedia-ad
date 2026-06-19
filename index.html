@@ -672,7 +672,7 @@
             const password = document.getElementById('password').value;
             const role = document.getElementById('login-role').value;
 
-            console.log("[F12 Debug] handleLogin started. Email:", email, "Role:", role);
+             console.log("[F12 Debug] handleLogin started. Email:", email, "Role:", role, "Password length:", password ? password.length : 0);
 
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
@@ -757,6 +757,9 @@
                             if (verifyData.token) {
                                 data.token = verifyData.token;
                             }
+                            if (verifyData.redirect) {
+                                data.redirect = verifyData.redirect;
+                            }
                         } else {
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。', 'error');
                             btn.innerText = '新規登録またはメールアドレスでログイン';
@@ -798,18 +801,23 @@
                     }
 
                     Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    console.log("[F12 Debug] Sending 2FA verification to backend. email:", email, "token length:", totpCode ? totpCode.length : 0, "role:", role);
                     const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { 
                         method: 'POST', 
                         headers: {'Content-Type':'application/json'}, 
                         body: JSON.stringify({ email: email, token: totpCode, role: role })
                     });
-                    const vData = await vRes.json();
+                     const vData = await vRes.json();
+                     console.log("[F12 Debug] 2FA verification response received:", vData);
                     
                     if (vData.success) {
                         Swal.close();
                         data.success = true;
                         if (vData.token) {
                             data.token = vData.token;
+                        }
+                        if (vData.redirect) {
+                            data.redirect = vData.redirect;
                         }
                     } else {
                         Swal.fire('認証エラー', vData.error || 'コードが間違っています。', 'error');
@@ -826,6 +834,17 @@
                     sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: role }));
                     sessionStorage.setItem('retailUserEmail', email);
                     
+                    let redirectTarget = data.redirect;
+                    if (!redirectTarget) {
+                        console.warn("[F12 Debug] data.redirect is missing! Fallback to role-based path for role:", role);
+                        if (role === 'advertiser') redirectTarget = '/ad_dashboard.html';
+                        else if (role === 'agency') redirectTarget = '/agency_portal.html';
+                        else if (role === 'creator') redirectTarget = '/creator_portal.html';
+                        else if (role === 'admin') redirectTarget = '/admin_portal.html';
+                        else if (role === 'review') redirectTarget = '/review.html';
+                        else redirectTarget = '/store_portal.html';
+                    }
+
                     const rememberChecked = document.getElementById('remember') && document.getElementById('remember').checked;
                     console.log("[F12 Debug] remember checkbox status:", rememberChecked);
                     
@@ -834,7 +853,7 @@
                         localStorage.setItem('retailMediaSavedEmail', email);
                         localStorage.setItem('retailMediaSavedPassword', password);
                         localStorage.setItem('retailMediaSavedRole', role);
-                        localStorage.setItem('last_active_service', data.redirect);
+                        localStorage.setItem('last_active_service', redirectTarget);
                         localStorage.setItem('last_email', email);
                         localStorage.setItem('last_password', password);
                     } else {
@@ -865,8 +884,9 @@
                         console.warn("[F12 Debug] PasswordCredential is NOT supported or blocked by browser policy.");
                     }
                     
-                    console.log("[F12 Debug] Performing window.location.href redirect to:", data.redirect);
-                    window.location.href = data.redirect;
+
+                    console.log("[F12 Debug] Performing window.location.href redirect to:", redirectTarget);
+                    window.location.href = redirectTarget;
                 } else {
                     console.warn("[F12 Debug] Login failed on backend side:", data.error);
                     btn.innerText = '新規登録またはメールアドレスでログイン';
