@@ -873,28 +873,11 @@
                         localStorage.removeItem('last_email');
                         localStorage.removeItem('last_password');
                     }
+                    // モバイル端末でのUIスレッドブロッキングやパスワード保存ダイアログ表示による遷移保留を防ぐため、
+                    // JSからの明示的な navigator.credentials.store (PasswordCredential) 呼び出しを廃止（通常のブラウザ自動保存機能に委ねます）
                     
-                    console.log("[F12 Debug] Checking PasswordCredential support in browser:", !!window.PasswordCredential);
-                    if (window.PasswordCredential) {
-                        try {
-                            const cred = new PasswordCredential({
-                                id: email,
-                                password: password
-                            });
-                            console.log("[F12 Debug] Created PasswordCredential instance. Attempting to store...");
-                            navigator.credentials.store(cred)
-                                .then(() => console.log("[F12 Debug] navigator.credentials.store completed successfully."))
-                                .catch(err => console.error("[F12 Debug] navigator.credentials.store failed:", err));
-                        } catch (credErr) {
-                            console.error("[F12 Debug] Failed to instantiate PasswordCredential:", credErr);
-                        }
-                    } else {
-                        console.warn("[F12 Debug] PasswordCredential is NOT supported or blocked by browser policy.");
-                    }
-                    
-
-                    console.log("[F12 Debug] Performing window.location.href redirect to:", redirectTarget);
-                    window.location.href = redirectTarget;
+                    console.log("[F12 Debug] Performing window.location.replace redirect to:", redirectTarget);
+                    window.location.replace(redirectTarget);
                 } else {
                     console.warn("[F12 Debug] Login failed on backend side:", data.error);
                     btn.innerText = '新規登録またはメールアドレスでログイン';

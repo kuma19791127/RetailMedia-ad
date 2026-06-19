@@ -51,6 +51,10 @@
             font-weight: 900;
             font-size: 1.5rem;
             color: var(--primary);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
         }
 
         .btn-login {
@@ -448,7 +452,7 @@
     <nav>
         <div class="logo">retail-ad Agency</div>
         <a href="javascript:void(0)" onclick="goBackToPortal()" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
-        <a href="index.html" class="btn-login" style="text-align: center; line-height: 1.2;">パートナー<br>ログイン</a>
+        <a href="index.html" class="btn-login" style="text-align: center; line-height: 1.2; margin-left: auto; z-index: 1000;">パートナー<br>ログイン</a>
     </nav>
 
     <header class="hero">
