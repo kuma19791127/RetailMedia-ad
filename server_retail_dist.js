@@ -2003,17 +2003,60 @@ app.get('/api/auth/users', requireAuth, async (req, res) => {
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
-    const { email, password, role } = req.body;
+    const { email, password, role, totpCode } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     try {
+        const targetRole = getDatabaseRole(role || 'store');
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
+        if (!user) {
+            return res.status(404).json({ error: "ユーザーが見つかりません" });
+        }
+
+        // 管理者セッションの検証 (CookieまたはBearerヘッダー)
+        let isAdmin = false;
+        let token = req.cookies ? req.cookies.token : null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
+        }
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                if (decoded && decoded.role === 'admin') {
+                    isAdmin = true;
+                }
+            } catch (jwtErr) {
+                // トークン無効時は2FA検証へ
+            }
+        }
+
+        // 管理者でない場合は、2FAコードによる検証を必須とする（Forgot Password時の防御）
+        if (!isAdmin) {
+            if (!user.two_factor_secret) {
+                return res.status(400).json({ error: "二段階認証(2FA)が未設定のため、安全を考慮してオンラインでのパスワード初期化を拒否しました。管理者に直接再発行を依頼してください。" });
+            }
+            if (!totpCode) {
+                return res.status(400).json({ error: "セキュリティ保護のため、パスワードの再設定には二段階認証(2FA)コードの入力が必要です。" });
+            }
+            
+            const speakeasy = require('speakeasy');
+            const verified = speakeasy.totp.verify({
+                secret: user.two_factor_secret,
+                encoding: 'base32',
+                token: totpCode,
+                window: 2
+            });
+            if (!verified) {
+                return res.status(401).json({ error: "二段階認証コードが間違っています。パスワードリセットは拒絶されました。" });
+            }
+        }
+
         const hashedPassword = hashPassword(password);
-        const targetRole = role || 'store';
         await dbHelper.query.run(
             'UPDATE users SET password = ? WHERE email = ? AND role = ?',
             [hashedPassword, email, targetRole]
         );
-        console.log(`[Auth] 🔑 Password Reset: ${email} (${targetRole}) inside Database`);
+        console.log(`[Auth] 🔑 Password Reset: ${email} (${targetRole}) inside Database - Authorized (Admin: ${isAdmin})`);
         res.json({ success: true });
     } catch (e) {
         console.error(e);

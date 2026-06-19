@@ -818,27 +818,47 @@
             });
 
             if (email) {
-                const { value: newPass } = await Swal.fire({
-                    title: '新しいパスワード',
-                    input: 'password',
-                    inputLabel: '新しいパスワードを入力してください',
-                    inputPlaceholder: 'New Password',
+                const { value: formValues } = await Swal.fire({
+                    title: 'パスワード再設定情報',
+                    html: `
+                        <input id="reset-password-input" type="password" class="swal2-input" placeholder="新しいパスワード" autocomplete="new-password">
+                        <input id="reset-totp-input" type="text" class="swal2-input" placeholder="6桁の二段階認証(2FA)コード" autocomplete="one-time-code">
+                        <select id="reset-role-input" class="swal2-input" style="width:80%; margin:1em auto;">
+                            <option value="store">店舗オーナー (Store Owner)</option>
+                            <option value="advertiser">広告主 (Advertiser)</option>
+                            <option value="agency">代理店 (Agency)</option>
+                            <option value="creator">クリエイター (Creator)</option>
+                        </select>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
                     confirmButtonText: '再設定 (Reset)',
-                    showCancelButton: true
+                    preConfirm: () => {
+                        return {
+                            newPass: document.getElementById('reset-password-input').value,
+                            totpCode: document.getElementById('reset-totp-input').value,
+                            role: document.getElementById('reset-role-input').value
+                        };
+                    }
                 });
 
-                if (newPass) {
+                if (formValues && formValues.newPass) {
                     try {
                         const res = await fetch(`${API_URL}/api/auth/reset-password`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, password: newPass })
+                            body: JSON.stringify({
+                                email,
+                                password: formValues.newPass,
+                                totpCode: formValues.totpCode,
+                                role: formValues.role
+                            })
                         });
                         const data = await res.json();
                         if (data.success) {
                             Swal.fire('Success', 'パスワードを再設定しました。<br>新しいパスワードでログインしてください。', 'success');
                         } else {
-                            Swal.fire('Error', data.error, 'error');
+                            Swal.fire('Error', data.error || '再設定に失敗しました。', 'error');
                         }
                     } catch (e) {
                         Swal.fire('Error', 'Connection Failed', 'error');
