@@ -694,6 +694,48 @@
             const btn = document.querySelector('.btn-primary');
             btn.innerText = 'ログイン中...';
             
+            // Helper function to proceed with redirection immediately on login success
+            function proceedWithLoginSuccess(loginData, userEmail, userPassword, userRole) {
+                console.log("[F12 Debug] proceedWithLoginSuccess started. Role:", userRole);
+                localStorage.removeItem('logged_out');
+                if (loginData.token) {
+                    console.log("[F12 Debug] Setting retailMediaToken in localStorage. token length:", loginData.token.length);
+                    localStorage.setItem('retailMediaToken', loginData.token);
+                }
+                sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: userEmail, role: userRole }));
+                sessionStorage.setItem('retailUserEmail', userEmail);
+                
+                let redirectTarget = loginData.redirect;
+                if (!redirectTarget) {
+                    if (userRole === 'advertiser') redirectTarget = 'ad_dashboard.html';
+                    else if (userRole === 'agency') redirectTarget = 'agency_portal.html';
+                    else if (userRole === 'creator') redirectTarget = 'creator_portal.html';
+                    else if (userRole === 'admin') redirectTarget = 'admin_portal.html';
+                    else if (userRole === 'review') redirectTarget = 'review.html';
+                    else redirectTarget = 'store_portal.html';
+                }
+
+                const rememberChecked = document.getElementById('remember') && document.getElementById('remember').checked;
+                if (rememberChecked) {
+                    localStorage.setItem('retailMediaSavedEmail', userEmail);
+                    localStorage.setItem('retailMediaSavedPassword', userPassword);
+                    localStorage.setItem('retailMediaSavedRole', userRole);
+                    localStorage.setItem('last_active_service', redirectTarget);
+                    localStorage.setItem('last_email', userEmail);
+                    localStorage.setItem('last_password', userPassword);
+                } else {
+                    localStorage.removeItem('retailMediaSavedEmail');
+                    localStorage.removeItem('retailMediaSavedPassword');
+                    localStorage.removeItem('retailMediaSavedRole');
+                    localStorage.removeItem('last_active_service');
+                    localStorage.removeItem('last_email');
+                    localStorage.removeItem('last_password');
+                }
+
+                console.log("[F12 Debug] Redirecting via location.replace directly to:", redirectTarget);
+                window.location.replace(redirectTarget);
+            }
+
             // 【セキュリティ】 ログイン成功の通行証（セッション）を発行
             try {
                 console.log("[F12 Debug] Sending login request to backend...");
@@ -757,13 +799,9 @@
 
                         if (verifyData.success) {
                             Swal.close();
-                            data.success = true;
-                            if (verifyData.token) {
-                                data.token = verifyData.token;
-                            }
-                            if (verifyData.redirect) {
-                                data.redirect = verifyData.redirect;
-                            }
+                            verifyData.redirect = verifyData.redirect || data.redirect;
+                            proceedWithLoginSuccess(verifyData, email, password, role);
+                            return;
                         } else {
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。', 'error');
                             btn.innerText = '新規登録またはメールアドレスでログイン';
@@ -811,18 +849,14 @@
                         headers: {'Content-Type':'application/json'}, 
                         body: JSON.stringify({ email: email, token: totpCode, role: role })
                     });
-                     const vData = await vRes.json();
-                     console.log("[F12 Debug] 2FA verification response received:", vData);
+                    const vData = await vRes.json();
+                    console.log("[F12 Debug] 2FA verification response received:", vData);
                     
                     if (vData.success) {
                         Swal.close();
-                        data.success = true;
-                        if (vData.token) {
-                            data.token = vData.token;
-                        }
-                        if (vData.redirect) {
-                            data.redirect = vData.redirect;
-                        }
+                        vData.redirect = vData.redirect || data.redirect;
+                        proceedWithLoginSuccess(vData, email, password, role);
+                        return;
                     } else {
                         Swal.fire('認証エラー', vData.error || 'コードが間違っています。', 'error');
                         btn.innerText = '新規登録またはメールアドレスでログイン';
@@ -831,53 +865,7 @@
                 }
 
                 if (data.success) {
-                    console.log("[F12 Debug] Login process completed successfully. Removing logged_out flag and setting token...");
-                    localStorage.removeItem('logged_out');
-                    if (data.token) {
-                        console.log("[F12 Debug] Setting retailMediaToken in localStorage. token length:", data.token.length);
-                        localStorage.setItem('retailMediaToken', data.token);
-                    } else {
-                        console.warn("[F12 Debug] token is missing in response!");
-                    }
-                    sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: email, role: role }));
-                    sessionStorage.setItem('retailUserEmail', email);
-                    
-                    let redirectTarget = data.redirect;
-                    if (!redirectTarget) {
-                        console.warn("[F12 Debug] data.redirect is missing! Fallback to role-based path for role:", role);
-                        if (role === 'advertiser') redirectTarget = '/ad_dashboard.html';
-                        else if (role === 'agency') redirectTarget = '/agency_portal.html';
-                        else if (role === 'creator') redirectTarget = '/creator_portal.html';
-                        else if (role === 'admin') redirectTarget = '/admin_portal.html';
-                        else if (role === 'review') redirectTarget = '/review.html';
-                        else redirectTarget = '/store_portal.html';
-                    }
-
-                    const rememberChecked = document.getElementById('remember') && document.getElementById('remember').checked;
-                    console.log("[F12 Debug] remember checkbox status:", rememberChecked);
-                    
-                    if (rememberChecked) {
-                        console.log("[F12 Debug] Saving credentials to localStorage for auto-fill.");
-                        localStorage.setItem('retailMediaSavedEmail', email);
-                        localStorage.setItem('retailMediaSavedPassword', password);
-                        localStorage.setItem('retailMediaSavedRole', role);
-                        localStorage.setItem('last_active_service', redirectTarget);
-                        localStorage.setItem('last_email', email);
-                        localStorage.setItem('last_password', password);
-                    } else {
-                        console.log("[F12 Debug] Clearing credentials from localStorage.");
-                        localStorage.removeItem('retailMediaSavedEmail');
-                        localStorage.removeItem('retailMediaSavedPassword');
-                        localStorage.removeItem('retailMediaSavedRole');
-                        localStorage.removeItem('last_active_service');
-                        localStorage.removeItem('last_email');
-                        localStorage.removeItem('last_password');
-                    }
-                    // モバイル端末でのUIスレッドブロッキングやパスワード保存ダイアログ表示による遷移保留を防ぐため、
-                    // JSからの明示的な navigator.credentials.store (PasswordCredential) 呼び出しを廃止（通常のブラウザ自動保存機能に委ねます）
-                    
-                    console.log("[F12 Debug] Performing window.location.replace redirect to:", redirectTarget);
-                    window.location.replace(redirectTarget);
+                    proceedWithLoginSuccess(data, email, password, role);
                 } else {
                     console.warn("[F12 Debug] Login failed on backend side:", data.error);
                     btn.innerText = '新規登録またはメールアドレスでログイン';
