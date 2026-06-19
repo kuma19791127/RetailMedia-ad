@@ -90,6 +90,73 @@ if (process.env.DATABASE_URL) {
                     price INT NOT NULL DEFAULT 0,
                     category VARCHAR(255)
                 );
+
+                CREATE TABLE IF NOT EXISTS withdrawal_requests (
+                    id VARCHAR(255) PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    amount DOUBLE PRECISION DEFAULT 0.0,
+                    status VARCHAR(50) DEFAULT 'Pending',
+                    timestamp BIGINT,
+                    details TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS creator_banks (
+                    email VARCHAR(255) PRIMARY KEY,
+                    bank_name VARCHAR(255),
+                    branch_name VARCHAR(255),
+                    account_number VARCHAR(255),
+                    account_holder VARCHAR(255),
+                    id_base64 TEXT,
+                    timestamp BIGINT
+                );
+
+                CREATE TABLE IF NOT EXISTS kyc_requests (
+                    id VARCHAR(255) PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    org_name VARCHAR(255),
+                    person_name VARCHAR(255),
+                    corp_id VARCHAR(13),
+                    duns VARCHAR(255),
+                    documents TEXT,
+                    ai_score INT,
+                    ai_details TEXT,
+                    timestamp BIGINT,
+                    status VARCHAR(50) DEFAULT 'pending'
+                );
+
+                CREATE TABLE IF NOT EXISTS agency_referrals (
+                    advertise_email VARCHAR(255) PRIMARY KEY,
+                    agency_email VARCHAR(255) NOT NULL,
+                    price DOUBLE PRECISION DEFAULT 0.0,
+                    status VARCHAR(50) DEFAULT 'Pending',
+                    date VARCHAR(100)
+                );
+
+                CREATE TABLE IF NOT EXISTS signage_states (
+                    store_id VARCHAR(255) PRIMARY KEY,
+                    state_json TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS scheduled_broadcasts (
+                    id VARCHAR(255) PRIMARY KEY,
+                    title VARCHAR(255),
+                    text TEXT,
+                    audio_url TEXT,
+                    schedule_time VARCHAR(100),
+                    target_store_id VARCHAR(255),
+                    advertiser VARCHAR(255),
+                    status VARCHAR(50) DEFAULT 'pending'
+                );
+
+                CREATE TABLE IF NOT EXISTS account_strikes (
+                    email VARCHAR(255) PRIMARY KEY,
+                    strikes INT DEFAULT 0
+                );
+
+                CREATE TABLE IF NOT EXISTS admin_settings (
+                    key VARCHAR(255) PRIMARY KEY,
+                    value TEXT
+                );
             `);
 
             // Migration path: Drop existing primary key constraint and recreate as composite if not already done
@@ -331,6 +398,89 @@ if (process.env.DATABASE_URL) {
                         items TEXT,
                         status TEXT,
                         timestamp INTEGER
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS withdrawal_requests (
+                        id TEXT PRIMARY KEY,
+                        email TEXT NOT NULL,
+                        amount REAL DEFAULT 0.0,
+                        status TEXT DEFAULT 'Pending',
+                        timestamp INTEGER,
+                        details TEXT
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS creator_banks (
+                        email TEXT PRIMARY KEY,
+                        bank_name TEXT,
+                        branch_name TEXT,
+                        account_number TEXT,
+                        account_holder TEXT,
+                        id_base64 TEXT,
+                        timestamp INTEGER
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS kyc_requests (
+                        id TEXT PRIMARY KEY,
+                        email TEXT NOT NULL,
+                        org_name TEXT,
+                        person_name TEXT,
+                        corp_id TEXT,
+                        duns TEXT,
+                        documents TEXT,
+                        ai_score INTEGER,
+                        ai_details TEXT,
+                        timestamp INTEGER,
+                        status TEXT DEFAULT 'pending'
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS agency_referrals (
+                        advertise_email TEXT PRIMARY KEY,
+                        agency_email TEXT NOT NULL,
+                        price REAL DEFAULT 0.0,
+                        status TEXT DEFAULT 'Pending',
+                        date TEXT
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS signage_states (
+                        store_id TEXT PRIMARY KEY,
+                        state_json TEXT
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS scheduled_broadcasts (
+                        id TEXT PRIMARY KEY,
+                        title TEXT,
+                        text TEXT,
+                        audio_url TEXT,
+                        schedule_time TEXT,
+                        target_store_id TEXT,
+                        advertiser TEXT,
+                        status TEXT DEFAULT 'pending'
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS account_strikes (
+                        email TEXT PRIMARY KEY,
+                        strikes INTEGER DEFAULT 0
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS admin_settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT
                     )
                 `);
 

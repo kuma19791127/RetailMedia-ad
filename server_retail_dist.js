@@ -3070,7 +3070,6 @@ app.post('/api/retailer/upload', requireAuth, async (req, res) => {
                 res.status(500).json({ success: false, error: err.message });
             });
         };
-
         // If file is > 10MB or is MOV, compress it on the server
         if (buffer.length > 10 * 1024 * 1024 || ext === '.mov') {
             console.log(`[Retailer Video Upload] File is large or MOV (${(buffer.length / 1024 / 1024).toFixed(2)}MB). Starting cloud compression...`);
@@ -3471,36 +3470,39 @@ app.post('/api/admin/agency-submit', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "代理店権限が必要です" });
     }
     const agencyEmail = req.user.email;
-    if (!agencyReferrals[agencyEmail]) {
-        agencyReferrals[agencyEmail] = [];
-    }
+    const priceVal = parseInt(req.body.price) || 0;
     
-    const newReferral = {
-        date: req.body.date,
-        agency: agencyEmail, // ログイン代理店のメールアドレスに強制固定しなりすましを排除
-        advertise: req.body.advertise,
-        price: parseInt(req.body.price) || 0,
-        status: 'Pending'
-    };
-    
-    agencyReferrals[agencyEmail].push(newReferral);
-    if (typeof saveFinanceDB === 'function') saveFinanceDB();
-    
-    // Notify the admin via SES
     try {
-        const dateStr = new Date().toISOString().split("T")[0];
-        const subject = `【リテアド】新規の広告主紹介・登録申請がありました (${newReferral.agency})`;
-        const body = `管理者 様\n\nAd Agency Proより、以下の通り新規の広告主（案件）登録申請がありました。\nAdmin Portalより承認（Verify）作業とアカウント発行を行ってください。\n\n--------------------------------\n[申請内容]\n申請日: ${newReferral.date}\n代理店名: ${newReferral.agency}\n紹介先広告主 (Email): ${newReferral.advertise}\n予定予算額: ¥${newReferral.price.toLocaleString()}\n--------------------------------\n\nよろしくお願いいたします。`;
-        await sendSESEmail("info@retail-ad.com", subject, body);
-    } catch (e) {
-        console.error("[Agency] Admin notification email failed", e);
-    }
+        await dbHelper.query.run(
+            `INSERT INTO agency_referrals (advertise_email, agency_email, price, status, date) 
+             VALUES (?, ?, ?, ?, ?) 
+             ON CONFLICT(advertise_email) DO UPDATE SET 
+                agency_email = EXCLUDED.agency_email, 
+                price = EXCLUDED.price, 
+                status = EXCLUDED.status, 
+                date = EXCLUDED.date`,
+            [req.body.advertise, agencyEmail, priceVal, 'Pending', req.body.date]
+        );
+        
+        // Notify the admin via SES
+        try {
+            const dateStr = new Date().toISOString().split("T")[0];
+            const subject = `【リテアド】新規の広告主紹介・登録申請がありました (${agencyEmail})`;
+            const body = `管理者 様\n\nAd Agency Proより、以下の通り新規の広告主（案件）登録申請がありました。\nAdmin Portalより承認（Verify）作業とアカウント発行を行ってください。\n\n--------------------------------\n[申請内容]\n申請日: ${req.body.date}\n代理店名: ${agencyEmail}\n紹介先広告主 (Email): ${req.body.advertise}\n予定予算額: ¥${priceVal.toLocaleString()}\n--------------------------------\n\nよろしくお願いいたします。`;
+            await sendSESEmail("info@retail-ad.com", subject, body);
+        } catch (e) {
+            console.error("[Agency] Admin notification email failed", e);
+        }
 
-    console.log(`[Agency] New Referral submitted by ${newReferral.agency} for budget ¥${newReferral.price}`);
-    res.json({ success: true });
+        console.log(`[Agency] New Referral submitted by ${agencyEmail} for budget ¥${priceVal} in DB`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Failed to submit agency referral to DB:", err);
+        res.status(500).json({ error: "紹介登録処理に失敗しました" });
+    }
 });
 
-app.get('/api/admin/agency', requireAuth, (req, res) => {
+app.get('/api/admin/agency', requireAuth, async (req, res) => {
     // ロールチェック (代理店または管理者のみ許可)
     if (req.user.role !== 'agency' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "代理店権限が必要です" });
@@ -3508,39 +3510,53 @@ app.get('/api/admin/agency', requireAuth, (req, res) => {
     const userEmail = req.user.email;
     const userRole = req.user.role;
     
-    if (userRole === 'admin') {
-        // Admin gets all referrals flattened
-        const allReferrals = Object.values(agencyReferrals).flat();
-        res.json(allReferrals);
-    } else {
-        // Normal agency gets only their own referrals
-        res.json(agencyReferrals[userEmail] || []);
+    try {
+        if (userRole === 'admin') {
+            const rows = await dbHelper.query.all('SELECT * FROM agency_referrals');
+            res.json(rows.map(r => ({
+                date: r.date,
+                agency: r.agency_email,
+                advertise: r.advertise_email,
+                price: r.price,
+                status: r.status
+            })));
+        } else {
+            const rows = await dbHelper.query.all('SELECT * FROM agency_referrals WHERE agency_email = ?', [userEmail]);
+            res.json(rows.map(r => ({
+                date: r.date,
+                agency: r.agency_email,
+                advertise: r.advertise_email,
+                price: r.price,
+                status: r.status
+            })));
+        }
+    } catch (err) {
+        console.error("Failed to get agency referrals from DB:", err);
+        res.status(500).json({ error: "紹介一覧の取得に失敗しました" });
     }
 });
 
-app.post('/api/admin/agency-verify', requireAuth, (req, res) => {
+app.post('/api/admin/agency-verify', requireAuth, async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({ error: "管理者権限が必要です" });
     }
     
     const { advertise } = req.body;
-    let found = false;
     
-    // Search across all agencies to find and verify the target advertise
-    for (const email of Object.keys(agencyReferrals)) {
-        const ref = agencyReferrals[email].find(r => r.advertise === advertise);
-        if (ref) {
-            ref.status = 'Verified';
-            found = true;
-            break;
+    try {
+        const result = await dbHelper.query.run(
+            'UPDATE agency_referrals SET status = ? WHERE advertise_email = ?',
+            ['Verified', advertise]
+        );
+        const updated = result.changes || result.rowCount;
+        if (updated > 0) {
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: "紹介データが見つかりませんでした" });
         }
-    }
-    
-    if (found) {
-        if (typeof saveFinanceDB === 'function') saveFinanceDB();
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ error: "Not found" });
+    } catch (err) {
+        console.error("Failed to verify agency referral in DB:", err);
+        res.status(500).json({ error: "紹介データの承認処理に失敗しました" });
     }
 });
 
@@ -3622,9 +3638,19 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
             return res.status(500).json({ error: "【本人確認システムエラー】通信エラーまたは解析エラーのため、本人確認を完了できませんでした。時間をおいて再度お試しください。" });
         }
         
-        creatorBanks[email] = { email, bankName, branchName, accountNum, holderName, updatedAt: new Date().toISOString() };
-        console.log(`[Creator] Bank Info Updated & KYC Passed for: ${email}`);
-        if (typeof saveFinanceDB === 'function') saveFinanceDB();
+        await dbHelper.query.run(
+            `INSERT INTO creator_banks (email, bank_name, branch_name, account_number, account_holder, id_base64, timestamp) 
+             VALUES (?, ?, ?, ?, ?, ?, ?) 
+             ON CONFLICT(email) DO UPDATE SET 
+                bank_name = EXCLUDED.bank_name, 
+                branch_name = EXCLUDED.branch_name, 
+                account_number = EXCLUDED.account_number, 
+                account_holder = EXCLUDED.account_holder, 
+                id_base64 = EXCLUDED.id_base64,
+                timestamp = EXCLUDED.timestamp`,
+            [email, bankName, branchName, accountNum, holderName, idBase64, Date.now()]
+        );
+        console.log(`[Creator] Bank Info Updated & KYC Passed in DB for: ${email}`);
         res.json({ success: true, message: "本人確認（KYC）を通過し、口座情報を保存しました" });
     } catch (e) {
         console.error("KYC Error:", e);
@@ -3634,38 +3660,44 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/admin/creators', requireAuth, (req, res) => {
+app.get('/api/admin/creators', requireAuth, async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({ error: "管理者権限が必要です" });
     }
     // Merge stats with bank data for Admin view
     // For demo, we just match mock stats to registered bank info conceptually
-    const list = Object.keys(creatorBanks).map(email => {
-        const bd = creatorBanks[email];
-        // Using global CREATOR_STATE for demo purposes based on current live data
-        const views = CREATOR_STATE.total_views;
-        const manufacturer_ad = Math.floor(views * 0.5);
-        const adsense_share = Math.floor(manufacturer_ad * 0.1);
-        const cm_bonus = 10000;
+    try {
+        const dbBanks = await dbHelper.query.all('SELECT * FROM creator_banks');
+        const list = dbBanks.map(bd => {
+            const email = bd.email;
+            // Using global CREATOR_STATE for demo purposes based on current live data
+            const views = CREATOR_STATE.total_views;
+            const manufacturer_ad = Math.floor(views * 0.5);
+            const adsense_share = Math.floor(manufacturer_ad * 0.1);
+            const cm_bonus = 10000;
 
-        const subtotal = manufacturer_ad + adsense_share + cm_bonus;
-        const agency_fee = Math.floor(subtotal * 0.2); // 20% to agency MCN
-        const final_payout = subtotal - agency_fee;
+            const subtotal = manufacturer_ad + adsense_share + cm_bonus;
+            const agency_fee = Math.floor(subtotal * 0.2); // 20% to agency MCN
+            const final_payout = subtotal - agency_fee;
 
-        return {
-            email: email,
-            name: bd.holderName,
-            bank: bd.bankName,
-            branch: bd.branchName,
-            account: bd.accountNum,
-            manufacturer_ad: manufacturer_ad,
-            adsense_share: adsense_share,
-            cm_bonus: cm_bonus,
-            agency_fee: agency_fee,
-            payout: final_payout
-        };
-    });
-    res.json({ success: true, list });
+            return {
+                email: email,
+                name: bd.account_holder,
+                bank: bd.bank_name,
+                branch: bd.branch_name,
+                account: bd.account_number,
+                manufacturer_ad: manufacturer_ad,
+                adsense_share: adsense_share,
+                cm_bonus: cm_bonus,
+                agency_fee: agency_fee,
+                payout: final_payout
+            };
+        });
+        res.json({ success: true, list });
+    } catch (err) {
+        console.error("Failed to fetch creators from DB:", err);
+        res.status(500).json({ error: "データベース接続エラーが発生しました" });
+    }
 });
 
 // Admin to Creator Bulk Email Handler
@@ -5294,6 +5326,103 @@ async function syncMemoryToDB() {
                             tx.status || 'completed',
                             tx.timestamp || Date.now()
                         ]
+                    );
+                }
+            }
+
+            // 5. Withdrawal Requests
+            if (typeof withdrawalRequests !== 'undefined' && Array.isArray(withdrawalRequests)) {
+                for (const wr of withdrawalRequests) {
+                    await dbHelper.query.run(
+                        'INSERT INTO withdrawal_requests (id, email, amount, status, timestamp, details) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                        [wr.id || wr.withdrawalId, wr.email, wr.amount, wr.status, wr.timestamp, JSON.stringify(wr.details || {})]
+                    );
+                }
+            }
+
+            // 6. Creator Banks
+            if (typeof creatorBanks !== 'undefined' && creatorBanks) {
+                for (const [email, cb] of Object.entries(creatorBanks)) {
+                    await dbHelper.query.run(
+                        'INSERT INTO creator_banks (email, bank_name, branch_name, account_number, account_holder, id_base64, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (email) DO NOTHING',
+                        [email, cb.bankName, cb.branchName, cb.accountNum, cb.holderName, cb.idBase64, cb.timestamp || Date.now()]
+                    );
+                }
+            }
+
+            // 7. KYC Requests
+            if (typeof kycRequests !== 'undefined' && Array.isArray(kycRequests)) {
+                for (const kyc of kycRequests) {
+                    await dbHelper.query.run(
+                        'INSERT INTO kyc_requests (id, email, org_name, person_name, corp_id, duns, documents, ai_score, ai_details, timestamp, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                        [
+                            kyc.id || ('kyc_' + Date.now() + Math.random()),
+                            kyc.userEmail || kyc.email,
+                            kyc.orgName || '',
+                            kyc.personName || '',
+                            kyc.corpId || '',
+                            kyc.duns || '',
+                            JSON.stringify(kyc.documents || []),
+                            kyc.aiScore || 0,
+                            JSON.stringify(kyc.aiDetails || []),
+                            kyc.timestamp || kyc.createdAt || Date.now(),
+                            kyc.status || 'pending'
+                        ]
+                    );
+                }
+            }
+
+            // 8. Agency Referrals
+            if (typeof agencyReferrals !== 'undefined' && agencyReferrals) {
+                for (const [agencyEmail, refs] of Object.entries(agencyReferrals)) {
+                    if (Array.isArray(refs)) {
+                        for (const ref of refs) {
+                            await dbHelper.query.run(
+                                'INSERT INTO agency_referrals (advertise_email, agency_email, price, status, date) VALUES (?, ?, ?, ?, ?) ON CONFLICT (advertise_email) DO NOTHING',
+                                [ref.advertise || ref.advertiseEmail, agencyEmail, ref.price, ref.status, ref.date]
+                            );
+                        }
+                    }
+                }
+            }
+
+            // 9. Signage States
+            const signageState = signageServer.getState ? signageServer.getState() : {};
+            if (signageState && typeof signageState === 'object') {
+                for (const [storeId, state] of Object.entries(signageState)) {
+                    await dbHelper.query.run(
+                        'INSERT INTO signage_states (store_id, state_json) VALUES (?, ?) ON CONFLICT (store_id) DO UPDATE SET state_json = EXCLUDED.state_json',
+                        [storeId, JSON.stringify(state)]
+                    );
+                }
+            }
+
+            // 10. Scheduled Broadcasts
+            if (typeof scheduledBroadcasts !== 'undefined' && Array.isArray(scheduledBroadcasts)) {
+                for (const sb of scheduledBroadcasts) {
+                    await dbHelper.query.run(
+                        'INSERT INTO scheduled_broadcasts (id, title, text, audio_url, schedule_time, target_store_id, advertiser, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING',
+                        [sb.id, sb.title || '', sb.text || '', sb.audio_url || '', sb.schedule_time || '', sb.target_store_id || '', sb.advertiser || '', sb.status || 'pending']
+                    );
+                }
+            }
+
+            // 11. Account Strikes
+            if (typeof accountStrikes !== 'undefined' && accountStrikes) {
+                for (const [email, strikes] of Object.entries(accountStrikes)) {
+                    await dbHelper.query.run(
+                        'INSERT INTO account_strikes (email, strikes) VALUES (?, ?) ON CONFLICT (email) DO UPDATE SET strikes = EXCLUDED.strikes',
+                        [email, strikes]
+                    );
+                }
+            }
+
+            // 12. Admin Settings
+            if (typeof adminSettings !== 'undefined' && adminSettings) {
+                for (const [key, val] of Object.entries(adminSettings)) {
+                    await dbHelper.query.run(
+                        'INSERT INTO admin_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value',
+                        [key, typeof val === 'object' ? JSON.stringify(val) : String(val)]
                     );
                 }
             }
