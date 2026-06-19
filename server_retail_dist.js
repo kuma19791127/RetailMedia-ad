@@ -3618,8 +3618,7 @@ app.post('/api/admin/agency-verify', requireAuth, async (req, res) => {
 
 
 
-// --- CREATOR BANK DATA STORE ---
-const creatorBankData = creatorBanks;
+// --- CREATOR BANK DATA STORE (DEPRECATED - Fully migrated to creator_banks DB table) ---
 const processingCreatorBankUpdates = new Set();
 
 app.post('/api/creator/bank', requireAuth, async (req, res) => {
