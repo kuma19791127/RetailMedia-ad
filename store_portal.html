@@ -734,9 +734,11 @@
 
             <script>
                 async function loadPosData() {
+                    console.log("[F12 Debug Frontend] Fetching sales history from server...");
                     try {
                         const response = await fetch(window.API_BASE_URL + '/api/admin/sales-history');
                         const data = await response.json();
+                        console.log("[F12 Debug Frontend] Fetch sales history response status:", response.status, "data:", data);
                         let total = 0;
                         let cust = 0;
                         let companySales = {};
@@ -1496,18 +1498,24 @@
                     const email = document.getElementById('billing-email').value;
 
                     try {
+                        const payload = { bank_info: bankInfo, billing_email: email };
+                        console.log("[F12 Debug Frontend] Saving store settings with payload:", payload);
                         const res = await fetch(`${API_URL_SETTINGS}/api/store/settings`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ bank_info: bankInfo, billing_email: email })
+                            body: JSON.stringify(payload)
                         });
-                        if (res.ok) {
+                        const data = await res.json();
+                        console.log("[F12 Debug Frontend] Save store settings response status:", res.status, "data:", data);
+
+                        if (res.ok && data.success) {
                             Swal.fire('保存しました', '店舗設定を更新しました。', 'success');
                         } else {
-                            throw new Error('Save Failed');
+                            throw new Error(data.error || 'Save Failed');
                         }
                     } catch (e) {
-                        Swal.fire('Error', '保存に失敗しました。', 'error');
+                        console.error("[F12 Debug Frontend] Save store settings exception:", e);
+                        Swal.fire('Error', '保存に失敗しました: ' + e.message, 'error');
                     }
                 }
             </script>
@@ -1967,9 +1975,11 @@
 
         // --- Revenue Logic ---
         async function loadRevenue() {
+            console.log("[F12 Debug Frontend] Fetching store revenue data...");
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/store/revenue');
                 const data = await res.json();
+                console.log("[F12 Debug Frontend] Fetch store revenue response status:", res.status, "data:", data);
 
                 const ysEl = document.getElementById('your-share');
                 if (ysEl) ysEl.innerText = '¥' + data.storeShare.toLocaleString();
@@ -2092,17 +2102,25 @@
 
                     // Collect unsynced local POS records (mock logic)
                     // Then push to Admin Server via API
-                    await fetch(window.API_BASE_URL + '/api/admin/sales/sync-batch', {
+                    const payload = {
+                        storeId: "STORE-001",
+                        syncTimestamp: new Date().toISOString(),
+                        records: [ /* Batched sales records */ ]
+                    };
+                    console.log("[F12 Debug Frontend] Starting background POS data sync with payload:", payload);
+                    const res = await fetch(window.API_BASE_URL + '/api/admin/sales/sync-batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            storeId: "STORE-001",
-                            syncTimestamp: new Date().toISOString(),
-                            records: [ /* Batched sales records */ ]
-                        })
-                    }).catch(e => {});
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    console.log("[F12 Debug Frontend] Background POS sync response status:", res.status, "data:", data);
 
-                    console.log("[Sync] Synced local POS records to Admin successfully.");
+                    if (res.ok && data.success) {
+                        console.log("[Sync] Synced local POS records to Admin successfully.");
+                    } else {
+                        throw new Error(data.error || "Batch sync failed");
+                    }
                     if(statusEl) {
                         statusEl.innerText = "🟢 定期同期成功 (" + new Date().toLocaleTimeString('ja-JP') + ")";
                         statusEl.style.color = "#15803d";
@@ -2451,12 +2469,14 @@
         resultDiv.style.display = 'none';
         
         try {
+            console.log("[F12 Debug Frontend] Running store management AI agent with input:", input);
             const res = await fetch(window.API_BASE_URL + '/api/agent/store', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: input, storeId: 'current_store' })
             });
             const data = await res.json();
+            console.log("[F12 Debug Frontend] Store AI agent response status:", res.status, "data:", data);
             
             if(data.success) {
                 resultDiv.innerHTML = data.message;
@@ -2465,6 +2485,7 @@
                 alert("エラー: " + data.error);
             }
         } catch(e) {
+            console.error("[F12 Debug Frontend] Store AI agent exception:", e);
             alert("通信エラー: " + e.message);
         }
         
