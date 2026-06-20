@@ -754,13 +754,17 @@
             const role = document.getElementById('login-role').value;
             if(!name || !email) { Swal.fire('エラー', '名前とメールを入力してください', 'error'); return; }
             
+            const body = { email: email, password: pass, role: role, name: name, org: org };
+            console.log("[F12 Debug Frontend] Attempting login with body:", { ...body, password: "***" });
+            
             try {
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: pass, role: role, name: name, org: org })
+                    body: JSON.stringify(body)
                 });
                 const data = await response.json();
+                console.log("[F12 Debug Frontend] Login response status:", response.status, "data:", data);
                 if (data.success) {
                     if (data.require2FA) {
                         // 2FA検証のダイアログ表示
@@ -1270,12 +1274,17 @@
         async function executeVideoIntelligence() {
             document.getElementById('ai-loading').style.display = 'block';
             document.getElementById('ai-status').innerHTML = 'AWS / Google AI<br><span style="font-size:0.8rem">解析中です...</span>';
+            
+            const payload = { video_base64: pendingVideoBase64 ? pendingVideoBase64.substring(0, 100) + "..." : "mock_data" };
+            console.log("[F12 Debug Frontend] Starting video intelligence analysis. Payload preview:", payload);
+            
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/manualhelp/video-to-steps', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ video_base64: pendingVideoBase64 || "mock_data" })
                 });
                 const data = await res.json();
+                console.log("[F12 Debug Frontend] Video intelligence response status:", res.status, "data:", data);
                 
                 if (res.ok && data.success) {
                     try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
@@ -1310,11 +1319,15 @@
             document.getElementById('ai-status').innerText = `${targetLang} に翻訳中...`;
             try {
                 const texts = tempSteps.map(s => s.title);
+                const payload = { texts: texts, target: targetLang };
+                console.log("[F12 Debug Frontend] Starting cloud translation. Payload:", payload);
+                
                 const res = await fetch(window.API_BASE_URL + '/api/manualhelp/translate-steps', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ texts: texts, target: targetLang })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
+                console.log("[F12 Debug Frontend] Cloud translation response status:", res.status, "data:", data);
                 if (data.data && data.data.translations) {
                     Swal.fire('完了', 'NMT翻訳が完了しました！', 'success');
                     data.data.translations.forEach((t, i) => tempSteps[i].title = t.translatedText );
@@ -1618,21 +1631,63 @@
             // Name is always shown now
             document.getElementById('prof-name-container').style.display = 'block';
             document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
+            document.getElementById('prof-pass').value = ""; // clear password
         
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
-    function saveProfile() {
-        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
-        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
+        const email = document.getElementById('prof-email').value;
+        const name = document.getElementById('prof-name-container').style.display !== 'none' 
+            ? document.getElementById('prof-name').value 
+            : (localStorage.getItem('demo_name') || "");
+        const pass = document.getElementById('prof-pass').value;
+
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_email', email);
         if(document.getElementById('prof-name-container').style.display !== 'none') {
-            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+            localStorage.setItem('demo_name', name);
         }
-        document.getElementById('modal-profile').style.display = 'none';
-        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
-                            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
-        // Try triggering local update if exists
-        try{ updateProfileDisplay(); }catch(e){}
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
+
+        try {
+            const body = { email, org, name };
+            if (pass) {
+                body.password = pass;
+            }
+            console.log("[F12 Debug Frontend] Synchronizing profile from manualhelp to /api/profile with body:", body);
+
+            const res = await fetch(window.API_BASE_URL + '/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
+
+            if (data.success) {
+                document.getElementById('modal-profile').style.display = 'none';
+                try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'プロフィールを保存・同期しました',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                // Try triggering local update if exists
+                try{ updateProfileDisplay(); }catch(e){}
+            } else {
+                Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+            }
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Profile save error:", e);
+            Swal.fire('エラー', 'サーバーとの通信に失敗しました', 'error');
+        }
     }
 </script>
 
@@ -1645,6 +1700,8 @@ async function handleAiPdf(e) {
     document.getElementById('ai-loading').style.display = 'block';
     document.getElementById('ai-status').innerHTML = 'AWS / Google AI<br><span style="font-size:0.8rem">PDFの目次を解析し階層化しています...</span>';
     
+    console.log("[F12 Debug Frontend] Starting AI PDF analysis for file:", file.name, "size:", file.size);
+    
     try {
         const reader = new FileReader();
         reader.onload = async (ev) => {
@@ -1654,6 +1711,7 @@ async function handleAiPdf(e) {
                 body: JSON.stringify({ pdf_base64: base64 })
             });
             const data = await res.json();
+            console.log("[F12 Debug Frontend] AI PDF analysis response status:", res.status, "data:", data);
             document.getElementById('ai-loading').style.display = 'none';
             if(data.success) {
                 const aiResult = data.result;
