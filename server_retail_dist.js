@@ -232,39 +232,81 @@ app.get('/api/products/master', requireAuth, async (req, res) => {
 });
 
 // --- Profile Management ---
-app.post('/api/profile', requireAuth, async (req, res) => {
-    const { email, org, name, type } = req.body;
+const saveProfileHandler = async (req, res) => {
+    console.log("[Profile API Debug] saveProfileHandler triggered with body:", req.body);
+    const { email, org, name, type, password } = req.body;
     if(!email) return res.json({success: false, error: "Email is required"});
     
     // 所有者検証 (本人のメールアドレス、または管理者のみ許可)
     if (req.user.email !== email && req.user.role !== 'admin') {
+        console.warn(`[Profile API Debug] Ownership verification failed: JWT email=${req.user.email} != input email=${email}`);
         return res.status(403).json({ error: "他人のプロフィールを更新する権限がありません" });
     }
+    
+    // DB (users テーブル) への同期およびパスワードハッシュの更新
+    try {
+        const existingUser = await dbHelper.query.get('SELECT role FROM users WHERE email = ?', [email]);
+        const targetRole = existingUser ? existingUser.role : getDatabaseRole(req.user.role);
+        
+        if (password) {
+            console.log("[Profile API Debug] Password change detected. Hashing new password...");
+            const hashedPassword = hashPassword(password);
+            await dbHelper.query.run(
+                'UPDATE users SET name = ?, org = ?, password = ? WHERE email = ? AND role = ?',
+                [name || '', org || '', hashedPassword, email, targetRole]
+            );
+            console.log(`[Profile API Debug] Successfully updated name, org, and password in DB for: ${email}`);
+        } else {
+            await dbHelper.query.run(
+                'UPDATE users SET name = ?, org = ? WHERE email = ? AND role = ?',
+                [name || '', org || '', email, targetRole]
+            );
+            console.log(`[Profile API Debug] Successfully updated name and org in DB for: ${email}`);
+        }
+    } catch (dbErr) {
+        console.error("[Profile API Debug] DB Synchronization Error:", dbErr.stack || dbErr.message || dbErr);
+    }
+
     try {
         const key = `profiles/${email}.json`;
+        console.log(`[Profile API Debug] Saving profile JSON to S3: key=${key}`);
         await s3Client.send(new PutObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET_NAME || S3_BUCKET_NAME,
             Key: key,
             Body: JSON.stringify({ email, org, name, type, updatedAt: new Date() }),
             ContentType: 'application/json'
         }));
+        console.log(`[Profile API Debug] S3 upload successful for: ${email}`);
+        
+        // 必須ルール1: データ永続化 (S3保存) の徹底 (saveDatabase の呼び出し)
+        if (typeof saveDatabase === 'function') {
+            console.log("[Profile API Debug] Calling saveDatabase() for state persistence...");
+            saveDatabase();
+        }
+        
         res.json({ success: true });
     } catch(e) {
-        console.error("[Profile API] Save Error:", e);
+        console.error("[Profile API Debug] S3 Save Error:", e.stack || e.message || e);
         res.status(500).json({ success: false, error: e.message });
     }
-});
+};
 
-app.get('/api/profile', requireAuth, async (req, res) => {
+app.post('/api/profile', requireAuth, saveProfileHandler);
+app.post('/api/user/profile', requireAuth, saveProfileHandler);
+
+const getProfileHandler = async (req, res) => {
+    console.log("[Profile API Debug] getProfileHandler triggered with query:", req.query);
     const { email } = req.query;
     if(!email) return res.json({success: false, error: "Email is required"});
     
     // 所有者検証 (本人のメールアドレス、または管理者のみ許可)
     if (req.user.email !== email && req.user.role !== 'admin') {
+        console.warn(`[Profile API Debug] Ownership verification failed for read: JWT email=${req.user.email} != input email=${email}`);
         return res.status(403).json({ error: "他人のプロフィールを閲覧する権限がありません" });
     }
     try {
         const key = `profiles/${email}.json`;
+        console.log(`[Profile API Debug] Fetching profile JSON from S3: key=${key}`);
         const data = await s3Client.send(new GetObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET_NAME || S3_BUCKET_NAME,
             Key: key
@@ -276,12 +318,26 @@ app.get('/api/profile', requireAuth, async (req, res) => {
             stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
         });
         const body = await streamToString(data.Body);
+        console.log(`[Profile API Debug] Successfully retrieved profile from S3 for: ${email}`);
         res.json({ success: true, profile: JSON.parse(body) });
     } catch(e) {
-        // Not found is fine
+        console.log(`[Profile API Debug] Profile not found in S3 (falling back to user record): ${e.message}`);
+        // S3にプロファイルファイルがない場合でも、DBから基本情報を取得して返却するフォールバック
+        try {
+            const user = await dbHelper.query.get('SELECT name, org FROM users WHERE email = ?', [email]);
+            if (user) {
+                console.log(`[Profile API Debug] Found user in DB as fallback: name=${user.name}, org=${user.org}`);
+                return res.json({ success: true, profile: { email, org: user.org || '', name: user.name || '', type: '' } });
+            }
+        } catch (dbErr) {
+            console.error("[Profile API Debug] Fallback DB Fetch Error:", dbErr);
+        }
         res.json({ success: false, error: "Profile not found" });
     }
-});
+};
+
+app.get('/api/profile', requireAuth, getProfileHandler);
+app.get('/api/user/profile', requireAuth, getProfileHandler);
 
 // --- Scheduled Broadcast System ---
 let scheduledBroadcasts = [];
@@ -1035,9 +1091,11 @@ async function downloadYoutubeVideo(url) {
 const processingCreatorReviewRequests = new Set(); // クリエイター動画審査のMutexロック
 
 app.post('/api/creator/review-content', requireAuth, async (req, res) => {
-    // ロールチェック
-    if (req.user.role !== 'creator' && req.user.role !== 'admin') {
-        return res.status(403).json({ error: "クリエイター権限が必要です" });
+    console.log(`[API /api/creator/review-content] [F12 Debug Backend] Triggered by user: ${req.user.email}, role: ${req.user.role}`);
+    // ロールチェック (クリエイター、広告主、管理者を許可)
+    if (req.user.role !== 'creator' && req.user.role !== 'advertiser' && req.user.role !== 'admin') {
+        console.warn(`[API /api/creator/review-content] Forbidden for role: ${req.user.role}`);
+        return res.status(403).json({ error: "クリエイターまたは広告主権限が必要です" });
     }
     const email = req.user.email;
     const org = req.user.org || email;
@@ -2194,7 +2252,7 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
     if (!limitCheck.allowed) {
         return res.status(429).json({ error: limitCheck.error });
     }
-    console.log(`[API /api/campaigns] Received new campaign creation request. Data size: ${JSON.stringify(req.body).length} bytes`);
+    console.log(`[API /api/campaigns] [F12 Debug Backend] New campaign request from email: ${ad_email}, role: ${req.user.role}, org: ${org}. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
         const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ytUrl, fileUrl } = req.body;
         // ログインしたユーザーのメールアドレスを強制使用
@@ -2436,12 +2494,12 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
                     }
                 }).run();
 
-            if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: データ永続化
+            console.log(`[API /api/campaigns] Campaign created successfully in DB (Transcoding in background). S3 persistence delegated to background sync loop.`);
             res.json({ success: true, message: "Campaign Created (Transcoding in background)" });
         } else {
             processAndInject(rawUrl);
             if (typeof broadcastEvent === 'function') broadcastEvent({ type: 'force_reload' });
-            if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: データ永続化
+            console.log(`[API /api/campaigns] Campaign created successfully in DB. S3 persistence delegated to background sync loop.`);
             res.json({ success: true, message: "Campaign Created" });
         }
     } catch (e) {
@@ -2496,10 +2554,12 @@ app.post('/api/campaigns/:id/status', requireAuth, async (req, res) => {
     const { status } = req.body;
     const userRole = req.user.role;
     const userEmail = req.user.email;
+    console.log(`[API /api/campaigns/:id/status] [F12 Debug Backend] Toggle status request for campaign ID: ${id} to status: ${status} by user: ${userEmail}, role: ${userRole}`);
 
     try {
         const campaign = await dbHelper.query.get('SELECT * FROM campaigns WHERE id = ?', [id]);
         if (!campaign) {
+            console.warn(`[API /api/campaigns/:id/status] Campaign ID ${id} not found.`);
             return res.status(404).json({ success: false, error: 'キャンペーンが見つかりません' });
         }
 
@@ -2512,25 +2572,29 @@ app.post('/api/campaigns/:id/status', requireAuth, async (req, res) => {
             isAuthorized = true;
         } else if (userRole === 'store' || userRole === 'retailer') {
             const userOrg = req.user.org || '';
-            if (campaign.target_org === userOrg || campaign.advertiser === userEmail) {
+            // Null/Undefined 比較によるバイパス防止のガードを強化
+            const isTargetOrgMatch = campaign.target_org && userOrg && campaign.target_org === userOrg;
+            const isOwnerMatch = campaign.advertiser && userEmail && campaign.advertiser === userEmail;
+            if (isTargetOrgMatch || isOwnerMatch) {
                 isAuthorized = true;
             }
         } else if (userRole === 'advertiser') {
-            if (campaign.advertiser === userEmail) {
+            // Null/Undefined 比較によるバイパス防止のガードを強化
+            if (campaign.advertiser && userEmail && campaign.advertiser === userEmail) {
                 isAuthorized = true;
             }
         }
 
         if (!isAuthorized) {
+            console.warn(`[API /api/campaigns/:id/status] Unauthorized status change attempt by ${userEmail} for campaign owner: ${campaign.advertiser}`);
             return res.status(403).json({ success: false, error: 'この操作を実行する権限がありません' });
         }
 
         await dbHelper.query.run('UPDATE campaigns SET status = ? WHERE id = ?', [status, id]);
         
-        // 必須ルール1: データ永続化 (S3保存) を行う
-        if (typeof saveDatabase === 'function') {
-            saveDatabase();
-        }
+        // 必須ルール1: データ永続化 (S3保存)
+        // 同期的 saveDatabase() は巻き戻り/ブロッキングの原因になるため、バックグラウンドの非同期同期処理に委譲します。
+        console.log(`[API /api/campaigns/:id/status] Status updated in DB. S3 persistence delegated to background sync loop.`);
 
         // signageServer への状態更新通知
         let found = false;
@@ -3963,7 +4027,8 @@ app.get('/api/admin/sales-history', requireAuth, (req, res) => {
     }
 });
 
-app.get('/api/analytics/global', (req, res) => {
+app.get('/api/analytics/global', requireAuth, (req, res) => {
+    console.log(`[API /api/analytics/global] [F12 Debug Backend] Stats request from user: ${req.user.email}, role: ${req.user.role}`);
     const rate = globalDashboardStats.impressions > 0
         ? ((globalDashboardStats.faceDetected / globalDashboardStats.impressions) * 100).toFixed(1) + "%"
         : "0.0%";
@@ -4011,7 +4076,8 @@ app.get('/api/analytics/global', (req, res) => {
 });
 
 // GET Creator Synergy Rankings for Advertiser Dashboard
-app.get('/api/analytics/ranking', (req, res) => {
+app.get('/api/analytics/ranking', requireAuth, (req, res) => {
+    console.log(`[API /api/analytics/ranking] [F12 Debug Backend] Rankings request from user: ${req.user.email}, role: ${req.user.role}`);
     try {
         const ranking = Object.keys(creatorStats).map(key => {
             const stat = creatorStats[key];
@@ -6775,7 +6841,8 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/analytics/pos-search', async (req, res) => {
+app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
+    console.log(`[API /api/analytics/pos-search] [F12 Debug Backend] Search query: "${req.query.q || req.query.keyword || ''}" by user: ${req.user.email}, role: ${req.user.role}`);
     const q = (req.query.q || req.query.keyword || '').toLowerCase();
     
     // POS連携時のデータベースリアルタイム集計を試行

@@ -1941,11 +1941,15 @@
         async function showABResults() {
             // Fetch latest real data
             let abStats = { A: { views: 0, scans: 0, sales: 0 }, B: { views: 0, scans: 0, sales: 0 } };
+            console.log("[F12 Debug Frontend] Fetching AB performance stats from /api/ad/analytics...");
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/ad/analytics');
                 const data = await res.json();
+                console.log("[F12 Debug Frontend] AB stats fetch response:", data);
                 if (data.ab_stats) abStats = data.ab_stats;
-            } catch (e) { console.error("Failed to fetch AB stats", e); }
+            } catch (e) {
+                console.error("[F12 Debug Frontend] Failed to fetch AB stats", e);
+            }
 
             // Calculate Engagement Rate (Sales per Scan)
             const cvrA = abStats.A.scans > 0 ? ((abStats.A.sales / abStats.A.scans) * 100).toFixed(1) : 0;
@@ -2546,12 +2550,16 @@
                         const checkUser = JSON.parse(sessionStorage.getItem('retailMediaAuth') || '{}');
                         adEmail = checkUser.email || sessionStorage.getItem('retailUserEmail') || adEmail;
 
+                        console.log("[F12 Debug Frontend] Fetching current user email from /api/user/me...");
                         const meRes = await fetch(`${API_URL}/api/user/me`, { credentials: 'include' });
                         const meData = await meRes.json();
+                        console.log("[F12 Debug Frontend] Fetch /api/user/me response:", meData);
                         if (meData && meData.user && meData.user.email && !meData.user.email.includes('demo')) {
                             adEmail = meData.user.email;
                         }
-                    } catch(e) {}
+                    } catch(e) {
+                        console.warn("[F12 Debug Frontend] Error fetching me profile (ignoring and using fallback email):", e);
+                    }
 
                     // --- AI REVIEW CONTENT ---
                     if (formValues.fileUrl || formValues.ytUrl) {
@@ -2573,6 +2581,7 @@
                             reqBody.video_base64 = formValues.fileUrl; // Base64
                         }
 
+                        console.log("[F12 Debug Frontend] Requesting AI Content Moderation from /api/creator/review-content with body:", reqBody);
                         const reviewRes = await fetch(`${API_URL}/api/creator/review-content`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -2581,10 +2590,12 @@
                         
                         if (!reviewRes.ok) {
                             Swal.close();
+                            console.error("[F12 Debug Frontend] AI Moderation review failed with HTTP status:", reviewRes.status);
                             throw new Error(`AI審査APIの呼び出しに失敗しました (Status: ${reviewRes.status})`);
                         }
                         
                         const reviewData = await reviewRes.json();
+                        console.log("[F12 Debug Frontend] AI Moderation review response data:", reviewData);
                         
                         if (!reviewData.safe) {
                             Swal.close();
@@ -2600,6 +2611,7 @@
 
                     console.log(`[Campaign API] Submitting new campaign data to endpoint: ${API_URL}/api/campaigns`);
                     console.log(`[Campaign Debug] Resolved email for upload: ${adEmail}`);
+                        console.log("[F12 Debug Frontend] Sending campaign registration request payload to /api/campaigns...");
                         const res = await fetch(`${API_URL}/api/campaigns`, {
                         method: 'POST',
                         credentials: 'include',
@@ -2817,10 +2829,13 @@
         }
 
         async function updateBudgetDisplays() {
+            console.log("[F12 Debug Frontend] Fetching campaign spend history from /api/campaigns...");
             try {
                 const res = await fetch(`${API_URL}/api/campaigns`, { credentials: 'include' });
+                console.log("[F12 Debug Frontend] campaigns spend fetch status:", res.status);
                 if(res.ok) {
                     const camps = await res.json();
+                    console.log("[F12 Debug Frontend] campaigns data loaded:", camps);
                     let totalSpend = 0;
                     camps.forEach(c => totalSpend += Number(c.spend || 0));
                     const spendEl = document.getElementById('account-spend-display');
@@ -3144,9 +3159,11 @@
             }
         } catch (e) {}
         const email = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'advertiser@example.com';
+        console.log("[F12 Debug Frontend] Checking KYC status on load for email:", email);
         try {
             const res = await fetch(window.API_BASE_URL + '/api/kyc/status?email=' + encodeURIComponent(email));
             const data = await res.json();
+            console.log("[F12 Debug Frontend] KYC status fetch response:", data);
             if (data.status === 'approved') {
                 localStorage.setItem('retail_kyc_approved', 'true');
             } else if (data.status === 'pending') {
@@ -3154,7 +3171,9 @@
             } else if (data.status === 'rejected') {
                 localStorage.setItem('retail_kyc_approved', 'false');
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Failed to fetch KYC status on load:", e);
+        }
     });
 
     async function submitKyc() {
@@ -3185,6 +3204,7 @@
         } catch (e) {}
         const email = checkUser.email || sessionStorage.getItem('retailUserEmail') || 'advertiser@example.com';
 
+        console.log("[F12 Debug Frontend] Submitting KYC document details to /api/kyc for email:", email, "corpId:", corpId, "duns:", duns);
         try {
             const res = await fetch(window.API_BASE_URL + '/api/kyc', {
                 method: 'POST',
@@ -3192,6 +3212,7 @@
                 body: JSON.stringify({ userEmail: email, corpId, duns })
             });
             const data = await res.json();
+            console.log("[F12 Debug Frontend] KYC submission response:", data);
             if (data.success) {
                 // Set to pending locally
                 localStorage.setItem('retail_kyc_approved', 'pending');
@@ -3279,12 +3300,14 @@
             if (pass) {
                 body.password = pass;
             }
+            console.log("[F12 Debug Frontend] Synchronizing advertiser profile to /api/user/profile with body:", body);
             const res = await fetch(window.API_BASE_URL + '/api/user/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
             const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
             if (data.success) {
                 Swal.fire({
                     toast: true,
