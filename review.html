@@ -117,9 +117,16 @@
 
 <script>
         async function loadUnlockReq() {
+            console.log("[F12 Debug] loadUnlockReq initiated");
             try {
+                console.log("[F12 Debug] Fetching unlock requests from:", window.API_BASE_URL + '/api/review/unlock');
                 const res = await fetch(window.API_BASE_URL + '/api/review/unlock');
+                console.log("[F12 Debug] loadUnlockReq fetch status:", res.status);
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
                 const data = await res.json();
+                console.log("[F12 Debug] loadUnlockReq fetched data count:", data.length);
                 const tbody = document.getElementById('unlock-body');
                 tbody.innerHTML = '';
                 
@@ -161,11 +168,13 @@
                     tbody.appendChild(row);
                 });
             } catch (e) {
-                console.error("Lock req fetch error", e);
+                console.error("[F12 Debug] Lock req fetch error", e);
+                document.getElementById('unlock-body').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">ロック解除申請の取得中に通信エラーが発生しました: ${e.message}</td></tr>`;
             }
         }
 
         async function updateUnlockStatus(id) {
+            console.log("[F12 Debug] updateUnlockStatus requested for ID:", id);
             Swal.fire({
                 title: 'アカウントロックを解除しますか？',
                 text: "該当クリエイターのすべての動画ステータスが 'active' に復帰します。",
@@ -176,23 +185,38 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
+                        console.log("[F12 Debug] Sending unlock approval request for ID:", id);
                         const res = await fetch(window.API_BASE_URL + '/api/review/unlock/' + id + '/approve', { method: 'POST' });
-                        if (res.ok) {
+                        console.log("[F12 Debug] updateUnlockStatus response status:", res.status);
+                        if (!res.ok) {
+                            throw new Error(`HTTP error! status: ${res.status}`);
+                        }
+                        const data = await res.json();
+                        console.log("[F12 Debug] updateUnlockStatus response data:", data);
+                        if (data.success) {
                             Swal.fire('承認完了', 'アカウントロックを解除しました。', 'success');
                             loadUnlockReq();
                         } else {
-                            Swal.fire('エラー', '通信に失敗しました', 'error');
+                            throw new Error(data.error || "ロック解除処理に失敗しました。");
                         }
                     } catch(e) {
-                        Swal.fire('エラー', '通信に失敗しました', 'error');
+                        console.error("[F12 Debug] updateUnlockStatus error:", e);
+                        Swal.fire('エラー', '通信に失敗しました: ' + e.message, 'error');
                     }
                 }
             });
         }
 async function loadKYCReq() {
+        console.log("[F12 Debug] loadKYCReq initiated");
         try {
+            console.log("[F12 Debug] Fetching KYC requests from:", window.API_BASE_URL + '/api/kyc');
             const res = await fetch(window.API_BASE_URL + '/api/kyc');
+            console.log("[F12 Debug] loadKYCReq fetch status:", res.status);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
             const data = await res.json();
+            console.log("[F12 Debug] loadKYCReq fetched data count:", data.length);
             const tbody = document.getElementById('kyc-history-body');
             
             if (data.length === 0) {
@@ -236,29 +260,49 @@ async function loadKYCReq() {
                 tbody.appendChild(tr);
             });
         } catch(e) {
-            document.getElementById('kyc-history-body').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">APIサーバーとの通信エラー</td></tr>';
+            console.error("[F12 Debug] loadKYCReq error:", e);
+            document.getElementById('kyc-history-body').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">APIサーバーとの通信エラー: ${e.message}</td></tr>`;
         }
     }
 
     async function updateKyc(id, status) {
+        console.log("[F12 Debug] updateKyc requested for ID:", id, "Status:", status);
         try {
+            console.log("[F12 Debug] Sending KYC status update to:", window.API_BASE_URL + '/api/kyc/' + id + '/status');
             const res = await fetch(window.API_BASE_URL + '/api/kyc/' + id + '/status', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({status})
             });
-            if(res.ok) {
+            console.log("[F12 Debug] updateKyc response status:", res.status);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            const data = await res.json();
+            console.log("[F12 Debug] updateKyc response data:", data);
+            if (data.success) {
                 Swal.fire({toast:true, position:'top-end', icon:'success', title:'ステータスを更新しました', showConfirmButton:false, timer:2000});
                 loadKYCReq();
-            loadUnlockReq();
+                loadUnlockReq();
+            } else {
+                throw new Error(data.error || "ステータス更新処理に失敗しました。");
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("[F12 Debug] updateKyc error:", e);
+            Swal.fire('エラー', '審査状況の更新に失敗しました: ' + e.message, 'error');
+        }
     }
 
     // Load on start
-    window.addEventListener('load', loadKYCReq);
+    window.addEventListener('load', () => {
+        loadKYCReq();
+        loadUnlockReq();
+    });
     // Auto refresh every 5 seconds
-    setInterval(loadKYCReq, 5000);
+    setInterval(() => {
+        loadKYCReq();
+        loadUnlockReq();
+    }, 5000);
 </script>
 
 
@@ -292,6 +336,9 @@ async function loadKYCReq() {
                     body: JSON.stringify({ email: email, password: pass, role: 'review' })
                 });
                 console.log("[Auth] Response status:", response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
                 console.log("[Auth] Response data:", data);
                 
@@ -381,14 +428,16 @@ async function loadKYCReq() {
                         return;
                     }
 
+                    console.log("[Auth] Login success directly without 2FA");
                     loginSuccess(email, pass);
                 } else {
+                    console.warn("[Auth] Login request failed:", data.error);
                     errDiv.textContent = data.error || '認証に失敗しました。';
                     errDiv.style.display = 'block';
                 }
             } catch (e) {
-                console.error(e);
-                errDiv.textContent = '接続エラーが発生しました。';
+                console.error("[Auth] Login request exception:", e);
+                errDiv.textContent = '接続エラーが発生しました。: ' + e.message;
                 errDiv.style.display = 'block';
             }
         }
