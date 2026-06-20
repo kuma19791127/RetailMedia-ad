@@ -1198,6 +1198,7 @@
         }
 
         async function syncShiftState(type) {
+            isSyncing = true;
             const body = type === 'staff' ? { staff: STAFF } : { chatHistory: chatHistory };
             console.log("[F12 Debug Frontend] Syncing shift state type:", type, "body:", body);
             try {
@@ -1213,6 +1214,8 @@
                 }
             } catch(e) {
                 console.error("[F12 Debug Frontend] Sync shift state error:", e);
+            } finally {
+                setTimeout(() => { isSyncing = false; }, 1000);
             }
         }
 
@@ -1248,6 +1251,7 @@
         };
 
         let isLoggingIn = false;
+        let isSyncing = false;
         async function doLogin(e) {
             if (e) e.preventDefault();
             if (isLoggingIn) {
@@ -1381,6 +1385,10 @@
     // Polling for real-time sync with other devices
     if (!window.shiftSyncInterval) {
         window.shiftSyncInterval = setInterval(async () => {
+            if (isSyncing || isLoggingIn) {
+                console.log("[F12 Debug Frontend] Polling skipped: syncing or logging in");
+                return;
+            }
             const beforeChatLen = chatHistory.length;
             const beforeStaffLen = STAFF.length;
             await fetchShiftState();
@@ -2244,6 +2252,7 @@ async function importExcelShift(event) {
     const file = event.target.files[0];
     if(!file) return;
 
+    isSyncing = true;
     Swal.fire({
         title: 'エクセル表を解析中...',
         text: 'マクロ定義や既存のフォーマットを読み込んでいます',
@@ -2259,23 +2268,50 @@ async function importExcelShift(event) {
                 const workbook = XLSX.read(data, {type: 'array'});
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                console.log("[F12 Debug Frontend] XLSX parsed JSON data raw:", json);
                 
                 if(json.length > 1) {
                     const headers = json[0];
-                    // Find dates from headers (e.g. "4/27(月)" -> "4/27")
-                    const dateKeys = headers.map(h => h ? h.toString().replace(/\(.*\)/, '') : '');
+                    // Normalize date keys from headers (handling M/D, YYYY/MM/DD, serial numbers etc.)
+                    const dateKeys = headers.map(h => {
+                        if (!h) return '';
+                        let str = h.toString().trim();
+                        // 1. Remove day of week (e.g. "(月)")
+                        str = str.replace(/\(.*\)/, '');
+                        // 2. Match YYYY/MM/DD or YYYY-MM-DD
+                        const matchYMD = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+                        if (matchYMD) {
+                            return `${parseInt(matchYMD[2])}/${parseInt(matchYMD[3])}`;
+                        }
+                        // 3. Match MM/DD or M/D (normalize e.g. 06/15 -> 6/15)
+                        const matchMD = str.match(/^(\d{1,2})[-\/](\d{1,2})$/);
+                        if (matchMD) {
+                            return `${parseInt(matchMD[1])}/${parseInt(matchMD[2])}`;
+                        }
+                        // 4. Match Excel Serial Number (numeric value representing dates)
+                        if (!isNaN(str) && parseFloat(str) > 40000) {
+                            // Convert Excel serial number to JS Date (UTC timezone offset correction)
+                            const utcDays = parseFloat(str) - 25569;
+                            const date = new Date(utcDays * 86400 * 1000);
+                            if (!isNaN(date.getTime())) {
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                            }
+                        }
+                        return str;
+                    });
+                    console.log("[F12 Debug Frontend] Normalized dateKeys:", dateKeys);
                     
                     const newStaff = [];
                     for(let i=1; i<json.length; i++) {
                         const row = json[i];
                         if(!row || row.length === 0 || !row[0]) continue;
                         
-                        const staffName = row[0];
+                        const staffName = row[0].toString().trim();
                         const customTimes = {};
                         
                         for(let c=1; c<row.length; c++) {
                             if(row[c] && dateKeys[c]) {
-                                customTimes[dateKeys[c]] = row[c].toString();
+                                customTimes[dateKeys[c]] = row[c].toString().trim();
                             }
                         }
                         
@@ -2291,8 +2327,12 @@ async function importExcelShift(event) {
                     // Replace STAFF with new imported staff
                     STAFF = newStaff;
                     importedCount = newStaff.length;
+                    console.log("[F12 Debug Frontend] New imported staff list:", STAFF);
+                } else {
+                    console.warn("[F12 Debug Frontend] Parsed JSON has insufficient rows.");
                 }
             } else {
+                console.error("[F12 Debug Frontend] XLSX library is undefined. Fallback applied.");
                 importedCount = 12; // fallback
             }
 
@@ -2308,9 +2348,12 @@ async function importExcelShift(event) {
                 });
 
                 document.getElementById('excel-shift-upload').value = '';
+                setTimeout(() => { isSyncing = false; }, 1000);
             }, 1000);
         } catch(error) {
+            console.error("[F12 Debug Frontend] Excel parsing error:", error);
             Swal.fire('エラー', 'ファイルの読み込みに失敗しました。', 'error');
+            isSyncing = false;
         }
     };
     reader.readAsArrayBuffer(file);
