@@ -484,9 +484,11 @@
                 tag.src = "https://www.youtube.com/iframe_api";
                 const firstScriptTag = document.getElementsByTagName('script')[0];
                 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                console.log("[Signage Player] YouTube Iframe API script tag injected successfully.");
             }
 
             function onYouTubeIframeAPIReady() {
+                console.log("[Signage Player] YouTube Iframe API is loaded. Initializing YT.Player...");
                 window.ytPlayer = new YT.Player('yt-player', {
                     height: '100%',
                     width: '100%',
@@ -507,7 +509,7 @@
             }
 
             function onPlayerReady(event) {
-                // Player is ready
+                console.log("[Signage Player] YouTube Player is READY and successfully initialized.");
             }
 
             function onPlayerError(event) {
@@ -516,7 +518,26 @@
                 
                 const currentItem = currentPlaylist[currentIndex];
                 let title = currentItem ? currentItem.title : "不明なコンテンツ";
-                console.error(`[配信エラー] 広告/クリエイター配信に失敗しました: ${title} (YouTube Player Error: ${event.data})`);
+                
+                // エラーコードによる詳細な日本語メッセージの判別
+                let errorDetails = "未知のエラー";
+                switch (event.data) {
+                    case 2:
+                        errorDetails = "無効なパラメータ値 (URLパラメータや動画IDが無効な可能性があります)";
+                        break;
+                    case 5:
+                        errorDetails = "HTML5プレーヤー再生エラー (またはHTML5プレーヤーに関する問題)";
+                        break;
+                    case 100:
+                        errorDetails = "動画が見つかりません (削除されたか、非公開に設定されています)";
+                        break;
+                    case 101:
+                    case 150:
+                        errorDetails = "動画の所有者により、他サイトや埋め込みプレーヤーでの再生が許可されていません";
+                        break;
+                }
+                
+                console.error(`[配信エラー] 広告/クリエイター配信に失敗しました: ${title} (YouTube Player Error Data: ${event.data} - ${errorDetails})`);
                 
                 // エラーになった動画をプレイリストから除外する（無限ループでのフリーズ防止）
                 if (currentItem) {
@@ -531,7 +552,7 @@
                     errDiv.style.cssText = "position:absolute; top:30%; left:10%; right:10%; background:rgba(231,76,60,0.95); color:white; padding:30px; border-radius:12px; font-weight:bold; font-size:1.5rem; text-align:center; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.5);";
                     document.getElementById('player-container').appendChild(errDiv);
                 }
-                errDiv.innerHTML = '⚠️ YouTubeの再生に失敗しました<br><span style="font-size:1rem;font-weight:normal;display:block;margin-top:10px;">動画の埋め込みが許可されていないか、削除されています。<br><br>(3秒後に次の動画へスキップします)</span>';
+                errDiv.innerHTML = `⚠️ YouTubeの再生に失敗しました<br><span style="font-size:1.1rem;font-weight:normal;display:block;margin-top:10px;">エラー理由: ${errorDetails}<br><br>(3秒後に次の動画へスキップします)</span>`;
                 errDiv.style.display = 'block';
 
                 setTimeout(() => {
@@ -541,9 +562,21 @@
             }
 
             function onPlayerStateChange(event) {
+                const currentItem = currentPlaylist[currentIndex];
+                let title = currentItem ? currentItem.title : "不明なコンテンツ";
+                
+                let stateStr = "UNKNOWN";
+                switch (event.data) {
+                    case YT.PlayerState.UNSTARTED: stateStr = "UNSTARTED (未開始)"; break;
+                    case YT.PlayerState.ENDED: stateStr = "ENDED (終了)"; break;
+                    case YT.PlayerState.PLAYING: stateStr = "PLAYING (再生中)"; break;
+                    case YT.PlayerState.PAUSED: stateStr = "PAUSED (一時停止)"; break;
+                    case YT.PlayerState.BUFFERING: stateStr = "BUFFERING (バッファリング中)"; break;
+                    case YT.PlayerState.CUED: stateStr = "CUED (再生準備完了)"; break;
+                }
+                console.log(`[YouTube Player State Change] ${stateStr} (${event.data}) for campaign: ${title}`);
+
                 if (event.data === YT.PlayerState.ENDED) {
-                    const currentItem = currentPlaylist[currentIndex];
-                    let title = currentItem ? currentItem.title : "不明なコンテンツ";
                     console.log(`[配信成功] 広告/クリエイター動画の再生が完了しました: ${title}`);
                     
                     document.getElementById('yt-player-container').style.display = 'none';
@@ -558,7 +591,9 @@
             function extractVideoID(url) {
                 var regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
                 var match = url.match(regExp);
-                return (match && match[2].length == 11) ? match[2] : null;
+                const vidId = (match && match[2].length == 11) ? match[2] : null;
+                console.log(`[YouTube ID Extractor] Extracted ID: ${vidId} from URL: ${url}`);
+                return vidId;
             }
         </script>
 
@@ -757,17 +792,20 @@ document.body.addEventListener('click', () => {
 
             // Handle YouTube
             if (item.is_youtube || (item.url && !item.url.startsWith('data:') && item.url.includes('youtu'))) {
+                console.log(`[Signage Player] YouTube campaign playback triggered. Title: ${item.title}, URL: ${item.url}`);
                 video.style.display = 'none';
                 imgScreen.style.display = 'none';
                 speedBadge.style.display = 'none';
 
                 const vidId = extractVideoID(item.url);
                 if (vidId && window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
+                    console.log(`[Signage Player] Loading YouTube video into player. ID: ${vidId}`);
                     document.getElementById('yt-player-container').style.display = 'block';
                     window.ytPlayer.loadVideoById(vidId);
                     
                     // Force skip after max 120 seconds (or item.duration) to prevent long videos hogging the loop
                     const maxDuration = Math.min(item.duration || 120, 120);
+                    console.log(`[Signage Player] YouTube force-skip scheduled in ${maxDuration} seconds.`);
                     setTimeout(() => {
                         if (currentPlaylist[currentIndex] === item && document.getElementById('yt-player-container').style.display === 'block') {
                             console.log(`[YouTube] Reached max duration of ${maxDuration}s. Force skipping.`);
@@ -775,7 +813,7 @@ document.body.addEventListener('click', () => {
                         }
                     }, maxDuration * 1000);
                 } else {
-                    console.log("YT Player not ready, skipping");
+                    console.warn(`[Signage Player] YouTube Player is NOT ready or Video ID extraction failed. (vidId: ${vidId}, playerExists: ${!!window.ytPlayer})`);
                     setTimeout(playNext, 2000);
                 }
                 return;

@@ -2327,8 +2327,20 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
                         mimeType = 'video/mp4';
                         console.log(`[AutoReview] YouTube video downloaded successfully. Size: ${videoBuffer.length} bytes`);
                     } catch (dlErr) {
-                        console.error("[AutoReview] YouTube download failed. Failing campaign review:", dlErr.message);
-                        adStatus = 'rejected';
+                        console.warn("[AutoReview] YouTube download failed. Falling back to Heuristics metadata review:", dlErr.message);
+                        
+                        // Heuristics 審査（キャンペーン名キーワードチェック）
+                        const lowerName = (name || "").toLowerCase();
+                        const badKeywords = ["詐欺", "ウイルス", "警告", "簡単に稼げる", "即日融資", "お試し無料"];
+                        const containsBad = badKeywords.some(kw => lowerName.includes(kw));
+
+                        if (containsBad) {
+                            console.warn(`[AutoReview] Heuristics policy check FAILED for campaign: ${name}`);
+                            adStatus = 'rejected';
+                        } else {
+                            console.log(`[AutoReview] Heuristics policy check PASSED for campaign: ${name}. Auto-approving.`);
+                            adStatus = 'active';
+                        }
                     }
                 } else if (finalUrl && finalUrl.startsWith('data:')) {
                     base64Data = finalUrl.replace(/^data:\w+\/\w+;base64,/, "");
