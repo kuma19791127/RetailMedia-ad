@@ -1982,7 +1982,7 @@
                 console.log("[F12 Debug Frontend] Fetch store revenue response status:", res.status, "data:", data);
 
                 const ysEl = document.getElementById('your-share');
-                if (ysEl) ysEl.innerText = '¥' + data.storeShare.toLocaleString();
+                if (ysEl) ysEl.innerText = '¥' + data.adnet.toLocaleString();
 
                 const trEl = document.getElementById('total-revenue');
                 if (trEl) trEl.innerText = '¥' + data.totalRevenue.toLocaleString();
