@@ -4400,13 +4400,14 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
         const bank = req.body.bank_info || {};
         
         await dbHelper.query.run(
-            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ? WHERE id = ?`,
+            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ?, bank_email = ? WHERE id = ?`,
             [
                 billing_email,
                 bank.bank_name || store.bank_name || '',
                 bank.branch_name || store.branch_name || '',
                 bank.account_number || store.account_number || '',
                 bank.account_holder || store.account_holder || '',
+                bank.email || store.bank_email || '',
                 storeId
             ]
         );
@@ -4583,7 +4584,8 @@ app.get('/api/admin/dashboard', requireAuth, async (req, res) => {
                 bank_name: s.bank_name || '',
                 branch_name: s.branch_name || '',
                 account_number: s.account_number || '',
-                account_holder: s.account_holder || ''
+                account_holder: s.account_holder || '',
+                email: s.bank_email || s.billing_email || ''
             };
             payoutData.push({
                 id: s.id,
@@ -6846,7 +6848,7 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
                 branch_name: store.branch_name || '',
                 account_number: store.account_number || '',
                 account_holder: store.account_holder || '',
-                email: store.billing_email || req.user.email
+                email: store.bank_email || store.billing_email || req.user.email
             },
             billing_email: store.billing_email || req.user.email,
             adnet: storeAdNet * 0.5

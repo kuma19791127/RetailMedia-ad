@@ -89,6 +89,7 @@ async function initSchema() {
                 branch_name TEXT,
                 account_number TEXT,
                 account_holder TEXT,
+                bank_email TEXT,
                 total_pos_sales REAL DEFAULT 0.0,
                 total_ad_revenue REAL DEFAULT 0.0,
                 monthly_operating_cost REAL DEFAULT 0.0,
@@ -138,6 +139,14 @@ async function initSchema() {
         try {
             await query.run("ALTER TABLE stores ADD COLUMN monthly_adsense_revenue REAL DEFAULT 0.0");
             console.log('[Database] ✅ SQLite stores table migrated (added monthly_adsense_revenue).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add bank_email to stores if not exists
+        try {
+            await query.run("ALTER TABLE stores ADD COLUMN bank_email TEXT");
+            console.log('[Database] ✅ SQLite stores table migrated (added bank_email).');
         } catch (e) {
             // Already exists, ignore
         }

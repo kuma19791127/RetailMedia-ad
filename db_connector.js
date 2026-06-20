@@ -54,6 +54,7 @@ if (process.env.DATABASE_URL) {
                     branch_name VARCHAR(255),
                     account_number VARCHAR(255),
                     account_holder VARCHAR(255),
+                    bank_email VARCHAR(255),
                     total_pos_sales DOUBLE PRECISION DEFAULT 0.0,
                     total_ad_revenue DOUBLE PRECISION DEFAULT 0.0,
                     monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0,
@@ -294,6 +295,14 @@ if (process.env.DATABASE_URL) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (monthly_adsense_revenue):', e.message);
             }
 
+            // Migration: Add bank_email column to stores table if not exists
+            try {
+                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS bank_email VARCHAR(255)");
+                console.log('[DB] ✅ PostgreSQL stores table migrated (added bank_email).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (bank_email):', e.message);
+            }
+
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
         } catch (e) {
             console.error('[DB] ❌ テーブル作成エラー:', e);
@@ -370,6 +379,7 @@ if (process.env.DATABASE_URL) {
                         branch_name TEXT,
                         account_number TEXT,
                         account_holder TEXT,
+                        bank_email TEXT,
                         total_pos_sales REAL DEFAULT 0.0,
                         total_ad_revenue REAL DEFAULT 0.0,
                         monthly_operating_cost REAL DEFAULT 0.0,
@@ -598,6 +608,24 @@ if (process.env.DATABASE_URL) {
                 });
 
                 // SQLite Migration: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
+
+                // Migration: Add bank_email column to stores for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for stores:', err.message);
+                        return;
+                    }
+                    const hasBankEmail = rows && rows.some(row => row.name === 'bank_email');
+                    if (!hasBankEmail) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN bank_email TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (bank_email):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.bank_email column added successfully.');
+                            }
+                        });
+                    }
+                });
 
                 // database.json からユーザー情報を SQLite の users テーブルに同期
                 const fs = require('fs');
