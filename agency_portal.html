@@ -692,19 +692,36 @@
         const email = document.getElementById('g-prof-email').value;
         const pass = document.getElementById('g-prof-pass').value;
 
+        console.log("[F12 Debug Profile] Initiating saveGenericProfile...");
+        console.log("[F12 Debug Profile] Fields - Email:", email, "Name:", name, "Org:", org);
+
         // Save locally to keep in sync across portals
         localStorage.setItem('demo_org', org);
         localStorage.setItem('demo_name', name);
         localStorage.setItem('demo_email', email);
-        
+        console.log("[F12 Debug Profile] LocalStorage updated successfully.");
+
         // Push sync to server (DB background)
+        const targetUrl = window.API_BASE_URL + '/api/user/profile';
+        console.log("[F12 Debug Profile] Sending POST request to:", targetUrl);
         try {
-            await fetch(window.API_BASE_URL + '/api/user/profile', {
+            const res = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({email, name, org})
             });
-        } catch(e) {}
+            console.log("[F12 Debug Profile] Response status:", res.status, "statusText:", res.statusText);
+            const resData = await res.json().catch(() => null);
+            console.log("[F12 Debug Profile] Response payload:", resData);
+
+            if (res.ok) {
+                console.log("[F12 Debug Profile] Profile successfully saved on server.");
+            } else {
+                console.error("[F12 Debug Profile] Server responded with error status:", res.status);
+            }
+        } catch(e) {
+            console.error("[F12 Debug Profile] Network error or exception during fetch:", e);
+        }
 
         document.getElementById('generic-profile-modal').style.display = 'none';
         

@@ -805,6 +805,57 @@
             }
         }
 
+        /* --- PC LAYOUT (大画面での2カラムフル表示対応) --- */
+        @media (min-width: 992px) {
+            body {
+                background: #f8fafc;
+            }
+            .container {
+                max-width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                flex-direction: row !important;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            /* 大画面ではチャットパネルとボードパネルを左右に並べて同時に表示 */
+            body.view-chat .chat-panel,
+            body.view-board .chat-panel,
+            body.view-monthly .chat-panel,
+            body.view-monthly-only .chat-panel {
+                display: flex !important;
+                width: 380px !important;
+                height: 100% !important;
+                border-right: 1px solid var(--border);
+            }
+
+            body.view-chat .board-panel,
+            body.view-board .board-panel,
+            body.view-monthly .board-panel,
+            body.view-monthly-only .board-panel {
+                display: flex !important;
+                flex: 1 !important;
+                width: auto !important;
+                height: 100% !important;
+            }
+
+            .mobile-bottom-tabs {
+                display: none !important; /* PCではボトムタブを隠す */
+            }
+
+            /* 1ヶ月カレンダー表示・ガント表示のオーバーレイ */
+            #monthly-view, #gantt-view {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100% !important;
+                height: 100% !important;
+                z-index: 3000;
+            }
+        }
+
         /* --- PRINT STYLES --- */
         @media print {
             body * {
