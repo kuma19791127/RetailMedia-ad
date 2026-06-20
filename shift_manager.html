@@ -1020,27 +1020,36 @@
                     </div>
                     <div><a href="shift_manager_lp.html#ai-agent-section" target="_blank" style="font-size: 0.8rem; color: #3b82f6; text-decoration: underline;">[機能の詳細を見る]</a></div>
                 </div>
-                <button class="primary-btn" onclick="runShiftAgent()"><i class="fas fa-magic"></i> マニュアル自律配信を実行</button>
+                <button class="primary-btn" onclick="runShiftAgent(event)"><i class="fas fa-magic"></i> マニュアル自律配信を実行</button>
             </div>
             <script>
-            async function runShiftAgent() {
+            async function runShiftAgent(e) {
+                console.log("[F12 Debug Frontend] Starting Shift Agent manual sync analysis");
+                const evt = e || window.event;
+                const btn = (evt && evt.currentTarget) ? evt.currentTarget : document.querySelector('button[onclick*="runShiftAgent"]');
                 try {
-                    const btn = event.currentTarget;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIが分析中...';
-                    btn.disabled = true;
+                    if (btn) {
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AIが分析中...';
+                        btn.disabled = true;
+                    }
                     
                     const res = await fetch(window.API_BASE_URL + '/api/agent/shift-manual-sync', { method: 'POST' });
                     const data = await res.json();
+                    console.log("[F12 Debug Frontend] Shift Agent response status:", res.status, "data:", data);
                     
                     if(data.success) {
                         alert("【通知完了】\nAIがマニュアルを選択しました！\nマニュアル: " + data.result.recommendedManualId + "\n理由: " + data.result.reason);
                     } else {
                         alert("エラー: " + data.error);
                     }
-                    btn.innerHTML = '<i class="fas fa-magic"></i> マニュアル自律配信を実行';
-                    btn.disabled = false;
                 } catch(e) {
+                    console.error("[F12 Debug Frontend] Shift Agent execution error:", e);
                     alert("通信エラー");
+                } finally {
+                    if (btn) {
+                        btn.innerHTML = '<i class="fas fa-magic"></i> マニュアル自律配信を実行';
+                        btn.disabled = false;
+                    }
                 }
             }
             </script>
@@ -1174,24 +1183,37 @@
 
         
         async function fetchShiftState() {
+            console.log("[F12 Debug Frontend] Fetching shift state from server...");
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/shift/state');
                 const data = await res.json();
+                console.log("[F12 Debug Frontend] Fetch shift state response status:", res.status, "data:", data);
                 if(data.success && data.state) {
                     if(data.state.staff && data.state.staff.length > 0) STAFF = data.state.staff;
                     if(data.state.chatHistory && data.state.chatHistory.length > 0) chatHistory = data.state.chatHistory;
                 }
-            } catch(e) { }
+            } catch(e) {
+                console.error("[F12 Debug Frontend] Fetch shift state error:", e);
+            }
         }
 
         async function syncShiftState(type) {
+            const body = type === 'staff' ? { staff: STAFF } : { chatHistory: chatHistory };
+            console.log("[F12 Debug Frontend] Syncing shift state type:", type, "body:", body);
             try {
-                await fetch(window.API_BASE_URL + '/api/shift/state', {
+                const res = await fetch(window.API_BASE_URL + '/api/shift/state', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(type === 'staff' ? { staff: STAFF } : { chatHistory: chatHistory })
+                    body: JSON.stringify(body)
                 });
-            } catch(e) { }
+                const data = await res.json();
+                console.log("[F12 Debug Frontend] Sync shift state response status:", res.status, "data:", data);
+                if (!data.success) {
+                    console.error("[F12 Debug Frontend] Sync shift state API returned error:", data.error);
+                }
+            } catch(e) {
+                console.error("[F12 Debug Frontend] Sync shift state error:", e);
+            }
         }
 
         function saveStaffDB() {
@@ -1235,27 +1257,41 @@
 
             const email = emailNode.value;
             const pass = passNode ? passNode.value : 'demo1234!!';
+            const body = { email: email, password: pass, role: 'store' };
+            console.log("[F12 Debug Frontend] Attempting login with body:", { ...body, password: "***" });
             
             try {
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: pass, role: 'store' })
+                    body: JSON.stringify(body)
                 });
                 const data = await response.json();
+                console.log("[F12 Debug Frontend] Login response status:", response.status, "data:", data);
                 
-                if (!data.success && !email.includes('demo')) {
-                    return Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
-                }
-                if (window.PasswordCredential) {
-                        const cred = new PasswordCredential({
-                            id: email,
-                            password: pass
-                        });
-                        navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                if (!data.success) {
+                    if (!email.includes('demo')) {
+                        return Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
+                    } else {
+                        console.warn("[F12 Debug Frontend] Login failed but proceeding as it is a demo account");
                     }
-                    sessionStorage.setItem('retailMediaAuth', 'true');
-            } catch(e) {}
+                }
+                if (data.success && window.PasswordCredential) {
+                    const cred = new PasswordCredential({
+                        id: email,
+                        password: pass
+                    });
+                    navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
+                }
+                sessionStorage.setItem('retailMediaAuth', 'true');
+            } catch(e) {
+                console.error("[F12 Debug Frontend] Login critical communication error:", e);
+                if (!email.includes('demo')) {
+                    return Swal.fire('通信エラー', 'サーバーとの接続に失敗しました。', 'error');
+                } else {
+                    console.warn("[F12 Debug Frontend] Communication failed, but proceeding in offline demo mode for demo account");
+                }
+            }
             
             await fetchShiftState();
 
@@ -2373,22 +2409,46 @@ async function importExcelShift(event) {
         localStorage.setItem('demo_org', org);
         localStorage.setItem('demo_name', name);
         localStorage.setItem('demo_email', email);
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
         
-        // Push sync to server (DB background)
         try {
-            await fetch(window.API_BASE_URL + '/api/user/profile', {
+            const body = { email, org, name };
+            if (pass) {
+                body.password = pass;
+            }
+            console.log("[F12 Debug Frontend] Synchronizing profile from shift_manager to /api/profile with body:", body);
+            
+            const res = await fetch(window.API_BASE_URL + '/api/profile', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({email, name, org})
+                body: JSON.stringify(body)
             });
-        } catch(e) {}
+            const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
 
-        document.getElementById('generic-profile-modal').style.display = 'none';
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
-        } else {
-            alert("プロフィールを保存しました。");
+            if (data.success) {
+                document.getElementById('generic-profile-modal').style.display = 'none';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
+                } else {
+                    alert("プロフィールを保存しました。");
+                }
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+                } else {
+                    alert("エラー: " + (data.error || '保存に失敗しました'));
+                }
+            }
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Profile save error:", e);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('エラー', 'サーバーとの通信に失敗しました', 'error');
+            } else {
+                alert("エラー: サーバーとの通信に失敗しました");
+            }
         }
         
         // Optional refresh specific to page
