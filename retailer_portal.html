@@ -855,6 +855,7 @@
             const pass = document.getElementById('login-password').value.trim();
             
             if(!email || !pass) {
+                console.warn("[F12 Debug] Login aborted: missing email or password");
                 document.getElementById('login-error').innerText = "メールアドレスとパスワードを入力してください。";
                 document.getElementById('login-error').style.display = 'block';
                 return;
@@ -869,6 +870,9 @@
                     body: JSON.stringify({ email: email, password: pass, role: 'store' })
                 });
                 console.log("[Auth] Response status:", response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
                 console.log("[Auth] Response data:", data);
                 
@@ -890,6 +894,7 @@
                             footer: '<a href="javascript:void(0)" id="reset-2fa-link" style="color:#d33; font-weight:bold; font-size:12px;">QRコードを再スキャンする（2FAを再設定）</a>',
                             didOpen: () => {
                                 document.getElementById('reset-2fa-link').onclick = async () => {
+                                    console.log("[Auth] Reset 2FA clicked");
                                     Swal.close();
                                     const confirmReset = await Swal.fire({
                                         title: '2FAの再設定',
@@ -900,37 +905,54 @@
                                         cancelButtonText: 'キャンセル'
                                     });
                                     if (confirmReset.isConfirmed) {
-                                        const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email, role: 'store' })
-                                        });
-                                        const resetData = await resetRes.json();
-                                        if (resetData.success) {
-                                            Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
-                                        } else {
-                                            Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                                        try {
+                                            console.log("[Auth] Sending reset 2FA request for email:", email);
+                                            const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ email, role: 'store' })
+                                            });
+                                            console.log("[Auth] Reset 2FA response status:", resetRes.status);
+                                            const resetData = await resetRes.json();
+                                            console.log("[Auth] Reset 2FA response data:", resetData);
+                                            if (resetData.success) {
+                                                Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
+                                            } else {
+                                                Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                                            }
+                                        } catch (resetErr) {
+                                            console.error("[Auth] Reset 2FA exception:", resetErr);
+                                            Swal.fire('エラー', '通信エラーにより2FAリセットに失敗しました。', 'error');
                                         }
                                     }
                                 };
                             }
                         });
 
-                        if (!totpCode) return;
+                        if (!totpCode) {
+                            console.log("[Auth] 2FA totpCode prompt cancelled by user");
+                            return;
+                        }
 
+                        console.log("[Auth] 2FA code entered:", totpCode);
                         Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                         
+                        console.log("[Auth] Verifying 2FA token...");
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, token: totpCode, role: 'store' })
                         });
+                        console.log("[Auth] 2FA verification response status:", verifyRes.status);
                         const verifyData = await verifyRes.json();
+                        console.log("[Auth] 2FA verification response data:", verifyData);
                         
                         if (verifyData.success) {
+                            console.log("[Auth] 2FA verification success");
                             loginSuccess(email, pass);
                             Swal.close();
                         } else {
+                            console.warn("[Auth] 2FA verification failed:", verifyData.error);
                             Swal.close();
                             Swal.fire({
                                 title: '認証エラー',
@@ -942,16 +964,22 @@
                                 cancelButtonColor: '#d33'
                             }).then(async (result) => {
                                 if (result.dismiss === Swal.DismissReason.cancel) {
-                                    const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email, role: 'store' })
-                                    });
-                                    const resetData = await resetRes.json();
-                                    if (resetData.success) {
-                                        Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
-                                    } else {
-                                        Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                                    try {
+                                        console.log("[Auth] Requesting 2FA reset from error dialog...");
+                                        const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email, role: 'store' })
+                                        });
+                                        const resetData = await resetRes.json();
+                                        if (resetData.success) {
+                                            Swal.fire('リセット完了', '再度ログインしてQRコードをスキャンしてください。', 'success');
+                                        } else {
+                                            Swal.fire('エラー', '2FAリセットに失敗しました。', 'error');
+                                        }
+                                    } catch (resetErr) {
+                                        console.error("[Auth] Reset 2FA exception from dialog:", resetErr);
+                                        Swal.fire('エラー', '通信エラーにより2FAリセットに失敗しました。', 'error');
                                     }
                                 }
                             });
@@ -969,6 +997,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, role: 'store' })
                         });
+                        console.log("[Auth] 2FA setup response status:", setupRes.status);
                         const setupData = await setupRes.json();
                         console.log("[Auth] 2FA setup response:", setupData);
                         
@@ -992,38 +1021,48 @@
                             }
                         });
 
-                        if (!totpCode) return;
+                        if (!totpCode) {
+                            console.log("[Auth] 2FA Setup prompt cancelled by user");
+                            return;
+                        }
 
+                        console.log("[Auth] 2FA Setup code entered:", totpCode);
                         Swal.fire({ title: '設定検証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'store' })
                         });
+                        console.log("[Auth] 2FA enable response status:", verifyRes.status);
                         const verifyData = await verifyRes.json();
+                        console.log("[Auth] 2FA enable response data:", verifyData);
 
                         if (verifyData.success) {
+                            console.log("[Auth] 2FA Setup verify success");
                             loginSuccess(email, pass);
                             Swal.close();
                         } else {
+                            console.warn("[Auth] 2FA Setup verify failed:", verifyData.error);
                             Swal.close();
                             Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
                         }
                         return;
                     }
 
+                    console.log("[Auth] Login success directly without 2FA");
                     loginSuccess(email, pass);
                 } else {
+                    console.warn("[Auth] Login request failed:", data.error);
                     document.getElementById('login-error').innerText = data.error || "認証に失敗しました";
                     document.getElementById('login-error').style.display = 'block';
                 }
             } catch (e) {
-                console.error(e);
-                document.getElementById('login-error').innerText = "接続エラーが発生しました。";
+                console.error("[Auth] Login request exception:", e);
+                document.getElementById('login-error').innerText = "接続エラーが発生しました。: " + e.message;
                 document.getElementById('login-error').style.display = 'block';
             }
         }
-
+        
         function loginSuccess(email, pass) {
             currentEmail = email;
             currentPrefix = email;
@@ -1463,12 +1502,15 @@ function parseBulkList() {
 }
 
 async function sendBulkEmail() {
+    console.log("[F12 Debug] sendBulkEmail initiated");
     const list = parseBulkList().filter(item => item.email !== "");
     if (list.length === 0) {
+        console.warn("[F12 Debug] sendBulkEmail aborted: empty or invalid list");
         Swal.fire("エラー", "有効な「店舗番号, メールアドレス」のペアを入力してください。", "error");
         return;
     }
 
+    console.log("[F12 Debug] Target bulk list:", list);
     Swal.fire({
         title: 'メール一斉送信中...',
         text: `${list.length}店舗宛てにセットアップ案内を配信しています。`,
@@ -1479,24 +1521,31 @@ async function sendBulkEmail() {
     });
 
     try {
+        const payload = {
+            prefix: currentPrefix,
+            list: list,
+            senderEmail: currentEmail
+        };
+        console.log("[F12 Debug] Sending POST request to bulk-email API with payload:", payload);
         const res = await fetch((window.API_BASE_URL || '') + '/api/retailer/bulk-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-                prefix: currentPrefix,
-                list: list,
-                senderEmail: currentEmail
-            })
+            body: JSON.stringify(payload)
         });
+        console.log("[F12 Debug] bulk-email API response status:", res.status);
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
+        console.log("[F12 Debug] bulk-email API response data:", data);
         if (data.success) {
             Swal.fire("送信完了", `${list.length}店舗へのセットアップ資材の自動配信が完了しました。`, "success");
         } else {
             throw new Error(data.error || "送信処理中にエラーが発生しました。");
         }
     } catch (err) {
-        console.error(err);
+        console.error("[F12 Debug] Error in sendBulkEmail:", err);
         Swal.fire("エラー", "メール一括送信に失敗しました: " + err.message, "error");
     }
 }
@@ -1631,11 +1680,18 @@ async function handleUpload(file) {
 }
 
 async function loadVideos() {
+    console.log("[F12 Debug] loadVideos initiated with prefix:", currentPrefix);
     try {
+        console.log("[F12 Debug] Fetching videos from:", window.API_BASE_URL + '/api/retailer/videos?prefix=' + currentPrefix);
         const res = await fetch(window.API_BASE_URL + '/api/retailer/videos?prefix=' + currentPrefix, {
             credentials: 'include'
         });
+        console.log("[F12 Debug] loadVideos fetch status:", res.status);
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const videos = await res.json();
+        console.log("[F12 Debug] loadVideos fetched videos count:", videos.length);
         let html = '';
         if(videos.length === 0) {
             html = '<p style="padding:15px; color:#94a3b8;">現在配信中の独自動画はありません。</p>';
@@ -1653,17 +1709,36 @@ async function loadVideos() {
         }
         document.getElementById('video-list').innerHTML = html;
     } catch(e) {
-        console.error(e);
+        console.error("[F12 Debug] Error loading videos:", e);
+        document.getElementById('video-list').innerHTML = `<p style="padding:15px; color:#ef4444;">動画一覧の取得中に通信エラーが発生しました: ${e.message}</p>`;
     }
 }
 
 async function deleteVideo(id) {
+    console.log("[F12 Debug] deleteVideo requested for ID:", id);
     if(confirm("この動画の配信を停止し、削除しますか？")) {
-        await fetch(window.API_BASE_URL + '/api/retailer/videos/' + id, { 
-            method: 'DELETE',
-            credentials: 'include'
-        });
-        loadVideos();
+        try {
+            console.log("[F12 Debug] Sending DELETE request to:", window.API_BASE_URL + '/api/retailer/videos/' + id);
+            const res = await fetch(window.API_BASE_URL + '/api/retailer/videos/' + id, { 
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            console.log("[F12 Debug] deleteVideo response status:", res.status);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            const data = await res.json();
+            console.log("[F12 Debug] deleteVideo response data:", data);
+            if (data.success) {
+                Swal.fire("削除完了", "動画の配信停止および削除が完了しました。", "success");
+                loadVideos();
+            } else {
+                throw new Error(data.error || "削除処理に失敗しました。");
+            }
+        } catch (e) {
+            console.error("[F12 Debug] Error deleting video:", e);
+            Swal.fire("エラー", "配信停止に失敗しました: " + e.message, "error");
+        }
     }
 }
 
