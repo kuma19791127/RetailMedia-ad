@@ -869,9 +869,15 @@
                     </div>
                 </div>
                 
-                <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">入金確認額（付与予算・円）</label>
-                    <input type="number" id="adv-budget" placeholder="100000" class="login-input" style="margin-top:5px; margin-bottom:0; font-size:18px; font-weight:bold; max-width:200px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">入金確認額（付与予算・円）</label>
+                        <input type="number" id="adv-budget" placeholder="100000" class="login-input" style="margin-top:5px; margin-bottom:0; font-size:18px; font-weight:bold;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">代理店CCメールアドレス (任意)</label>
+                        <input type="email" id="adv-agency-email" placeholder="agency@example.com" class="login-input" style="margin-top:5px; margin-bottom:0;">
+                    </div>
                 </div>
 
                 <div style="display:flex; justify-content:flex-end;">
@@ -901,17 +907,18 @@
             </div>
 
             <script>
-                function createAdvertiserAccount() {
+                async function createAdvertiserAccount() {
                     const name = document.getElementById('adv-name').value;
                     const email = document.getElementById('adv-email').value;
                     const budget = document.getElementById('adv-budget').value;
-                    const ccEmail = document.getElementById('adv-agency-email').value;
+                    const ccEmailEl = document.getElementById('adv-agency-email');
+                    const ccEmail = ccEmailEl ? ccEmailEl.value : '';
                     
                     if (!name || !email || !budget) {
                         return Swal.fire('エラー', 'すべての項目を入力してください', 'error');
                     }
 
-                    Swal.fire({
+                    const confirmRes = await Swal.fire({
                         title: 'アカウント発行確認',
                         html: `<div style="text-align:left; font-size:14px; background:#f8fafc; padding:15px; border-radius:8px;">
                             対象企業: <b>${name}</b> 様<br>
@@ -924,14 +931,32 @@
                         confirmButtonColor: '#f39c12',
                         confirmButtonText: '発行してメール送信',
                         cancelButtonText: 'キャンセル'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // Dummy processing delay to simulate backend account creation & email
-                            Swal.fire({ title: '処理中...', html: 'API連携中...<br>・新規ID/PASS生成中<br>・予算データの登録中<br>・ご案内メール送信中', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                            
-                            setTimeout(() => {
-                                // Add to demo history table
-                                const tbody = document.getElementById('adv-history-body');
+                    });
+
+                    if (!confirmRes.isConfirmed) return;
+
+                    Swal.fire({ 
+                        title: '処理中...', 
+                        html: 'API連携中...<br>・新規ID/PASS生成中<br>・予算データの登録中<br>・ご案内メール送信中', 
+                        allowOutsideClick: false, 
+                        didOpen: () => Swal.showLoading() 
+                    });
+
+                    try {
+                        const payload = { name, email, budget: Number(budget), ccEmail };
+                        console.log("[F12 Debug Frontend] Creating advertiser account with payload:", payload);
+                        
+                        const res = await fetch(window.API_BASE_URL + '/api/admin/invite', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+                        console.log("[F12 Debug Frontend] Advertiser account creation response status:", res.status, "data:", data);
+
+                        if (res.ok && data.success) {
+                            const tbody = document.getElementById('adv-history-body');
+                            if (tbody) {
                                 const tr = document.createElement('tr');
                                 tr.innerHTML = `
                                     <td style="padding:10px;">${new Date().toLocaleString('ja-JP')}</td>
@@ -941,17 +966,21 @@
                                     <td style="padding:10px;"><span class="badge badge-sent">発行済・送信済</span></td>
                                 `;
                                 tbody.prepend(tr);
-                                
-                                // Reset form
-                                document.getElementById('adv-name').value = '';
-                                document.getElementById('adv-email').value = '';
-                                document.getElementById('adv-budget').value = '';
-                                document.getElementById('adv-agency-email').value = '';
+                            }
 
-                                Swal.fire('成功', 'アカウント発行・予算チャージが完了し、企業様（および代理店様）へのご案内メールが送信されました！', 'success');
-                            }, 2000);
+                            document.getElementById('adv-name').value = '';
+                            document.getElementById('adv-email').value = '';
+                            document.getElementById('adv-budget').value = '';
+                            if (ccEmailEl) ccEmailEl.value = '';
+
+                            Swal.fire('成功', 'アカウント発行・予算チャージが完了し、企業様（および代理店様）へのご案内メールが送信されました！', 'success');
+                        } else {
+                            Swal.fire('エラー', data.error || 'アカウント発行に失敗しました。', 'error');
                         }
-                    });
+                    } catch (e) {
+                        console.error("[F12 Debug Frontend] Advertiser account creation exception:", e);
+                        Swal.fire('通信エラー', 'サーバーとの通信に失敗しました。', 'error');
+                    }
                 }
             
 
@@ -1400,20 +1429,29 @@
                 return;
             }
             try {
-                await fetch(`${API_BASE}/api/admin/creators/send-email`, {
+                console.log("[F12 Debug Frontend] Sending creator reward email to:", email, "amount:", amount);
+                const res = await fetch(`${API_BASE}/api/admin/creators/send-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ to: email, amount: amount })
                 });
+                const data = await res.json();
+                console.log("[F12 Debug Frontend] Creator reward email response status:", res.status, "data:", data);
 
-                if (btnElement) {
-                    btnElement.innerText = "🚀 送信済!";
-                    btnElement.disabled = true;
-                    btnElement.style.background = "#27ae60";
-                    btnElement.style.cursor = "default";
+                if (res.ok && data.success) {
+                    if (btnElement) {
+                        btnElement.innerText = "🚀 送信済!";
+                        btnElement.disabled = true;
+                        btnElement.style.background = "#27ae60";
+                        btnElement.style.cursor = "default";
+                    }
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '支払確定メールを送信しました', showConfirmButton: false, timer: 1500 });
+                } else {
+                    Swal.fire('エラー', data.error || 'メール送信に失敗しました', 'error');
                 }
             } catch (e) {
-                console.error("Email send failed", e);
+                console.error("[F12 Debug Frontend] Creator email send exception:", e);
+                Swal.fire('通信エラー', 'サーバーとの接続に失敗しました', 'error');
             }
         }
 
@@ -1749,40 +1787,57 @@
 
         async function sendPayoutEmail(email, amount, btnElement) {
             try {
-                // Mock endpoint, same logic as Creator/Billing
-                await fetch(`${API_BASE}/api/admin/creators/send-email`, { // Reusing mock email endpoint
+                console.log("[F12 Debug Frontend] Sending store payout email to:", email, "amount:", amount);
+                const res = await fetch(`${API_BASE}/api/admin/creators/send-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ to: email, amount: amount, type: 'store_payout' })
                 });
+                const data = await res.json();
+                console.log("[F12 Debug Frontend] Store payout email response status:", res.status, "data:", data);
 
-                if (btnElement) {
-                    btnElement.innerText = "🚀 送信済";
-                    btnElement.disabled = true;
-                    btnElement.style.background = "#27ae60";
-                    btnElement.style.cursor = "default";
+                if (res.ok && data.success) {
+                    if (btnElement) {
+                        btnElement.innerText = "🚀 送信済";
+                        btnElement.disabled = true;
+                        btnElement.style.background = "#27ae60";
+                        btnElement.style.cursor = "default";
+                    }
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '収益支払通知メールを送信しました', showConfirmButton: false, timer: 1500 });
+                } else {
+                    Swal.fire('エラー', data.error || 'メール送信に失敗しました', 'error');
                 }
             } catch (e) {
-                console.error("Payout Email send failed", e);
+                console.error("[F12 Debug Frontend] Payout Email send exception:", e);
+                Swal.fire('通信エラー', 'サーバーとの接続に失敗しました', 'error');
             }
         }
 
         async function sendAdsensePayoutEmail(email, amount, btnElement) {
             try {
-                await fetch(`${API_BASE}/api/admin/creators/send-email`, {
+                console.log("[F12 Debug Frontend] Sending store AdSense payout email to:", email, "amount:", amount);
+                const res = await fetch(`${API_BASE}/api/admin/creators/send-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ to: email, amount: amount, type: 'store_adsense_payout' })
                 });
+                const data = await res.json();
+                console.log("[F12 Debug Frontend] Store AdSense payout email response status:", res.status, "data:", data);
 
-                if (btnElement) {
-                    btnElement.innerText = "🚀 送信済";
-                    btnElement.disabled = true;
-                    btnElement.style.background = "#27ae60";
-                    btnElement.style.cursor = "default";
+                if (res.ok && data.success) {
+                    if (btnElement) {
+                        btnElement.innerText = "🚀 送信済";
+                        btnElement.disabled = true;
+                        btnElement.style.background = "#27ae60";
+                        btnElement.style.cursor = "default";
+                    }
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'AdSense支払通知メールを送信しました', showConfirmButton: false, timer: 1500 });
+                } else {
+                    Swal.fire('エラー', data.error || 'メール送信に失敗しました', 'error');
                 }
             } catch (e) {
-                console.error("AdSense Payout Email send failed", e);
+                console.error("[F12 Debug Frontend] AdSense Payout Email send exception:", e);
+                Swal.fire('通信エラー', 'サーバーとの接続に失敗しました', 'error');
             }
         }
 
@@ -1960,23 +2015,30 @@
         async function sendInvoice(storeEmail, amount, btnElement) {
             const senderEmail = document.getElementById('admin-email').value || "system@default.com";
 
-            // No Confirm - Automatic Send with PDF content
             try {
-                await fetch(`${API_BASE}/api/admin/billing/send-email`, {
+                console.log("[F12 Debug Frontend] Sending billing invoice to:", storeEmail, "amount:", amount);
+                const res = await fetch(`${API_BASE}/api/admin/billing/send-email`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ to: storeEmail, from: senderEmail, amount: amount })
                 });
+                const data = await res.json();
+                console.log("[F12 Debug Frontend] Billing invoice response status:", res.status, "data:", data);
 
-                // Visual Feedback
-                if (btnElement) {
-                    btnElement.innerText = "🚀 送信済!";
-                    btnElement.disabled = true;
-                    btnElement.style.background = "#27ae60";
-                    btnElement.style.cursor = "default";
+                if (res.ok && data.success) {
+                    if (btnElement) {
+                        btnElement.innerText = "🚀 送信済!";
+                        btnElement.disabled = true;
+                        btnElement.style.background = "#27ae60";
+                        btnElement.style.cursor = "default";
+                    }
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '請求書を送信しました', showConfirmButton: false, timer: 1500 });
+                } else {
+                    Swal.fire('エラー', data.error || '請求書の送信に失敗しました', 'error');
                 }
             } catch (e) {
-                console.error("Send failed", e);
+                console.error("[F12 Debug Frontend] Billing invoice send exception:", e);
+                Swal.fire('通信エラー', 'サーバーとの接続に失敗しました', 'error');
             }
         }
 
