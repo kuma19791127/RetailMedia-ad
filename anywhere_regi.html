@@ -359,10 +359,12 @@
     <!-- Password Reset Modal -->
     <div id="modal-reset">
         <div style="background:white; padding:30px; border-radius:10px; width:300px; text-align:center;">
-            <h3>請求先メール登録</h3>
-            <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">管理者へ直接請求先アドレスを送信します。</p>
-            <input type="email" id="reset-email" placeholder="email@example.com" style="width:100%; padding:10px; margin-bottom:15px; box-sizing:border-box; border:1px solid #bdc3c7;">
-            <button onclick="doReset()" style="width:100%; padding:10px; background:#2563EB; color:white; border:none; border-radius:4px; cursor:pointer;">送信する</button>
+            <h3>パスワードの再設定</h3>
+            <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">2FAが有効なアカウントのみ、ここで再設定が可能です。</p>
+            <input type="email" id="reset-email" placeholder="メールアドレス" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box; border:1px solid #bdc3c7;">
+            <input type="password" id="reset-new-password" placeholder="新しいパスワード" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box; border:1px solid #bdc3c7;">
+            <input type="text" id="reset-totp" placeholder="2FA認証コード(6桁)" style="width:100%; padding:10px; margin-bottom:15px; box-sizing:border-box; border:1px solid #bdc3c7;">
+            <button onclick="doReset()" style="width:100%; padding:10px; background:#2563EB; color:white; border:none; border-radius:4px; cursor:pointer;">パスワード更新</button>
             <div style="margin-top:15px; cursor:pointer; color:#95a5a6; font-size:12px;" onclick="closeResetModal()">Cancel</div>
         </div>
     </div>
@@ -940,17 +942,34 @@ window.addEventListener('DOMContentLoaded', () => {
         function showResetModal() { document.getElementById('modal-reset').style.display = 'flex'; }
         function closeResetModal() { document.getElementById('modal-reset').style.display = 'none'; }
         async function doReset() {
-            const email = document.getElementById('reset-email').value;
-            if (!email) return alert("Email required");
+            const email = document.getElementById('reset-email').value.trim();
+            const password = document.getElementById('reset-new-password').value.trim();
+            const totpCode = document.getElementById('reset-totp').value.trim();
+            
+            if (!email || !password || !totpCode) {
+                return alert("すべての項目を入力してください。");
+            }
+            
             try {
-                const res = await fetch(`${API_URL}/api/admin/settings/billing-email`, {
+                Swal.fire({ title: '処理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const res = await fetch(`${API_URL}/api/auth/reset-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email })
+                    body: JSON.stringify({ email, password, role: 'store', totpCode })
                 });
-                alert("管理画面に請求先メールアドレスが登録されました。");
-                closeResetModal();
-            } catch (e) { alert("Error"); }
+                const data = await res.json();
+                Swal.close();
+                
+                if (data.success) {
+                    Swal.fire('完了', 'パスワードが再設定されました。新しいパスワードでログインしてください。', 'success');
+                    closeResetModal();
+                } else {
+                    Swal.fire('エラー', data.error || '再設定に失敗しました。', 'error');
+                }
+            } catch (e) {
+                Swal.close();
+                Swal.fire('エラー', '通信に失敗しました。', 'error');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1342,6 +1361,7 @@ function playBeep() {
         if(typeof Swal !== 'undefined') {
             document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
             document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            document.getElementById('prof-pass').value = ""; // clear password field to avoid retention
             // Name is always shown now
             document.getElementById('prof-name-container').style.display = 'block';
             document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
@@ -1349,16 +1369,54 @@ function playBeep() {
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
-    function saveProfile() {
-        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
-        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
+        const email = document.getElementById('prof-email').value;
+        const name = document.getElementById('prof-name').value;
+        const pass = document.getElementById('prof-pass').value;
+
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_email', email);
         if(document.getElementById('prof-name-container').style.display !== 'none') {
-            localStorage.setItem('demo_name', document.getElementById('prof-name').value);
+            localStorage.setItem('demo_name', name);
         }
-        document.getElementById('modal-profile').style.display = 'none';
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
-        // Try triggering local update if exists
-        try{ updateProfileDisplay(); }catch(e){}
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
+        
+        try {
+            const body = { email, org, name, type: 'store' };
+            if (pass) {
+                body.password = pass;
+            }
+            console.log("[F12 Debug Frontend] Synchronizing store profile from anywhere_regi to /api/profile with body:", body);
+            const res = await fetch(window.API_BASE_URL + '/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
+            
+            if (data.success) {
+                document.getElementById('modal-profile').style.display = 'none';
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'プロフィールを保存・同期しました',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                // Try triggering local update if exists
+                try{ updateProfileDisplay(); }catch(e){}
+            } else {
+                Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+            }
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Profile save error:", e);
+            Swal.fire('エラー', 'サーバーとの通信に失敗しました', 'error');
+        }
     }
 </script>
 
@@ -1422,7 +1480,7 @@ function switchPaymentTab(tab) {
             const res = await fetch(window.API_BASE_URL + '/api/agent/regi', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message, scannedItems: window.cartItems || [] })
+                body: JSON.stringify({ message: message, scannedItems: cartItems || [] })
             });
             const data = await res.json();
             

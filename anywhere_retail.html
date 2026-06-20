@@ -187,7 +187,7 @@
             </form>
 
             <div style="margin-top:15px; font-size:12px;">
-                <a href="#" style="color:#2563EB;">Forgot Password?</a>
+                <a href="#" onclick="Swal.fire('パスワードの再設定', 'パスワードの初期化・再発行は、セキュリティ保護のためシステム管理者に直接お問い合わせください。', 'info')" style="color:#2563EB;">Forgot Password?</a>
             </div>
 
             <div style="margin-top:25px; font-size:12px; color:#6B7280; line-height:1.8; text-align: left; background:#F9FAFB; padding:15px; border-radius:8px; border:1px solid #E5E7EB;">
@@ -356,15 +356,53 @@
         if(typeof Swal !== 'undefined') {
             document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
             document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            document.getElementById('prof-pass').value = ""; // clear password field to avoid retention
             document.getElementById('modal-profile').style.display = 'flex';
         }
     }
-    function saveProfile() {
-        localStorage.setItem('demo_org', document.getElementById('prof-org').value);
-        localStorage.setItem('demo_email', document.getElementById('prof-email').value);
-        document.getElementById('user-email-display').innerText = document.getElementById('prof-org').value + ' / ' + document.getElementById('prof-email').value;
-        document.getElementById('modal-profile').style.display = 'none';
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを更新しました', showConfirmButton:false, timer:2000});
+    async function saveProfile() {
+        const org = document.getElementById('prof-org').value;
+        const email = document.getElementById('prof-email').value;
+        const pass = document.getElementById('prof-pass').value;
+
+        localStorage.setItem('demo_org', org);
+        localStorage.setItem('demo_email', email);
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
+        
+        try {
+            const body = { email, org, name: '', type: 'store' };
+            if (pass) {
+                body.password = pass;
+            }
+            console.log("[F12 Debug Frontend] Synchronizing store profile from anywhere_retail to /api/profile with body:", body);
+            const res = await fetch(window.API_BASE_URL + '/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
+            
+            if (data.success) {
+                document.getElementById('user-email-display').innerText = org + ' / ' + email;
+                document.getElementById('modal-profile').style.display = 'none';
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'プロフィールを保存・同期しました',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            } else {
+                Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+            }
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Profile save error:", e);
+            Swal.fire('エラー', 'サーバーとの通信に失敗しました', 'error');
+        }
     }
 </script>
 
