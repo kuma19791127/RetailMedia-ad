@@ -86,6 +86,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only
 
 
 const getDatabaseRole = (role) => {
+    if (role === 'corp' || role === 'employee') {
+        return 'store';
+    }
     return role || 'store';
 };
 const hashPassword = (password) => {

@@ -347,7 +347,7 @@
             <p style="color:#cbd5e1; margin-bottom:20px; font-size:0.9rem;">役割を選択してログインしてください</p>
             
             <iframe name="dummyframe_login" style="display:none;"></iframe>
-            <form id="login-form" action="about:blank" target="dummyframe_login" method="POST" onsubmit="setTimeout(doLogin, 10); return true;" style="width:100%; margin:0; padding:0;">
+            <form id="login-form" onsubmit="doLogin(event);" style="width:100%; margin:0; padding:0;">
             <input type="text" id="login-name" placeholder="氏名 (例: 鈴木 一郎)" autocomplete="name">
             <input type="email" id="login-email" name="email" placeholder="メールアドレス" autocomplete="username">
             <input type="password" id="login-pass" name="password" placeholder="パスワード" autocomplete="current-password">
@@ -746,28 +746,38 @@
         window.addEventListener('hashchange', checkRoute);
 
         // --- Auth functions ---
-        async function doLogin() {
+        async function doLogin(e) {
+            if (e) e.preventDefault();
             const org = "Demo Corp";
             const name = document.getElementById('login-name').value.trim();
             const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-pass') ? document.getElementById('login-pass').value : 'demo1234!!';
             const role = document.getElementById('login-role').value;
-            if(!name || !email) { Swal.fire('エラー', '名前とメールを入力してください', 'error'); return; }
+            if(!name || !email) { 
+                console.warn("[F12 Debug Frontend] Login aborted: missing name or email");
+                Swal.fire('エラー', '名前とメールを入力してください', 'error'); 
+                return; 
+            }
             
             const body = { email: email, password: pass, role: role, name: name, org: org };
             console.log("[F12 Debug Frontend] Attempting login with body:", { ...body, password: "***" });
             
             try {
+                console.log("[F12 Debug Frontend] Sending login request to:", window.API_BASE_URL + '/api/auth/login');
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
+                console.log("[F12 Debug Frontend] Login HTTP status:", response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
-                console.log("[F12 Debug Frontend] Login response status:", response.status, "data:", data);
+                console.log("[F12 Debug Frontend] Login response data:", data);
                 if (data.success) {
                     if (data.require2FA) {
-                        // 2FA検証のダイアログ表示
+                        console.log("[F12 Debug Frontend] Require 2FA verification");
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証コード',
                             text: '認証アプリに表示されている6桁のコードを入力してください。',
@@ -777,39 +787,58 @@
                             confirmButtonText: '認証',
                             cancelButtonText: 'キャンセル',
                             inputValidator: (value) => {
-                                if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                                if (!value || value.length !== 6) return '6桁 of 数字を入力してください';
                             }
                         });
 
-                        if (!totpCode) return;
+                        if (!totpCode) {
+                            console.log("[F12 Debug Frontend] 2FA cancelled by user");
+                            return;
+                        }
 
+                        console.log("[F12 Debug Frontend] 2FA code entered:", totpCode);
                         Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                         
+                        console.log("[F12 Debug Frontend] Verifying 2FA token...");
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, token: totpCode, role: role })
                         });
+                        console.log("[F12 Debug Frontend] 2FA verification response status:", verifyRes.status);
+                        if (!verifyRes.ok) {
+                            throw new Error(`2FA verification HTTP error! status: ${verifyRes.status}`);
+                        }
                         const verifyData = await verifyRes.json();
+                        console.log("[F12 Debug Frontend] 2FA verification response data:", verifyData);
                         
                         if (verifyData.success) {
+                            console.log("[F12 Debug Frontend] 2FA verification success");
                             Swal.close();
                             loginSuccess(email, pass, name, org, role);
                         } else {
+                            console.warn("[F12 Debug Frontend] 2FA verification failed:", verifyData.error);
+                            Swal.close();
                             Swal.fire('認証エラー', verifyData.error || '認証コードが違います。', 'error');
                         }
                         return;
                     }
 
                     if (data.require2FASetup) {
-                        // 2FAセットアップ
+                        console.log("[F12 Debug Frontend] Require 2FA Setup");
                         Swal.fire({ title: '2FA初期設定中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        console.log("[F12 Debug Frontend] Requesting 2FA setup details...");
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, role: role })
                         });
+                        console.log("[F12 Debug Frontend] 2FA setup response status:", setupRes.status);
+                        if (!setupRes.ok) {
+                            throw new Error(`2FA setup HTTP error! status: ${setupRes.status}`);
+                        }
                         const setupData = await setupRes.json();
+                        console.log("[F12 Debug Frontend] 2FA setup response data:", setupData);
 
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証の有効化',
@@ -819,7 +848,7 @@
                                 <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${setupData.secret}</code></p>
                             `,
                             input: 'text',
-                            inputPlaceholder: '6桁 of codes',
+                            inputPlaceholder: '6桁のコード',
                             showCancelButton: true,
                             confirmButtonText: '有効化する',
                             cancelButtonText: 'キャンセル',
@@ -828,28 +857,43 @@
                             }
                         });
 
-                        if (!totpCode) return;
+                        if (!totpCode) {
+                            console.log("[F12 Debug Frontend] 2FA Setup prompt cancelled by user");
+                            return;
+                        }
 
+                        console.log("[F12 Debug Frontend] 2FA Setup code entered:", totpCode);
                         Swal.fire({ title: '認証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+                        console.log("[F12 Debug Frontend] Enabling 2FA...");
                         const enableRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: role })
                         });
+                        console.log("[F12 Debug Frontend] 2FA enable response status:", enableRes.status);
+                        if (!enableRes.ok) {
+                            throw new Error(`2FA enable HTTP error! status: ${enableRes.status}`);
+                        }
                         const enableData = await enableRes.json();
+                        console.log("[F12 Debug Frontend] 2FA enable response data:", enableData);
 
                         if (enableData.success) {
+                            console.log("[F12 Debug Frontend] 2FA Setup success");
                             Swal.close();
                             loginSuccess(email, pass, name, org, role);
                         } else {
+                            console.warn("[F12 Debug Frontend] 2FA Setup failed:", enableData.error);
+                            Swal.close();
                             Swal.fire('設定エラー', enableData.error || '無効なコードです。', 'error');
                         }
                         return;
                     }
 
+                    console.log("[F12 Debug Frontend] Login success directly");
                     loginSuccess(email, pass, name, org, role, data.user);
                 } else {
+                    console.warn("[F12 Debug Frontend] Login failed:", data.error);
                     Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
                 }
             } catch(e) {
