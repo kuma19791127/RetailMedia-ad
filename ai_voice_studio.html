@@ -371,6 +371,7 @@
                     audio_url: audio_url,
                     schedule_time: isPriority ? null : schedule_time
                 };
+                console.log("[F12 Debug Frontend] Sending broadcast payload to signage:", payload, "isPriority:", isPriority);
 
                 try {
                     const res = await fetch(window.API_BASE_URL + '/api/signage/schedule_voice', {
@@ -379,12 +380,14 @@
                         body: JSON.stringify(payload)
                     });
                     const data = await res.json();
+                    console.log("[F12 Debug Frontend] Broadcast delivery response status:", res.status, "data:", data);
                     if (data.success) {
                         Swal.fire('成功', data.message, 'success');
                     } else {
                         Swal.fire('エラー', data.error || '送信に失敗しました', 'error');
                     }
                 } catch(e) {
+                    console.error("[F12 Debug Frontend] Broadcast delivery exception:", e);
                     Swal.fire('エラー', 'サーバーに接続できません', 'error');
                 }
             }
@@ -405,20 +408,24 @@
                 generateBtn.disabled = true;
                 generateBtn.innerText = "生成中...";
                 
+                const body = { 
+                    text: text, 
+                    voiceName: voiceModel.includes('gemini_') ? voiceModel.replace('gemini_', '') : voiceModel, 
+                    stylePrompt: voiceStyle,
+                    speed: voiceSpeed,
+                    pitch: voicePitch
+                };
+                console.log("[F12 Debug Frontend] Starting voice synthesis with parameters:", body);
+                
                 try {
                     const res = await fetch(window.API_BASE_URL + '/api/voice/synthesize', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            text: text, 
-                            voiceName: voiceModel.includes('gemini_') ? voiceModel.replace('gemini_', '') : voiceModel, 
-                            stylePrompt: voiceStyle,
-                            speed: voiceSpeed,
-                            pitch: voicePitch
-                        })
+                        body: JSON.stringify(body)
                     });
                     
                     const data = await res.json();
+                    console.log("[F12 Debug Frontend] Voice synthesis response status:", res.status, "data:", data);
                     if (data.success && data.audioBase64) {
                         const audioPlayer = document.getElementById('ai-audio-player');
                         audioPlayer.src = `data:audio/mp3;base64,${data.audioBase64}`;
@@ -518,22 +525,46 @@
         localStorage.setItem('demo_org', org);
         localStorage.setItem('demo_name', name);
         localStorage.setItem('demo_email', email);
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
         
-        // Push sync to server (DB background)
         try {
-            await fetch(window.API_BASE_URL + '/api/profile', {
+            const body = { email, org, name };
+            if (pass) {
+                body.password = pass;
+            }
+            console.log("[F12 Debug Frontend] Synchronizing profile from ai_voice_studio to /api/profile with body:", body);
+            
+            const res = await fetch(window.API_BASE_URL + '/api/profile', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({email, name, org})
+                body: JSON.stringify(body)
             });
-        } catch(e) {}
+            const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
 
-        document.getElementById('generic-profile-modal').style.display = 'none';
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
-        } else {
-            alert("プロフィールを保存しました。");
+            if (data.success) {
+                document.getElementById('generic-profile-modal').style.display = 'none';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールを全システムに同期しました', showConfirmButton:false, timer:2000});
+                } else {
+                    alert("プロフィールを保存しました。");
+                }
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+                } else {
+                    alert("エラー: " + (data.error || '保存に失敗しました'));
+                }
+            }
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Profile save error:", e);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('エラー', 'サーバーとの通信に失敗しました', 'error');
+            } else {
+                alert("エラー: サーバーとの通信に失敗しました");
+            }
         }
         
         // Optional refresh specific to page
