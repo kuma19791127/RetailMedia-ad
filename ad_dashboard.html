@@ -102,28 +102,43 @@
     <title>リテアド | Advertiser Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script>
-        function requestUnlock() {
-            Swal.fire({
+        async function requestUnlock() {
+            const { value: text } = await Swal.fire({
                 title: 'アカウントロック解除申請',
                 text: 'AI審査により不適切と判定された動画を削除/修正しましたか？運営審査部門 (Review) へ解除申請を送信します。',
-                icon: 'warning',
+                input: 'textarea',
+                inputPlaceholder: '規約に違反していない理由（申し開き）をご記入ください...',
                 showCancelButton: true,
                 confirmButtonColor: '#10b981',
                 cancelButtonColor: '#9ca3af',
                 confirmButtonText: 'はい、申請します'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch(window.API_BASE_URL + '/api/review/unlock', {
+            });
+
+            if (text) {
+                Swal.fire({
+                    title: '送信中...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                
+                try {
+                    const res = await fetch(window.API_BASE_URL + '/api/creator/request-unlock', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: localStorage.getItem('demo_email') || 'advertiser@demo.com', target: 'Review' })
-                    }).then(res => res.json()).then(data => {
-                        Swal.fire('送信完了', 'Review部門へアカウントロック解除を申請しました。後日審査されます。', 'success');
-                    }).catch(e => {
-                        Swal.fire('送信完了', 'Review部門へアカウントロック解除を申請しました。(モック)', 'success');
+                        body: JSON.stringify({ email: localStorage.getItem('demo_email') || 'advertiser@demo.com', appealText: text })
                     });
+                    
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success) {
+                        Swal.fire('送信完了', 'Review部門へアカウントロック解除を申請しました。後日審査されます。', 'success');
+                    } else {
+                        Swal.fire('エラー', data.error || '送信に失敗しました。サーバーエラーが発生しました。', 'error');
+                    }
+                } catch (e) {
+                    console.error("Unlock Request Error:", e);
+                    Swal.fire('送信完了', 'Review部門へアカウントロック解除を申請しました。(モック)', 'success');
                 }
-            });
+            }
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
@@ -132,7 +147,7 @@
     <script src="square_integration.js" defer></script>
     <style>
         .swal2-container {
-            z-index: 10005 !important;
+            z-index: 100015 !important;
         }
         :root {
             --primary: #6366f1;
@@ -2701,15 +2716,25 @@
                                         inputPlaceholder: '規約に違反していない理由をご記入ください...'
                                     });
                                     if (text) {
+                                        Swal.fire({
+                                            title: '送信中...',
+                                            allowOutsideClick: false,
+                                            didOpen: () => { Swal.showLoading(); }
+                                        });
                                         try {
-                                            await fetch(API_URL + '/api/creator/request-unlock', {
+                                            const res = await fetch(API_URL + '/api/creator/request-unlock', {
                                                 method: 'POST',
                                                 headers: {'Content-Type':'application/json'},
                                                 body: JSON.stringify({ email: adEmail, appealText: text })
                                             });
-                                            Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                            const data = await res.json().catch(() => ({}));
+                                            if (res.ok && data.success) {
+                                                Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                            } else {
+                                                Swal.fire('エラー', data.error || '送信に失敗しました。', 'error');
+                                            }
                                         } catch (err) {
-                                            Swal.fire('エラー', '送信に失敗しました。', 'error');
+                                            Swal.fire('エラー', '通信エラーが発生しました。', 'error');
                                         }
                                     }
                                 }

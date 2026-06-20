@@ -1337,15 +1337,25 @@
                                         inputPlaceholder: '規約に違反していない理由をご記入ください...'
                                     });
                                     if (text) {
+                                        Swal.fire({
+                                            title: '送信中...',
+                                            allowOutsideClick: false,
+                                            didOpen: () => { Swal.showLoading(); }
+                                        });
                                         try {
-                                            await fetch(API_URL + '/api/creator/request-unlock', {
+                                            const res = await fetch(API_URL + '/api/creator/request-unlock', {
                                                 method: 'POST',
                                                 headers: {'Content-Type':'application/json'},
                                                 body: JSON.stringify({ email: loggedInEmail, appealText: text })
                                             });
-                                            Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                            const data = await res.json().catch(() => ({}));
+                                            if (res.ok && data.success) {
+                                                Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                            } else {
+                                                Swal.fire('エラー', data.error || '送信に失敗しました。', 'error');
+                                            }
                                         } catch (err) {
-                                            Swal.fire('エラー', '送信に失敗しました。', 'error');
+                                            Swal.fire('エラー', '通信エラーが発生しました。', 'error');
                                         }
                                     }
                                 }

@@ -76,7 +76,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .swal2-container {
-            z-index: 10005 !important;
+            z-index: 100015 !important;
         }
 :root {
     --primary: #2563eb;
@@ -841,12 +841,26 @@ h2 {
                                                 inputPlaceholder: '規約に違反していない理由をご記入ください...'
                                             });
                                             if (text) {
-                                                await fetch(API_BASE + '/api/creator/request-unlock', {
-                                                    method: 'POST',
-                                                    headers: {'Content-Type':'application/json'},
-                                                    body: JSON.stringify({ email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth'), appealText: text })
+                                                Swal.fire({
+                                                    title: '送信中...',
+                                                    allowOutsideClick: false,
+                                                    didOpen: () => { Swal.showLoading(); }
                                                 });
-                                                Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                                try {
+                                                    const res = await fetch(API_BASE + '/api/creator/request-unlock', {
+                                                        method: 'POST',
+                                                        headers: {'Content-Type':'application/json'},
+                                                        body: JSON.stringify({ email: sessionStorage.getItem('retailUserEmail') || sessionStorage.getItem('retailMediaAuth'), appealText: text })
+                                                    });
+                                                    const data = await res.json().catch(() => ({}));
+                                                    if (res.ok && data.success) {
+                                                        Swal.fire('送信完了', '管理者に解除申請を送信しました。', 'success');
+                                                    } else {
+                                                        Swal.fire('エラー', data.error || '送信に失敗しました。', 'error');
+                                                    }
+                                                } catch (err) {
+                                                    Swal.fire('エラー', '通信エラーが発生しました。', 'error');
+                                                }
                                             }
                                         }
                                     }
