@@ -75,7 +75,12 @@ async function initSchema() {
                 budget REAL DEFAULT 0.0,
                 spend REAL DEFAULT 0.0,
                 impressions INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'pending'
+                status TEXT DEFAULT 'pending',
+                target_scope TEXT,
+                target_areas TEXT,
+                target_orgs TEXT,
+                target_prefectures TEXT,
+                target_store_types TEXT
             )
         `);
 
@@ -90,6 +95,9 @@ async function initSchema() {
                 account_number TEXT,
                 account_holder TEXT,
                 bank_email TEXT,
+                area TEXT,
+                prefecture TEXT,
+                store_type TEXT,
                 total_pos_sales REAL DEFAULT 0.0,
                 total_ad_revenue REAL DEFAULT 0.0,
                 monthly_operating_cost REAL DEFAULT 0.0,
@@ -147,6 +155,70 @@ async function initSchema() {
         try {
             await query.run("ALTER TABLE stores ADD COLUMN bank_email TEXT");
             console.log('[Database] ✅ SQLite stores table migrated (added bank_email).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add area to stores if not exists
+        try {
+            await query.run("ALTER TABLE stores ADD COLUMN area TEXT");
+            console.log('[Database] ✅ SQLite stores table migrated (added area).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add prefecture to stores if not exists
+        try {
+            await query.run("ALTER TABLE stores ADD COLUMN prefecture TEXT");
+            console.log('[Database] ✅ SQLite stores table migrated (added prefecture).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add store_type to stores if not exists
+        try {
+            await query.run("ALTER TABLE stores ADD COLUMN store_type TEXT");
+            console.log('[Database] ✅ SQLite stores table migrated (added store_type).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add target_scope to campaigns if not exists
+        try {
+            await query.run("ALTER TABLE campaigns ADD COLUMN target_scope TEXT");
+            console.log('[Database] ✅ SQLite campaigns table migrated (added target_scope).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add target_areas to campaigns if not exists
+        try {
+            await query.run("ALTER TABLE campaigns ADD COLUMN target_areas TEXT");
+            console.log('[Database] ✅ SQLite campaigns table migrated (added target_areas).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add target_orgs to campaigns if not exists
+        try {
+            await query.run("ALTER TABLE campaigns ADD COLUMN target_orgs TEXT");
+            console.log('[Database] ✅ SQLite campaigns table migrated (added target_orgs).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add target_prefectures to campaigns if not exists
+        try {
+            await query.run("ALTER TABLE campaigns ADD COLUMN target_prefectures TEXT");
+            console.log('[Database] ✅ SQLite campaigns table migrated (added target_prefectures).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add target_store_types to campaigns if not exists
+        try {
+            await query.run("ALTER TABLE campaigns ADD COLUMN target_store_types TEXT");
+            console.log('[Database] ✅ SQLite campaigns table migrated (added target_store_types).');
         } catch (e) {
             // Already exists, ignore
         }

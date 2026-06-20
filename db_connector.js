@@ -43,7 +43,12 @@ if (process.env.DATABASE_URL) {
                     impressions INT DEFAULT 0,
                     status VARCHAR(50) DEFAULT 'pending',
                     advertiser VARCHAR(255),
-                    target_org VARCHAR(255)
+                    target_org VARCHAR(255),
+                    target_scope VARCHAR(50) DEFAULT 'enterprise',
+                    target_areas TEXT,
+                    target_orgs TEXT,
+                    target_prefectures TEXT,
+                    target_store_types TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS stores (
@@ -55,6 +60,9 @@ if (process.env.DATABASE_URL) {
                     account_number VARCHAR(255),
                     account_holder VARCHAR(255),
                     bank_email VARCHAR(255),
+                    area VARCHAR(100),
+                    prefecture VARCHAR(255),
+                    store_type VARCHAR(255),
                     total_pos_sales DOUBLE PRECISION DEFAULT 0.0,
                     total_ad_revenue DOUBLE PRECISION DEFAULT 0.0,
                     monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0,
@@ -303,6 +311,70 @@ if (process.env.DATABASE_URL) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (bank_email):', e.message);
             }
 
+            // Migration path: Add area column to stores table if not exists
+            try {
+                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS area VARCHAR(100)");
+                console.log('[DB] ✅ PostgreSQL stores table migrated (added area).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (area):', e.message);
+            }
+            
+            // Migration path: Add target_scope column to campaigns table if not exists
+            try {
+                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_scope VARCHAR(50) DEFAULT 'enterprise'");
+                console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_scope).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_scope):', e.message);
+            }
+
+            // Migration path: Add target_areas column to campaigns table if not exists
+            try {
+                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_areas TEXT");
+                console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_areas).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_areas):', e.message);
+            }
+
+            // Migration path: Add target_orgs column to campaigns table if not exists
+            try {
+                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_orgs TEXT");
+                console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_orgs).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_orgs):', e.message);
+            }
+
+            // Migration path: Add prefecture column to stores table if not exists
+            try {
+                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS prefecture VARCHAR(255)");
+                console.log('[DB] ✅ PostgreSQL stores table migrated (added prefecture).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (prefecture):', e.message);
+            }
+
+            // Migration path: Add store_type column to stores table if not exists
+            try {
+                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS store_type VARCHAR(255)");
+                console.log('[DB] ✅ PostgreSQL stores table migrated (added store_type).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (store_type):', e.message);
+            }
+
+            // Migration path: Add target_prefectures column to campaigns table if not exists
+            try {
+                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_prefectures TEXT");
+                console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_prefectures).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_prefectures):', e.message);
+            }
+
+            // Migration path: Add target_store_types column to campaigns table if not exists
+            try {
+                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_store_types TEXT");
+                console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_store_types).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_store_types):', e.message);
+            }
+
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
         } catch (e) {
             console.error('[DB] ❌ テーブル作成エラー:', e);
@@ -380,6 +452,9 @@ if (process.env.DATABASE_URL) {
                         account_number TEXT,
                         account_holder TEXT,
                         bank_email TEXT,
+                        area TEXT,
+                        prefecture TEXT,
+                        store_type TEXT,
                         total_pos_sales REAL DEFAULT 0.0,
                         total_ad_revenue REAL DEFAULT 0.0,
                         monthly_operating_cost REAL DEFAULT 0.0,
@@ -399,7 +474,12 @@ if (process.env.DATABASE_URL) {
                         impressions INTEGER DEFAULT 0,
                         status TEXT DEFAULT 'pending',
                         advertiser TEXT,
-                        target_org TEXT
+                        target_org TEXT,
+                        target_scope TEXT DEFAULT 'enterprise',
+                        target_areas TEXT,
+                        target_orgs TEXT,
+                        target_prefectures TEXT,
+                        target_store_types TEXT
                     )
                 `);
 
@@ -622,6 +702,150 @@ if (process.env.DATABASE_URL) {
                                 console.error('[SQLite] ALTER TABLE stores error (bank_email):', alterErr.message);
                             } else {
                                 console.log('[SQLite] ✅ stores.bank_email column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add area column to stores for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for stores:', err.message);
+                        return;
+                    }
+                    const hasArea = rows && rows.some(row => row.name === 'area');
+                    if (!hasArea) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN area TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (area):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.area column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add target_scope column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for campaigns:', err.message);
+                        return;
+                    }
+                    const hasTargetScope = rows && rows.some(row => row.name === 'target_scope');
+                    if (!hasTargetScope) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN target_scope TEXT DEFAULT 'enterprise'", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error (target_scope):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.target_scope column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add target_areas column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for campaigns:', err.message);
+                        return;
+                    }
+                    const hasTargetAreas = rows && rows.some(row => row.name === 'target_areas');
+                    if (!hasTargetAreas) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN target_areas TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error (target_areas):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.target_areas column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add target_orgs column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for campaigns:', err.message);
+                        return;
+                    }
+                    const hasTargetOrgs = rows && rows.some(row => row.name === 'target_orgs');
+                    if (!hasTargetOrgs) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN target_orgs TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error (target_orgs):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.target_orgs column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add prefecture column to stores for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for stores:', err.message);
+                        return;
+                    }
+                    const hasPrefecture = rows && rows.some(row => row.name === 'prefecture');
+                    if (!hasPrefecture) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN prefecture TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (prefecture):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.prefecture column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add store_type column to stores for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for stores:', err.message);
+                        return;
+                    }
+                    const hasStoreType = rows && rows.some(row => row.name === 'store_type');
+                    if (!hasStoreType) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN store_type TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (store_type):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.store_type column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add target_prefectures column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for campaigns:', err.message);
+                        return;
+                    }
+                    const hasTargetPrefectures = rows && rows.some(row => row.name === 'target_prefectures');
+                    if (!hasTargetPrefectures) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN target_prefectures TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error (target_prefectures):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.target_prefectures column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add target_store_types column to campaigns for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(campaigns)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for campaigns:', err.message);
+                        return;
+                    }
+                    const hasTargetStoreTypes = rows && rows.some(row => row.name === 'target_store_types');
+                    if (!hasTargetStoreTypes) {
+                        sqliteDb.run("ALTER TABLE campaigns ADD COLUMN target_store_types TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE campaigns error (target_store_types):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ campaigns.target_store_types column added successfully.');
                             }
                         });
                     }

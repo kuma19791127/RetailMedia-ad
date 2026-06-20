@@ -1470,6 +1470,38 @@
                         (Email)</label>
                     <input type="email" id="billing-email" placeholder="accounting@store.com"
                         style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:20px;">
+                </div>
+            </div>
+
+            <!-- Store Area: Targeting Location -->
+            <div class="card" style="margin-top:20px; border-left: 5px solid #9b59b6;">
+                <div style="margin-top:15px;">
+                    <h4 style="border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:#8e44ad;">📍
+                        店舗配信エリア設定 (Store Area Setting)</h4>
+                    <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">※ この店舗が属する地域を設定します。エリア指定の広域広告配信に使用されます。</p>
+
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">配信対象エリア (Area)</label>
+                    <select id="store-area" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
+                        <option value="">未設定 (全国配信のみ対象)</option>
+                        <option value="関東">関東エリア (Kanto)</option>
+                        <option value="関西">関西エリア (Kansai)</option>
+                        <option value="中部">中部エリア (Chubu)</option>
+                        <option value="九州">九州エリア (Kyushu)</option>
+                        <option value="北海道東北">北海道・東北エリア (Hokkaido/Tohoku)</option>
+                    </select>
+
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">都道府県 (Prefecture)</label>
+                    <input type="text" id="store-prefecture" placeholder="例: 東京都" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; box-sizing:border-box; margin-bottom:10px; font-size:14px;">
+
+                    <label style="display:block; font-size:12px; color:#7f8c8d; margin-bottom:5px;">店舗業態セグメント (Store Type)</label>
+                    <select id="store-type" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:20px;">
+                        <option value="">未設定</option>
+                        <option value="スーパーマーケット">スーパーマーケット</option>
+                        <option value="コンビニ">コンビニエンスストア</option>
+                        <option value="ドラッグストア">ドラッグストア</option>
+                        <option value="飲食店">飲食店</option>
+                        <option value="その他">その他</option>
+                    </select>
 
                     <button onclick="saveStoreSettings()"
                         style="background:#34495e; color:white; border:none; padding:10px 30px; border-radius:4px; cursor:pointer; font-weight:bold; display:block; width:100%;">
@@ -1496,9 +1528,12 @@
                         email: bankInputs[4].value
                     };
                     const email = document.getElementById('billing-email').value;
+                    const area = document.getElementById('store-area').value;
+                    const prefecture = document.getElementById('store-prefecture').value;
+                    const store_type = document.getElementById('store-type').value;
 
                     try {
-                        const payload = { bank_info: bankInfo, billing_email: email };
+                        const payload = { bank_info: bankInfo, billing_email: email, area: area, prefecture: prefecture, store_type: store_type };
                         console.log("[F12 Debug Frontend] Saving store settings with payload:", payload);
                         const res = await fetch(`${API_URL_SETTINGS}/api/store/settings`, {
                             method: 'POST',
@@ -2020,6 +2055,20 @@
                 if (data.billing_email) {
                     const emailInput = document.getElementById('billing-email');
                     if (emailInput) emailInput.value = data.billing_email;
+                }
+
+                // Populate Store Area, Prefecture, and Store Type
+                if (data.area) {
+                    const areaSelect = document.getElementById('store-area');
+                    if (areaSelect) areaSelect.value = data.area;
+                }
+                if (data.prefecture) {
+                    const prefectureInput = document.getElementById('store-prefecture');
+                    if (prefectureInput) prefectureInput.value = data.prefecture;
+                }
+                if (data.store_type) {
+                    const storeTypeSelect = document.getElementById('store-type');
+                    if (storeTypeSelect) storeTypeSelect.value = data.store_type;
                 }
 
                 // Sync with Login Email

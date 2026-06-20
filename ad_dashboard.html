@@ -2328,6 +2328,33 @@
                             <option value="senior">50代以上</option>
                         </select>
                     </div>
+
+                    <div style="margin-top:10px;">
+                        <label style="font-size:12px; font-weight:bold; color:#555; display:block; margin-bottom:5px;">📢 配信範囲 (Scope)</label>
+                        <select id="swal-scope" class="swal2-select" style="width:100%; font-size:14px; margin:0; padding:8px;" onchange="toggleScopeInputs()">
+                            <option value="enterprise">🏬 指定企業のみ配信（通常）</option>
+                            <option value="area">📍 エリア限定配信</option>
+                            <option value="prefecture">🗺️ 都道府県限定配信</option>
+                            <option value="all" ${window.currentUser && window.currentUser.role === 'admin' ? '' : 'disabled'}>🌐 全国・全店配信 ${window.currentUser && window.currentUser.role === 'admin' ? '' : '（※運営限定）'}</option>
+                            <option value="cross_enterprise" ${window.currentUser && window.currentUser.role === 'admin' ? '' : 'disabled'}>🏢 複数企業ジャック配信 ${window.currentUser && window.currentUser.role === 'admin' ? '' : '（※運営限定）'}</option>
+                        </select>
+                    </div>
+                    <div id="swal-scope-area-container" style="display:none; margin-top:10px;">
+                        <label style="font-size:11px; display:block; text-align:left; color:#666; margin-bottom:3px;">対象エリア（カンマ区切り。例: 関東,関西）</label>
+                        <input id="swal-target-areas" class="swal2-input" placeholder="例: 関東,関西" style="margin:0; font-size:13px; width:100%; box-sizing:border-box;">
+                    </div>
+                    <div id="swal-scope-prefectures-container" style="display:none; margin-top:10px;">
+                        <label style="font-size:11px; display:block; text-align:left; color:#666; margin-bottom:3px;">対象都道府県（カンマ区切り。例: 東京都,神奈川県）</label>
+                        <input id="swal-target-prefectures" class="swal2-input" placeholder="例: 東京都,神奈川県" style="margin:0; font-size:13px; width:100%; box-sizing:border-box;">
+                    </div>
+                    <div id="swal-scope-orgs-container" style="display:none; margin-top:10px;">
+                        <label style="font-size:11px; display:block; text-align:left; color:#666; margin-bottom:3px;">対象企業（組織）ID（カンマ区切り。例: Corp_A,Corp_B）</label>
+                        <input id="swal-target-orgs" class="swal2-input" placeholder="例: Corp_A,Corp_B" style="margin:0; font-size:13px; width:100%; box-sizing:border-box;">
+                    </div>
+                    <div style="margin-top:10px;">
+                        <label style="font-size:12px; font-weight:bold; color:#555; display:block; margin-bottom:5px;">🏪 店舗業態フィルタ（任意・カンマ区切り）</label>
+                        <input id="swal-target-store-types" class="swal2-input" placeholder="例: スーパーマーケット,コンビニ" style="margin:0; font-size:13px; width:100%; box-sizing:border-box;">
+                    </div>
                     <div style="margin-top:10px;">
                         <select id="swal-time" class="swal2-select" style="width:100%; font-size:14px; margin:0; padding:8px;">
                             <option value="all">🕒 配信時間: 指定なし (終日)</option>
@@ -2426,6 +2453,12 @@
                 confirmButtonText: '配信登録',
                 confirmButtonColor: '#3498db',
                 didOpen: () => {
+                    window.toggleScopeInputs = () => {
+                        const scope = document.getElementById('swal-scope').value;
+                        document.getElementById('swal-scope-area-container').style.display = (scope === 'area') ? 'block' : 'none';
+                        document.getElementById('swal-scope-prefectures-container').style.display = (scope === 'prefecture') ? 'block' : 'none';
+                        document.getElementById('swal-scope-orgs-container').style.display = (scope === 'cross_enterprise') ? 'block' : 'none';
+                    };
                     window.searchStores = () => {
                         const q = document.getElementById('swal-store-search').value;
                         const resultsDiv = document.getElementById('swal-store-results');
@@ -2550,7 +2583,12 @@
                         ytUrl: document.getElementById('swal-yt-url').value,
                         fileUrl: fileUrl, // Send Base64
                         fileName: fileInput.files.length > 0 ? fileInput.files[0].name : null, // Send Filename
-                        targetStores: targetStores.length > 0 ? targetStores : ['all'] // New attribute
+                        targetStores: targetStores.length > 0 ? targetStores : ['all'],
+                        target_scope: document.getElementById('swal-scope').value,
+                        target_areas: document.getElementById('swal-target-areas').value,
+                        target_orgs: document.getElementById('swal-target-orgs').value,
+                        target_prefectures: document.getElementById('swal-target-prefectures').value,
+                        target_store_types: document.getElementById('swal-target-store-types').value
                     }
                 }
             });
@@ -2648,7 +2686,12 @@
                             url: formValues.fileUrl, // Pass Base64 as main URL
                             filename: formValues.fileName, // Store original filename
                             format: formValues.format,
-                            ad_email: adEmail
+                            ad_email: adEmail,
+                            target_scope: formValues.target_scope,
+                            target_areas: formValues.target_areas,
+                            target_orgs: formValues.target_orgs,
+                            target_prefectures: formValues.target_prefectures,
+                            target_store_types: formValues.target_store_types
                         })
                     });
 

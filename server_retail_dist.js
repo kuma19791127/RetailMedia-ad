@@ -2257,9 +2257,23 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
     }
     console.log(`[API /api/campaigns] [F12 Debug Backend] New campaign request from email: ${ad_email}, role: ${req.user.role}, org: ${org}. Data size: ${JSON.stringify(req.body).length} bytes`);
     try {
-        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ytUrl, fileUrl } = req.body;
+        const { name, start, end, budget, plan, trigger, target_imp, file_url, url, youtube_url, format, ytUrl, fileUrl, target_scope, target_areas, target_orgs, target_prefectures, target_store_types } = req.body;
         // ログインしたユーザーのメールアドレスを強制使用
         const ad_email = req.user.email;
+
+        const targetScope = target_scope || 'enterprise';
+        const targetAreas = target_areas || '';
+        const targetOrgs = target_orgs || '';
+        const targetPrefectures = target_prefectures || '';
+        const targetStoreTypes = target_store_types || '';
+
+        // --- セキュリティガード：一般広告主（admin以外）が 'all' (全国配信) や 'cross_enterprise' (複数企業ジャック) を指定するのを防ぐ ---
+        if (req.user.role !== 'admin') {
+            if (targetScope === 'all' || targetScope === 'cross_enterprise') {
+                console.warn(`[API /api/campaigns] Unauthorized target_scope '${targetScope}' requested by non-admin user ${ad_email}`);
+                return res.status(403).json({ error: "【権限エラー】全国配信および複数企業ジャック配信は、リてアド運営(管理者)のみ作成可能です。" });
+            }
+        }
 
         // --- Demo Account Restriction ---
         if (!ad_email || ad_email.includes('demo') || ad_email.includes('admin') || ad_email.includes('test') || ad_email === 'client@example.com' || ad_email === 'Guest' || ad_email === 'Unknown') {
@@ -2420,16 +2434,16 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
             }
             console.log(`[AutoReview] Campaign '${name}' auto-review result: ${adStatus}`);
 
-            // Insert into SQLite database
+            // Insert into SQLite/PG database
             let campaignId = Date.now();
             try {
                 const targetOrg = req.body.target_org || req.user.org || 'default_store';
                 const dbRes = await dbHelper.query.run(
-                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status, advertiser, target_org) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [name, start, end, appliedPrice, 0.0, 0, adStatus, ad_email, targetOrg]
+                    'INSERT INTO campaigns (name, start_date, end_date, budget, spend, impressions, status, advertiser, target_org, target_scope, target_areas, target_orgs, target_prefectures, target_store_types) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [name, start, end, appliedPrice, 0.0, 0, adStatus, ad_email, targetOrg, targetScope, targetAreas, targetOrgs, targetPrefectures, targetStoreTypes]
                 );
                 campaignId = dbRes.lastID;
-                console.log(`[Campaign Database] Saved campaign ID: ${campaignId} into SQLite. Target Org: ${targetOrg}`);
+                console.log(`[Campaign Database] Saved campaign ID: ${campaignId} into SQLite/PG. Target Org: ${targetOrg}, Scope: ${targetScope}`);
             } catch (dbErr) {
                 console.error("[Campaign Database] Save failed:", dbErr.message);
             }
@@ -2447,7 +2461,12 @@ app.post('/api/campaigns', requireAuth, async (req, res) => {
                 budget: budget,
                 plan_type: plan,
                 trigger: trigger,          // For Moment
-                target_imp: target_imp     // For Impression
+                target_imp: target_imp,    // For Impression
+                target_scope: targetScope,
+                target_areas: targetAreas,
+                target_orgs: targetOrgs,
+                target_prefectures: targetPrefectures,
+                target_store_types: targetStoreTypes
             };
 
             // Inject into Server Logic
@@ -2555,7 +2574,10 @@ app.get('/api/campaigns', requireAuth, async (req, res) => {
             budget: c.budget,
             spend: c.spend,
             imp: c.impressions,
-            status: c.status
+            status: c.status,
+            target_scope: c.target_scope,
+            target_areas: c.target_areas,
+            target_orgs: c.target_orgs
         }));
         res.json(formattedList);
     } catch (e) {
@@ -3489,11 +3511,28 @@ app.get('/api/ad/analytics', requireAuth, async (req, res) => {
 });
 
 
-app.get('/api/signage/playlist', (req, res) => {
+app.get('/api/signage/playlist', async (req, res) => {
     console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
     const location = req.query.location || 'register_side';
     const storeId = req.query.storeId || 'STORE_001'; // 安全なデフォルトフォールバック
-    let playlist = signageServer.getPlaylist(location, false, storeId);
+    
+    let storeOrg = 'default_store';
+    let storeArea = '';
+    let storePrefecture = '';
+    let storeType = '';
+    try {
+        const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
+        if (store) {
+            storeOrg = store.id || 'default_store';
+            storeArea = store.area || '';
+            storePrefecture = store.prefecture || '';
+            storeType = store.store_type || '';
+        }
+    } catch (dbErr) {
+        console.error(`[API /api/signage/playlist] Failed to fetch store metadata from DB:`, dbErr.message);
+    }
+
+    let playlist = signageServer.getPlaylist(location, false, storeId, storeOrg, storeArea, storePrefecture, storeType);
 
     // [Fix] Handle Default "Spaghetti" Demo Content in Production Mode
     if (playlist && playlist.length > 0 && playlist[0].id === 'ad_default') {
@@ -4398,9 +4437,12 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
 
         const billing_email = req.body.billing_email || store.billing_email;
         const bank = req.body.bank_info || {};
+        const area = req.body.area || store.area || '';
+        const prefecture = req.body.prefecture || store.prefecture || '';
+        const store_type = req.body.store_type || store.store_type || '';
         
         await dbHelper.query.run(
-            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ?, bank_email = ? WHERE id = ?`,
+            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ?, bank_email = ?, area = ?, prefecture = ?, store_type = ? WHERE id = ?`,
             [
                 billing_email,
                 bank.bank_name || store.bank_name || '',
@@ -4408,6 +4450,9 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
                 bank.account_number || store.account_number || '',
                 bank.account_holder || store.account_holder || '',
                 bank.email || store.bank_email || '',
+                area,
+                prefecture,
+                store_type,
                 storeId
             ]
         );
@@ -6851,6 +6896,9 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
                 email: store.bank_email || store.billing_email || req.user.email
             },
             billing_email: store.billing_email || req.user.email,
+            area: store.area || '',
+            prefecture: store.prefecture || '',
+            store_type: store.store_type || '',
             adnet: storeAdNet * 0.5
         });
     } catch (e) {

@@ -21,8 +21,66 @@ let CONTEXT = {
     people_count: 12
 };
 
+function isCampaignMatch(ad, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType) {
+    const scope = ad.target_scope || 'enterprise';
+    
+    // 1. 全店舗配信 (all)
+    if (scope === 'all') {
+        return matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreType);
+    }
+    
+    // 2. エリア限定配信 (area)
+    if (scope === 'area') {
+        if (!requestStoreArea || !ad.target_areas) return false;
+        const areas = ad.target_areas.split(',').map(a => a.trim());
+        if (!areas.includes(requestStoreArea)) return false;
+        return matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreType);
+    }
+    
+    // 3. 都道府県限定配信 (prefecture)
+    if (scope === 'prefecture') {
+        if (!requestStorePrefecture || !ad.target_prefectures) return false;
+        const prefs = ad.target_prefectures.split(',').map(p => p.trim());
+        if (!prefs.includes(requestStorePrefecture)) return false;
+        return matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreType);
+    }
+    
+    // 4. 複数企業ジャック配信 (cross_enterprise)
+    if (scope === 'cross_enterprise') {
+        if (!requestStoreOrg || !ad.target_orgs) return false;
+        const orgs = ad.target_orgs.split(',').map(o => o.trim());
+        if (!orgs.includes(requestStoreOrg)) return false;
+        return matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreType);
+    }
+    
+    // 5. 特定の単一企業/組織配信 (enterprise)
+    if (scope === 'enterprise') {
+        const isOrgMatch = !ad.target_org || ad.target_org === 'default_store' || ad.target_org === requestStoreOrg || ad.target_org === requestStoreId;
+        if (!isOrgMatch) return false;
+        return matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreType);
+    }
+    
+    return true;
+}
+
+function matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreType) {
+    // 都道府県指定チェック
+    if (ad.target_prefectures) {
+        if (!requestStorePrefecture) return false;
+        const prefs = ad.target_prefectures.split(',').map(p => p.trim()).filter(Boolean);
+        if (prefs.length > 0 && !prefs.includes(requestStorePrefecture)) return false;
+    }
+    // 店舗業態指定チェック
+    if (ad.target_store_types) {
+        if (!requestStoreType) return false;
+        const types = ad.target_store_types.split(',').map(t => t.trim()).filter(Boolean);
+        if (types.length > 0 && !types.includes(requestStoreType)) return false;
+    }
+    return true;
+}
+
 module.exports = {
-getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
+    getPlaylist: (locationId, isProduction = false, requestStoreId = null, requestStoreOrg = null, requestStoreArea = null, requestStorePrefecture = null, requestStoreType = null) => {
         const state = STATE["register_side"];
 
         // --- Priority 1: Emergency / Voice Interrupt (Targeted) ---
@@ -49,30 +107,30 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
         // 1. Add all uploaded active Paid/Creator ads
         if (Array.isArray(state.paid)) {
             for (const ad of state.paid) {
-                if (ad.status === 'active') playlist.push(ad);
+                if (ad.status === 'active' && isCampaignMatch(ad, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType)) playlist.push(ad);
             }
-        } else if (state.paid && state.paid.status === 'active') {
+        } else if (state.paid && state.paid.status === 'active' && isCampaignMatch(state.paid, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType)) {
             playlist.push(state.paid);
         }
 
         // 2. Add active Moment / Impression ads
         if (Array.isArray(state.moment)) {
             for (const ad of state.moment) {
-                if (ad.status === 'active') playlist.push(ad);
+                if (ad.status === 'active' && isCampaignMatch(ad, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType)) playlist.push(ad);
             }
-        } else if (state.moment && state.moment.status === 'active') {
+        } else if (state.moment && state.moment.status === 'active' && isCampaignMatch(state.moment, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType)) {
             playlist.push(state.moment);
         }
 
         if (Array.isArray(state.impression)) {
             for (const ad of state.impression) {
-                if (ad.status === 'active') {
+                if (ad.status === 'active' && isCampaignMatch(ad, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType)) {
                     const current = ad.current_imp || 0;
                     const target = ad.target_imp || 1000;
                     if (current < target) playlist.push(ad);
                 }
             }
-        } else if (state.impression && state.impression.status === 'active') {
+        } else if (state.impression && state.impression.status === 'active' && isCampaignMatch(state.impression, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType)) {
             const current = state.impression.current_imp || 0;
             const target = state.impression.target_imp || 1000;
             if (current < target) playlist.push(state.impression);
@@ -132,10 +190,14 @@ getPlaylist: (locationId, isProduction = false, requestStoreId = null) => {
             for (const rv of global.cachedRetailerVideos) {
                 if (rv.status !== 'active') continue;
                 
-                // Match Logic: Check if the video is meant for ALL stores, or just this specific chain, or this specific store
-                const isMatch = (rv.target_store === 'ALL') || 
-                                (requestStoreId && requestStoreId.startsWith(rv.retailer_prefix)) ||
-                                (rv.target_store === requestStoreId);
+                // Match Logic: Check targeting scope and fallback to legacy logic
+                let isMatch = isCampaignMatch(rv, requestStoreId, requestStoreOrg, requestStoreArea, requestStorePrefecture, requestStoreType);
+                if (rv.target_scope === undefined) {
+                    // Legacy Match fallback
+                    isMatch = (rv.target_store === 'ALL') || 
+                              (requestStoreId && requestStoreId.startsWith(rv.retailer_prefix)) ||
+                              (rv.target_store === requestStoreId);
+                }
                 
                 if (isMatch) {
                     playlist.push(rv);
