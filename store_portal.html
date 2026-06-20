@@ -2092,7 +2092,7 @@
 
                     // Collect unsynced local POS records (mock logic)
                     // Then push to Admin Server via API
-                    await fetch(API_URL + '/api/admin/sales/sync-batch', {
+                    await fetch(window.API_BASE_URL + '/api/admin/sales/sync-batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -2196,7 +2196,7 @@
 
             // Send to Signage Server
             try {
-                await fetch(`${API_URL}/api/signage/interrupt`, {
+                await fetch(`${window.API_BASE_URL}/api/signage/interrupt`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: text, type: 'emergency' })
@@ -2376,6 +2376,7 @@
         if(typeof Swal !== 'undefined') {
             document.getElementById('prof-org').value = localStorage.getItem('demo_org') || "Demo Store";
             document.getElementById('prof-email').value = localStorage.getItem('demo_email') || "store@demo.com";
+            document.getElementById('prof-pass').value = ""; // clear password field to avoid retention
             if(showName) {
                 document.getElementById('prof-name-container').style.display = 'block';
                 document.getElementById('prof-name').value = localStorage.getItem('demo_name') || "鈴木 (店長)";
@@ -2389,26 +2390,50 @@
         const org = document.getElementById('prof-org').value;
         const email = document.getElementById('prof-email').value;
         const name = document.getElementById('prof-name').value;
+        const pass = document.getElementById('prof-pass').value;
 
         localStorage.setItem('demo_org', org);
         localStorage.setItem('demo_email', email);
         if(document.getElementById('prof-name-container').style.display !== 'none') {
             localStorage.setItem('demo_name', name);
         }
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
         
         try {
-            await fetch(window.API_BASE_URL + '/api/profile', {
+            const body = { email, org, name, type: 'store' };
+            if (pass) {
+                body.password = pass;
+            }
+            console.log("[F12 Debug Frontend] Synchronizing store profile to /api/profile with body:", body);
+            const res = await fetch(window.API_BASE_URL + '/api/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, org, name, type: 'store' })
+                body: JSON.stringify(body)
             });
-        } catch(e) { console.error(e); }
-
-        document.getElementById('modal-profile').style.display = 'none';
-        Swal.fire({toast:true, position:'top-end', icon:'success', title:'プロフィールをS3に保存しました', showConfirmButton:false, timer:2000});
-        
-        // Try triggering local update if exists
-        try{ updateProfileDisplay(); }catch(e){}
+            const data = await res.json();
+            console.log("[F12 Debug Frontend] Profile synchronization response:", data);
+            
+            if (data.success) {
+                document.getElementById('modal-profile').style.display = 'none';
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'プロフィールを保存・同期しました',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                // Try triggering local update if exists
+                try{ updateProfileDisplay(); }catch(e){}
+            } else {
+                Swal.fire('エラー', data.error || '保存に失敗しました', 'error');
+            }
+        } catch(e) {
+            console.error("[F12 Debug Frontend] Profile save error:", e);
+            Swal.fire('エラー', 'サーバーとの通信に失敗しました', 'error');
+        }
     }
 </script>
 
