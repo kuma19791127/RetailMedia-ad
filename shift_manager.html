@@ -932,7 +932,7 @@
         <div class="login-box" id="login-box">
             <h2>シフト管理システム ログイン</h2>
             <iframe name="dummyframe_shift" id="dummyframe_shift" style="display:none;"></iframe>
-            <form target="dummyframe_shift" action="about:blank" method="POST" onsubmit="setTimeout(doLogin, 10); return true;">
+            <form onsubmit="doLogin(event);">
                 <input type="text" id="login-org" placeholder="組織コードを入力 (例: non-logi.inc)" value="non-logi.inc" required autocomplete="organization">
                 <input type="email" id="login-email" name="email" placeholder="メールアドレス" required autocomplete="username">
                 <select id="login-dept">
@@ -1247,36 +1247,63 @@
             });
         };
 
-        async function doLogin() {
+        let isLoggingIn = false;
+        async function doLogin(e) {
+            if (e) e.preventDefault();
+            if (isLoggingIn) {
+                console.warn("[F12 Debug Frontend] doLogin ignored: already logging in");
+                return;
+            }
+            isLoggingIn = true;
+
             const orgNode = document.getElementById('login-org');
             const nameNode = document.getElementById('login-name');
             const emailNode = document.getElementById('login-email');
             const passNode = document.getElementById('login-password') || document.getElementById('login-pass');
             
-            if (!orgNode.value || !nameNode.value) return Swal.fire('エラー', '組織コードと名前を入力してください', 'error');
+            if (!orgNode.value || !nameNode.value) {
+                isLoggingIn = false;
+                return Swal.fire('エラー', '組織コードと名前を入力してください', 'error');
+            }
 
             const email = emailNode.value;
             const pass = passNode ? passNode.value : 'demo1234!!';
             const body = { email: email, password: pass, role: 'store' };
             console.log("[F12 Debug Frontend] Attempting login with body:", { ...body, password: "***" });
             
+            const submitBtn = document.querySelector('#login-box button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'ログイン中...';
+            }
+
+            let loginSuccess = false;
             try {
+                console.log("[F12 Debug Frontend] Sending login request to:", window.API_BASE_URL + '/api/auth/login');
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
+                console.log("[F12 Debug Frontend] Login HTTP status:", response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
-                console.log("[F12 Debug Frontend] Login response status:", response.status, "data:", data);
+                console.log("[F12 Debug Frontend] Login response data:", data);
                 
-                if (!data.success) {
+                if (data.success) {
+                    loginSuccess = true;
+                } else {
                     if (!email.includes('demo')) {
-                        return Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
+                        Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
+                        return;
                     } else {
                         console.warn("[F12 Debug Frontend] Login failed but proceeding as it is a demo account");
+                        loginSuccess = true;
                     }
                 }
-                if (data.success && window.PasswordCredential) {
+                if (loginSuccess && window.PasswordCredential) {
                     const cred = new PasswordCredential({
                         id: email,
                         password: pass
@@ -1287,9 +1314,17 @@
             } catch(e) {
                 console.error("[F12 Debug Frontend] Login critical communication error:", e);
                 if (!email.includes('demo')) {
-                    return Swal.fire('通信エラー', 'サーバーとの接続に失敗しました。', 'error');
+                    Swal.fire('通信エラー', 'サーバーとの接続に失敗しました。詳細: ' + e.message, 'error');
+                    return;
                 } else {
                     console.warn("[F12 Debug Frontend] Communication failed, but proceeding in offline demo mode for demo account");
+                    loginSuccess = true;
+                }
+            } finally {
+                isLoggingIn = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'ログインして進む';
                 }
             }
             
