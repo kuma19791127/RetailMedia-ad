@@ -1113,13 +1113,20 @@ h2 {
         localStorage.setItem('demo_org', org);
         localStorage.setItem('demo_name', name);
         localStorage.setItem('demo_email', email);
+        if (pass) {
+            localStorage.setItem('demo_password', pass);
+        }
         
         // Push sync to server (DB background)
         try {
+            const payload = { email, name, org };
+            if (pass) {
+                payload.password = pass;
+            }
             await fetch(window.API_BASE_URL + '/api/user/profile', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({email, name, org})
+                body: JSON.stringify(payload)
             });
         } catch(e) {}
 

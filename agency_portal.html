@@ -701,6 +701,12 @@
         localStorage.setItem('demo_email', email);
         console.log("[F12 Debug Profile] LocalStorage updated successfully.");
 
+        const payload = { email, name, org };
+        if (pass) {
+            payload.password = pass;
+            localStorage.setItem('demo_password', pass);
+        }
+
         // Push sync to server (DB background)
         const targetUrl = window.API_BASE_URL + '/api/user/profile';
         console.log("[F12 Debug Profile] Sending POST request to:", targetUrl);
@@ -708,7 +714,7 @@
             const res = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({email, name, org})
+                body: JSON.stringify(payload)
             });
             console.log("[F12 Debug Profile] Response status:", res.status, "statusText:", res.statusText);
             const resData = await res.json().catch(() => null);
