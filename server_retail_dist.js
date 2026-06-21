@@ -4717,6 +4717,77 @@ app.post('/api/admin/store/operating-cost', requireAuth, async (req, res) => {
     }
 });
 
+// AWS Cost Explorer Cache & Auto-Sync
+let lastAwsCostFetchTime = 0;
+let cachedAwsCostUSD = 34.50; // Mock cost fallback
+
+async function autoSyncAwsCostToStores() {
+    const now = Date.now();
+    // Cache for 24 hours (86400000 ms) to avoid API query charges ($0.01 per call)
+    if (now - lastAwsCostFetchTime < 86400000) {
+        return;
+    }
+    
+    console.log('[AWS SDK Auto-Sync] Starting background auto-sync of AWS cost...');
+    let costUSD = cachedAwsCostUSD;
+    
+    if (typeof ceClient !== 'undefined' && ceClient) {
+        try {
+            const today = new Date();
+            const firstDayPrevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const lastDayPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            
+            const formatDate = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+            
+            const startDate = formatDate(firstDayPrevMonth);
+            const endDate = formatDate(lastDayPrevMonth);
+            
+            const command = new GetCostAndUsageCommand({
+                TimePeriod: { Start: startDate, End: endDate },
+                Granularity: 'MONTHLY',
+                Metrics: ['UnblendedCost']
+            });
+            
+            const data = await ceClient.send(command);
+            if (data && data.ResultsByTime && data.ResultsByTime[0]) {
+                const amountStr = data.ResultsByTime[0].Total.UnblendedCost.Amount;
+                costUSD = parseFloat(amountStr) || cachedAwsCostUSD;
+                console.log(`[AWS SDK Auto-Sync] Successfully fetched AWS Cost from API: $${costUSD}`);
+            }
+        } catch (e) {
+            console.error('[AWS SDK Auto-Sync] Error calling Cost Explorer API, using cache:', e);
+        }
+    } else {
+        console.log(`[AWS SDK Auto-Sync] Cost Explorer client not initialized. Using mock cost: $${costUSD}`);
+    }
+    
+    cachedAwsCostUSD = costUSD;
+    lastAwsCostFetchTime = now;
+    
+    try {
+        const stores = await dbHelper.query.all('SELECT * FROM stores');
+        const activeStores = stores.filter(s => s.id !== "default_store");
+        if (activeStores.length > 0) {
+            const shareCost = parseFloat((costUSD / activeStores.length).toFixed(2));
+            for (const s of activeStores) {
+                await dbHelper.query.run(
+                    'UPDATE stores SET monthly_operating_cost = ? WHERE id = ?',
+                    [shareCost, s.id]
+                );
+                console.log(`[AWS SDK Auto-Sync] Automatically updated operating cost for store ${s.id} to $${shareCost}`);
+            }
+            if (typeof saveDatabase === 'function') saveDatabase();
+        }
+    } catch (dbErr) {
+        console.error('[AWS SDK Auto-Sync] Failed to sync cost to stores database:', dbErr);
+    }
+}
+
 // Fetch AWS Cost (Cost Explorer API) for the previous month
 app.get('/api/admin/aws-cost', requireAuth, async (req, res) => {
     if (req.user.role !== 'admin') {
@@ -4815,6 +4886,7 @@ app.get('/api/admin/dashboard', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "管理者権限が必要です" });
     }
     try {
+        autoSyncAwsCostToStores().catch(err => console.error('[AWS SDK Auto-Sync] Background sync error:', err));
         const billingData = [];
         const payoutData = [];
         const rows = await dbHelper.query.all('SELECT * FROM stores');
@@ -7079,8 +7151,8 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
             store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
         }
         
-        const storeAdNet = store ? (store.total_ad_revenue || 0) : 0;
-        const storeAdsense = store ? (store.monthly_adsense_revenue || 20000) : 20000;
+        const storeAdNet = store ? (store.total_ad_revenue || 40000) : 40000;
+        const storeAdsense = store ? (store.monthly_adsense_revenue !== undefined && store.monthly_adsense_revenue !== null ? store.monthly_adsense_revenue : 0) : 0;
         
         const storeTotalRevenue = storeAdNet + storeAdsense;
         const storeShare = (storeAdNet * 0.5) + storeAdsense;
