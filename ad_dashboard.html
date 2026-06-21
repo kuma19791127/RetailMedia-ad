@@ -1184,6 +1184,20 @@
                                 今日: --/--/-- (--)</span>
                             <span id="current-weather-text" style="color:#7f8c8d; font-size:14px;">現在の環境情報を取得中...</span>
                         </div>
+                        <!-- 自社商品・カテゴリ絞り込みフィルター (POSアクセス削減用) -->
+                        <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f1f5f9; padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <span style="font-size:0.85rem; font-weight:bold; color:#475569;">自社商品フィルター:</span>
+                            <input type="text" id="dashboard-filter-keyword" placeholder="商品名またはJAN..." style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; width:150px;" oninput="fetchAnalytics();">
+                            <select id="dashboard-filter-category" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; background:white; font-size:0.85rem;" onchange="fetchAnalytics();">
+                                <option value="">すべてのカテゴリ</option>
+                                <option value="飲料">飲料</option>
+                                <option value="菓子">菓子</option>
+                                <option value="酒類">酒類</option>
+                                <option value="日用品">日用品</option>
+                                <option value="その他">その他</option>
+                            </select>
+                            <button onclick="fetchAnalytics();" style="background:#475569; color:white; border:none; padding:6px 12px; border-radius:6px; font-size:0.85rem; font-weight:bold; cursor:pointer;">適用</button>
+                        </div>
                     </div>
                     
                     <div class="budget-panel">
@@ -1956,9 +1970,11 @@
         async function showABResults() {
             // Fetch latest real data
             let abStats = { A: { views: 0, scans: 0, sales: 0 }, B: { views: 0, scans: 0, sales: 0 } };
-            console.log("[F12 Debug Frontend] Fetching AB performance stats from /api/ad/analytics...");
+            const filterKw = document.getElementById('dashboard-filter-keyword') ? document.getElementById('dashboard-filter-keyword').value : '';
+            const filterCat = document.getElementById('dashboard-filter-category') ? document.getElementById('dashboard-filter-category').value : '';
+            console.log(`[F12 Debug Frontend] Fetching AB performance stats from /api/ad/analytics with filter: keyword="${filterKw}", category="${filterCat}"...`);
             try {
-                const res = await fetch(window.API_BASE_URL + '/api/ad/analytics');
+                const res = await fetch(window.API_BASE_URL + `/api/ad/analytics?keyword=${encodeURIComponent(filterKw)}&category=${encodeURIComponent(filterCat)}`);
                 const data = await res.json();
                 console.log("[F12 Debug Frontend] AB stats fetch response:", data);
                 if (data.ab_stats) abStats = data.ab_stats;
@@ -2100,9 +2116,15 @@
                 // Determine API base URL
                 const API_PREFIX = location.protocol === 'file:' ? 'http://localhost:3000' : '';
                 let url = `${API_PREFIX}/api/ad/analytics?`;
-                if (lat && lon) url += `lat=${lat}&lon=${lon}`;
-                else url += 'region=Tokyo';
+                if (lat && lon) url += `lat=${lat}&lon=${lon}&`;
+                else url += 'region=Tokyo&';
 
+                const filterKw = document.getElementById('dashboard-filter-keyword') ? document.getElementById('dashboard-filter-keyword').value : '';
+                const filterCat = document.getElementById('dashboard-filter-category') ? document.getElementById('dashboard-filter-category').value : '';
+                
+                url += `keyword=${encodeURIComponent(filterKw)}&category=${encodeURIComponent(filterCat)}`;
+
+                console.log(`[F12 Debug Frontend] fetchAnalytics querying URL: ${url}`);
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('API Error');
                 data = await res.json();

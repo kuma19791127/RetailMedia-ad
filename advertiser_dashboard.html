@@ -825,9 +825,17 @@
                     <i class="fas fa-search-dollar" style="color:#2563eb;"></i> POSデータ検索（自社商品分析）
                 </h3>
                 <p style="font-size:0.9rem; color:#64748b;">商品のJANコードや商品名から、実店舗での売上実績を検索できます。広告出稿前後の効果測定にご活用ください。</p>
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="text" id="pos-search-keyword" placeholder="商品名またはJANコードを入力..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
-                    <button onclick="searchPosData()" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">検索</button>
+                <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
+                    <input type="text" id="pos-search-keyword" placeholder="商品名またはJANコードを入力..." style="flex:2; min-width:200px; padding:10px; border:1px solid #cbd5e1; border-radius:6px;" oninput="searchPosData(); loadAnalytics();">
+                    <select id="pos-search-category" style="flex:1; min-width:150px; padding:10px; border:1px solid #cbd5e1; border-radius:6px; background:white; font-size:0.9rem;" onchange="searchPosData(); loadAnalytics();">
+                        <option value="">すべてのカテゴリ</option>
+                        <option value="飲料">飲料</option>
+                        <option value="菓子">菓子</option>
+                        <option value="酒類">酒類</option>
+                        <option value="日用品">日用品</option>
+                        <option value="その他">その他</option>
+                    </select>
+                    <button onclick="searchPosData(); loadAnalytics();" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">適用・検索</button>
                 </div>
                 <div id="pos-search-results" style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
@@ -1064,32 +1072,39 @@
 
         async function searchPosData() {
             const keyword = document.getElementById('pos-search-keyword').value;
-            if (!keyword) return alert('検索キーワードまたはJANコードを入力してください。');
+            const category = document.getElementById('pos-search-category') ? document.getElementById('pos-search-category').value : '';
+            
+            console.log(`[F12 Debug Frontend] searchPosData triggered. keyword="${keyword}", category="${category}"`);
             
             try {
-                const res = await fetch(`/api/analytics/pos-search?keyword=${encodeURIComponent(keyword)}`);
-                const data = await res.json();
-                if (data.success) {
+                const res = await fetch(`/api/analytics/pos-search?keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`);
+                const resData = await res.json();
+                console.log("[F12 Debug Frontend] pos-search API response:", resData);
+                
+                if (resData.success) {
                     document.getElementById('pos-search-results').style.display = 'block';
-                    document.getElementById('pos-result-count').innerText = `${data.stats.count.toLocaleString()}個`;
-                    document.getElementById('pos-result-sales').innerText = `¥${data.stats.totalSales.toLocaleString()}`;
+                    
+                    const totalItems = resData.data ? (resData.data.totalItems || resData.data.count || 0) : 0;
+                    const totalSales = resData.data ? (resData.data.totalSales || 0) : 0;
+                    
+                    document.getElementById('pos-result-count').innerText = `${totalItems.toLocaleString()}個`;
+                    document.getElementById('pos-result-sales').innerText = `¥${totalSales.toLocaleString()}`;
                     
                     const tbody = document.getElementById('pos-result-list');
-                    if (data.transactions.length === 0) {
+                    if (!resData.transactions || resData.transactions.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">該当する販売データがありません</td></tr>`;
                     } else {
-                        tbody.innerHTML = data.transactions.map(tx => `
+                        tbody.innerHTML = resData.transactions.map(tx => `
                             <tr>
                                 <td>${new Date(tx.time || Date.now()).toLocaleString('ja-JP')}</td>
-                                <td>${tx.productName || tx.brand || '不明な商品'}</td>
+                                <td>${tx.productName || tx.brand || '不明な商品'} [${tx.category || '未分類'}]</td>
                                 <td style="color:#10b981; font-weight:bold;">¥${(tx.amount || 0).toLocaleString()}</td>
                             </tr>
                         `).join('');
                     }
                 }
             } catch (e) {
-                console.error(e);
-                alert("POSデータの検索に失敗しました。");
+                console.error("[F12 Debug Frontend] POS search error:", e);
             }
         }
 
@@ -1415,7 +1430,11 @@
 
         async function loadAnalytics() {
             try {
-                const res = await fetch(API_URL + '/api/ad/analytics');
+                const keyword = document.getElementById('pos-search-keyword') ? document.getElementById('pos-search-keyword').value : '';
+                const category = document.getElementById('pos-search-category') ? document.getElementById('pos-search-category').value : '';
+                console.log(`[F12 Debug Frontend] loadAnalytics fetching. keyword="${keyword}", category="${category}"`);
+                
+                const res = await fetch(API_URL + `/api/ad/analytics?keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`);
                 const data = await res.json();
                 
                 // Get general info about campaigns

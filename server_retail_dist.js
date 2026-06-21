@@ -3503,6 +3503,89 @@ app.get('/api/ad/analytics', requireAuth, async (req, res) => {
         attribution.cpa = 0;
     }
 
+    // Dynamic Filtered Stats from POS database
+    const filterKeyword = (req.query.keyword || '').toLowerCase();
+    const filterCategory = (req.query.category || '').toLowerCase();
+    
+    if (filterKeyword || filterCategory) {
+        try {
+            let sql = 'SELECT * FROM pos_transactions';
+            let params = [];
+            if (filterKeyword && filterCategory) {
+                sql += ' WHERE items LIKE ? AND items LIKE ?';
+                params.push(`%${filterKeyword}%`, `%${filterCategory}%`);
+            } else if (filterKeyword) {
+                sql += ' WHERE items LIKE ?';
+                params.push(`%${filterKeyword}%`);
+            } else if (filterCategory) {
+                sql += ' WHERE items LIKE ?';
+                params.push(`%${filterCategory}%`);
+            }
+            
+            const rows = await dbHelper.query.all(sql, params);
+            let filteredRevenue = 0;
+            let filteredSalesCount = 0;
+            
+            rows.forEach(row => {
+                let itemsList = [];
+                try {
+                    itemsList = JSON.parse(row.items || '[]');
+                } catch(e) {}
+                
+                itemsList.forEach(item => {
+                    const name = (item.name || '').toLowerCase();
+                    const category = (item.category || '').toLowerCase();
+                    
+                    const matchesKw = !filterKeyword || name.includes(filterKeyword);
+                    const matchesCat = !filterCategory || category.includes(filterCategory);
+                    
+                    if (matchesKw && matchesCat) {
+                        filteredRevenue += (item.price || 0);
+                        filteredSalesCount += 1;
+                    }
+                });
+            });
+            
+            attribution.revenue = filteredRevenue;
+            attribution.sales = filteredSalesCount;
+            
+            const totalGlobalSales = global.productionStats.ab.A.sales + global.productionStats.ab.B.sales;
+            const ratioA = totalGlobalSales > 0 ? (global.productionStats.ab.A.sales / totalGlobalSales) : 0.5;
+            const ratioB = totalGlobalSales > 0 ? (global.productionStats.ab.B.sales / totalGlobalSales) : 0.5;
+            
+            const filteredAB = {
+                A: { 
+                    views: Math.round(global.productionStats.ab.A.views * (filteredSalesCount / (totalGlobalSales || 1))), 
+                    scans: Math.round(global.productionStats.ab.A.scans * (filteredSalesCount / (totalGlobalSales || 1))), 
+                    sales: Math.round(filteredSalesCount * ratioA),
+                    revenue: Math.round(filteredRevenue * ratioA) 
+                },
+                B: { 
+                    views: Math.round(global.productionStats.ab.B.views * (filteredSalesCount / (totalGlobalSales || 1))), 
+                    scans: Math.round(global.productionStats.ab.B.scans * (filteredSalesCount / (totalGlobalSales || 1))), 
+                    sales: Math.round(filteredSalesCount * ratioB),
+                    revenue: Math.round(filteredRevenue * ratioB) 
+                }
+            };
+            
+            if (filteredSalesCount > 0) {
+                attribution.cpa = Math.floor(10000 / filteredSalesCount);
+            } else {
+                attribution.cpa = 0;
+            }
+            
+            console.log(`[API /api/ad/analytics] Filtered POS stats for keyword="${filterKeyword}", category="${filterCategory}". Revenue: ¥${filteredRevenue}, Sales: ${filteredSalesCount}`);
+            
+            return res.json({
+                attribution, analysis, context, traffic,
+                scan_count: Math.round(global.productionStats.scans * (filteredSalesCount / (totalGlobalSales || 1))),
+                ab_stats: filteredAB
+            });
+        } catch(dbErr) {
+            console.error("[API /api/ad/analytics] Failed to query dynamic POS stats, using fallback:", dbErr.message);
+        }
+    }
+
     res.json({
         attribution, analysis, context, traffic,
         scan_count: global.productionStats.scans,
@@ -6907,17 +6990,28 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
 });
 
 app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
-    console.log(`[API /api/analytics/pos-search] [F12 Debug Backend] Search query: "${req.query.q || req.query.keyword || ''}" by user: ${req.user.email}, role: ${req.user.role}`);
+    console.log(`[API /api/analytics/pos-search] [F12 Debug Backend] Search query keyword: "${req.query.keyword || ''}", category: "${req.query.category || ''}" by user: ${req.user.email}, role: ${req.user.role}`);
     const q = (req.query.q || req.query.keyword || '').toLowerCase();
+    const qCat = (req.query.category || '').toLowerCase();
     
     // POS連携時のデータベースリアルタイム集計を試行
     try {
         let rows = [];
-        if (q) {
-            rows = await dbHelper.query.all('SELECT * FROM pos_transactions WHERE items LIKE ?', [`%${q}%`]);
-        } else {
-            rows = await dbHelper.query.all('SELECT * FROM pos_transactions');
+        let sql = 'SELECT * FROM pos_transactions';
+        let params = [];
+        
+        if (q && qCat) {
+            sql += ' WHERE items LIKE ? AND items LIKE ?';
+            params.push(`%${q}%`, `%${qCat}%`);
+        } else if (q) {
+            sql += ' WHERE items LIKE ?';
+            params.push(`%${q}%`);
+        } else if (qCat) {
+            sql += ' WHERE items LIKE ?';
+            params.push(`%${qCat}%`);
         }
+        
+        rows = await dbHelper.query.all(sql, params);
         
         let totalSales = 0;
         let totalItems = 0;
@@ -6931,12 +7025,18 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
             
             itemsList.forEach(item => {
                 const name = (item.name || '').toLowerCase();
-                if (!q || name.includes(q)) {
+                const category = (item.category || '').toLowerCase();
+                
+                const matchesKeyword = !q || name.includes(q);
+                const matchesCategory = !qCat || category.includes(qCat);
+                
+                if (matchesKeyword && matchesCategory) {
                     totalSales += (item.price || 0);
                     totalItems += 1;
                     txList.push({
                         time: Number(row.timestamp) || Date.now(),
                         productName: item.name || '商品',
+                        category: item.category || '未分類',
                         amount: item.price || 0
                     });
                 }
@@ -6949,6 +7049,7 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
                 success: true, 
                 data: {
                     keyword: q || '全体',
+                    category: qCat || '全体',
                     totalSales: totalSales,
                     totalItems: totalItems,
                     trend: '+10%'
@@ -6963,20 +7064,21 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
     // データが存在しない、またはエラー時のデモ用シミュレーション（フォールバック）
     let simulatedData = {
         keyword: q || '全体',
+        category: qCat || '全カテゴリ',
         totalSales: 0,
         totalItems: 0,
         trend: '+0%'
     };
 
-    if (q.includes('ビール') || q.includes('beer')) {
+    if (q.includes('ビール') || q.includes('beer') || qCat.includes('酒')) {
         simulatedData.totalSales = 1250000;
         simulatedData.totalItems = 4500;
         simulatedData.trend = '+15%';
-    } else if (q.includes('スナック') || q.includes('菓子')) {
+    } else if (q.includes('スナック') || q.includes('菓子') || qCat.includes('菓子')) {
         simulatedData.totalSales = 850000;
         simulatedData.totalItems = 6200;
         simulatedData.trend = '+8%';
-    } else if (q !== '') {
+    } else if (q !== '' || qCat !== '') {
         simulatedData.totalSales = 320000;
         simulatedData.totalItems = 1200;
         simulatedData.trend = '+2%';
