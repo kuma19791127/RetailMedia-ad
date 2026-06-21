@@ -439,65 +439,6 @@
                 ダッシュボードに提示します
             </p>
         </div>
-        <div class="card" id="retailer-ai-agent-section" style="border-left: 4px solid #2ecc71; grid-column: span 2;">
-            <div class="icon">🤖</div>
-            <h3>リテーラー用AIエージェント (即時動画生成)</h3>
-            <p style="margin-bottom: 20px;">
-                自店舗の朝イチの在庫データや特売情報をAIが読み取り、「今日売るべき商品」の販促動画を瞬時に自動生成。<br>
-                外部の広告枠を消費することなく、自社のサイネージ（ベースループ映像）に直接組み込んで売上を直に支援します。<br>
-                地域のイベントや店舗イベントなど、自社作成動画を配信して顧客に親近感を醸成します。
-            </p>
-            <div style="background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 8px; border: 1px solid var(--glass); text-align: left; font-size: 0.9rem; line-height: 1.6; color: #e2e8f0; word-wrap: break-word;">
-                <strong style="color: #2ecc71; display: block; font-size: 1.05rem; margin-bottom: 10px;">🎥 Google Cloud Veo (ヴィオ) 連携仕様と料金体系</strong>
-                <p style="margin-bottom: 10px;">
-                    本機能は、Googleの最新動画生成AI **「Google Cloud Veo」** および **「Gemini」** のAPIをバックエンドで連携させています。<br>
-                    GeminiがPOSデータと店舗がアップロードしたキャラクター画像を分析してシーン構成を指示し、その指示を基にVeoが実際に動くキャラクターの販促動画（MP4）を物理的にレンダリング・自動作成する高度な連携ワークフローを採用しています。
-                </p>
-                <p style="margin-bottom: 15px;">
-                    ※本機能の利用料金は、連携されている **Square（スクエア）決済** より従量課金にて引き落とされます。APIキーはサーバー環境変数（dotenv等）に安全に保存され保護されています。
-                </p>
-                
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.85rem; color: white;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--primary); background: rgba(255,255,255,0.05);">
-                            <th style="padding: 8px; text-align: left;">モデル種類</th>
-                            <th style="padding: 8px; text-align: left;">映像のみ (1秒あたり)</th>
-                            <th style="padding: 8px; text-align: left;">映像＋音声 (1秒あたり)</th>
-                            <th style="padding: 8px; text-align: left;">特徴</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid var(--glass);">
-                            <td style="padding: 8px; font-weight: bold;">Veo (標準/高品質)</td>
-                            <td style="padding: 8px; color: var(--primary);">約 $0.50 (約75円)</td>
-                            <td style="padding: 8px; color: var(--primary);">約 $0.75 (約112円)</td>
-                            <td style="padding: 8px; color: #94a3b8;">高画質なプロモーション動画向け。シネマティックな高品質映像。</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--glass);">
-                            <td style="padding: 8px; font-weight: bold;">Veo Fast (高速/軽量)</td>
-                            <td style="padding: 8px; color: var(--primary);">約 $0.10 (約15円)</td>
-                            <td style="padding: 8px; color: #94a3b8;">—</td>
-                            <td style="padding: 8px; color: #94a3b8;">生成スピードが早く、コストも抑えめ。手軽な動きの追加に。</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--glass);">
-                            <td style="padding: 8px; font-weight: bold;">Veo Lite (低コスト)</td>
-                            <td style="padding: 8px; color: var(--primary);">約 $0.03〜0.05 (約4.5〜7.5円)</td>
-                            <td style="padding: 8px; color: #94a3b8;">—</td>
-                            <td style="padding: 8px; color: #94a3b8;">解像度を抑えた日常的なSNS・店舗販促向け。日次の特売案内等。</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <ul style="padding-left: 20px; margin-bottom: 15px; font-size: 0.85rem; color: #cbd5e1;">
-                    <li style="margin-bottom: 5px;">**映像のみ (動画)**: 音声を含まない無音のMP4動画。自店BGMや別合成のアナウンスと組み合わせるのに最適。</li>
-                    <li style="margin-bottom: 5px;">**映像＋音声 (動画)**: AIが映像に合わせて自動生成したナレーションや効果音・BGMが含まれたMP4動画。</li>
-                </ul>
-
-                <a href="https://deepmind.google/technologies/veo/" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: bold; font-size: 0.85rem;">
-                    👉 Google DeepMind 公式 Veo 生成動画・デモサンプルはこちら
-                </a>
-            </div>
-        </div>
         <div class="card">
             <div class="icon">🗣️</div>
             <h3>AIボイススタジオ (顧客還元の告知)</h3>
