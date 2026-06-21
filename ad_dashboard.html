@@ -1266,6 +1266,13 @@
                         </div>
                     </div>
 
+                    <!-- Retailer Portal Link -->
+                    <div style="margin-top: 25px; text-align: center;">
+                        <a href="/retailer_portal.html" id="retailer-portal-link" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: #fff; padding: 12px 30px; border-radius: 50px; font-size: 1.1rem; text-decoration: none; font-weight: bold; display: inline-block; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4); transition: transform 0.2s, box-shadow 0.2s;">
+                            自社で配信したい場合はこちら &rarr;
+                        </a>
+                    </div>
+
                     <!-- Enterprise Premium Plan -->
                     <div style="margin-top: 25px; background: linear-gradient(135deg, #0f172a, #312e81); padding: 30px 20px; border-radius: 12px; border: 1px solid #8b5cf6; box-shadow: 0 5px 20px rgba(139, 92, 246, 0.2); text-align: center;">
                         <h3 style="font-size: 1.6rem; color: #f472b6; margin-top: 0; margin-bottom: 15px; text-align: center;">
@@ -3458,6 +3465,7 @@ async function open2FASetup() {
         const { value: totpCode } = await Swal.fire({
             title: '🔑 二段階認証の設定',
             html: `
+                <p style="font-size:0.95rem; line-height:1.5; color:#3b82f6; font-weight:bold; margin-bottom:10px;">【共通設定】最初に設定した advertiser, store or retailer と共通</p>
                 <p style="font-size:0.9rem; line-height:1.5;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
                 <img src="${qrData.qrcode}" style="margin: 15px auto; display:block; max-width:180px; border: 1px solid #cbd5e1; border-radius:8px; padding:10px;">
                 <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${qrData.secret}</code></p>

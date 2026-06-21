@@ -604,6 +604,7 @@
                         const { value: code } = await Swal.fire({
                             title: '二段階認証の設定',
                             html: `
+                                <p style="font-size: 14.5px; color:#3b82f6; font-weight:bold; margin-bottom:10px;">【共通設定】最初に設定した advertiser, store or retailer と共通</p>
                                 <p style="font-size: 14px;">認証アプリ(Google Authenticator等)でQRコードをスキャンしてください</p>
                                 <img src="${setupData.qrcode}" alt="QR Code" style="margin: 10px auto; border-radius: 8px; border: 1px solid #ccc;">
                                 <p style="font-size: 12px; color: #888; user-select: all;">シークレットキー: <b>${setupData.secret}</b></p>
@@ -646,7 +647,7 @@
                         const { value: code } = await Swal.fire({
                             title: '二段階認証',
                             input: 'text',
-                            inputLabel: 'アプリに表示されている6桁 of codeを入力してください',
+                            inputLabel: '【共通設定】最初に設定した advertiser, store or retailer と共通\nアプリに表示されている6桁のコードを入力してください',
                             inputPlaceholder: '123456',
                             showCancelButton: true,
                             confirmButtonText: '認証してログイン',
@@ -825,6 +826,7 @@
                 const { value: formValues } = await Swal.fire({
                     title: 'パスワード再設定情報',
                     html: `
+                        <p style="font-size:0.9rem; color:#3b82f6; font-weight:bold; margin-bottom:10px;">二段階認証コードは最初に設定した advertiser, store or retailer と共通です</p>
                         <input id="reset-password-input" type="password" class="swal2-input" placeholder="新しいパスワード" autocomplete="new-password">
                         <input id="reset-totp-input" type="text" class="swal2-input" placeholder="6桁の二段階認証(2FA)コード" autocomplete="one-time-code">
                         <select id="reset-role-input" class="swal2-input" style="width:80%; margin:1em auto;">

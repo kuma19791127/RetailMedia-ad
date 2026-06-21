@@ -377,7 +377,7 @@
                         if (!url.includes('/api/auth/login')) {
                             console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                             sessionStorage.clear();
-                            window.location.replace('index.html?logout=true');
+                            window.location.replace('retailer_portal.html?logout=true');
                         }
                     }
                     return response;
@@ -882,7 +882,7 @@
                         Swal.close();
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証コード',
-                            html: '認証アプリに表示される<br>6桁のコードを入力してください<br>最初にログインしたstore or retailerと共通',
+                            html: '認証アプリに表示される<br>6桁のコードを入力してください<br>【共通設定】最初に設定した advertiser, store or retailer と共通',
                             input: 'text',
                             inputPlaceholder: '6桁のコードを入力',
                             showCancelButton: true,
@@ -1007,6 +1007,7 @@
                         const { value: totpCode } = await Swal.fire({
                             title: '🔑 2段階認証の有効化',
                             html: `
+                                <p style="font-size:0.95rem; line-height:1.5; color:#3b82f6; font-weight:bold; margin-bottom:10px;">【共通設定】最初に設定した advertiser, store or retailer と共通</p>
                                 <p style="font-size:0.9rem;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
                                 <img src="${setupData.qrcode}" style="margin: 15px auto; display:block; max-width:180px;">
                                 <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${setupData.secret}</code></p>
@@ -1104,10 +1105,15 @@
             switchTab('dashboard');
         }
 
-        function logout() {
+        async function logout() {
             console.log('[F12 Debug] Retailer Portal Logout initiated');
             sessionStorage.clear();
-            location.href = 'index.html?logout=true';
+            try {
+                await fetch(window.API_BASE_URL + '/api/auth/logout', { method: 'POST' });
+            } catch (e) {
+                console.error("[Logout Error]", e);
+            }
+            location.href = 'retailer_portal.html?logout=true';
         }
 
 function switchSetupMode(mode) {

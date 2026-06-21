@@ -1870,11 +1870,32 @@ app.post('/api/auth/2fa/setup', async (req, res) => {
             }
         }
         
-        const secret = speakeasy.generateSecret({ name: label });
-        qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
-            if (err) return res.status(500).json({ error: "QRコード生成失敗" });
-            res.json({ secret: secret.base32, qrcode: data_url });
-        });
+        // 2FA共通化: advertiser または store ロールの場合、もう片方のロールで既にシークレットが設定されていればそれを再利用する
+        let existingSecret = null;
+        if (targetRole === 'advertiser' || targetRole === 'store') {
+            const otherRole = targetRole === 'advertiser' ? 'store' : 'advertiser';
+            const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
+            if (otherUser && otherUser.two_factor_secret) {
+                existingSecret = otherUser.two_factor_secret;
+            }
+            if (user && user.two_factor_secret) {
+                existingSecret = user.two_factor_secret;
+            }
+        }
+
+        if (existingSecret) {
+            const otpauth_url = speakeasy.otpauthURL({ secret: existingSecret, label: label, encoding: 'base32' });
+            qrcode.toDataURL(otpauth_url, (err, data_url) => {
+                if (err) return res.status(500).json({ error: "QRコード生成失敗" });
+                res.json({ secret: existingSecret, qrcode: data_url });
+            });
+        } else {
+            const secret = speakeasy.generateSecret({ name: label });
+            qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+                if (err) return res.status(500).json({ error: "QRコード生成失敗" });
+                res.json({ secret: secret.base32, qrcode: data_url });
+            });
+        }
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -1886,8 +1907,29 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
     try {
         const speakeasy = require('speakeasy');
         const targetRole = getDatabaseRole(role || 'store');
-        const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
         
+        // 2FA共通化: 相手側のロールが2FAを有効にしている場合は、こちら側にも自動同期
+        if (targetRole === 'advertiser' || targetRole === 'store') {
+            if (user && !user.two_factor_secret) {
+                const otherRole = targetRole === 'advertiser' ? 'store' : 'advertiser';
+                const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
+                if (otherUser && otherUser.two_factor_secret) {
+                    await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, email, targetRole]);
+                    user.two_factor_secret = otherUser.two_factor_secret;
+                    
+                    // インメモリ同期
+                    const userKey = `${email}:${targetRole}`;
+                    if (typeof users !== 'undefined' && users && users[userKey]) {
+                        users[userKey].twoFactorSecret = otherUser.two_factor_secret;
+                    } else if (typeof users !== 'undefined' && users && users[email]) {
+                        users[email].twoFactorSecret = otherUser.two_factor_secret;
+                    }
+                    if (typeof saveDatabase === 'function') saveDatabase();
+                }
+            }
+        }
+
         if (user && user.two_factor_secret) {
             const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 2 });
             if (verified) {
@@ -1919,15 +1961,33 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
 
         if (verified && user) {
-            await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [secret, email, targetRole]);
-            
-            // メモリ上のusers変数も同期
-            const userKey = `${email}:${targetRole}`;
-            if (typeof users !== 'undefined' && users && users[userKey]) {
-                users[userKey].twoFactorSecret = secret;
-            } else if (typeof users !== 'undefined' && users && users[email]) {
-                users[email].twoFactorSecret = secret;
+            // 同一メールアドレスの advertiser と store の両方の 2FA シークレットを同期して更新
+            if (targetRole === 'advertiser' || targetRole === 'store') {
+                await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND (role = \'advertiser\' OR role = \'store\')', [secret, email]);
+                
+                // インメモリ同期
+                if (typeof users !== 'undefined' && users) {
+                    const roles = ['advertiser', 'store'];
+                    for (const r of roles) {
+                        const key = `${email}:${r}`;
+                        if (users[key]) users[key].twoFactorSecret = secret;
+                    }
+                    if (users[email]) users[email].twoFactorSecret = secret;
+                }
+            } else {
+                await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [secret, email, targetRole]);
+                
+                // メモリ上のusers変数も同期
+                const userKey = `${email}:${targetRole}`;
+                if (typeof users !== 'undefined' && users && users[userKey]) {
+                    users[userKey].twoFactorSecret = secret;
+                } else if (typeof users !== 'undefined' && users && users[email]) {
+                    users[email].twoFactorSecret = secret;
+                }
             }
+
+            // データ永続化 (S3保存)
+            if (typeof saveDatabase === 'function') saveDatabase();
 
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, getCookieOptions(req));
@@ -1983,18 +2043,40 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
             }
         }
 
-        await dbHelper.query.run(
-            'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
-            [email, targetRole]
-        );
-        
-        // メモリ同期
-        const userKey = `${email}:${targetRole}`;
-        if (typeof users !== 'undefined' && users && users[userKey]) {
-            users[userKey].twoFactorSecret = null;
-        } else if (typeof users !== 'undefined' && users && users[email]) {
-            users[email].twoFactorSecret = null;
+        // 同一メールアドレス of advertiser と store の両方の 2FA シークレットをリセット
+        if (targetRole === 'advertiser' || targetRole === 'store') {
+            await dbHelper.query.run(
+                'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND (role = \'advertiser\' OR role = \'store\')',
+                [email]
+            );
+            
+            // インメモリ同期
+            if (typeof users !== 'undefined' && users) {
+                const roles = ['advertiser', 'store'];
+                for (const r of roles) {
+                    const key = `${email}:${r}`;
+                    if (users[key]) users[key].twoFactorSecret = null;
+                }
+                if (users[email]) users[email].twoFactorSecret = null;
+            }
+        } else {
+            await dbHelper.query.run(
+                'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
+                [email, targetRole]
+            );
+            
+            // メモリ同期
+            const userKey = `${email}:${targetRole}`;
+            if (typeof users !== 'undefined' && users && users[userKey]) {
+                users[userKey].twoFactorSecret = null;
+            } else if (typeof users !== 'undefined' && users && users[email]) {
+                users[email].twoFactorSecret = null;
+            }
         }
+        
+        // データ永続化 (S3保存)
+        if (typeof saveDatabase === 'function') saveDatabase();
+
         console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${targetRole}) - Authorized (Admin: ${isAdmin})`);
         
         res.json({ success: true });
@@ -2051,6 +2133,29 @@ app.post('/api/auth/login', async (req, res) => {
 
         if (verifyPassword(password, user.password)) {
             const targetRole = role || user.role;
+            
+            // 2FA共通化: advertiser または store ロールの場合、もう片方が 2FA シークレットを設定していれば同期
+            if (dbRole === 'advertiser' || dbRole === 'store') {
+                if (!user.two_factor_secret) {
+                    const otherRole = dbRole === 'advertiser' ? 'store' : 'advertiser';
+                    const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
+                    if (otherUser && otherUser.two_factor_secret) {
+                        await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, email, dbRole]);
+                        user.two_factor_secret = otherUser.two_factor_secret;
+                        
+                        // インメモリ同期
+                        const userKey = `${email}:${dbRole}`;
+                        if (typeof users !== 'undefined' && users && users[userKey]) {
+                            users[userKey].twoFactorSecret = otherUser.two_factor_secret;
+                        } else if (typeof users !== 'undefined' && users && users[email]) {
+                            users[email].twoFactorSecret = otherUser.two_factor_secret;
+                        }
+                        
+                        if (typeof saveDatabase === 'function') saveDatabase();
+                    }
+                }
+            }
+
             // 2FAスキップクッキーの検証
             let skip2FA = false;
             if (req.cookies && req.cookies['2fa_skip']) {
@@ -2151,6 +2256,28 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
         // 管理者でない場合は、2FAコードによる検証を必須とする（Forgot Password時の防御）
         if (!isAdmin) {
+            // 2FA共通化: リセット対象のロールに2FAシークレットが無い場合でも、もう片方に設定されていれば同期
+            if (targetRole === 'advertiser' || targetRole === 'store') {
+                if (!user.two_factor_secret) {
+                    const otherRole = targetRole === 'advertiser' ? 'store' : 'advertiser';
+                    const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
+                    if (otherUser && otherUser.two_factor_secret) {
+                        await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, email, targetRole]);
+                        user.two_factor_secret = otherUser.two_factor_secret;
+                        
+                        // インメモリ同期
+                        const userKey = `${email}:${targetRole}`;
+                        if (typeof users !== 'undefined' && users && users[userKey]) {
+                            users[userKey].twoFactorSecret = otherUser.two_factor_secret;
+                        } else if (typeof users !== 'undefined' && users && users[email]) {
+                            users[email].twoFactorSecret = otherUser.two_factor_secret;
+                        }
+                        
+                        if (typeof saveDatabase === 'function') saveDatabase();
+                    }
+                }
+            }
+
             if (!user.two_factor_secret) {
                 return res.status(400).json({ error: "二段階認証(2FA)が未設定のため、安全を考慮してオンラインでのパスワード初期化を拒否しました。管理者に直接再発行を依頼してください。" });
             }

@@ -44,7 +44,7 @@
                             if (!url.includes('/api/auth/login')) {
                                 console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                                 sessionStorage.clear();
-                                window.location.replace('index.html?logout=true');
+                                window.location.replace('admin_portal.html?logout=true');
                             }
                         }
                         return response;
@@ -2357,14 +2357,15 @@
             }
         }
 
-        function logoutAdmin() {
+        async function logoutAdmin() {
             console.log('[F12 Debug] Admin Portal Logout initiated');
             sessionStorage.clear();
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('login-overlay').style.display = 'flex';
-            document.getElementById('admin-user').value = '';
-            document.getElementById('admin-pass').value = '';
-            Swal.fire({ toast: true, position: 'top', title: 'ログアウトしました', icon: 'info', showConfirmButton: false, timer: 1500 });
+            try {
+                await fetch(window.API_BASE_URL + '/api/auth/logout', { method: 'POST' });
+            } catch (e) {
+                console.error("[Logout Error]", e);
+            }
+            window.location.href = 'admin_portal.html?logout=true';
         }
 
         // Accessibility Fix: Ensure login overlay is not hidden from screen readers
