@@ -82,14 +82,31 @@
             nav {
                 flex-direction: column;
                 padding: 15px;
+                gap: 15px;
+            }
+            .back-container, .logo-container, .links-container {
+                flex: none !important;
+                justify-content: center !important;
+                text-align: center;
+                width: 100%;
+                display: flex;
+            }
+            .logo-container {
+                order: 1;
+            }
+            .back-container {
+                order: 2;
+            }
+            .links-container {
+                order: 3;
             }
             .logo {
-                margin-bottom: 20px;
+                margin-bottom: 0;
             }
             .nav-links {
                 display: flex;
                 flex-direction: column;
-                gap: 20px;
+                gap: 10px;
                 text-align: center;
                 width: 100%;
             }
@@ -99,7 +116,7 @@
                 font-size: 1.1rem;
             }
             .hero {
-                padding-top: 180px; /* Adjust spacing for stacked nav */
+                padding-top: 220px; /* Adjust spacing for stacked nav */
             }
         }
 
@@ -372,12 +389,18 @@
 
 <body>
 
-    <nav>
-        <div class="logo">retail-ad<span>Store</span></div>
-        <a href="javascript:void(0)" onclick="goBackToPortal()" style="position: absolute; left: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
-        <div class="nav-links">
-            <a href="#benefits">導入メリット</a>
-            <a href="#revenue">収益モデル</a>
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; backdrop-filter: blur(10px); position: fixed; width: 100%; z-index: 1000; box-sizing: border-box; border-bottom: 1px solid var(--glass);">
+        <div class="back-container" style="flex: 1; display: flex; justify-content: flex-start;">
+            <a href="javascript:void(0)" onclick="goBackToPortal()" style="color: #cbd5e1; text-decoration: none; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 20px; transition: 0.3s; z-index: 1000; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-arrow-left"></i> ポータルへ</a>
+        </div>
+        <div class="logo-container" style="flex: 1; display: flex; justify-content: center; text-align: center;">
+            <div class="logo" style="margin: 0;">retail-ad<span>Store</span></div>
+        </div>
+        <div class="links-container" style="flex: 1; display: flex; justify-content: flex-end;">
+            <div class="nav-links">
+                <a href="#benefits">導入メリット</a>
+                <a href="#revenue">収益モデル</a>
+            </div>
         </div>
     </nav>
 
