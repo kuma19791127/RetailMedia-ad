@@ -1076,6 +1076,10 @@
             
             console.log(`[F12 Debug Frontend] searchPosData triggered. keyword="${keyword}", category="${category}"`);
             
+            // Save filter state to LocalStorage
+            localStorage.setItem('adv_pos_kw', keyword);
+            localStorage.setItem('adv_pos_cat', category);
+            
             try {
                 const res = await fetch(`/api/analytics/pos-search?keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`);
                 const resData = await res.json();
@@ -1434,6 +1438,10 @@
                 const category = document.getElementById('pos-search-category') ? document.getElementById('pos-search-category').value : '';
                 console.log(`[F12 Debug Frontend] loadAnalytics fetching. keyword="${keyword}", category="${category}"`);
                 
+                // Save filter state to LocalStorage
+                localStorage.setItem('adv_pos_kw', keyword);
+                localStorage.setItem('adv_pos_cat', category);
+                
                 const res = await fetch(API_URL + `/api/ad/analytics?keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`);
                 const data = await res.json();
                 
@@ -1464,9 +1472,22 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Restore filter state from LocalStorage
+            const savedKw = localStorage.getItem('adv_pos_kw') || '';
+            const savedCat = localStorage.getItem('adv_pos_cat') || '';
+            console.log(`[F12 Debug Frontend] Restoring filter state: kw="${savedKw}", cat="${savedCat}"`);
+            
+            const kwInput = document.getElementById('pos-search-keyword');
+            const catSelect = document.getElementById('pos-search-category');
+            if (kwInput) kwInput.value = savedKw;
+            if (catSelect) catSelect.value = savedCat;
+
             if (location.protocol.startsWith('http')) {
                 loadCampaigns();
                 loadAnalytics();
+                if (savedKw || savedCat) {
+                    searchPosData();
+                }
                 setInterval(loadAnalytics, 5000); // Poll for new data
             }
         });

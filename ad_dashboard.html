@@ -1972,6 +1972,11 @@
             let abStats = { A: { views: 0, scans: 0, sales: 0 }, B: { views: 0, scans: 0, sales: 0 } };
             const filterKw = document.getElementById('dashboard-filter-keyword') ? document.getElementById('dashboard-filter-keyword').value : '';
             const filterCat = document.getElementById('dashboard-filter-category') ? document.getElementById('dashboard-filter-category').value : '';
+            
+            // Save filter state to LocalStorage
+            localStorage.setItem('ad_pos_kw', filterKw);
+            localStorage.setItem('ad_pos_cat', filterCat);
+            
             console.log(`[F12 Debug Frontend] Fetching AB performance stats from /api/ad/analytics with filter: keyword="${filterKw}", category="${filterCat}"...`);
             try {
                 const res = await fetch(window.API_BASE_URL + `/api/ad/analytics?keyword=${encodeURIComponent(filterKw)}&category=${encodeURIComponent(filterCat)}`);
@@ -2085,6 +2090,16 @@
         }
 
         async function loadData() {
+            // Restore filter state from LocalStorage
+            const savedKw = localStorage.getItem('ad_pos_kw') || '';
+            const savedCat = localStorage.getItem('ad_pos_cat') || '';
+            console.log(`[F12 Debug Frontend] Restoring filter state in ad_dashboard: kw="${savedKw}", cat="${savedCat}"`);
+            
+            const kwInput = document.getElementById('dashboard-filter-keyword');
+            const catSelect = document.getElementById('dashboard-filter-category');
+            if (kwInput) kwInput.value = savedKw;
+            if (catSelect) catSelect.value = savedCat;
+
             const contextText = document.getElementById('current-weather-text');
             contextText.innerText = "📡 Locating device...";
 
@@ -2122,6 +2137,10 @@
                 const filterKw = document.getElementById('dashboard-filter-keyword') ? document.getElementById('dashboard-filter-keyword').value : '';
                 const filterCat = document.getElementById('dashboard-filter-category') ? document.getElementById('dashboard-filter-category').value : '';
                 
+                // Save filter state to LocalStorage
+                localStorage.setItem('ad_pos_kw', filterKw);
+                localStorage.setItem('ad_pos_cat', filterCat);
+
                 url += `keyword=${encodeURIComponent(filterKw)}&category=${encodeURIComponent(filterCat)}`;
 
                 console.log(`[F12 Debug Frontend] fetchAnalytics querying URL: ${url}`);
