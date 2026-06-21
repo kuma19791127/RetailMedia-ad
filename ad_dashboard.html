@@ -1341,11 +1341,14 @@
 
             <!-- Panel: API & SDK Settings -->
             <div id="panel-api" class="panel" style="display:none;">
-                <div class="content-header">
+                <div class="content-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
                     <div>
                         <h2 style="margin:0; color:#2c3e50;">⚙️ API & SDK Integration</h2>
                         <span style="color:#7f8c8d; font-size:14px;">Connect your POS, EC, or DSP to retail-ad</span>
                     </div>
+                    <button onclick="showPanel('dashboard')" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                        ← ダッシュボードに戻る
+                    </button>
                 </div>
 
                 <!-- API Key Section -->
@@ -1485,7 +1488,8 @@
             // Hide all panels
             document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
             // Show target
-            document.getElementById('panel-' + panelId).style.display = 'block';
+            const targetPanel = document.getElementById('panel-' + panelId);
+            if (targetPanel) targetPanel.style.display = 'block';
 
             // Update Sidebar Active State
             const items = document.querySelectorAll('.nav-item');
@@ -1506,6 +1510,13 @@
             if (items[activeIndex]) {
                 items[activeIndex].style.background = 'rgba(255,255,255,0.1)';
                 items[activeIndex].style.color = 'white';
+            }
+
+            // Sync with bottom mobile navigation buttons
+            document.querySelectorAll('.mobile-nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+            if (panelId === 'api') {
+                const apiBtn = document.querySelector('.mobile-nav .nav-btn[onclick*="api"]');
+                if (apiBtn) apiBtn.classList.add('active');
             }
         }
 
@@ -3136,6 +3147,9 @@
         <a href="advertiser_dashboard.html" class="nav-btn" style="text-decoration:none;">
             <i>📈</i><span>分析</span>
         </a>
+        <div class="nav-btn" onclick="showPanel('api')">
+            <i>🔌</i><span>API設定</span>
+        </div>
         <div class="nav-btn" onclick="registerCreditCard()">
             <i>💳</i><span>お支払い</span>
         </div>

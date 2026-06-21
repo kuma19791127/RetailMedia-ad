@@ -7154,7 +7154,7 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
         const storeAdNet = store ? (store.total_ad_revenue || 40000) : 40000;
         const storeAdsense = store ? (store.monthly_adsense_revenue !== undefined && store.monthly_adsense_revenue !== null ? store.monthly_adsense_revenue : 0) : 0;
         
-        const storeTotalRevenue = storeAdNet + storeAdsense;
+        const storeTotalRevenue = (storeAdNet * 0.5) + storeAdsense;
         const storeShare = (storeAdNet * 0.5) + storeAdsense;
         
         const filteredTransactions = (typeof transactions !== 'undefined' && Array.isArray(transactions))
