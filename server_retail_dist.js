@@ -7016,6 +7016,7 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
         let totalSales = 0;
         let totalItems = 0;
         const txList = [];
+        const productMap = {};
         
         rows.forEach(row => {
             let itemsList = [];
@@ -7024,24 +7025,39 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
             } catch(e) {}
             
             itemsList.forEach(item => {
-                const name = (item.name || '').toLowerCase();
+                const name = item.name || '商品';
+                const lowerName = name.toLowerCase();
                 const category = (item.category || '').toLowerCase();
                 
-                const matchesKeyword = !q || name.includes(q);
+                const matchesKeyword = !q || lowerName.includes(q);
                 const matchesCategory = !qCat || category.includes(qCat);
                 
                 if (matchesKeyword && matchesCategory) {
-                    totalSales += (item.price || 0);
+                    const price = item.price || 0;
+                    totalSales += price;
                     totalItems += 1;
                     txList.push({
                         time: Number(row.timestamp) || Date.now(),
-                        productName: item.name || '商品',
+                        productName: name,
                         category: item.category || '未分類',
-                        amount: item.price || 0
+                        amount: price
                     });
+                    
+                    if (!productMap[name]) {
+                        productMap[name] = {
+                            productName: name,
+                            category: item.category || '未分類',
+                            totalSales: 0,
+                            totalItems: 0
+                        };
+                    }
+                    productMap[name].totalSales += price;
+                    productMap[name].totalItems += 1;
                 }
             });
         });
+
+        const productsList = Object.values(productMap).sort((a, b) => b.totalSales - a.totalSales);
 
         // データベースにデータが存在すれば、そのリアルタイム結果を返却
         if (totalItems > 0) {
@@ -7052,6 +7068,7 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
                     category: qCat || '全体',
                     totalSales: totalSales,
                     totalItems: totalItems,
+                    products: productsList, // 商品別の集計リストを追加
                     trend: '+10%'
                 },
                 transactions: txList.slice(0, 50) // 直近50件
@@ -7067,21 +7084,40 @@ app.get('/api/analytics/pos-search', requireAuth, async (req, res) => {
         category: qCat || '全カテゴリ',
         totalSales: 0,
         totalItems: 0,
+        products: [],
         trend: '+0%'
     };
 
     if (q.includes('ビール') || q.includes('beer') || qCat.includes('酒')) {
         simulatedData.totalSales = 1250000;
         simulatedData.totalItems = 4500;
+        simulatedData.products = [
+            { productName: "プレミアムビール 極み生", category: "酒類", totalSales: 750000, totalItems: 2500 },
+            { productName: "クラフトビール 青空麦酒", category: "酒類", totalSales: 500000, totalItems: 2000 }
+        ];
         simulatedData.trend = '+15%';
     } else if (q.includes('スナック') || q.includes('菓子') || qCat.includes('菓子')) {
         simulatedData.totalSales = 850000;
         simulatedData.totalItems = 6200;
+        simulatedData.products = [
+            { productName: "ポテトチップスうすしお", category: "菓子", totalSales: 450000, totalItems: 3200 },
+            { productName: "チョコウエハース", category: "菓子", totalSales: 400000, totalItems: 3000 }
+        ];
         simulatedData.trend = '+8%';
     } else if (q !== '' || qCat !== '') {
         simulatedData.totalSales = 320000;
         simulatedData.totalItems = 1200;
+        simulatedData.products = [
+            { productName: `${q || '対象'}商品A`, category: qCat || 'その他', totalSales: 200000, totalItems: 800 },
+            { productName: `${q || '対象'}商品B`, category: qCat || 'その他', totalSales: 120000, totalItems: 400 }
+        ];
         simulatedData.trend = '+2%';
+    } else {
+        simulatedData.products = [
+            { productName: "プレミアムビール 極み生", category: "酒類", totalSales: 750000, totalItems: 2500 },
+            { productName: "ポテトチップスうすしお", category: "菓子", totalSales: 450000, totalItems: 3200 },
+            { productName: "緑茶 ペットボトル 500ml", category: "飲料", totalSales: 300000, totalItems: 2000 }
+        ];
     }
 
     res.json({ 

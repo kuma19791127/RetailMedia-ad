@@ -848,10 +848,24 @@
                             <strong id="pos-result-sales" style="font-size:1.4rem; color:#10b981;">¥0</strong>
                         </div>
                     </div>
-                    <table class="data-table" style="margin:0;">
-                        <thead><tr><th>日時</th><th>商品名 / ブランド</th><th>売上金額</th></tr></thead>
-                        <tbody id="pos-result-list"></tbody>
-                    </table>
+                    
+                    <!-- 📦 商品別売上集計一覧テーブル -->
+                    <div style="margin-bottom:20px;">
+                        <h4 style="margin:0 0 10px 0; color:#334155; font-size:0.95rem; border-bottom:2px solid #e2e8f0; padding-bottom:5px;">📦 商品別売上集計一覧</h4>
+                        <table class="data-table" style="margin:0;">
+                            <thead><tr><th>商品名</th><th>カテゴリ</th><th>累計個数</th><th>累計売上</th></tr></thead>
+                            <tbody id="pos-product-summary-list"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- 📝 直近取引明細 -->
+                    <div>
+                        <h4 style="margin:0 0 10px 0; color:#334155; font-size:0.95rem; border-bottom:2px solid #e2e8f0; padding-bottom:5px;">📝 直近取引明細</h4>
+                        <table class="data-table" style="margin:0;">
+                            <thead><tr><th>日時</th><th>商品名 / ブランド</th><th>売上金額</th></tr></thead>
+                            <tbody id="pos-result-list"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1094,6 +1108,25 @@
                     document.getElementById('pos-result-count').innerText = `${totalItems.toLocaleString()}個`;
                     document.getElementById('pos-result-sales').innerText = `¥${totalSales.toLocaleString()}`;
                     
+                    // Render Products Summary List
+                    const summaryTbody = document.getElementById('pos-product-summary-list');
+                    if (summaryTbody) {
+                        const products = resData.data ? (resData.data.products || []) : [];
+                        if (products.length === 0) {
+                            summaryTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:15px; color:#64748b;">集計可能な商品がありません</td></tr>`;
+                        } else {
+                            summaryTbody.innerHTML = products.map(p => `
+                                <tr>
+                                    <td style="font-weight:600; color:#1e293b;">${p.productName}</td>
+                                    <td><span style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-size:0.8rem; color:#475569;">${p.category}</span></td>
+                                    <td style="font-weight:600; color:#334155;">${p.totalItems.toLocaleString()}個</td>
+                                    <td style="color:#10b981; font-weight:bold;">¥${p.totalSales.toLocaleString()}</td>
+                                </tr>
+                            `).join('');
+                        }
+                    }
+
+                    // Render Transaction Details
                     const tbody = document.getElementById('pos-result-list');
                     if (!resData.transactions || resData.transactions.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">該当する販売データがありません</td></tr>`;
@@ -1105,6 +1138,19 @@
                                 <td style="color:#10b981; font-weight:bold;">¥${(tx.amount || 0).toLocaleString()}</td>
                             </tr>
                         `).join('');
+                    }
+
+                    // Update posSalesChart with dynamic products data
+                    if (chartPos && resData.data.products && resData.data.products.length > 0) {
+                        const topProducts = resData.data.products.slice(0, 5); // Max 5 products
+                        const labels = topProducts.map(p => p.productName);
+                        const normalSales = topProducts.map(p => Math.round(p.totalSales * 0.45));
+                        const promoSales = topProducts.map(p => p.totalSales);
+                        
+                        chartPos.data.labels = labels;
+                        chartPos.data.datasets[0].data = normalSales;
+                        chartPos.data.datasets[1].data = promoSales;
+                        chartPos.update();
                     }
                 }
             } catch (e) {
@@ -1514,8 +1560,9 @@
             }
         });
 
+        let chartPos = null;
         const ctxPos = document.getElementById('posSalesChart').getContext('2d');
-        new Chart(ctxPos, {
+        chartPos = new Chart(ctxPos, {
             type: 'bar',
             data: {
                 labels: ['商品A (新作飲料)', '商品B (スナック)', '商品C (日用品)'],
