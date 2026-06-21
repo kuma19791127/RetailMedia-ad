@@ -2043,7 +2043,7 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
             }
         }
 
-        // 同一メールアドレス of advertiser と store の両方の 2FA シークレットをリセット
+        // 同一メールアドレスの advertiser と store の両方の 2FA シークレットをリセット
         if (targetRole === 'advertiser' || targetRole === 'store') {
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND (role = \'advertiser\' OR role = \'store\')',
