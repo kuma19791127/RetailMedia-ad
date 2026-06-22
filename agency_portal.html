@@ -571,14 +571,19 @@
                 let totalContract = 0;
                 let listHtml = '';
 
+                if (!Array.isArray(referrals)) {
+                    console.warn("[F12 Debug Frontend] Referrals list is not an array:", referrals);
+                    return;
+                }
+
                 referrals.forEach(r => {
-                    totalContract += r.price;
+                    totalContract += Number(r.price || 0);
                     const statusClass = r.status === 'Pending' ? 'tag-pending' : 'tag-approved';
                     listHtml += `
                         <div class="list-item">
                             <div>
                                 <div style="font-weight:bold;">${r.advertise}</div>
-                                <div style="font-size:0.8rem; color:#64748b;">¥${(r.price).toLocaleString()} / ${r.date || '-'}</div>
+                                <div style="font-size:0.8rem; color:#64748b;">¥${Number(r.price || 0).toLocaleString()} / ${r.date || '-'}</div>
                             </div>
                             <span class="tag ${statusClass}">${r.status}</span>
                         </div>

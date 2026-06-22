@@ -2191,10 +2191,10 @@
 
             // Metrics
             const revDisplay = document.getElementById('revenue-display');
-            if (revDisplay && data.attribution.revenue) revDisplay.innerText = '¥' + data.attribution.revenue.toLocaleString();
+            if (revDisplay && data.attribution && data.attribution.revenue) revDisplay.innerText = '¥' + data.attribution.revenue.toLocaleString();
 
             const cpaDisplay = document.getElementById('cpa-display');
-            if (cpaDisplay && data.attribution.cpa) cpaDisplay.innerText = '¥' + data.attribution.cpa.toLocaleString();
+            if (cpaDisplay && data.attribution && data.attribution.cpa) cpaDisplay.innerText = '¥' + data.attribution.cpa.toLocaleString();
 
             const activeFactors = data.context.active_factors || [];
 
@@ -2964,7 +2964,9 @@
                     const camps = await res.json();
                     console.log("[F12 Debug Frontend] campaigns data loaded:", camps);
                     let totalSpend = 0;
-                    camps.forEach(c => totalSpend += Number(c.spend || 0));
+                    if (Array.isArray(camps)) {
+                        camps.forEach(c => totalSpend += Number(c.spend || 0));
+                    }
                     const spendEl = document.getElementById('account-spend-display');
                     if(spendEl) spendEl.innerText = totalSpend.toLocaleString();
                 }

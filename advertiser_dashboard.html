@@ -1119,8 +1119,8 @@
                                 <tr>
                                     <td style="font-weight:600; color:#1e293b;">${p.productName}</td>
                                     <td><span style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-size:0.8rem; color:#475569;">${p.category}</span></td>
-                                    <td style="font-weight:600; color:#334155;">${p.totalItems.toLocaleString()}個</td>
-                                    <td style="color:#10b981; font-weight:bold;">¥${p.totalSales.toLocaleString()}</td>
+                                    <td style="font-weight:600; color:#334155;">${(p.totalItems || 0).toLocaleString()}個</td>
+                                    <td style="color:#10b981; font-weight:bold;">¥${(p.totalSales || 0).toLocaleString()}</td>
                                 </tr>
                             `).join('');
                         }
@@ -1164,6 +1164,11 @@
                 const res = await fetch(API_URL + '/api/campaigns');
                 if (!res.ok) return;
                 const list = await res.json();
+
+                if (!Array.isArray(list)) {
+                    console.warn("[F12 Debug Frontend] Campaigns list is not an array:", list);
+                    return;
+                }
 
                 const tbody = document.getElementById('campaign-list');
                 let totalSpend = 0;

@@ -613,7 +613,7 @@ h2 {
                         <div class="video-title">${v.title}</div>
                         <div style="font-size:0.8rem; color:#888;">${v.format} | ランク: <strong style="color:${v.color}">${v.rank}</strong></div>
                         <div style="margin-top:10px; font-weight:bold;">
-                            ${v.views.toLocaleString()} 再生 / 推定 ¥${v.revenue.toLocaleString()}
+                            ${(v.views || 0).toLocaleString()} 再生 / 推定 ¥${(v.revenue || 0).toLocaleString()}
                         </div>
                         ${deliveryInfo}
                         ${scoreHtml}
@@ -623,7 +623,7 @@ h2 {
             });
 
             // Direct from backend
-    document.getElementById('total-views').innerText = fallbackTotalV.toLocaleString();
+    document.getElementById('total-views').innerText = (fallbackTotalV || 0).toLocaleString();
     document.getElementById('total-revenue').innerText = '¥' + (fallbackTotalR ? fallbackTotalR.toLocaleString() : '0');
 
     if (mockVideos && mockVideos.length > 0) {
