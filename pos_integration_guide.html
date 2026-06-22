@@ -272,6 +272,80 @@
             </div>
         </div>
 
+        <h2><i class="fa-solid fa-code"></i> POS SDKの具体的な導入手順</h2>
+        <p>
+            POS Connect SDK（<code>pos_connect_sdk.js</code>）は、自社で構築・運用しているPOSシステムやECサイトの決済・売上確定処理部分に組み込むことで、自動データ同期を実現します。以下の3ステップで導入できます。
+        </p>
+
+        <h3>ステップ1. SDKファイルの配置とインポート</h3>
+        <p>
+            貴社POSシステムのプロジェクトフォルダに <a href="/pos_connect_sdk.js" target="_blank"><code>pos_connect_sdk.js</code></a> をダウンロード・配置し、プログラムに読み込ませます。
+        </p>
+        <div class="code-block">
+<span class="code-comment">// ■ Webブラウザ(フロントエンド)で動作するレジの場合</span>
+&lt;script src="/js/pos_connect_sdk.js"&gt;&lt;/script&gt;
+
+<span class="code-comment">// ■ Node.jsなどサーバーサイドで動作するレジの場合</span>
+<span class="code-keyword">const</span> RetailAdPOS = require(<span class="code-string">'./pos_connect_sdk.js'</span>);
+        </div>
+
+        <h3>ステップ2. SDKの初期化</h3>
+        <p>
+            レジアプリの起動ロジックの中で、発行された専用APIキーとリテアドの本番サーバーURLを渡して初期化します。
+        </p>
+        <div class="code-block">
+<span class="code-keyword">const</span> liteAd = <span class="code-keyword">new</span> RetailAdPOS(<span class="code-string">'貴社のLITEAD_API_KEY_XXXX'</span>, <span class="code-string">'https://api.retail-ad.com'</span>);
+        </div>
+
+        <h3>ステップ3. 決済完了ハンドラへの組み込み (★最も重要)</h3>
+        <p>
+            POSレジで「会計が完了した瞬間」「レシートが印刷される直前」「決済APIの成功コールバック内」の処理に、以下の同期関数を1行追加します。
+        </p>
+        <div class="code-block">
+<span class="code-keyword">function</span> <span class="code-keyword">onPaymentSuccess</span>(transactionData) {
+    <span class="code-comment">// --- リテアドへの売上実績の自動同期を追加 ---</span>
+    liteAd.trackSale({
+        transactionId: transactionData.id,  <span class="code-comment">// 決済伝票番号</span>
+        amount: transactionData.totalPrice,  <span class="code-comment">// 会計総額 (例: 1500)</span>
+        items: transactionData.janCodes      <span class="code-comment">// 購入商品のJANコード配列 (例: ['4901335109634'])</span>
+    }).then(res =&gt; {
+        console.log(<span class="code-string">'[retail-ad] 同期成功:'</span>, res);
+    }).catch(err =&gt; {
+        console.error(<span class="code-string">'[retail-ad] 同期エラー:'</span>, err);
+    });
+    <span class="code-comment">// --------------------------------------------</span>
+
+    <span class="code-comment">// レシート印刷など、従来のレジ処理へ続きます</span>
+    printReceipt();
+}
+        </div>
+
+        <h2><i class="fa-solid fa-file-excel"></i> ファイル手動取込 (※自動連携不可の店舗用)</h2>
+        <p>
+            「レジメーカーの規約でSDKの組み込みができない」「API連携機能がレジに備わっていない」という店舗様でも、ExcelやCSVファイルによる手動アップロード機能を使うことで、今すぐ「どこでもレジ（顧客用スマホ決済）」を稼働させることができます。
+        </p>
+        <div class="warning-box" style="background:#f1f5f9; border-left:4px solid #10b981; padding:20px;">
+            <h4 style="color:#0f766e; margin-top:0;"><i class="fa-solid fa-circle-info"></i> 手動取込の運用ステップ</h4>
+            <ol style="padding-left:20px; color:#475569; line-height:1.8; margin-bottom:0;">
+                <li style="margin-bottom:10px;">
+                    <b>商品データの書き出し:</b><br>
+                    現在お使いのレジや基幹システムの管理画面から、商品一覧データ（Excel/CSV）を書き出します。
+                </li>
+                <li style="margin-bottom:10px;">
+                    <b>インポート用ファイルの用意:</b><br>
+                    書き出したデータから「JANコード」「商品名」「販売価格」「カテゴリー」の4つの項目を揃えたファイルを作成します。
+                </li>
+                <li style="margin-bottom:10px;">
+                    <b>店舗管理画面からアップロード:</b><br>
+                    店舗管理画面（<code>store_portal.html</code> または <code>anywhere_retail.html</code> の「ファイル手動取込」ボタン）から該当ファイルをドラッグ＆ドロップしてアップロードします。
+                </li>
+                <li>
+                    <b>全端末・お客様用画面への自動反映:</b><br>
+                    アップロードした商品データはクラウド（S3）を通じて自動同期され、お客様がスマホカメラで商品のバーコードを読んだ瞬間に、即座に商品名と価格が反映されてお買い物が可能になります。
+                </li>
+            </ol>
+        </div>
+
     </div>
 </body>
 </html>
