@@ -2035,14 +2035,23 @@
                 const data = await res.json();
                 console.log("[F12 Debug Frontend] Fetch store revenue response status:", res.status, "data:", data);
 
+                if (!res.ok) {
+                    console.warn("[F12 Debug Frontend] loadRevenue failed with status:", res.status, data.error);
+                    return;
+                }
+
+                const adnetVal = data.adnet !== undefined ? data.adnet : (data.storeShare !== undefined ? data.storeShare : 0);
+                const totalRevVal = data.totalRevenue !== undefined ? data.totalRevenue : 0;
+                const storeShareVal = data.storeShare !== undefined ? data.storeShare : 0;
+
                 const ysEl = document.getElementById('your-share');
-                if (ysEl) ysEl.innerText = '¥' + data.adnet.toLocaleString();
+                if (ysEl) ysEl.innerText = '¥' + adnetVal.toLocaleString();
 
                 const trEl = document.getElementById('total-revenue');
-                if (trEl) trEl.innerText = '¥' + data.totalRevenue.toLocaleString();
+                if (trEl) trEl.innerText = '¥' + totalRevVal.toLocaleString();
                 // Also update the bank info card's dynamic amount display
                 const bankTarget = document.getElementById('bank-payout-target');
-                if (bankTarget) bankTarget.innerText = '¥' + data.storeShare.toLocaleString();
+                if (bankTarget) bankTarget.innerText = '¥' + storeShareVal.toLocaleString();
 
                 // Real AdSense Data
                 if (data.adsense !== undefined) {

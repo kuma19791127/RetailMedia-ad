@@ -1842,7 +1842,7 @@ app.post('/api/auth/register', async (req, res) => {
         console.log(`[Auth] 🆕 New User Registered: ${email} (${defaultRole})`);
 
         const token = jwt.sign({ email, role: defaultRole }, JWT_SECRET, { expiresIn: '24h' });
-        res.cookie('token', token, getCookieOptions(req));
+        res.cookie('token', token, getCookieOptions(req, 24 * 60 * 60 * 1000));
         res.json({ success: true, redirect: getRedirectUrl(defaultRole) });
     } catch (e) {
         console.error("[Auth Register Error]", e);
@@ -1934,7 +1934,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
             const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 2 });
             if (verified) {
                 const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-                res.cookie('token', jwtToken, getCookieOptions(req));
+                res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
                 
                 // 5時間有効な2FAスキップクッキーを発行
                 const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
@@ -1990,7 +1990,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
             if (typeof saveDatabase === 'function') saveDatabase();
 
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-            res.cookie('token', jwtToken, getCookieOptions(req));
+            res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
 
             // 5時間有効な2FAスキップクッキーを発行
             const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
@@ -2191,9 +2191,10 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            // ログイン成功時にJWTトークンを発行してCookieにセット
+            // ログイン成功時にJWTトークンを発行してCookieにセット (24時間の明示的有効期限を設定してタイムアウトを防止)
             const jwtToken = jwt.sign({ email, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-            res.cookie('token', jwtToken, getCookieOptions(req));
+            console.log(`[Auth Login Success] Issued token for email: ${email}, role: ${targetRole}, name: ${user.name}`);
+            res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
 
             // Session token set in cookies
             res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
@@ -7136,9 +7137,11 @@ app.post('/api/freee/sales', requireAuth, async (req, res) => {
 
 // --- Store Portal Revenue Endpoint ---
 app.get('/api/store/revenue', requireAuth, async (req, res) => {
+    console.log("[F12 Debug Backend] /api/store/revenue accessed. req.user:", req.user);
     // ロールチェック (店舗または管理者のみ許可)
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
-        return res.status(403).json({ error: "店舗権限が必要です" });
+        console.warn("[F12 Debug Backend] /api/store/revenue Access Denied: User role is", req.user.role, "but store or admin is required.");
+        return res.status(403).json({ error: "店舗権限が必要です", actualRole: req.user.role });
     }
     try {
         const storeId = req.user.org || req.user.email;
@@ -7165,6 +7168,7 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
             success: true,
             totalRevenue: storeTotalRevenue,
             storeShare: storeShare,
+            adnet: storeShare,
             adsense: storeAdsense,
             unitA: Math.round(storeAdsense * 0.6),
             unitB: Math.round(storeAdsense * 0.4),
