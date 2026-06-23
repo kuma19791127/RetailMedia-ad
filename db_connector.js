@@ -288,39 +288,7 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ 初期ローカルイベントの登録が完了しました。');
             }
 
-            // ユーザーデータの同期 (database.json のユーザー情報を PostgreSQL の users テーブルにインポート)
-            const fs = require('fs');
-            const path = require('path');
-            const jsonPath = path.resolve(__dirname, 'database.json');
-            if (fs.existsSync(jsonPath)) {
-                try {
-                    const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-                    if (data.users) {
-                        for (const [key, userDetails] of Object.entries(data.users)) {
-                            let email = key;
-                            let role = userDetails.role;
-                            if (key.includes(':')) {
-                                const parts = key.split(':');
-                                email = parts[0];
-                                role = parts[1];
-                            }
-                            await client.query(
-                                `INSERT INTO users (email, password, role, name, org, two_factor_secret) 
-                                 VALUES ($1, $2, $3, $4, $5, $6) 
-                                 ON CONFLICT (email, role) DO UPDATE 
-                                 SET password = EXCLUDED.password, 
-                                     name = EXCLUDED.name,
-                                     org = EXCLUDED.org,
-                                     two_factor_secret = COALESCE(users.two_factor_secret, EXCLUDED.two_factor_secret)`,
-                                [email, userDetails.password, getDatabaseRole(role), userDetails.name || null, userDetails.org || null, userDetails.twoFactorSecret || null]
-                            );
-                        }
-                        console.log('[DB] ✅ Users synchronized from database.json to PostgreSQL.');
-                    }
-                } catch (e) {
-                    console.error('[DB] ❌ Users synchronization error:', e);
-                }
-            }
+
 
             // Migration: Add monthly_operating_cost column to stores table if not exists
             try {
@@ -940,47 +908,7 @@ if (process.env.DATABASE_URL) {
                     }
                 });
 
-                // database.json からユーザー情報を SQLite の users テーブルに同期
-                const fs = require('fs');
-                const path = require('path');
-                const jsonPath = path.resolve(__dirname, 'database.json');
-                if (fs.existsSync(jsonPath)) {
-                    try {
-                        const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-                        if (data.users) {
-                            const stmt = sqliteDb.prepare(`
-                                INSERT INTO users (email, password, role, name, org, two_factor_secret) 
-                                VALUES (?, ?, ?, ?, ?, ?)
-                                ON CONFLICT(email, role) DO UPDATE SET
-                                    password = EXCLUDED.password,
-                                    name = EXCLUDED.name,
-                                    org = EXCLUDED.org,
-                                    two_factor_secret = COALESCE(users.two_factor_secret, EXCLUDED.two_factor_secret)
-                            `);
-                            for (const [key, userDetails] of Object.entries(data.users)) {
-                                let email = key;
-                                let role = userDetails.role;
-                                if (key.includes(':')) {
-                                    const parts = key.split(':');
-                                    email = parts[0];
-                                    role = parts[1];
-                                }
-                                stmt.run([
-                                    email, 
-                                    userDetails.password, 
-                                    getDatabaseRole(role), 
-                                    userDetails.name || null, 
-                                    userDetails.org || null, 
-                                    userDetails.twoFactorSecret || null
-                                ]);
-                            }
-                            stmt.finalize();
-                            console.log('[Database] ✅ Users synchronized from database.json to SQLite.');
-                        }
-                    } catch (e) {
-                        console.error('[Database] ❌ SQLite Users synchronization error:', e);
-                    }
-                }
+
             });
         }
     });
