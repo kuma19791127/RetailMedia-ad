@@ -105,6 +105,17 @@ if (process.env.DATABASE_URL) {
                     category VARCHAR(255)
                 );
 
+                CREATE TABLE IF NOT EXISTS contacts (
+                    id SERIAL PRIMARY KEY,
+                    company_name VARCHAR(255),
+                    person_name VARCHAR(255),
+                    email VARCHAR(255),
+                    contact_type VARCHAR(255),
+                    message TEXT,
+                    image_data TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
                 CREATE TABLE IF NOT EXISTS withdrawal_requests (
                     id VARCHAR(255) PRIMARY KEY,
                     email VARCHAR(255) NOT NULL,
@@ -349,7 +360,7 @@ if (process.env.DATABASE_URL) {
                 await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_scope VARCHAR(50) DEFAULT 'enterprise'");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_scope).');
             } catch (e) {
-                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_scope):', e.message);
+                console.error('[DB] PostgreSQL campaigns table migration failed (target_scope):', e.message);
             }
 
             // Migration path: Add target_areas column to campaigns table if not exists
@@ -357,7 +368,7 @@ if (process.env.DATABASE_URL) {
                 await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_areas TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_areas).');
             } catch (e) {
-                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_areas):', e.message);
+                console.error('[DB] PostgreSQL campaigns table migration failed (target_areas):', e.message);
             }
 
             // Migration path: Add target_orgs column to campaigns table if not exists
@@ -365,7 +376,7 @@ if (process.env.DATABASE_URL) {
                 await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_orgs TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_orgs).');
             } catch (e) {
-                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_orgs):', e.message);
+                console.error('[DB] PostgreSQL campaigns table migration failed (target_orgs):', e.message);
             }
 
             // Migration path: Add prefecture column to stores table if not exists
@@ -389,7 +400,7 @@ if (process.env.DATABASE_URL) {
                 await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_prefectures TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_prefectures).');
             } catch (e) {
-                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_prefectures):', e.message);
+                console.error('[DB] PostgreSQL campaigns table migration failed (target_prefectures):', e.message);
             }
 
             // Migration path: Add target_store_types column to campaigns table if not exists
@@ -397,7 +408,7 @@ if (process.env.DATABASE_URL) {
                 await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_store_types TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_store_types).');
             } catch (e) {
-                console.error('[DB] ❌ PostgreSQL campaigns table migration failed (target_store_types):', e.message);
+                console.error('[DB] PostgreSQL campaigns table migration failed (target_store_types):', e.message);
             }
 
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
@@ -464,6 +475,19 @@ if (process.env.DATABASE_URL) {
                         age INTEGER,
                         ad_id TEXT,
                         store_id TEXT
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS contacts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        company_name TEXT,
+                        person_name TEXT,
+                        email TEXT,
+                        contact_type TEXT,
+                        message TEXT,
+                        image_data TEXT,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
                     )
                 `);
 

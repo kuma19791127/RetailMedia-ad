@@ -583,6 +583,36 @@
     </section>
 
     <section id="contact" class="section" style="background: white; max-width: 100%;">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <style>
+            .type-btn {
+                display: inline-block;
+                padding: 10px 20px;
+                border: 1px solid #cbd5e1;
+                border-radius: 30px;
+                font-size: 0.9rem;
+                font-weight: 700;
+                color: #475569;
+                background: #f8fafc;
+                cursor: pointer;
+                transition: 0.2s;
+                text-align: center;
+                user-select: none;
+            }
+            .type-btn-label input:checked + .type-btn {
+                background: #2563eb;
+                color: white;
+                border-color: #2563eb;
+                box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+            }
+            .type-btn:hover {
+                border-color: #2563eb;
+                color: #2563eb;
+            }
+            .type-btn-label input:checked + .type-btn:hover {
+                color: white;
+            }
+        </style>
         <div style="max-width: 1200px; margin: 0 auto;">
             <h2 class="section-title">お問い合わせ窓口</h2>
             <div class="contact-form">
@@ -593,57 +623,166 @@
                 <form id="contact-form-main" onsubmit="handleContactSubmit(event)">
                     <div class="form-group">
                         <label>会社名・店舗名</label>
-                        <input type="text" name="company" required placeholder="例: 株式会社〇〇">
+                        <input type="text" name="company" placeholder="例: 株式会社〇〇">
                     </div>
                     <div class="form-group">
-                        <label>お名前</label>
+                        <label>お名前 (担当者名) <span style="color: #ef4444;">*</span></label>
                         <input type="text" name="name" required placeholder="例: 山田 太郎">
                     </div>
                     <div class="form-group">
-                        <label>メールアドレス (連絡先)</label>
+                        <label>メールアドレス (返信用) <span style="color: #ef4444;">*</span></label>
                         <input type="email" name="email" required placeholder="例: yamada@example.com">
                     </div>
                     <div class="form-group">
-                        <label>お問い合わせ種別</label>
-                        <select name="type"
-                            style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; background:white;">
-                            <option>店舗へのサイネージ導入について</option>
-                            <option>広告出稿について</option>
-                            <option>クリエイター登録について</option>
-                            <option>代理店契約について</option>
-                            <option>その他・取材等</option>
-                        </select>
+                        <label>お問い合わせ種類 <span style="color: #ef4444;">*</span></label>
+                        <div class="type-button-group" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;">
+                            <label class="type-btn-label">
+                                <input type="radio" name="type" value="1. 広告について" checked style="display: none;">
+                                <span class="type-btn">1. 広告について</span>
+                            </label>
+                            <label class="type-btn-label">
+                                <input type="radio" name="type" value="2. エンジニアリング" style="display: none;">
+                                <span class="type-btn">2. エンジニアリング</span>
+                            </label>
+                            <label class="type-btn-label">
+                                <input type="radio" name="type" value="3. レビュー" style="display: none;">
+                                <span class="type-btn">3. レビュー</span>
+                            </label>
+                            <label class="type-btn-label">
+                                <input type="radio" name="type" value="4. 出金・入金" style="display: none;">
+                                <span class="type-btn">4. 出金・入金</span>
+                            </label>
+                            <label class="type-btn-label">
+                                <input type="radio" name="type" value="5. その他" style="display: none;">
+                                <span class="type-btn">5. その他</span>
+                            </label>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>お問い合わせ内容</label>
+                        <label>お問い合わせ内容 <span style="color: #ef4444;">*</span></label>
                         <textarea name="message" required placeholder="ご要望やご質問を詳細にご記入ください..."></textarea>
                     </div>
-                    <button type="submit">送信する</button>
+                    <div class="form-group">
+                        <label>画像を添付 (任意)</label>
+                        <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; background: #f8fafc; position: relative; cursor: pointer; transition: 0.2s;" ondragover="event.preventDefault()" ondrop="handleDrop(event)" onclick="document.getElementById('contact-image-input').click()">
+                            <span style="font-size: 1.5rem; display: block; margin-bottom: 5px;">📸</span>
+                            <span id="upload-status" style="font-size: 0.9rem; color: #64748b;">画像を選択するか、ドラッグ＆ドロップしてください</span>
+                            <input type="file" id="contact-image-input" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                            <div id="image-preview-container" style="display: none; margin-top: 15px; position: relative;">
+                                <img id="image-preview" src="" style="max-height: 150px; max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <button type="button" onclick="removeImage(event)" style="position: absolute; top: -10px; right: -10px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; font-size: 14px; line-height: 24px; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" style="margin-top: 10px;">送信する</button>
                     <p style="font-size:0.8rem; color:var(--gray); margin-top:15px; text-align:center;">
                         ※送信いただいた個人情報は、当社の<a href="#privacy" style="color:var(--primary);">プライバシーポリシー</a>に基づき適切に管理されます。
                     </p>
                 </form>
                 <script>
-                    function handleContactSubmit(e) {
+                    let attachedImageBase64 = null;
+
+                    function handleFileSelect(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            processFile(file);
+                        }
+                    }
+
+                    function handleDrop(e) {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file) {
+                            processFile(file);
+                        }
+                    }
+
+                    function processFile(file) {
+                        if (!file.type.startsWith('image/')) {
+                            Swal.fire('エラー', '画像ファイルのみアップロード可能です。', 'error');
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            attachedImageBase64 = e.target.result;
+                            document.getElementById('image-preview').src = attachedImageBase64;
+                            document.getElementById('image-preview-container').style.display = 'block';
+                            document.getElementById('upload-status').innerText = file.name;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+
+                    function removeImage(e) {
+                        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+                        attachedImageBase64 = null;
+                        document.getElementById('contact-image-input').value = '';
+                        document.getElementById('image-preview').src = '';
+                        document.getElementById('image-preview-container').style.display = 'none';
+                        document.getElementById('upload-status').innerText = '画像を選択するか、ドラッグ＆ドロップしてください';
+                    }
+
+                    async function handleContactSubmit(e) {
                         e.preventDefault();
                         const form = e.target;
-                        const company = form.company.value;
-                        const name = form.name.value;
-                        const email = form.email.value;
-                        const type = form.type.value;
-                        const message = form.message.value;
+                        
+                        const company = form.company.value.trim();
+                        const name = form.name.value.trim();
+                        const email = form.email.value.trim();
+                        const message = form.message.value.trim();
+                        
+                        const typeElement = form.querySelector('input[name="type"]:checked');
+                        const type = typeElement ? typeElement.value : '';
 
-                        const u = "info";
-                        const d = "retail-ad.com";
-                        const subject = encodeURIComponent("【リテアドお問い合わせ】" + type);
-                        const body = encodeURIComponent(
-                            "会社名・店舗名: " + company + "\n" +
-                            "お名前: " + name + "\n" +
-                            "メールアドレス: " + email + "\n" +
-                            "お問い合わせ種別: " + type + "\n\n" +
-                            "内容:\n" + message
-                        );
-                        window.location.href = "mailto:" + u + "@" + d + "?subject=" + subject + "&body=" + body;
+                        if (!name || !email || !type || !message) {
+                            Swal.fire('入力エラー', '必須項目をすべて入力してください。', 'warning');
+                            return;
+                        }
+
+                        Swal.fire({
+                            title: '送信中...',
+                            text: 'お問い合わせを送信しています。',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        try {
+                            const payload = {
+                                company: company,
+                                name: name,
+                                email: email,
+                                type: type,
+                                message: message,
+                                image: attachedImageBase64
+                            };
+
+                            const res = await fetch(`${window.API_BASE_URL || ''}/api/contact`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            });
+
+                            const data = await res.json();
+                            
+                            if (data.success) {
+                                Swal.fire({
+                                    title: '送信完了',
+                                    text: 'お問い合わせを受付いたしました。ありがとうございます。',
+                                    icon: 'success'
+                                }).then(() => {
+                                    form.reset();
+                                    removeImage();
+                                });
+                            } else {
+                                throw new Error(data.error || '送信に失敗しました。');
+                            }
+                        } catch (err) {
+                            console.error("[Contact Form Submit Error]", err);
+                            Swal.fire('送信エラー', err.message || '通信エラーが発生しました。', 'error');
+                        }
                     }
                 </script>
             </div>

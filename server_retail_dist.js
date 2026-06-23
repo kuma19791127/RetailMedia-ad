@@ -7465,3 +7465,78 @@ app.post('/api/admin/devices', requireAuth, (req, res) => {
     console.log(`[Admin] 🛠️ Device ${deviceId} permanently paired to Store ${storeId}`);
     res.json({ success: true, message: `Device paired to ${storeId}` });
 });
+
+// --- [NEW] Contact (Inquiry) System API ---
+
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { company, name, email, type, message, image } = req.body;
+        
+        if (!name || !email || !type || !message) {
+            return res.status(400).json({ error: "必須項目（お名前、メールアドレス、お問い合わせ種別、内容）を入力してください" });
+        }
+
+        let savedImagePath = null;
+        if (image && image.includes(';base64,')) {
+            try {
+                // uploads/contacts ディレクトリを準備
+                const contactsUploadDir = path.join(__dirname, 'uploads', 'contacts');
+                if (!fs.existsSync(contactsUploadDir)) {
+                    fs.mkdirSync(contactsUploadDir, { recursive: true });
+                }
+
+                // Base64データをデコード
+                const parts = image.split(';base64,');
+                const mimeType = parts[0].split(':')[1];
+                const base64Data = parts[1];
+                
+                let ext = 'png';
+                if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
+                else if (mimeType.includes('gif')) ext = 'gif';
+                else if (mimeType.includes('pdf')) ext = 'pdf';
+
+                const fileName = `contact_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+                const absoluteFilePath = path.join(contactsUploadDir, fileName);
+                
+                fs.writeFileSync(absoluteFilePath, Buffer.from(base64Data, 'base64'));
+                savedImagePath = `/uploads/contacts/${fileName}`;
+                console.log(`[Contact API] Image saved successfully to: ${savedImagePath}`);
+            } catch (err) {
+                console.error("[Contact API] Failed to save contact image file:", err);
+                // 画像保存失敗でも、お問い合わせ自体の作成は続行する
+            }
+        }
+
+        // DBに書き込み
+        const sql = `
+            INSERT INTO contacts (company_name, person_name, email, contact_type, message, image_data)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+        const params = [company || null, name, email, type, message, savedImagePath];
+        
+        const result = await dbHelper.query.run(sql, params);
+        console.log(`[Contact API] New contact saved in database. ID: ${result ? result.lastID : 'N/A'}`);
+        
+        res.json({ success: true, contactId: result ? result.lastID : null, imagePath: savedImagePath });
+    } catch (e) {
+        console.error("[Contact API] Error creating contact inquiry:", e);
+        res.status(500).json({ error: "サーバーエラーが発生しました: " + e.message });
+    }
+});
+
+// 管理用：お問い合わせ一覧の取得（認証必須、管理者またはレビュー担当のみ）
+app.get('/api/contact', requireAuth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'review') {
+            return res.status(403).json({ error: "管理者権限が必要です" });
+        }
+        
+        const sql = "SELECT * FROM contacts ORDER BY id DESC";
+        const rows = await dbHelper.query.all(sql);
+        
+        res.json({ success: true, data: rows });
+    } catch (e) {
+        console.error("[Contact API] Error fetching contact inquiries:", e);
+        res.status(500).json({ error: "お問い合わせ一覧の取得に失敗しました: " + e.message });
+    }
+});
