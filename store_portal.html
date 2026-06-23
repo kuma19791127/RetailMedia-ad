@@ -994,10 +994,24 @@
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:8px; border-left: 5px solid #10b981;">
                         <h4 style="margin-top:0; color:#10b981;">🟢 POS接続SDK (pos_connect_sdk.js) によるレジ連携</h4>
                         <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:10px;">
-                            東芝テックや富士通などの独自POSシステムの場合、システムに同梱されている軽量な <a href="pos_connect_sdk.js" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:bold;"><code>pos_connect_sdk.js</code></a> をレジのプログラムに1行組み込むだけで連携が完了します。
+                            東芝テックや富士通などの独自POSシステムの場合、システムに同梱されている軽量な <a href="pos_connect_sdk.js" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:bold;"><code>pos_connect_sdk.js</code></a> をレジのプログラムに組み込むことで連携が完了します。
                         </p>
+                        
+                        <!-- 簡易組み込みガイド (貼り付け位置とコード) -->
+                        <div style="margin-top:10px; margin-bottom:15px; background:#1e293b; color:#e2e8f0; padding:15px; border-radius:6px; font-family:monospace; font-size:11px; text-align:left; overflow-x:auto; line-height:1.5; border:1px solid #334155;">
+                            <span style="color:#10b981;">// 【貼り付け位置】既存POSレジの「会計処理完了・確定イベント」のハンドラ内に以下を組み込みます</span><br>
+                            <span style="color:#38bdf8;">function</span> onPaymentSuccess(transactionData) {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#10b981;">// リテアドへの売上自動同期を実行</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;liteAd.trackSale({<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;transactionId: transactionData.id,&nbsp;&nbsp;<span style="color:#10b981;">// 決済伝票番号</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;amount: transactionData.totalPrice,&nbsp;&nbsp;<span style="color:#10b981;">// 会計総額</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;items: transactionData.janCodes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#10b981;">// 購入商品のJANコード配列 (例: ['4901335109634'])</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;});<br>
+                            }
+                        </div>
+                        
                         <a href="pos_integration_guide.html" target="_blank" style="display:inline-block; padding:6px 12px; background:#10b981; color:white; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">
-                            📖 SDK連携・統合ガイドを表示
+                            📖 詳細なSDK連携・統合ガイドを表示
                         </a>
                     </div>
 
