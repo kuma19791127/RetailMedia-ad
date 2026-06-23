@@ -448,12 +448,11 @@ async function loadKYCReq() {
             if (remember) {
                 localStorage.setItem('last_email', email);
                 localStorage.setItem('last_password', pass);
-                localStorage.setItem('last_active_service', 'review.html');
             } else {
                 localStorage.removeItem('last_email');
                 localStorage.removeItem('last_password');
-                localStorage.removeItem('last_active_service');
             }
+            localStorage.removeItem('last_active_service'); // 社内システムのため自動遷移対象から除外
 
             if (window.PasswordCredential) {
                 const cred = new PasswordCredential({
@@ -482,7 +481,7 @@ async function loadKYCReq() {
 
         // Auto-fill login credentials if stored in LocalStorage
         document.addEventListener('DOMContentLoaded', () => {
-            localStorage.setItem('last_active_service', 'review.html');
+            localStorage.removeItem('last_active_service'); // 社内システムのため自動遷移対象から除外
             const savedEmail = localStorage.getItem('last_email');
             const savedPass = localStorage.getItem('last_password');
             if (savedEmail) {
