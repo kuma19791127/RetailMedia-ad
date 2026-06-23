@@ -4513,6 +4513,65 @@ You must output ONLY a valid JSON object matching the following structure:
             stats: globalDashboardStats
         });
 
+        // --- AI Voice Call generation based on Shopper Demographic, POS, and Local Events ---
+        try {
+            let selectedProducts = [];
+            try {
+                const productRows = await dbHelper.query.all('SELECT * FROM products');
+                if (productRows && productRows.length > 0) {
+                    const shuffled = productRows.sort(() => 0.5 - Math.random());
+                    selectedProducts = shuffled.slice(0, 3).map(p => `${p.name}（${p.price}円）`);
+                }
+            } catch (dbErr) {
+                console.error("[AI Voice Call] Error fetching products:", dbErr.message);
+            }
+            if (selectedProducts.length === 0) {
+                selectedProducts = ['美味しいお惣菜（298円）', '新鮮な天然水（98円）', 'お買い得なベーコン（238円）'];
+            }
+
+            let localEventName = '地域のイベント';
+            try {
+                const eventRows = await dbHelper.query.all('SELECT * FROM local_events WHERE store_id = ?', [storeId || 'STORE_001']);
+                if (eventRows && eventRows.length > 0) {
+                    const randomEvent = eventRows[Math.floor(Math.random() * eventRows.length)];
+                    localEventName = randomEvent.event_name;
+                }
+            } catch (dbErr) {
+                console.error("[AI Voice Call] Error fetching local events:", dbErr.message);
+            }
+
+            let speechText = `いらっしゃいませ！本日のおすすめは ${selectedProducts[0]} です。ぜひお買い求めください！`;
+            const rawKey = process.env.GEMINI_API_KEY || '';
+            const hasGemini = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+
+            if (hasGemini) {
+                try {
+                    const prompt = `店頭に${detectedAge}代の${detectedGender === 'male' ? '男性' : detectedGender === 'female' ? '女性' : 'お客様'}が立っています。また、店舗周辺の行事として「${localEventName}」が予定されています。本日のお買い得商品リスト「${selectedProducts.join(', ')}」の中から、この顧客やイベントに最も適した商品を1つ選び、温かみのある日本語で、20秒以内で話せる短いお買い得案内・声掛けメッセージ（30〜50文字程度）を1文だけで作成してください。
+例：「今週末は近所の小学校で運動会ですね！お弁当のおかずにピッタリな国産鶏モモ肉が本日特売ですよ！」
+※余計な説明や挨拶、括弧、HTMLタグは省き、発話するセリフのみをテキストで出力してください。`;
+                    
+                    const systemInstruction = "You are a friendly instore AI voice assistant for digital signage. Speak directly to the shopper.";
+                    const geminiResponse = await callGeminiAPI(prompt, "text/plain", systemInstruction);
+                    if (geminiResponse && geminiResponse.trim()) {
+                        speechText = geminiResponse.trim().replace(/[\"\'「」]/g, '');
+                    }
+                } catch (geminiErr) {
+                    console.error("[AI Voice Call] Gemini speech generation failed, using fallback default:", geminiErr.message);
+                }
+            }
+
+            console.log(`[AI Voice Call] Broadcasting speech text: "${speechText}" for store: ${storeId || 'STORE_001'}`);
+            broadcastEvent({
+                type: 'ai_voice_call',
+                storeId: storeId || 'STORE_001',
+                message: speechText,
+                gender: detectedGender,
+                age: detectedAge
+            });
+        } catch (aiCallErr) {
+            console.error("[AI Voice Call] Critical failure in voice call process:", aiCallErr);
+        }
+
         // 必須ルール1: S3/DynamoDBデータ保存関数の呼び出し
         if (typeof saveDatabase === 'function') saveDatabase();
 

@@ -1280,12 +1280,101 @@ document.body.addEventListener('click', () => {
 
                 if (data.type === 'emergency') {
                     handleEmergency(data.message);
+                } else if (data.type === 'ai_voice_call') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentStoreId = urlParams.get('storeId') || 'STORE_001';
+                    if (data.storeId === currentStoreId) {
+                        handleAIVoiceCall(data.message, data.gender, data.age);
+                    }
                 } else if (data.type === 'force_reload') {
                     console.log("[Player] Force Reload received. Fetching immediately...");
                     clearTimeout(fetchTimer);
                     fetchPlaylist();
                 }
             };
+        }
+
+        function handleAIVoiceCall(msg, gender, age) {
+            console.log(`[AI Voice Call Received] "${msg}" for demographic: ${age}s ${gender}`);
+
+            // 1. Speak with Instant Interrupt
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel(); // Cancel any active audio playback immediately!
+                const u = new SpeechSynthesisUtterance(msg);
+                u.lang = 'ja-JP';
+                u.rate = 0.85;
+
+                const voices = window.speechSynthesis.getVoices();
+                let voice = null;
+                if (gender === 'female') {
+                    voice = voices.find(v => v.name.includes("Nanami") || v.name.includes("Haruka") || v.name.includes("Google 日本語"));
+                } else {
+                    voice = voices.find(v => v.name.includes("Keita") || v.name.includes("Ichiro") || v.name.includes("Google 日本語"));
+                }
+                if (!voice) voice = voices.find(v => v.lang.includes('ja'));
+                if (voice) u.voice = voice;
+
+                window.speechSynthesis.speak(u);
+            }
+
+            // 2. Show Glassmorphism Pop-up Bubble
+            showAIBubble(msg, gender, age);
+        }
+
+        let bubbleTimeout = null;
+        function showAIBubble(msg, gender, age) {
+            let container = document.getElementById('ai-call-bubble-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'ai-call-bubble-container';
+                container.style.cssText = "position:fixed; bottom:120px; right:30px; max-width:400px; background:rgba(255, 255, 255, 0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.4); border-radius:20px; padding:20px; display:flex; gap:15px; align-items:center; z-index:9999; box-shadow:0 15px 35px rgba(0,0,0,0.15); transition: opacity 0.5s ease, transform 0.5s ease; opacity:0; transform:translateY(20px); font-family:'Helvetica Neue', Arial, sans-serif;";
+                
+                const avatar = document.createElement('div');
+                avatar.id = 'ai-call-avatar';
+                avatar.style.cssText = "width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg, #3b82f6, #8b5cf6); display:flex; justify-content:center; align-items:center; color:white; font-size:1.8rem; flex-shrink:0; box-shadow:0 4px 10px rgba(59,130,246,0.3);";
+                avatar.innerHTML = '🤖';
+                
+                const textWrapper = document.createElement('div');
+                textWrapper.style.cssText = "display:flex; flex-direction:column; gap:4px;";
+                
+                const badge = document.createElement('div');
+                badge.id = 'ai-call-badge';
+                badge.style.cssText = "font-size:11px; font-weight:bold; color:#7c3aed; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:10px; width:fit-content;";
+                badge.innerText = "AI おすすめ案内";
+                
+                const bodyText = document.createElement('div');
+                bodyText.id = 'ai-call-body';
+                bodyText.style.cssText = "font-size:15px; color:#1f2937; font-weight:bold; line-height:1.4;";
+                
+                textWrapper.appendChild(badge);
+                textWrapper.appendChild(bodyText);
+                container.appendChild(avatar);
+                container.appendChild(textWrapper);
+                document.body.appendChild(container);
+            }
+            
+            const bodyText = document.getElementById('ai-call-body');
+            const badge = document.getElementById('ai-call-badge');
+            
+            const genderText = gender === 'female' ? '女性' : gender === 'male' ? '男性' : 'お客様';
+            badge.innerText = `AI おすすめ案内 (${age}代 ${genderText}向け)`;
+            bodyText.innerText = msg;
+            
+            container.style.display = 'flex';
+            setTimeout(() => {
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 50);
+
+            if (bubbleTimeout) clearTimeout(bubbleTimeout);
+            
+            bubbleTimeout = setTimeout(() => {
+                container.style.opacity = '0';
+                container.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    container.style.display = 'none';
+                }, 500);
+            }, 8000);
         }
 
         function handleEmergency(msg) {

@@ -171,6 +171,14 @@ if (process.env.DATABASE_URL) {
                     key VARCHAR(255) PRIMARY KEY,
                     value TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS local_events (
+                    id SERIAL PRIMARY KEY,
+                    store_id VARCHAR(100) NOT NULL,
+                    event_name VARCHAR(255) NOT NULL,
+                    event_date VARCHAR(100),
+                    description TEXT
+                );
             `);
 
             // Migration path: Drop existing primary key constraint and recreate as composite if not already done
@@ -243,6 +251,23 @@ if (process.env.DATABASE_URL) {
                     );
                 }
                 console.log('[DB] ✅ 初期商品マスタの登録が完了しました。');
+            }
+
+            // 初期ローカルイベントデータの投入 (空の場合のみ)
+            const eventCountRes = await pool.query('SELECT COUNT(*) FROM local_events');
+            if (parseInt(eventCountRes.rows[0].count, 10) === 0) {
+                const defaultEvents = [
+                    ['STORE_001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
+                    ['STORE_001', '地域住民スポーツフェスティバル', '2026/06/28', '地域のスポーツ大会。ドリンクや軽食の需要があります。'],
+                    ['STORE_001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
+                ];
+                for (const ev of defaultEvents) {
+                    await pool.query(
+                        'INSERT INTO local_events (store_id, event_name, event_date, description) VALUES ($1, $2, $3, $4)',
+                        ev
+                    );
+                }
+                console.log('[DB] ✅ 初期ローカルイベントの登録が完了しました。');
             }
 
             // ユーザーデータの同期 (database.json のユーザー情報を PostgreSQL の users テーブルにインポート)
@@ -579,6 +604,16 @@ if (process.env.DATABASE_URL) {
                     )
                 `);
 
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS local_events (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        store_id TEXT NOT NULL,
+                        event_name TEXT NOT NULL,
+                        event_date TEXT,
+                        description TEXT
+                    )
+                `);
+
                 // Migration: Add store_id column to face_sensor_logs for SQLite if not exists
                 sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {
                     if (err) {
@@ -684,6 +719,20 @@ if (process.env.DATABASE_URL) {
                         defaultProducts.forEach(prod => stmt.run(prod));
                         stmt.finalize();
                         console.log('[Database] ✅ SQLite 初期商品マスタの登録が完了しました。');
+                    }
+                });
+
+                sqliteDb.get("SELECT COUNT(*) as count FROM local_events", (err, row) => {
+                    if (row && row.count === 0) {
+                        const defaultEvents = [
+                            ['STORE_001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
+                            ['STORE_001', '地域住民スポーツフェスティバル', '2026/06/28', '地域のスポーツ大会。ドリンクや軽食の需要があります。'],
+                            ['STORE_001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
+                        ];
+                        const stmt = sqliteDb.prepare("INSERT INTO local_events (store_id, event_name, event_date, description) VALUES (?, ?, ?, ?)");
+                        defaultEvents.forEach(ev => stmt.run(ev));
+                        stmt.finalize();
+                        console.log('[Database] ✅ SQLite 初期ローカルイベントの登録が完了しました。');
                     }
                 });
 
