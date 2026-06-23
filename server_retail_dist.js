@@ -212,6 +212,17 @@ app.get('/api/db-status', requireAuth, async (req, res) => {
     }
 });
 
+app.get('/api/debug/outbound-ip', async (req, res) => {
+    try {
+        const fetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: f}) => f(...args)));
+        const response = await fetch('https://httpbin.org/ip');
+        const data = await response.json();
+        res.json({ outboundIp: data.origin });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 const PORT = 3000;
 
 
