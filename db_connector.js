@@ -22,6 +22,8 @@ if (process.env.DATABASE_URL) {
     // 起動時にテーブルを自動作成
     const initDB = async () => {
         try {
+            // ロックタイムアウトを5秒に設定して、旧コンテナとのテーブルロック競合による起動デッドロックを防止
+            await pool.query("SET lock_timeout = 5000");
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS users (
                     email VARCHAR(255),
