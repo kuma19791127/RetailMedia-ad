@@ -21,10 +21,12 @@ if (process.env.DATABASE_URL) {
 
     // 起動時にテーブルを自動作成
     const initDB = async () => {
+        let client = null;
         try {
+            client = await pool.connect();
             // ロックタイムアウトを5秒に設定して、旧コンテナとのテーブルロック競合による起動デッドロックを防止
-            await pool.query("SET lock_timeout = 5000");
-            await pool.query(`
+            await client.query("SET lock_timeout = 5000");
+            await client.query(`
                 CREATE TABLE IF NOT EXISTS users (
                     email VARCHAR(255),
                     password TEXT NOT NULL,
@@ -196,7 +198,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Drop existing primary key constraint and recreate as composite if not already done
             try {
-                await pool.query(`
+                await client.query(`
                     ALTER TABLE users DROP CONSTRAINT IF EXISTS users_pkey;
                     ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (email, role);
                 `);
@@ -207,7 +209,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add store_id column to face_sensor_logs if not exists
             try {
-                await pool.query(`
+                await client.query(`
                     ALTER TABLE face_sensor_logs ADD COLUMN IF NOT EXISTS store_id VARCHAR(100);
                 `);
                 console.log('[DB] ✅ PostgreSQL face_sensor_logs.store_id column added or already exists.');
@@ -217,7 +219,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add advertiser column to campaigns table if not exists
             try {
-                await pool.query(`
+                await client.query(`
                     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS advertiser VARCHAR(255);
                 `);
                 console.log('[DB] ✅ PostgreSQL campaigns.advertiser column added or already exists.');
@@ -227,7 +229,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add target_org column to campaigns table if not exists
             try {
-                await pool.query(`
+                await client.query(`
                     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_org VARCHAR(255);
                 `);
                 console.log('[DB] ✅ PostgreSQL campaigns.target_org column added or already exists.');
@@ -239,7 +241,7 @@ if (process.env.DATABASE_URL) {
             console.log('[DB] Users roles migration bypassed (roles are preserved).');
 
             // 初期データの投入 (空の場合のみ)
-            const countRes = await pool.query('SELECT COUNT(*) FROM products');
+            const countRes = await client.query('SELECT COUNT(*) FROM products');
             if (parseInt(countRes.rows[0].count, 10) === 0) {
                 const defaultProducts = [
                     ['4580347721500', 'ライフプレミアム 天然水 2L', 98, '飲料・水'],
@@ -258,7 +260,7 @@ if (process.env.DATABASE_URL) {
                     ['4939505130737', 'スマイルライフ 烏龍茶 500ml', 88, '飲料・水']
                 ];
                 for (const prod of defaultProducts) {
-                    await pool.query(
+                    await client.query(
                         'INSERT INTO products (jan_code, name, price, category) VALUES ($1, $2, $3, $4) ON CONFLICT (jan_code) DO NOTHING',
                         prod
                     );
@@ -267,7 +269,7 @@ if (process.env.DATABASE_URL) {
             }
 
             // 初期ローカルイベントデータの投入 (空の場合のみ)
-            const eventCountRes = await pool.query('SELECT COUNT(*) FROM local_events');
+            const eventCountRes = await client.query('SELECT COUNT(*) FROM local_events');
             if (parseInt(eventCountRes.rows[0].count, 10) === 0) {
                 const defaultEvents = [
                     ['STORE_001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
@@ -275,7 +277,7 @@ if (process.env.DATABASE_URL) {
                     ['STORE_001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
                 ];
                 for (const ev of defaultEvents) {
-                    await pool.query(
+                    await client.query(
                         'INSERT INTO local_events (store_id, event_name, event_date, description) VALUES ($1, $2, $3, $4)',
                         ev
                     );
@@ -299,7 +301,7 @@ if (process.env.DATABASE_URL) {
                                 email = parts[0];
                                 role = parts[1];
                             }
-                            await pool.query(
+                            await client.query(
                                 `INSERT INTO users (email, password, role, name, org, two_factor_secret) 
                                  VALUES ($1, $2, $3, $4, $5, $6) 
                                  ON CONFLICT (email, role) DO UPDATE 
@@ -319,7 +321,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration: Add monthly_operating_cost column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added monthly_operating_cost).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (monthly_operating_cost):', e.message);
@@ -327,7 +329,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration: Add monthly_labor_cost column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_labor_cost DOUBLE PRECISION DEFAULT 0.0");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_labor_cost DOUBLE PRECISION DEFAULT 0.0");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added monthly_labor_cost).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (monthly_labor_cost):', e.message);
@@ -335,7 +337,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration: Add monthly_adsense_revenue column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_adsense_revenue DOUBLE PRECISION DEFAULT 0.0");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_adsense_revenue DOUBLE PRECISION DEFAULT 0.0");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added monthly_adsense_revenue).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (monthly_adsense_revenue):', e.message);
@@ -343,7 +345,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration: Add bank_email column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS bank_email VARCHAR(255)");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS bank_email VARCHAR(255)");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added bank_email).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (bank_email):', e.message);
@@ -351,7 +353,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add area column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS area VARCHAR(100)");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS area VARCHAR(100)");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added area).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (area):', e.message);
@@ -359,7 +361,7 @@ if (process.env.DATABASE_URL) {
             
             // Migration path: Add target_scope column to campaigns table if not exists
             try {
-                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_scope VARCHAR(50) DEFAULT 'enterprise'");
+                await client.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_scope VARCHAR(50) DEFAULT 'enterprise'");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_scope).');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns table migration failed (target_scope):', e.message);
@@ -367,7 +369,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add target_areas column to campaigns table if not exists
             try {
-                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_areas TEXT");
+                await client.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_areas TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_areas).');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns table migration failed (target_areas):', e.message);
@@ -375,7 +377,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add target_orgs column to campaigns table if not exists
             try {
-                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_orgs TEXT");
+                await client.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_orgs TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_orgs).');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns table migration failed (target_orgs):', e.message);
@@ -383,7 +385,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add prefecture column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS prefecture VARCHAR(255)");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS prefecture VARCHAR(255)");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added prefecture).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (prefecture):', e.message);
@@ -391,7 +393,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add store_type column to stores table if not exists
             try {
-                await pool.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS store_type VARCHAR(255)");
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS store_type VARCHAR(255)");
                 console.log('[DB] ✅ PostgreSQL stores table migrated (added store_type).');
             } catch (e) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (store_type):', e.message);
@@ -399,7 +401,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add target_prefectures column to campaigns table if not exists
             try {
-                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_prefectures TEXT");
+                await client.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_prefectures TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_prefectures).');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns table migration failed (target_prefectures):', e.message);
@@ -407,7 +409,7 @@ if (process.env.DATABASE_URL) {
 
             // Migration path: Add target_store_types column to campaigns table if not exists
             try {
-                await pool.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_store_types TEXT");
+                await client.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_store_types TEXT");
                 console.log('[DB] ✅ PostgreSQL campaigns table migrated (added target_store_types).');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns table migration failed (target_store_types):', e.message);
@@ -415,7 +417,16 @@ if (process.env.DATABASE_URL) {
 
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
         } catch (e) {
-            console.error('[DB] ❌ テーブル作成エラー:', e);
+            console.error('[DB] ❌ テーブル作成・移行エラー (起動は続行します):', e);
+        } finally {
+            if (client) {
+                try {
+                    client.release();
+                    console.log('[DB] PostgreSQL client released back to pool.');
+                } catch (releaseErr) {
+                    console.error('[DB] Failed to release client:', releaseErr);
+                }
+            }
         }
     };
     initDB();
