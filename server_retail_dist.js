@@ -2038,11 +2038,16 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     console.log("[API /api/auth/login] Request body:", req.body);
     const { email, password, role, name, org, totpCode } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Missing fields" });
+    if (!email || !password) {
+        console.warn("[Auth /api/auth/login] Missing fields: email or password missing");
+        return res.status(400).json({ error: "Missing fields" });
+    }
 
     try {
         const dbRole = getDatabaseRole(role || 'store');
+        console.log(`[Auth /api/auth/login] [Trace 1] Querying DB for email=${email}, role=${dbRole}`);
         let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
+        console.log(`[Auth /api/auth/login] [Trace 2] DB query completed. User found: ${!!user}`);
 
         if (!user) {
             console.log(`[Auth] Login failed: User ${email} with role ${dbRole} not found`);
@@ -2080,7 +2085,10 @@ app.post('/api/auth/login', async (req, res) => {
             await dbHelper.query.run(updateSql, updateParams);
         }
 
-        if (verifyPassword(password, user.password)) {
+        console.log(`[Auth /api/auth/login] [Trace 3] Verifying password...`);
+        const passwordMatched = verifyPassword(password, user.password);
+        console.log(`[Auth /api/auth/login] [Trace 4] Password match result: ${passwordMatched}`);
+        if (passwordMatched) {
             const targetRole = role || user.role;
             
             // 2FA共通化: advertiser または store ロールの場合、もう片方が 2FA シークレットを設定していれば同期
@@ -2119,8 +2127,10 @@ app.post('/api/auth/login', async (req, res) => {
                     if (!totpCode && !skip2FA) {
                         return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(targetRole) });
                     } else if (totpCode) {
+                        console.log(`[Auth /api/auth/login] [Trace speakeasy] Verifying TOTP code: ${totpCode}`);
                         const speakeasy = require('speakeasy');
                         const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: totpCode, window: 2 });
+                        console.log(`[Auth /api/auth/login] [Trace speakeasy result] Verification: ${verified}`);
                         if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
 
                         // 2FA検証に成功したのでスキップクッキーを更新/発行
@@ -2131,6 +2141,7 @@ app.post('/api/auth/login', async (req, res) => {
             }
 
             // ログイン成功時にJWTトークンを発行してCookieにセット (24時間の明示的有効期限を設定してタイムアウトを防止)
+            console.log(`[Auth /api/auth/login] [Trace jwt] Signing token for email: ${email}, role: ${targetRole}`);
             const jwtToken = jwt.sign({ email, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             console.log(`[Auth Login Success] Issued token for email: ${email}, role: ${targetRole}, name: ${user.name}`);
             res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
@@ -2142,8 +2153,8 @@ app.post('/api/auth/login', async (req, res) => {
             res.json({ success: false, error: "パスワードが間違っています。" });
         }
     } catch (e) {
-        console.error("[Auth Login Error]", e);
-        res.status(500).json({ error: e.message });
+        console.error("[Auth /api/auth/login Error] [Trace exception] Login process threw an exception:", e.stack || e.message || e);
+        res.status(500).json({ error: "サーバー内部エラーが発生しました: " + e.message });
     }
 });
 

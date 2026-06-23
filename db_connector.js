@@ -11,7 +11,10 @@ if (process.env.DATABASE_URL) {
     console.log('[DB] DATABASE_URL が設定されています。PostgreSQLに接続します...');
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false } // RDS等のクラウドDB必須設定
+        ssl: { rejectUnauthorized: false }, // RDS等のクラウドDB必須設定
+        connectionTimeoutMillis: 5000,      // 接続タイムアウトを5秒に設定（無限ハング防止）
+        idleTimeoutMillis: 10000,           // アイドル状態の接続を10秒で解放してコネクションを節約
+        max: 15                             // 最大同時接続数を15に制限
     });
 
     // Prevent uncaught connection errors from crashing the Node.js process (idle client errors)
