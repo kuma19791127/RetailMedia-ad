@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-
-    <!-- === API Base URL Config === -->
-    <script>
-        window.API_BASE_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') 
-            ? 'http://localhost:3000' 
-            : 'https://api.retail-ad.com'; // TODO: 本番環境のバックエンドURLに変更してください
-    </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>お役立ちコラム | RetailMedia_System</title>
@@ -17,14 +9,14 @@
         body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; background: #f9fbfd; margin: 0; padding: 0; }
         header { background: #fff; padding: 20px 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .logo { font-size: 24px; font-weight: bold; color: #2563EB; text-decoration: none; }
-        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
         h1 { text-align: center; color: #1e293b; margin-bottom: 40px; font-size: 32px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-        .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; transition: transform 0.2s; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; transition: transform 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         .card h2 { font-size: 20px; margin-top: 0; color: #0f172a; line-height: 1.4; }
-        .card p { color: #64748b; font-size: 15px; margin-bottom: 25px; }
-        .card a { display: inline-block; padding: 10px 20px; background: #2563EB; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .card p { color: #64748b; font-size: 15px; margin-bottom: 25px; flex-grow: 1; }
+        .card a { display: inline-block; padding: 10px 20px; background: #2563EB; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; text-align: center; }
         .card a:hover { background: #1d4ed8; }
         .footer { text-align: center; padding: 30px; margin-top: 60px; color: #64748b; font-size: 14px; background: #fff; border-top: 1px solid #e2e8f0; }
     </style>
@@ -54,9 +46,51 @@
             </div>
             
             <div class="card">
-                <h2>実店舗のマネタイズ戦略：場所をメディアに変えて利益を最大化する</h2>
+                <h2>実店舗 of マネタイズ戦略：場所をメディアに変えて利益を最大化する</h2>
                 <p>「モノを売る場所」から「体験を提供するメディア」へ。サイネージ、サンプリング、データ提供など、実店舗の新たな収益モデルを解説。</p>
                 <a href="article_store_monetization.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>AIカメラと視線分析技術が変える、デジタルサイネージ広告の効果測定</h2>
+                <p>店頭サイネージにおける最大の課題「視覚効果測定」。AI顔認識カメラを用いたアテンション測定の仕組みと、エッジ処理によるプライバシー対策を解説。</p>
+                <a href="article_ai_camera.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>デジタルサイネージにおける個人情報保護とプライバシーガイドライン</h2>
+                <p>カメラ画像を使用した視聴者属性分析。総務省・経産省のガイドラインに基づいた、安全で炎上しないプライバシーポリシー設計と明示方法の原則。</p>
+                <a href="article_privacy_signage.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>人手不足を解決するキオスク端末とスマートセルフ決済の導入メリット</h2>
+                <p>レジ待ち時間による機会損失（レジ待ち離脱）と人件費高騰を解消する、スマートフォンを活用したモバイルセルフ決済とスマート店舗の未来。</p>
+                <a href="article_kiosk_dx.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>メーカーのROASを最大化する！購買データ（POS）連動型広告の仕組み</h2>
+                <p>広告の費用対効果（ROAS）を可視化する。サイネージ広告の放映ログとID-POS購買データの突合が、メーカーの広告投資を加速する理由。</p>
+                <a href="article_roas_improvement.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>低コストで始める店舗DX：地方スーパー・ドラッグストアの生き残り戦略</h2>
+                <p>大手チェーンに対抗する、地方単一店舗や中規模店舗の生存戦略。Android搭載デバイスやクラウドSaaSを活用したミニマムスタートの秘訣。</p>
+                <a href="article_local_shop_dx.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>飲食・物販向けデジタルメニューボード：売上を伸ばす表示最適化手法</h2>
+                <p>液晶ディスプレイを用いたメニュー電子化。時間帯・天候連動でのメニュー切替や、湯気などの動画シズル感がもたらす客単価アップと印刷コスト削減効果。</p>
+                <a href="article_digital_menu.html">続きを読む</a>
+            </div>
+
+            <div class="card">
+                <h2>リテールメディアの次なる進化：実店舗とECを融合するOMOマーケティング</h2>
+                <p>アプリでチェックした情報を店頭サイネージやスマートカートと連動。ネットとオフラインの境界を無くす一貫した顧客体験とデータ蓄積のシナリオ。</p>
+                <a href="article_omo_marketing.html">続きを読む</a>
             </div>
         </div>
     </div>

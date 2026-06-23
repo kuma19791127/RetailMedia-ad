@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デジタルサイネージにおける個人情報保護とプライバシーガイドライン | RetailMedia_System</title>
+    <meta name="description" content="デジタルサイネージにおける個人情報保護とプライバシーガイドラインについて詳しく解説する専門コラムです。">
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; background: #f9fbfd; margin: 0; padding: 0; }
+        header { background: #fff; padding: 20px 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: bold; color: #2563EB; text-decoration: none; }
+        .container { max-width: 800px; margin: 40px auto; padding: 40px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        h1 { font-size: 28px; color: #1e293b; border-bottom: 2px solid #2563EB; padding-bottom: 10px; margin-bottom: 30px; }
+        h2 { font-size: 22px; color: #334155; margin-top: 40px; border-left: 4px solid #2563EB; padding-left: 15px; }
+        h3 { font-size: 18px; color: #475569; margin-top: 25px; }
+        p { font-size: 16px; margin-bottom: 20px; }
+        .footer { text-align: center; padding: 30px; margin-top: 40px; color: #64748b; font-size: 14px; background: #fff; border-top: 1px solid #e2e8f0; }
+        .back-link { display: inline-block; margin-top: 30px; padding: 10px 20px; background: #f1f5f9; color: #475569; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .back-link:hover { background: #e2e8f0; }
+    </style>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9174386245513478" crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">RetailMedia System</a>
+        <nav>
+            <a href="articles_index.html" style="text-decoration:none; color:#475569; font-weight:bold;">コラム一覧</a>
+        </nav>
+    </header>
+    <div class="container">
+        <h1>デジタルサイネージにおける個人情報保護とプライバシーガイドライン</h1>
+        
+<p>実店舗のデジタルサイネージにAIカメラを設置して効果測定を行う際、最も注意しなければならないのが「個人情報保護とプライバシー」の問題です。ユーザーの安心感を保ちつつ、適切なデータ活用を行うための業界ガイドラインと技術的対策について解説します。</p>
+
+<h2>なぜサイネージのカメラ画像が問題視されるのか？</h2>
+<p>店内の防犯カメラとは異なり、マーケティング目的でのカメラ設置は、顧客に「勝手に顔写真を撮られて分析されているのではないか」という不安感を与えがちです。適切に周知を行わずにカメラ撮影を行うと、ソーシャルメディア等での炎上リスクや、ブランドイメージの低下に繋がりかねません。</p>
+
+<h2>総務省・経産省が示す「カメラ画像利活用ガイドライン」</h2>
+<p>政府が発行しているガイドラインでは、顔認識などのカメラ画像をマーケティングで活用する際、以下の3つの原則を遵守することを求めています。</p>
+<h3>1. 目的と実施内容の明示</h3>
+<p>店舗の入り口やサイネージの近くに、「カメラを設置し、視聴者分析を行っている旨」と、その「利用目的」を明確に記載したPOPやステッカーなどを設置する必要があります。ユーザーが「撮影されている事実」を事前に認知できる状態にすることが必須です。</p>
+
+<h3>2. データの即時匿名化と保存禁止</h3>
+<p>撮影した動画や静止画をそのままハードディスク等に保存することは原則禁止とされています。カメラの映像は「性別・年代・注視時間」といった統計情報（特徴量データ）に処理した瞬間、元の顔画像データはメモリ上から完全に削除されなければなりません。このローカルで即時処理する仕組みは「エッジAI」として実装されることが標準となっています。</p>
+
+<h3>3. オプトアウト（拒否）機会の提供</h3>
+<p>もし可能であれば、撮影や分析を望まない顧客に対して、カメラの死角となる通路の案内や、撮影から除外する仕組みなどの説明を提供することが望ましいとされています。</p>
+
+<h2>リテアド（RetailMedia System）におけるセキュリティ設計</h2>
+<p>当プラットフォームでは、プライバシー保護を最優先課題として設計しています。カメラ映像は一切ネットワークを通じて外部に送信されず、端末内（エッジ側）でのみ特徴抽出を行います。サーバーに送信されるデータは個人を完全に特定不可能な数値情報のみであり、顧客のプライバシーを完全に保護した上で、精度の高い広告レポートを生成することが可能です。</p>
+
+<h2>まとめ</h2>
+<p>プライバシー保護への配慮は、法規制への適合だけでなく、顧客に対する誠実な姿勢を示すことで信頼を高めるチャンスでもあります。正しいプライバシーポリシーの策定と店頭での明示をセットで行うことが、健全なリテールメディア運用の土台となります。</p>
+
+        <a href="articles_index.html" class="back-link">← コラム一覧へ戻る</a>
+    </div>
+    <footer class="footer">
+        &copy; 2026 RetailMedia_System. All rights reserved.
+    </footer>
+</body>
+</html>
