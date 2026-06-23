@@ -982,53 +982,7 @@
                 </div>
             </div>
 
-            <!-- POS Integration Action Panel -->
-            <div id="pos-integration-section" class="card" style="margin-top:20px; border-left: 5px solid #10b981;">
-                <h3 style="margin-top:0; color:#10b981;"><i class="fa-solid fa-plug"></i> POS・データ連携設定</h3>
-                <p style="font-size:0.9rem; color:#475569; line-height:1.6; margin-bottom: 20px;">
-                    店舗の売上データをシステムと連携し、成果報酬型広告を稼働させます。
-                </p>
 
-                <div style="display:flex; flex-direction:column; gap:20px;">
-                    <!-- 方法1 -->
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:8px; border-left: 5px solid #10b981;">
-                        <h4 style="margin-top:0; color:#10b981;">🟢 方法1: どこでもレジ（PC接続型・推奨）と商品一括取込</h4>
-                        <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:10px;">
-                            既存のレジや基幹システムから「商品のエクセル/CSV」を書き出し、どこでもレジ画面上部から読み込ませることで、数万件 of データが端末内部にキャッシュされ、オフラインで爆速稼働します。
-                        </p>
-                        <a href="anywhere_regi.html" target="_blank" style="display:inline-block; padding:6px 12px; background:#10b981; color:white; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">
-                            📱 実際のどこでもレジを見る
-                        </a>
-                    </div>
-
-                    <!-- バックグラウンド同期 -->
-                    <div style="background:#eff6ff; border:1px solid #bae6fd; padding:15px; border-radius:8px; border-left: 5px solid #3b82f6;">
-                        <h4 style="margin-top:0; color:#2563eb;">🔄 POS売上データの定期自動送信機能 (バックグラウンド同期)</h4>
-                        <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:0;">
-                            店舗システム（store_portal）およびPOS（anywhere_regi）は「販売データを記録・送信する」役割に特化し、広告マッチング等の重い処理は本部サーバー（Admin）で行うことで、店舗端末の負荷を完全に下げます。
-                        </p>
-                    </div>
-
-                    <!-- 方法2 -->
-                    <div style="background:#fffbeb; border:1px solid #fef3c7; padding:15px; border-radius:8px; border-left: 5px solid #fbbf24;">
-                        <h4 style="margin-top:0; color:#d97706;">🟡 方法2: クラウドPOSの「Webhooks連携」（スマレジ・Square等）</h4>
-                        <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:0;">
-                            スマレジやSquareの管理画面にリテアドのサーバーURLを1つ登録するだけで、会計成立時に自動でデータが連携されます。既存のレジ機材や操作を一切変更しません。
-                        </p>
-                    </div>
-
-                    <!-- 方法3 -->
-                    <div style="background:#fef2f2; border:1px solid #fecaca; padding:15px; border-radius:8px; border-left: 5px solid #ef4444;">
-                        <h4 style="margin-top:0; color:#dc2626;">🔴 方法3: 既存の大手レジメーカーへの組み込み（SDK連携）</h4>
-                        <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:10px;">
-                            東芝テックや富士通などの独自POSシステムの場合、システムに同梱されている軽量な <a href="pos_connect_sdk.js" target="_blank" style="color:#dc2626; text-decoration:underline; font-weight:bold;"><code>pos_connect_sdk.js</code></a> をレジのプログラムに1行組み込むだけで連携が完了します。
-                        </p>
-                        <a href="pos_integration_guide.html" target="_blank" style="display:inline-block; padding:6px 12px; background:#dc2626; color:white; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold;">
-                            📖 SDK連携・統合ガイドを表示
-                        </a>
-                    </div>
-                </div>
-            </div>
 
             <script>
                 // MCM connection script
@@ -2016,15 +1970,6 @@
             }
         }
 
-        function showPOSIntegration() {
-            showPanel('revenue');
-            const el = document.getElementById('pos-integration-section');
-            if (el) {
-                setTimeout(() => {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 100);
-            }
-        }
 
 
         // --- Revenue Logic ---

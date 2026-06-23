@@ -417,7 +417,6 @@
         <div class="nav-links">
             <a href="#features">機能</a>
             <a href="ad_dashboard.html">分析</a>
-            <a href="#api">API連携</a>
             <a href="ad_dashboard.html" class="btn-nav">ログイン</a>
         </div>
     </nav>
@@ -498,35 +497,6 @@
             <!-- Embedding the demo video created earlier -->
             <iframe src="demo_movie.html" width="100%" height="650px" frameborder="0"
                 style="background: black;"></iframe>
-        </div>
-    </section>
-
-    <section id="api" class="features"
-        style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: center; background: rgba(15, 23, 42, 0.5);">
-        <div style="text-align: center;">
-            <h2 style="font-size: 2.5rem;">🔗 自社システムと連携</h2>
-            <p style="font-size: 1.2rem; color: #1e293b; margin-bottom: 20px;">
-                開発者向けの強力な<br class="mobile-br">API / SDK を提供。<br>
-                取得した<br class="sp-br">
-<span class="nw">AI分析データやPOSデータを</span><br class="sp-br">他のツールへ引き渡し、<br class="sp-br">御社のマーケティングシステムと<br class="sp-br">シームレスに統合できます。
-            </p>
-            <div class="code-block">
-                // Initialize RetailMedia SDK
-                const rm = new RetailMediaSDK({ apiKey: 'YOUR_KEY' });
-
-                // Push Ad based on Inventory
-                rm.campaign.create({
-                target: 'store_shibuya',
-                trigger: { stockLevel: 'high', weather: 'rainy' },
-                creative: 'ad_umbrella_sale.mp4'
-                });
-            </div>
-        </div>
-        <div style="text-align:center;">
-            <div
-                style="background:linear-gradient(45deg, #2563eb, #f43f5e); width:200px; height:200px; margin:0 auto; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 50px rgba(37,99,235,0.5);">
-                <span style="font-size:5rem;">API</span>
-            </div>
         </div>
     </section>
 
