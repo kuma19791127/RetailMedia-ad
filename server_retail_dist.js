@@ -2142,16 +2142,6 @@ app.post('/api/auth/login', async (req, res) => {
                     if (otherUser && otherUser.two_factor_secret) {
                         await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, email, dbRole]);
                         user.two_factor_secret = otherUser.two_factor_secret;
-                        
-                        // インメモリ同期
-                        const userKey = `${email}:${dbRole}`;
-                        if (typeof users !== 'undefined' && users && users[userKey]) {
-                            users[userKey].twoFactorSecret = otherUser.two_factor_secret;
-                        } else if (typeof users !== 'undefined' && users && users[email]) {
-                            users[email].twoFactorSecret = otherUser.two_factor_secret;
-                        }
-                        
-                        if (typeof saveDatabase === 'function') saveDatabase();
                     }
                 }
             }
