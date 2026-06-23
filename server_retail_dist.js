@@ -3660,18 +3660,20 @@ app.get('/api/ad/analytics', requireAuth, async (req, res) => {
                     itemsList = JSON.parse(row.items || '[]');
                 } catch(e) {}
                 
-                itemsList.forEach(item => {
-                    const name = (item.name || '').toLowerCase();
-                    const category = (item.category || '').toLowerCase();
-                    
-                    const matchesKw = !filterKeyword || name.includes(filterKeyword);
-                    const matchesCat = !filterCategory || category.includes(filterCategory);
-                    
-                    if (matchesKw && matchesCat) {
-                        filteredRevenue += (item.price || 0);
-                        filteredSalesCount += 1;
-                    }
-                });
+                if (Array.isArray(itemsList)) {
+                    itemsList.forEach(item => {
+                        const name = (item.name || '').toLowerCase();
+                        const category = (item.category || '').toLowerCase();
+                        
+                        const matchesKw = !filterKeyword || name.includes(filterKeyword);
+                        const matchesCat = !filterCategory || category.includes(filterCategory);
+                        
+                        if (matchesKw && matchesCat) {
+                            filteredRevenue += (item.price || 0);
+                            filteredSalesCount += 1;
+                        }
+                    });
+                }
             });
             
             attribution.revenue = filteredRevenue;
