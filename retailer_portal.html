@@ -1429,7 +1429,7 @@ async function loadSignageDevices() {
     const listEl = document.getElementById('signage-list');
     if (!listEl) return;
     try {
-        const res = await fetch((window.API_BASE_URL || '') + '/api/store/signages');
+        const res = await fetch((window.API_BASE_URL || '') + '/api/store/signages', { credentials: 'include' });
         const data = await res.json();
         if (res.ok && data.success) {
             listEl.innerHTML = '';
@@ -1477,6 +1477,7 @@ async function addSignageDevice() {
         const res = await fetch((window.API_BASE_URL || '') + '/api/store/signages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ name })
         });
         const data = await res.json();
@@ -1507,7 +1508,8 @@ async function deleteSignageDevice(id) {
     Swal.fire({ title: '削除中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
         const res = await fetch((window.API_BASE_URL || '') + `/api/store/signages/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         const data = await res.json();
         if (res.ok && data.success) {
