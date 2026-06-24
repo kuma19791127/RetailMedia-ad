@@ -631,13 +631,9 @@
                     <span style="color:#8e44ad; font-weight:bold;">※サイネージIDは自動数値で付与されます。</span>
                 </div>
                 
-                <div class="single-setup-form-inputs" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
-                    <div style="flex:1; min-width:200px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">1. 貴社の企業ID（英数字）<br>貴社mail</label>
-                        <input type="text" id="retailer-prefix-single" placeholder="例: LIFE" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; background:#f1f5f9;" readonly>
-                    </div>
-                    <div style="flex:1; min-width:200px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">2. 店舗ID (7桁の自動数値)</label>
+                <div class="single-setup-form-inputs" style="margin-bottom:15px;">
+                    <div style="width:100%;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">対象の店舗ID (7桁の数値ID)</label>
                         <input type="text" id="store-suffix" placeholder="例: 1000001" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;">
                     </div>
                 </div>
@@ -1397,7 +1393,7 @@ function getAndroidRemoveInstructionsContent(storeId) {
 function downloadSingleBat(type) {
     const suffix = document.getElementById('store-suffix').value.trim();
     if(!suffix) {
-        Swal.fire("エラー", "店舗番号（または店舗名）を入力してください。", "error");
+        Swal.fire("エラー", "7桁の数値店舗IDを入力してください。", "error");
         return;
     }
     const storeId = suffix;
@@ -1494,7 +1490,7 @@ async function sendBulkEmail() {
     const list = parseBulkList().filter(item => item.email !== "");
     if (list.length === 0) {
         console.warn("[F12 Debug] sendBulkEmail aborted: empty or invalid list");
-        Swal.fire("エラー", "有効な「店舗番号, メールアドレス」のペアを入力してください。", "error");
+        Swal.fire("エラー", "有効な「店舗ID, メールアドレス」のペアを入力してください。", "error");
         return;
     }
 
@@ -1541,7 +1537,7 @@ async function sendBulkEmail() {
 async function downloadBulkZip() {
     const list = parseBulkList();
     if (list.length === 0) {
-        Swal.fire("エラー", "店舗番号を入力してください。", "error");
+        Swal.fire("エラー", "店舗IDを入力してください。", "error");
         return;
     }
 
