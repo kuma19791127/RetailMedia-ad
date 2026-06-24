@@ -6889,8 +6889,8 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
 // --- Store Portal Signage Device Management Endpoints ---
 
 app.get('/api/store/signages', requireAuth, async (req, res) => {
-    if (req.user.role !== 'store' && req.user.role !== 'admin') {
-        return res.status(403).json({ error: "店舗権限が必要です" });
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗またはリテーラー権限が必要です" });
     }
     try {
         const storeId = req.user.org || req.user.email;
@@ -6914,8 +6914,8 @@ app.get('/api/store/signages', requireAuth, async (req, res) => {
 });
 
 app.post('/api/store/signages', requireAuth, async (req, res) => {
-    if (req.user.role !== 'store' && req.user.role !== 'admin') {
-        return res.status(403).json({ error: "店舗権限が必要です" });
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗またはリテーラー権限が必要です" });
     }
     const { name } = req.body;
     try {
@@ -6969,8 +6969,8 @@ app.post('/api/store/signages', requireAuth, async (req, res) => {
 });
 
 app.delete('/api/store/signages/:id', requireAuth, async (req, res) => {
-    if (req.user.role !== 'store' && req.user.role !== 'admin') {
-        return res.status(403).json({ error: "店舗権限が必要です" });
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗またはリテーラー権限が必要です" });
     }
     const signageId = req.params.id;
     try {
