@@ -753,6 +753,7 @@
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email, password, role })
                 });
                 
@@ -765,6 +766,7 @@
                     const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { 
                         method: 'POST', 
                         headers: {'Content-Type':'application/json'}, 
+                        credentials: 'include',
                         body: JSON.stringify({ email: email, role: role })
                     });
                     const qrData = await qrRes.json();
@@ -804,6 +806,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { 
                             method: 'POST', 
                             headers: {'Content-Type':'application/json'}, 
+                            credentials: 'include',
                             body: JSON.stringify({ email: email, token: totpCode, secret: qrData.secret, role: role })
                         });
                         const verifyData = await verifyRes.json();
@@ -858,6 +861,7 @@
                     const vRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', { 
                         method: 'POST', 
                         headers: {'Content-Type':'application/json'}, 
+                        credentials: 'include',
                         body: JSON.stringify({ email: email, token: totpCode, role: role })
                     });
                     const vData = await vRes.json();
@@ -925,6 +929,7 @@
                     const res = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify({ email, password, role })
                     });
                     const data = await res.json();

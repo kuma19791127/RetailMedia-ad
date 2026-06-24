@@ -582,6 +582,7 @@
                 const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email, password })
                 });
 
@@ -597,6 +598,7 @@
                         const setupRes = await fetch(`${API_URL}/api/auth/2fa/setup`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, role: data.role })
                         });
                         const setupData = await setupRes.json();
@@ -621,6 +623,7 @@
                             const verifyRes = await fetch(`${API_URL}/api/auth/2fa/enable`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
                                 body: JSON.stringify({ email, secret: setupData.secret, token: code, role: data.role })
                             });
                             const verifyData = await verifyRes.json();
@@ -671,6 +674,7 @@
                                         const resetRes = await fetch(`${API_URL}/api/auth/reset-2fa`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
+                                            credentials: 'include',
                                             body: JSON.stringify({ email, password: password, role: data.role })
                                         });
                                         const resetData = await resetRes.json();
@@ -689,6 +693,7 @@
                             const loginRes = await fetch(`${API_URL}/api/auth/login`, {
                                  method: 'POST',
                                  headers: { 'Content-Type': 'application/json' },
+                                 credentials: 'include',
                                  body: JSON.stringify({ email, password, totpCode: code, role: data.role })
                              });
                             const loginData = await loginRes.json();
@@ -719,6 +724,7 @@
                                         const resetRes = await fetch(`${API_URL}/api/auth/reset-2fa`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
+                                            credentials: 'include',
                                             body: JSON.stringify({ email, password: password, role: data.role })
                                         });
                                         const resetData = await resetRes.json();
