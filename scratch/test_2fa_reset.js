@@ -35,20 +35,19 @@ function postJson(url, data) {
 }
 
 async function runTests() {
-    console.log('[Test] Sending Login request with advertiserID (ADV_001) as role: store...');
+    console.log('[Test] Sending 2FA Reset request for advertiserID (ADV_001) as role: store...');
     try {
-        const res = await postJson('http://localhost:3000/api/auth/login', {
+        const res = await postJson('http://localhost:3000/api/auth/reset-2fa', {
             email: 'ADV_001',
             password: 'DemoPass2026!',
             role: 'store'
         });
         console.log('Response Status:', res.status);
-        console.log('Response Headers:', res.headers);
         console.log('Response Body:', res.body);
 
         const data = JSON.parse(res.body);
         if (res.status === 200 && data.success) {
-            console.log('✅ Test passed: Successfully logged in using advertiserID.');
+            console.log('✅ Test passed: Successfully reset 2FA using advertiserID.');
         } else {
             console.log('❌ Test failed:', data.error || 'Unknown error');
         }

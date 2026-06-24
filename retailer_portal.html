@@ -530,7 +530,7 @@
                             <li style="margin-bottom:10px;">
                                 <b>宛先リストの準備：</b><br>
                                 「店舗ID, メールアドレス」のリスト<br>
-                                （例: LIFE_001, 店舗mailアドレス）を<br>
+                                （例: 1000001, 店舗mailアドレス）を<br>
                                 コピー
                             </li>
                             <li style="margin-bottom:10px;">
@@ -691,7 +691,7 @@
                     <label><input type="radio" name="targetStore" value="SPECIFIC"> 特定の店舗のみに配信する</label>
                     <div id="specific-store-container" style="display:none; margin-top:10px;">
                         <div class="store-input-row" style="display:flex; gap:5px; margin-bottom:5px;">
-                            <input type="text" class="specific-store-id" placeholder="例: LIFE_001" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                            <input type="text" class="specific-store-id" placeholder="例: 1000001" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                             <button onclick="addStoreInput()" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">➕ 追加</button>
                         </div>
                     </div>
@@ -760,7 +760,7 @@
             const row = document.createElement('div');
             row.className = 'store-input-row';
             row.style.cssText = 'display:flex; gap:5px; margin-bottom:5px;';
-            row.innerHTML = `<input type="text" class="specific-store-id" placeholder="例: LIFE_002" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+            row.innerHTML = `<input type="text" class="specific-store-id" placeholder="例: 1000002" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                              <button onclick="this.parentElement.remove()" style="background:#ef4444; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">❌ 削除</button>`;
             container.appendChild(row);
         }
