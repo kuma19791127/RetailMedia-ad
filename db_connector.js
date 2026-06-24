@@ -221,6 +221,16 @@ if (process.env.DATABASE_URL) {
                 console.error('[DB] PostgreSQL face_sensor_logs.store_id migration error:', e.message);
             }
 
+            // Migration path: Normalize legacy store ids (STORE_001 / STORE-001 -> 1000001)
+            try {
+                await client.query("UPDATE users SET org = '1000001' WHERE org = 'STORE_001' OR org = 'STORE-001'");
+                await client.query("UPDATE stores SET id = '1000001' WHERE id = 'STORE_001' OR id = 'STORE-001'");
+                await client.query("UPDATE signage_states SET store_id = '1000001' WHERE store_id = 'STORE_001' OR store_id = 'STORE-001'");
+                console.log('[DB] ✅ PostgreSQL legacy store ids normalized to 1000001.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL legacy store normalization error:', e.message);
+            }
+
             // Migration path: Add advertiser column to campaigns table if not exists
             try {
                 await client.query(`
@@ -730,6 +740,13 @@ if (process.env.DATABASE_URL) {
                                     }
                                 }
                             }
+                        });
+
+                        // SQLite Migration: Normalize legacy store ids (STORE_001 / STORE-001 -> 1000001)
+                        sqliteDb.serialize(() => {
+                            sqliteDb.run("UPDATE users SET org = '1000001' WHERE org = 'STORE_001' OR org = 'STORE-001'");
+                            sqliteDb.run("UPDATE stores SET id = '1000001' WHERE id = 'STORE_001' OR id = 'STORE-001'");
+                            sqliteDb.run("UPDATE signage_states SET store_id = '1000001' WHERE store_id = 'STORE_001' OR store_id = 'STORE-001'");
                         });
                     }
                 });

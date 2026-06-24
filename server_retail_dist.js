@@ -86,7 +86,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev_only
 
 
 const getDatabaseRole = (role) => {
-    if (role === 'corp' || role === 'employee') {
+    if (role === 'corp' || role === 'employee' || role === 'retailer') {
         return 'store';
     }
     return role || 'store';
@@ -1862,13 +1862,13 @@ app.post('/api/auth/register', async (req, res) => {
         const hashedPassword = hashPassword(password);
         await dbHelper.query.run(
             'INSERT INTO users (email, password, role, org) VALUES (?, ?, ?, ?)',
-            [email, hashedPassword, defaultRole, orgId]
+            [email, hashedPassword, dbRole, orgId]
         );
         console.log(`[Auth] 🆕 New User Registered: ${email} (${defaultRole})`);
 
-        const token = jwt.sign({ email, role: defaultRole, org: orgId }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ email, role: dbRole, org: orgId }, JWT_SECRET, { expiresIn: '24h' });
         res.cookie('token', token, getCookieOptions(req, 24 * 60 * 60 * 1000));
-        res.json({ success: true, redirect: getRedirectUrl(defaultRole) });
+        res.json({ success: true, redirect: getRedirectUrl(dbRole) });
     } catch (e) {
         console.error("[Auth Register Error]", e);
         res.status(500).json({ error: e.message });
