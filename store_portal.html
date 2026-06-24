@@ -957,15 +957,25 @@
                             if (res.ok && data.success) {
                                 listEl.innerHTML = '';
                                 if (data.devices && data.devices.length > 0) {
+                                    const storeId = window.CURRENT_USER_ORG || "1000001";
                                     data.devices.forEach(dev => {
                                         const div = document.createElement('div');
-                                        div.style = 'display:flex; justify-content:space-between; align-items:center; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;';
+                                        div.style = 'padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; display:flex; flex-direction:column; gap:10px; margin-bottom:10px;';
                                         div.innerHTML = `
-                                            <div>
-                                                <strong style="color:#334155; font-size:14px;">${dev.name}</strong>
-                                                <div style="font-size:12px; color:#64748b; margin-top:2px;">端末ID (7桁): <code style="font-weight:bold; color:#8e44ad; font-size:13px;">${dev.id}</code></div>
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                <div>
+                                                    <strong style="color:#334155; font-size:14px;">${dev.name}</strong>
+                                                    <div style="font-size:12px; color:#64748b; margin-top:2px;">端末ID (7桁): <code style="font-weight:bold; color:#8e44ad; font-size:13px;">${dev.id}</code></div>
+                                                </div>
+                                                <button onclick="deleteSignageDevice('${dev.id}')" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;">削除</button>
                                             </div>
-                                            <button onclick="deleteSignageDevice('${dev.id}')" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;">削除</button>
+                                            <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:8px; border-top:1px dashed #e2e8f0;">
+                                                <button onclick="downloadSignageBat('${storeId}', '${dev.id}', 'normal')" style="background:#10b981; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;"><i class="fa-solid fa-windows"></i> Win自動起動バッチ</button>
+                                                <button onclick="downloadSignageBat('${storeId}', '${dev.id}', 'android')" style="background:#2563eb; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;"><i class="fa-solid fa-android"></i> Android手順書</button>
+                                                <button onclick="downloadSignageBat('${storeId}', '${dev.id}', 'simple')" style="background:#64748b; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;"><i class="fa-solid fa-file-lines"></i> 簡易スタートガイド</button>
+                                                <button onclick="downloadSignageBat('${storeId}', '${dev.id}', 'remove')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;"><i class="fa-solid fa-trash-can"></i> Win設定解除</button>
+                                                <button onclick="downloadSignageBat('${storeId}', '${dev.id}', 'remove_android')" style="background:#f97316; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;"><i class="fa-solid fa-ban"></i> Android設定解除</button>
+                                            </div>
                                         `;
                                         listEl.appendChild(div);
                                     });
@@ -1032,6 +1042,101 @@
                         } catch (e) {
                             Swal.fire('エラー', 'サーバーに接続できませんでした。', 'error');
                         }
+                    }
+
+                    function getBatFileContent(storeId, terminalId) {
+                        const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}&terminal_id=${terminalId}`;
+                        return `@echo off\r\nsetlocal enabledelayedexpansion\r\nchcp 65001 >nul\r\n\r\n:: --- 管理者権限の取得（UACプロンプトの表示） ---\r\nnet session >nul 2>&1\r\nif %errorLevel% neq 0 (\r\n    echo 管理者権限が必要です。プロンプト表示中...\r\n    powershell -Command "Start-Process '%~f0' -Verb RunAs"\r\n    exit /b\r\n)\r\n:: ---------------------------------------------------\r\n\r\ncolor 0B\r\necho =========================================================\r\necho リテアド LEDサイネージ セットアップツール (${terminalId})\r\necho =========================================================\r\necho.\r\necho パソコンをサイネージとしてセットアップします。\r\necho.\r\necho 店舗ID: ${storeId}\r\necho 端末ID: ${terminalId}\r\necho.\r\npause\r\n\r\n:: 1. パネル番号の適用\r\nmkdir "C:\\\\RetailMedia" >nul 2>&1\r\necho {"terminal_id": "${terminalId}"} > "C:\\\\RetailMedia\\config.json"\r\necho [OK] 固有IDを C:\\\\RetailMedia\\\\config.json に保存しました。\r\n\r\n:: 2. USBの無効化（セキュリティ）\r\nset /p disable_usb="USBポートを無効化しますか？ (Y/N): "\r\nif /i "%disable_usb%"=="Y" (\r\n    reg add "HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\USBSTOR" /v Start /t REG_DWORD /d 4 /f >nul 2>&1\r\n    echo [OK] USBストレージの読み込みを無効化しました。\r\n)\r\n\r\n:: 3. 起動（キオスクモード）の設定\r\nset "STARTUP_DIR=%ALLUSERSPROFILE%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Startup"\r\nset "SHORTCUT_PATH=%STARTUP_DIR%\\\\RetailAd_Signage.lnk"\r\nset "TARGET_URL=${targetUrl}"\r\n\r\nset "CHROME_PATH=C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe"\r\nset "EDGE_PATH=C:\\\\Program Files (x86)\\\\Google\\\\Chrome\\\\Application\\\\msedge.exe"\r\nif exist "%CHROME_PATH%" (\r\n    set "BROWSER_PATH=%CHROME_PATH%"\r\n) else (\r\n    set "BROWSER_PATH=%EDGE_PATH%"\r\n)\r\n\r\nset "VBS_SCRIPT=%TEMP%\\\\CreateShortcut.vbs"\r\necho Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_SCRIPT%"\r\necho sLinkFile = "%SHORTCUT_PATH%" >> "%VBS_SCRIPT%"\r\necho Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_SCRIPT%"\r\necho oLink.TargetPath = "%BROWSER_PATH%" >> "%VBS_SCRIPT%"\r\necho oLink.Arguments = "--kiosk \\\\""%TARGET_URL%\\\\"" --autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --no-first-run --no-default-browser-check" >> "%VBS_SCRIPT%"\r\necho oLink.Save >> "%VBS_SCRIPT%"\r\ncscript //nologo "%VBS_SCRIPT%"\r\ndel "%VBS_SCRIPT%"\r\n\r\necho.\r\necho =========================================================\r\necho 🎉 セットアップが完了しました！\r\necho =========================================================\r\necho パソコン起動時に、自動で全画面でサイネージが起動し、\r\necho 広告の配信と収益化が開始されます。\r\necho 元の状態に戻したい場合は、「remove_retail_signage.bat」を実行してください。\r\necho.\r\npause\r\n`;
+                    }
+
+                    function getRemoveBatContent() {
+                        return `@echo off\r\nsetlocal enabledelayedexpansion\r\nchcp 65001 >nul\r\n\r\n:: --- 管理者権限の取得（UACプロンプトの表示） ---\r\nnet session >nul 2>&1\r\nif %errorLevel% neq 0 (\r\n    echo 管理者権限が必要です。プロンプト表示中...\r\n    powershell -Command "Start-Process '%~f0' -Verb RunAs"\r\n    exit /b\r\n)\r\n:: ---------------------------------------------------\r\n\r\necho =========================================================\r\necho リテアド サイネージ設定解除・セキュリティ復元スクリプト\r\necho =========================================================\r\necho.\r\necho パソコンを「サイネージ専用」から「通常のパソコン」に戻します。\r\necho ・自動起動ショートカットの削除\r\necho ・USB制限の解除（無効化の復元）\r\necho ・自動サインイン設定の解除\r\necho ・サイネージ専用ユーザー(SignagePlayer)の削除\r\necho を実行します。\r\necho.\r\npause\r\n\r\n:: 1. ショートカット削除\r\nset "STARTUP_ALL=%ALLUSERSPROFILE%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Startup\\\\RetailAd_Signage.lnk"\r\nset "STARTUP_USER=%APPDATA%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Startup\\\\RetailAd_Signage.lnk"\r\n\r\nif exist "%STARTUP_ALL%" del "%STARTUP_ALL%"\r\nif exist "%STARTUP_USER%" del "%STARTUP_USER%"\r\necho [OK] 自動起動のショートカットを削除しました。\r\n\r\n:: 2. USB制限解除\r\nreg add "HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\USBSTOR" /v Start /t REG_DWORD /d 3 /f >nul 2>&1\r\necho [OK] USB制限を解除しました（再起動後に有効になります）。\r\n\r\n:: 3. 自動サインイン設定の削除\r\nreg add "HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f >nul 2>&1\r\nreg delete "HKLM\\\\SOFTWARE\\\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultUserName /f >nul 2>&1\r\nreg delete "HKLM\\\\SOFTWARE\\\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultPassword /f >nul 2>&1\r\necho [OK] 自動サインイン設定を削除しました。\r\n\r\n:: 4. 専用ユーザーの削除\r\nnet user SignagePlayer /delete >nul 2>&1\r\necho [OK] サイネージ専用ユーザー(SignagePlayer)を削除しました。\r\n\r\necho.\r\necho =========================================================\r\necho 🎉 すべての解除・復元が完了しました！通常のパソコンに戻りました。\r\necho =========================================================\r\necho パソコンを再起動すると、通常のアカウントで起動します。\r\necho.\r\npause\r\n`;
+                    }
+
+                    function getWindowsRemoveInstructionsContent() {
+                        return `=========================================================\r\nリテアド・サイネージ Windows設定解除・手動復元手順書\r\n=========================================================\r\n\r\nこのファイルは、セキュリティ警告等でバッチファイル（.bat）が実行できない\r\n環境（法人のパソコンなど）において、手動で安全に設定を解除・復元するための\r\n手順書です。管理者権限を持つアカウントで実行してください。\r\n\r\n---------------------------------------------------------\r\n■ 解除・復元手順（コマンドプロンプトでの実行）\r\n---------------------------------------------------------\r\n1. スタートメニューから「cmd」または「コマンドプロンプト」を検索します。\r\n\r\n2. 「コマンドプロンプト」を右クリックし、「管理者として実行」を選択します。\r\n\r\n3. 以下の【解除コマンド】ブロックにあるコマンドを1行ずつコピーし、\r\n   コマンドプロンプト画面に貼り付けて（右クリックで貼り付け可能）Enterキーで実行してください。\r\n\r\n---------------------------------------------------------\r\n【解除コマンド】\r\n---------------------------------------------------------\r\n:: 1. 自動起動ショートカットの削除\r\ndel "%ALLUSERSPROFILE%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Startup\\\\RetailAd_Signage.lnk" /f /q 2>nul\r\ndel "%APPDATA%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Startup\\\\RetailAd_Signage.lnk" /f /q 2>nul\r\n\r\n:: 2. USB制限の解除（再起動後に有効）\r\nreg add "HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\USBSTOR" /v Start /t REG_DWORD /d 3 /f\r\n\r\n:: 3. 自動サインイン設定の無効化\r\nreg add "HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f\r\nreg delete "HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Winlogon" /v DefaultUserName /f 2>nul\r\nreg delete "HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Winlogon" /v DefaultPassword /f 2>nul\r\n\r\n:: 4. 専用ユーザーの削除\r\nnet user SignagePlayer /delete 2>nul\r\n\r\n---------------------------------------------------------\r\n■ 完了の確認\r\n---------------------------------------------------------\r\n・上記のコマンドがすべて実行されたら、パソコンを再起動してください。\r\n・再起動後、通常のパソコンのデスクトップ画面が開き、USBの使用や自動サインインが解除されていることを確認してください。\r\n`;
+                    }
+
+                    function getAndroidInstructionsContent(storeId, terminalId) {
+                        return `=========================================================\r\nリテアド・サイネージ Androidアプリ導入・セットアップ手順書\r\n=========================================================\r\n\r\nこのファイルは、既存のAndroidサイネージパネル（Android OS搭載）に\r\n「リテアド・サイネージプレイヤー」アプリを導入し、セットアップするための手順書です。\r\n\r\n【店舗設定ID情報】\r\n店舗固有ID: ${storeId}\r\n端末固有ID: ${terminalId}\r\n\r\n---------------------------------------------------------\r\n■ セットアップ手順\r\n---------------------------------------------------------\r\n1. サイネージ用Android端末のブラウザ等から、リテアド・サイネージプレイヤー\r\n   アプリ (APKファイル) をダウンロード・インストールします。\r\n   （※事前に本部から案内された専用URL、または公式ストアからインストールしてください）\r\n\r\n2. インストールしたアプリを起動します。\r\n\r\n3. 初回起動時に表示される「店舗ID入力画面」において、\r\n   上記の店舗固有ID【 ${storeId} 】を入力してください。\r\n\r\n4. 続けて端末ID（またはサイネージID）入力画面が表示された場合は、\r\n   上記の端末固有ID【 ${terminalId} 】を入力してください。\r\n\r\n5. 「保存」または「接続」ボタンをタップすると、サーバーから最新の広告・動画\r\n   プレイリストが同期され、自動的にフルスクリーン再生が開始されます。\r\n\r\n---------------------------------------------------------\r\n■ 注意事項\r\n---------------------------------------------------------\r\n・端末の電源を入れた際、自動的にリテアドアプリが起動する「自動起動（Auto Start）設定」を\r\n  Android端末本体の設定メニュー等で有効にしておくことを推奨します。\r\n・インターネット接続が常時確保されていることをご確認ください。\r\n`;
+                    }
+
+                    function getSimpleStartInstructionsContent(storeId, terminalId) {
+                        return `=========================================================\r\nリテアド・サイネージ 簡易スタートガイド（セキュリティ制限なし）\r\n=========================================================\r\n\r\nこのファイルは、店舗の既存サイネージシステムにおいて、\r\nOSの設定変更（管理者制限やUSB無効化など）を行わずに、\r\nリテアド・サイネージの表示のみを開始するための手順書です。\r\n\r\n【店舗設定ID情報】\r\n店舗固有ID: ${storeId}\r\n端末固有ID: ${terminalId}\r\n\r\n【サイネージプレイヤー起動用URL】\r\nhttps://retail-ad.com/signage_player.html?storeId=${storeId}&terminal_id=${terminalId}\r\n\r\n---------------------------------------------------------\r\n■ セットアップ手順（Windows / Android 共通）\r\n---------------------------------------------------------\r\n1. サイネージ表示用に使用する端末（PCまたはandroidコントローラー）でブラウザ（Google Chrome推奨）を起動します。\r\n\r\n2. 上記の【サイネージプレイヤー起動用URL】をアドレスバーに入力して開きます。\r\n\r\n3. 画面が表示されたら、ブラウザの「ブックマーク（お気に入り）」に登録します。\r\n   （※PCの場合は、ブラウザの全画面表示モード「F11キー」を押すことで、サイネージとしてフルスクリーン表示が可能です）\r\n\r\n4. Androidや既存のスマートパネルでアプリを使用する場合は、アプリを起動し、初期起動時の店舗ID入力欄に上記の【店舗ID: ${storeId}】および【端末ID: ${terminalId}】を登録して起動してください。\r\n\r\n---------------------------------------------------------\r\n■ 注意事項\r\n---------------------------------------------------------\r\n・本手順では、USBポートの制限や、端末起動時の全自動キオスク起動設定などは行われません。\r\n・電源投入時の自動起動を行いたい場合は、各デバイスのOS標準設定（スタートアップ登録など）を用いて、手動で上記のURLまたはアプリを起動対象に登録してください。\r\n`;
+                    }
+
+                    function getAndroidRemoveInstructionsContent(storeId, terminalId) {
+                        return `=========================================================\r\nリテアド・サイネージ Androidアプリ設定解除・初期化ガイド\r\n=========================================================\r\n\r\nこのファイルは、Android端末から「リテアド・サイネージ」の店舗ID設定を\r\n解除し、アプリを初期状態に戻す、あるいは削除するための手順書です。\r\n\r\n【対象の店舗ID情報】\r\n店舗固有ID: ${storeId}\r\n端末固有ID: ${terminalId}\r\n\r\n---------------------------------------------------------\r\n■ 解除・初期化手順\r\n---------------------------------------------------------\r\n1. サイネージ用Android端末の画面上で起動している「リテアド・サイネージプレイヤー」\r\n   アプリの再生を終了します。\r\n   （※画面を終了するか、設定ボタン等から管理メニューを開きます）\r\n\r\n2. アプリ内の「設定画面」または「管理メニュー」を開きます。\r\n\r\n3. 「店舗IDの削除」または「登録解除（クリア）」ボタンをタップし、\r\n   現在紐付けられている店舗ID【 ${storeId} 】および端末ID【 ${terminalId} 】を削除します。\r\n\r\n4. 今後サイネージとして一切使用しない場合は、Android端末標準の設定アプリ\r\n   （アプリ管理など）から「アンインストール」を実行してください。\r\n`;
+                    }
+
+                    function downloadSignageBat(storeId, terminalId, type) {
+                        if (!storeId || !terminalId) {
+                            Swal.fire("エラー", "店舗IDまたは端末IDが不足しています。", "error");
+                            return;
+                        }
+
+                        if (type === 'remove_android') {
+                            const textContent = getAndroidRemoveInstructionsContent(storeId, terminalId);
+                            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `remove_android_signage_${storeId}_${terminalId}.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            Swal.fire("発行完了", `「remove_android_signage_${storeId}_${terminalId}.txt」をダウンロードしました。`, "success");
+                            return;
+                        }
+
+                        if (type === 'simple') {
+                            const textContent = getSimpleStartInstructionsContent(storeId, terminalId);
+                            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `simple_start_${storeId}_${terminalId}.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            Swal.fire("発行完了", `「simple_start_${storeId}_${terminalId}.txt」をダウンロードしました。`, "success");
+                            return;
+                        }
+
+                        if (type === 'android') {
+                            const textContent = getAndroidInstructionsContent(storeId, terminalId);
+                            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `android_instructions_${storeId}_${terminalId}.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            Swal.fire("発行完了", `「android_instructions_${storeId}_${terminalId}.txt」をダウンロードしました。`, "success");
+                            return;
+                        }
+
+                        if (type === 'remove') {
+                            const textContent = getWindowsRemoveInstructionsContent();
+                            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `remove_windows_signage_instructions.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            Swal.fire("発行完了", "「remove_windows_signage_instructions.txt」をダウンロードしました。", "success");
+                            return;
+                        }
+
+                        const batContent = getBatFileContent(storeId, terminalId);
+                        const blob = new Blob([batContent], { type: 'application/x-bat' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `setup_${storeId}_${terminalId}.bat`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        Swal.fire("発行完了", `店舗スタッフに「setup_${storeId}_${terminalId}.bat」を配布してください。`, "success");
                     }
                 </script>
             </div>
