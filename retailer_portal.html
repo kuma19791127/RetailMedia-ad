@@ -841,13 +841,13 @@
                 return;
             }
 
-            console.log("[Auth] Form submitted. Email:", email, "Role: advertiser");
+            console.log("[Auth] Form submitted. Email:", email, "Role: store");
             try {
                 console.log("[Auth] Sending login request to:", window.API_BASE_URL + '/api/auth/login');
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: pass, role: 'advertiser' })
+                    body: JSON.stringify({ email: email, password: pass, role: 'store' })
                 });
                 console.log("[Auth] Response status:", response.status);
                 if (!response.ok) {
@@ -891,7 +891,7 @@
                                             const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ email, password: passVal, role: 'advertiser' })
+                                                body: JSON.stringify({ email, password: passVal, role: 'store' })
                                             });
                                             console.log("[Auth] Reset 2FA response status:", resetRes.status);
                                             const resetData = await resetRes.json();
@@ -922,7 +922,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, role: 'advertiser' })
+                            body: JSON.stringify({ email, token: totpCode, role: 'store' })
                         });
                         console.log("[Auth] 2FA verification response status:", verifyRes.status);
                         const verifyData = await verifyRes.json();
@@ -951,7 +951,7 @@
                                         const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email, password: passVal, role: 'advertiser' })
+                                            body: JSON.stringify({ email, password: passVal, role: 'store' })
                                         });
                                         const resetData = await resetRes.json();
                                         if (resetData.success) {
@@ -977,7 +977,7 @@
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, role: 'advertiser' })
+                            body: JSON.stringify({ email, role: 'store' })
                         });
                         console.log("[Auth] 2FA setup response status:", setupRes.status);
                         const setupData = await setupRes.json();
@@ -1014,7 +1014,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'advertiser' })
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'store' })
                         });
                         console.log("[Auth] 2FA enable response status:", verifyRes.status);
                         const verifyData = await verifyRes.json();

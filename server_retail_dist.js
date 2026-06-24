@@ -2009,9 +2009,16 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
     }
 
     try {
-        const targetRole = getDatabaseRole(role || 'store');
+        let targetRole = getDatabaseRole(role || 'store');
         console.log(`[Auth /api/auth/reset-2fa] Querying DB for identifier=${email}, role=${targetRole}`);
         let user = await dbHelper.query.get('SELECT * FROM users WHERE (email = ? OR org = ?) AND role = ?', [email, email, targetRole]);
+        if (!user && targetRole === 'store') {
+            user = await dbHelper.query.get('SELECT * FROM users WHERE (email = ? OR org = ?) AND role = ?', [email, email, 'advertiser']);
+            if (user) {
+                targetRole = 'advertiser';
+                console.log(`[Auth /api/auth/reset-2fa] Fallback match: Found user as advertiser role.`);
+            }
+        }
         if (!user) {
             console.warn(`[Auth /api/auth/reset-2fa] User not found for identifier=${email}, role=${targetRole}`);
             return res.status(404).json({ error: "ユーザーが見つかりません" });
@@ -2077,9 +2084,16 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     try {
-        const dbRole = getDatabaseRole(role || 'store');
+        let dbRole = getDatabaseRole(role || 'store');
         console.log(`[Auth /api/auth/login] [Trace 1] Querying DB for identifier=${email}, role=${dbRole}`);
         let user = await dbHelper.query.get('SELECT * FROM users WHERE (email = ? OR org = ?) AND role = ?', [email, email, dbRole]);
+        if (!user && dbRole === 'store') {
+            user = await dbHelper.query.get('SELECT * FROM users WHERE (email = ? OR org = ?) AND role = ?', [email, email, 'advertiser']);
+            if (user) {
+                dbRole = 'advertiser';
+                console.log(`[Auth /api/auth/login] Fallback match: Found user as advertiser role.`);
+            }
+        }
         console.log(`[Auth /api/auth/login] [Trace 2] DB query completed. User found: ${!!user}`);
 
         if (!user) {
