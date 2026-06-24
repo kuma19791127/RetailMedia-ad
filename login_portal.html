@@ -667,10 +667,11 @@
                                         cancelButtonText: 'キャンセル'
                                     });
                                     if (confirmReset.isConfirmed) {
+                                        console.log("[Auth] Sending reset 2FA request for email:", email, "with password length:", password ? password.length : 0);
                                         const resetRes = await fetch(`${API_URL}/api/auth/reset-2fa`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email })
+                                            body: JSON.stringify({ email, password: password, role: data.role })
                                         });
                                         const resetData = await resetRes.json();
                                         if (resetData.success) {
@@ -714,10 +715,11 @@
                                     cancelButtonColor: '#d33'
                                 }).then(async (result) => {
                                     if (result.dismiss === Swal.DismissReason.cancel) {
+                                        console.log("[Auth] Requesting 2FA reset from error dialog... with password length:", password ? password.length : 0);
                                         const resetRes = await fetch(`${API_URL}/api/auth/reset-2fa`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email })
+                                            body: JSON.stringify({ email, password: password, role: data.role })
                                         });
                                         const resetData = await resetRes.json();
                                         if (resetData.success) {

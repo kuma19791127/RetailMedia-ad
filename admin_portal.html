@@ -2319,10 +2319,11 @@
                             cancelButtonText: 'キャンセル'
                         });
                         if (confirmReset.isConfirmed) {
+                            console.log("[Auth] Sending reset 2FA request for admin:", user, "with password length:", pass ? pass.length : 0);
                             const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: user, role: 'admin' })
+                                body: JSON.stringify({ email: user, password: pass, role: 'admin' })
                             });
                             const resetData = await resetRes.json();
                             if (resetData.success) {
@@ -2412,10 +2413,12 @@
                 Swal.fire({ title: '2FA設定を準備中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
                 // 既存の2FA設定をリセット
+                console.log("[Auth] Resetting admin 2FA from admin portal (already logged in)...");
                 const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, role: 'admin' })
+                    body: JSON.stringify({ email: email, role: 'admin' }),
+                    credentials: 'include'
                 });
                 const resetData = await resetRes.json();
                 

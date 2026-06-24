@@ -858,11 +858,11 @@
                                     });
                                     if (confirmReset.isConfirmed) {
                                         try {
-                                            console.log("[Auth] Sending reset 2FA request for email:", email);
+                                            console.log("[Auth] Sending reset 2FA request for email:", email, "with password length:", pass ? pass.length : 0);
                                             const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ email, role: 'store' })
+                                                body: JSON.stringify({ email, password: pass, role: 'store' })
                                             });
                                             console.log("[Auth] Reset 2FA response status:", resetRes.status);
                                             const resetData = await resetRes.json();
@@ -917,11 +917,11 @@
                             }).then(async (result) => {
                                 if (result.dismiss === Swal.DismissReason.cancel) {
                                     try {
-                                        console.log("[Auth] Requesting 2FA reset from error dialog...");
+                                        console.log("[Auth] Requesting 2FA reset from error dialog... with password length:", pass ? pass.length : 0);
                                         const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ email, role: 'store' })
+                                            body: JSON.stringify({ email, password: pass, role: 'store' })
                                         });
                                         const resetData = await resetRes.json();
                                         if (resetData.success) {
