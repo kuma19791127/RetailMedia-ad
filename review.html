@@ -333,7 +333,8 @@ async function loadKYCReq() {
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: pass, role: 'review' })
+                    body: JSON.stringify({ email: email, password: pass, role: 'review' }),
+                    credentials: 'include'
                 });
                 console.log("[Auth] Response status:", response.status);
                 if (!response.ok) {
@@ -365,7 +366,8 @@ async function loadKYCReq() {
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, role: 'review' })
+                            body: JSON.stringify({ email, token: totpCode, role: 'review' }),
+                            credentials: 'include'
                         });
                         const verifyData = await verifyRes.json();
                         
@@ -385,7 +387,8 @@ async function loadKYCReq() {
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, role: 'review' })
+                            body: JSON.stringify({ email, role: 'review' }),
+                            credentials: 'include'
                         });
                         const setupData = await setupRes.json();
                         console.log("[Auth] 2FA setup response:", setupData);
@@ -415,7 +418,8 @@ async function loadKYCReq() {
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'review' })
+                            body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'review' }),
+                            credentials: 'include'
                         });
                         const verifyData = await verifyRes.json();
 

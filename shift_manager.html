@@ -1338,7 +1338,8 @@
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(body),
+                    credentials: 'include'
                 });
                 console.log("[F12 Debug Frontend] Login HTTP status:", response.status);
                 if (!response.ok) {
