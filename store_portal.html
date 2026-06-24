@@ -610,7 +610,7 @@
                 return originalFetch(input, init).then(response => {
                     if (response.status === 401 || response.status === 403) {
                         const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
-                        if (!url.includes('/api/auth/login')) {
+                        if (!url.includes('/api/auth/login') && !url.includes('/api/admin/sales')) {
                             console.warn("[Global Auth Hook] 401/403 detected. Clearing auth and redirecting to login. URL:", url);
                             sessionStorage.clear();
                             
@@ -2101,6 +2101,9 @@
                     console.log("[F12 Debug] Store Portal: user/me response status:", meRes.status);
                     const meData = await meRes.json();
                     console.log("[F12 Debug] Store Portal: user/me response data:", meData);
+                    if (meData.user) {
+                        window.CURRENT_USER_ORG = meData.user.org || meData.user.email;
+                    }
                     const emailInput = document.getElementById('billing-email');
                     if (emailInput && meData.user && meData.user.email && !meData.user.email.includes('demo')) {
                         if (!emailInput.value) emailInput.value = meData.user.email;
@@ -2174,8 +2177,21 @@
 
                     // Collect unsynced local POS records (mock logic)
                     // Then push to Admin Server via API
+                    if (!window.CURRENT_USER_ORG) {
+                        try {
+                            const meRes = await fetch((window.API_BASE_URL || '') + '/api/user/me');
+                            if (meRes.ok) {
+                                const meData = await meRes.json();
+                                if (meData.user) {
+                                    window.CURRENT_USER_ORG = meData.user.org || meData.user.email;
+                                }
+                            }
+                        } catch (err) {
+                            console.error("[Sync] Failed to fetch current user on sync:", err);
+                        }
+                    }
                     const payload = {
-                        storeId: "STORE-001",
+                        storeId: window.CURRENT_USER_ORG || "STORE-001",
                         syncTimestamp: new Date().toISOString(),
                         records: [ /* Batched sales records */ ]
                     };
