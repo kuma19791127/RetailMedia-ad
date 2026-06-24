@@ -1824,6 +1824,20 @@ app.post('/api/admin/sales/sync-batch', requireAuth, async (req, res) => {
 
 // --- AUTH (2FA) ---
 
+async function generateUniqueStoreId() {
+    let attempts = 0;
+    while (attempts < 100) {
+        const randId = Math.floor(1000000 + Math.random() * 9000000).toString();
+        const user = await dbHelper.query.get('SELECT * FROM users WHERE org = ?', [randId]);
+        const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [randId]);
+        if (!user && !store) {
+            return randId;
+        }
+        attempts++;
+    }
+    throw new Error("Failed to generate unique 7-digit Store ID");
+}
+
 app.post('/api/auth/register', async (req, res) => {
     const { email, password, role } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email and Password required" });
@@ -1834,14 +1848,25 @@ app.post('/api/auth/register', async (req, res) => {
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
         if (user) return res.status(400).json({ error: "User already exists" });
 
+        let orgId = null;
+        if (defaultRole === 'store' || defaultRole === 'retailer') {
+            orgId = await generateUniqueStoreId();
+            // stores テーブルにも初期レコードを作成
+            await dbHelper.query.run(
+                'INSERT INTO stores (id, name, billing_email) VALUES (?, ?, ?)',
+                [orgId, `${email}の店舗`, email]
+            );
+            console.log(`[Auth] 🏪 Store created with 7-digit ID: ${orgId}`);
+        }
+
         const hashedPassword = hashPassword(password);
         await dbHelper.query.run(
-            'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
-            [email, hashedPassword, defaultRole]
+            'INSERT INTO users (email, password, role, org) VALUES (?, ?, ?, ?)',
+            [email, hashedPassword, defaultRole, orgId]
         );
         console.log(`[Auth] 🆕 New User Registered: ${email} (${defaultRole})`);
 
-        const token = jwt.sign({ email, role: defaultRole }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ email, role: defaultRole, org: orgId }, JWT_SECRET, { expiresIn: '24h' });
         res.cookie('token', token, getCookieOptions(req, 24 * 60 * 60 * 1000));
         res.json({ success: true, redirect: getRedirectUrl(defaultRole) });
     } catch (e) {
@@ -6833,6 +6858,114 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
             adnet: storeAdNet * 0.5
         });
     } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- Store Portal Signage Device Management Endpoints ---
+
+app.get('/api/store/signages', requireAuth, async (req, res) => {
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
+    try {
+        const storeId = req.user.org || req.user.email;
+        let row = await dbHelper.query.get('SELECT * FROM signage_states WHERE store_id = ?', [storeId]);
+        let devices = [];
+        if (row && row.state_json) {
+            try {
+                const stateObj = JSON.parse(row.state_json);
+                if (stateObj && Array.isArray(stateObj.devices)) {
+                    devices = stateObj.devices;
+                }
+            } catch (jsonErr) {
+                console.error("[Signage Device JSON Parse Error]", jsonErr.message);
+            }
+        }
+        res.json({ success: true, devices });
+    } catch (e) {
+        console.error("[Get Signages Error]", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/store/signages', requireAuth, async (req, res) => {
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
+    const { name } = req.body;
+    try {
+        const storeId = req.user.org || req.user.email;
+        let row = await dbHelper.query.get('SELECT * FROM signage_states WHERE store_id = ?', [storeId]);
+        
+        let stateObj = { devices: [] };
+        if (row && row.state_json) {
+            try {
+                stateObj = JSON.parse(row.state_json) || { devices: [] };
+                if (!Array.isArray(stateObj.devices)) {
+                    stateObj.devices = [];
+                }
+            } catch (jsonErr) {
+                stateObj = { devices: [] };
+            }
+        }
+
+        let signageId = "";
+        let attempts = 0;
+        const existingIds = new Set(stateObj.devices.map(d => d.id));
+        while (attempts < 100) {
+            const randId = Math.floor(2000000 + Math.random() * 8000000).toString();
+            if (!existingIds.has(randId)) {
+                signageId = randId;
+                break;
+            }
+            attempts++;
+        }
+        if (!signageId) throw new Error("7桁のサイネージIDの生成に失敗しました");
+
+        const newDevice = {
+            id: signageId,
+            name: name || "サイネージ端末",
+            status: "active",
+            createdAt: new Date().toISOString()
+        };
+        stateObj.devices.push(newDevice);
+
+        if (row) {
+            await dbHelper.query.run('UPDATE signage_states SET state_json = ? WHERE store_id = ?', [JSON.stringify(stateObj), storeId]);
+        } else {
+            await dbHelper.query.run('INSERT INTO signage_states (store_id, state_json) VALUES (?, ?)', [storeId, JSON.stringify(stateObj)]);
+        }
+
+        res.json({ success: true, device: newDevice });
+    } catch (e) {
+        console.error("[Add Signage Error]", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/store/signages/:id', requireAuth, async (req, res) => {
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
+    const signageId = req.params.id;
+    try {
+        const storeId = req.user.org || req.user.email;
+        let row = await dbHelper.query.get('SELECT * FROM signage_states WHERE store_id = ?', [storeId]);
+        if (!row || !row.state_json) {
+            return res.status(404).json({ error: "サイネージ設定が見つかりません" });
+        }
+
+        let stateObj = JSON.parse(row.state_json);
+        if (stateObj && Array.isArray(stateObj.devices)) {
+            stateObj.devices = stateObj.devices.filter(d => d.id !== signageId);
+            await dbHelper.query.run('UPDATE signage_states SET state_json = ? WHERE store_id = ?', [JSON.stringify(stateObj), storeId]);
+            res.json({ success: true, message: "サイネージを削除しました" });
+        } else {
+            res.status(404).json({ error: "対象デバイスが見つかりません" });
+        }
+    } catch (e) {
+        console.error("[Delete Signage Error]", e);
         res.status(500).json({ error: e.message });
     }
 });
