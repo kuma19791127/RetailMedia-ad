@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const fs = require('fs');
 
 const getDatabaseRole = (role) => {
     return role;
@@ -275,9 +276,9 @@ if (process.env.DATABASE_URL) {
             const eventCountRes = await client.query('SELECT COUNT(*) FROM local_events');
             if (parseInt(eventCountRes.rows[0].count, 10) === 0) {
                 const defaultEvents = [
-                    ['STORE_001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
-                    ['STORE_001', '地域住民スポーツフェスティバル', '2026/06/28', '地域のスポーツ大会。ドリンクや軽食の需要があります。'],
-                    ['STORE_001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
+                    ['1000001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
+                    ['1000001', '地域住民スポーツフェスティバル', '2026/06/28', '地域のスポーツ大会。ドリンクや軽食の需要があります。'],
+                    ['1000001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
                 ];
                 for (const ev of defaultEvents) {
                     await client.query(
@@ -691,8 +692,7 @@ if (process.env.DATABASE_URL) {
                     }
                 });
 
-                // Recreate users table to apply schema change dynamically
-                sqliteDb.run("DROP TABLE IF EXISTS users");
+                // Create users table if not exists (Removed DROP TABLE to persist user records across server restarts)
                 sqliteDb.run(`
                     CREATE TABLE IF NOT EXISTS users (
                         email TEXT,
@@ -703,7 +703,36 @@ if (process.env.DATABASE_URL) {
                         two_factor_secret TEXT,
                         PRIMARY KEY (email, role)
                     )
-                `);
+                `, (err) => {
+                    if (!err) {
+                        sqliteDb.get("SELECT COUNT(*) as count FROM users", (userCountErr, row) => {
+                            if (row && row.count === 0) {
+                                console.log('[Database] Seeding initial users from database.json into SQLite...');
+                                const path = require('path');
+                                const dbPath = path.join(__dirname, 'database.json');
+                                if (fs.existsSync(dbPath)) {
+                                    try {
+                                        const parsed = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+                                        if (parsed.users) {
+                                            const stmt = sqliteDb.prepare("INSERT INTO users (email, password, role, org, two_factor_secret) VALUES (?, ?, ?, ?, ?)");
+                                            Object.keys(parsed.users).forEach(key => {
+                                                const u = parsed.users[key];
+                                                const parts = key.split(':');
+                                                const email = parts[0];
+                                                const role = u.role || parts[1] || 'store';
+                                                stmt.run(email, u.password, role, u.org || null, u.twoFactorSecret || null);
+                                            });
+                                            stmt.finalize();
+                                            console.log('[Database] ✅ SQLite initial users seeded successfully.');
+                                        }
+                                    } catch (ex) {
+                                        console.error('[Database] Failed to seed initial users:', ex.message);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
 
                 sqliteDb.get("SELECT COUNT(*) as count FROM products", (err, row) => {
                     if (row && row.count === 0) {
@@ -733,9 +762,9 @@ if (process.env.DATABASE_URL) {
                 sqliteDb.get("SELECT COUNT(*) as count FROM local_events", (err, row) => {
                     if (row && row.count === 0) {
                         const defaultEvents = [
-                            ['STORE_001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
-                            ['STORE_001', '地域住民スポーツフェスティバル', '2026/06/28', '地域のスポーツ大会。ドリンクや軽食の需要があります。'],
-                            ['STORE_001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
+                            ['1000001', '近隣小学校の運動会', '2026/06/25', '近隣の小学校で運動会が開催されます。お弁当の需要が高まります。'],
+                            ['1000001', '地域住民スポーツフェスティバル', '2026/06/28', '地域のスポーツ大会。ドリンクや軽食の需要があります。'],
+                            ['1000001', '駅前商店街の夕市セール', '2026/06/30', '商店街合同の夕方タイムセールです。']
                         ];
                         const stmt = sqliteDb.prepare("INSERT INTO local_events (store_id, event_name, event_date, description) VALUES (?, ?, ?, ?)");
                         defaultEvents.forEach(ev => stmt.run(ev));

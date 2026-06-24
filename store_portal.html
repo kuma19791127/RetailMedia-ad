@@ -2301,7 +2301,7 @@
                         }
                     }
                     const payload = {
-                        storeId: window.CURRENT_USER_ORG || "STORE-001",
+                        storeId: window.CURRENT_USER_ORG || "1000001",
                         syncTimestamp: new Date().toISOString(),
                         records: [ /* Batched sales records */ ]
                     };
@@ -2393,7 +2393,7 @@
                 // API Call (Broadcasts to Signage)
                 const speed = document.getElementById('voice-speed').value;
                 // Target Broadcast to THIS store only (Prevents global panic)
-                const storeId = "STORE_001";
+                const storeId = window.CURRENT_USER_ORG || "1000001";
                 await fetch(`${window.API_BASE_URL}/api/ai/generate?text=${encodeURIComponent(text)}&speed=${speed}&storeId=${storeId}`);
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Broadcast Live (Local Store)!', showConfirmButton: false, timer: 1500 });
             }, 1500);

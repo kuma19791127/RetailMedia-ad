@@ -641,7 +641,7 @@ document.body.addEventListener('click', () => {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const location = urlParams.get('location') || 'register_side';
-                const storeId = urlParams.get('storeId') || 'STORE_001';
+                const storeId = urlParams.get('storeId') || '1000001';
                 const terminalId = urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || 'DEMO_UNIT';
 
                 const res = await fetch(window.API_BASE_URL + `/api/signage/playlist?location=${location}&storeId=${storeId}&terminal_id=${terminalId}`);
@@ -1010,7 +1010,7 @@ document.body.addEventListener('click', () => {
             }
 
             const urlParams = new URLSearchParams(window.location.search);
-            const storeId = urlParams.get('storeId') || 'STORE_001';
+            const storeId = urlParams.get('storeId') || '1000001';
 
             console.log(`[Analytics API] Sending beacon data for Store: ${storeId}, Ad: ${adId} (Attention: ${attention}%, Skip: ${skip})`);
             fetch(window.API_BASE_URL + `/api/analytics/track?adId=${adId}&attention=${attention}&skip=${skip}&storeId=${storeId}`).then(r => {
@@ -1282,7 +1282,7 @@ document.body.addEventListener('click', () => {
                     handleEmergency(data.message);
                 } else if (data.type === 'ai_voice_call') {
                     const urlParams = new URLSearchParams(window.location.search);
-                    const currentStoreId = urlParams.get('storeId') || 'STORE_001';
+                    const currentStoreId = urlParams.get('storeId') || '1000001';
                     if (data.storeId === currentStoreId) {
                         handleAIVoiceCall(data.message, data.gender, data.age);
                     }

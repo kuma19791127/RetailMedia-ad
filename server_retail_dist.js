@@ -1827,7 +1827,7 @@ app.post('/api/admin/sales/sync-batch', requireAuth, async (req, res) => {
 async function generateUniqueStoreId() {
     let attempts = 0;
     while (attempts < 100) {
-        const randId = Math.floor(1000000 + Math.random() * 9000000).toString();
+        const randId = Math.floor(1000000 + Math.random() * 1000000).toString();
         const user = await dbHelper.query.get('SELECT * FROM users WHERE org = ?', [randId]);
         const store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [randId]);
         if (!user && !store) {
@@ -2001,13 +2001,19 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
 });
 
 app.post('/api/auth/reset-2fa', async (req, res) => {
+    console.log("[API /api/auth/reset-2fa] Request body:", req.body);
     const { email, password, role } = req.body;
-    if (!email) return res.status(400).json({ error: "Email required" });
+    if (!email) {
+        console.warn("[Auth /api/auth/reset-2fa] Missing email in request");
+        return res.status(400).json({ error: "Email required" });
+    }
 
     try {
         const targetRole = getDatabaseRole(role || 'store');
-        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
+        console.log(`[Auth /api/auth/reset-2fa] Querying DB for identifier=${email}, role=${targetRole}`);
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE (email = ? OR org = ?) AND role = ?', [email, email, targetRole]);
         if (!user) {
+            console.warn(`[Auth /api/auth/reset-2fa] User not found for identifier=${email}, role=${targetRole}`);
             return res.status(404).json({ error: "ユーザーが見つかりません" });
         }
 
@@ -2031,9 +2037,11 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
         // 管理者でない場合は、正しいパスワードの入力を必須とする
         if (!isAdmin) {
             if (!password) {
+                console.warn("[Auth /api/auth/reset-2fa] Password missing for non-admin reset request");
                 return res.status(400).json({ error: "セキュリティ保護のため、2FAの再設定にはパスワードの入力が必要です。" });
             }
             if (!verifyPassword(password, user.password)) {
+                console.warn("[Auth /api/auth/reset-2fa] Password verification failed");
                 return res.status(401).json({ error: "パスワードが間違っています。二段階認証のリセットは拒否されました。" });
             }
         }
@@ -2042,16 +2050,16 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
         if (targetRole === 'advertiser' || targetRole === 'store') {
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND (role = \'advertiser\' OR role = \'store\')',
-                [email]
+                [user.email]
             );
         } else {
             await dbHelper.query.run(
                 'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
-                [email, targetRole]
+                [user.email, targetRole]
             );
         }
 
-        console.log(`[Auth] 🔐 2FA Secret Reset for: ${email} (${targetRole}) - Authorized (Admin: ${isAdmin})`);
+        console.log(`[Auth] 🔐 2FA Secret Reset for: ${user.email} (${targetRole}) - Authorized (Admin: ${isAdmin})`);
         
         res.json({ success: true });
     } catch (e) {
@@ -2070,14 +2078,16 @@ app.post('/api/auth/login', async (req, res) => {
 
     try {
         const dbRole = getDatabaseRole(role || 'store');
-        console.log(`[Auth /api/auth/login] [Trace 1] Querying DB for email=${email}, role=${dbRole}`);
-        let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, dbRole]);
+        console.log(`[Auth /api/auth/login] [Trace 1] Querying DB for identifier=${email}, role=${dbRole}`);
+        let user = await dbHelper.query.get('SELECT * FROM users WHERE (email = ? OR org = ?) AND role = ?', [email, email, dbRole]);
         console.log(`[Auth /api/auth/login] [Trace 2] DB query completed. User found: ${!!user}`);
 
         if (!user) {
-            console.log(`[Auth] Login failed: User ${email} with role ${dbRole} not found`);
+            console.log(`[Auth] Login failed: User matching identifier ${email} with role ${dbRole} not found`);
             return res.status(401).json({ error: "ユーザーが存在しないか、パスワードが正しくありません。" });
         }
+
+        const actualEmail = user.email; // Use verified email for all session bindings
 
         // Update name, org, and role if provided and different
         let updated = false;
@@ -2097,7 +2107,7 @@ app.post('/api/auth/login', async (req, res) => {
             updated = true;
         }
         const targetRoleToUpdate = getDatabaseRole(role);
-        if (role && user.role !== targetRoleToUpdate && !email.includes('@demo.com')) {
+        if (role && user.role !== targetRoleToUpdate && !actualEmail.includes('@demo.com')) {
             updateSql += 'role = ?, ';
             updateParams.push(targetRoleToUpdate);
             user.role = targetRoleToUpdate;
@@ -2106,7 +2116,7 @@ app.post('/api/auth/login', async (req, res) => {
         
         if (updated) {
             updateSql = updateSql.slice(0, -2) + ' WHERE email = ? AND role = ?';
-            updateParams.push(email, dbRole);
+            updateParams.push(actualEmail, dbRole);
             await dbHelper.query.run(updateSql, updateParams);
         }
 
@@ -2120,9 +2130,9 @@ app.post('/api/auth/login', async (req, res) => {
             if (dbRole === 'advertiser' || dbRole === 'store') {
                 if (!user.two_factor_secret) {
                     const otherRole = dbRole === 'advertiser' ? 'store' : 'advertiser';
-                    const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
+                    const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [actualEmail, otherRole]);
                     if (otherUser && otherUser.two_factor_secret) {
-                        await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, email, dbRole]);
+                        await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, actualEmail, dbRole]);
                         user.two_factor_secret = otherUser.two_factor_secret;
                     }
                 }
@@ -2133,7 +2143,7 @@ app.post('/api/auth/login', async (req, res) => {
             if (req.cookies && req.cookies['2fa_skip']) {
                 try {
                     const decoded = jwt.verify(req.cookies['2fa_skip'], JWT_SECRET);
-                    if (decoded && decoded.email === email && decoded.skip2FA) {
+                    if (decoded && decoded.email === actualEmail && decoded.skip2FA) {
                         skip2FA = true;
                     }
                 } catch (err) {
@@ -2145,12 +2155,12 @@ app.post('/api/auth/login', async (req, res) => {
             if (true) {
                 // If 2FA is not setup, require setup (QR Code display)
                 if (!user.two_factor_secret) {
-                    return res.json({ success: true, require2FASetup: true, email: email, redirect: getRedirectUrl(targetRole), role: targetRole });
+                    return res.json({ success: true, require2FASetup: true, email: actualEmail, redirect: getRedirectUrl(targetRole), role: targetRole });
                 }
                 // If 2FA is enabled, require code verification
                 if (user.two_factor_secret) {
                     if (!totpCode && !skip2FA) {
-                        return res.json({ success: true, require2FA: true, email: email, redirect: getRedirectUrl(targetRole) });
+                        return res.json({ success: true, require2FA: true, email: actualEmail, redirect: getRedirectUrl(targetRole) });
                     } else if (totpCode) {
                         console.log(`[Auth /api/auth/login] [Trace speakeasy] Verifying TOTP code: ${totpCode}`);
                         const speakeasy = require('speakeasy');
@@ -2159,22 +2169,22 @@ app.post('/api/auth/login', async (req, res) => {
                         if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
 
                         // 2FA検証に成功したのでスキップクッキーを更新/発行
-                        const skipToken = jwt.sign({ email, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
+                        const skipToken = jwt.sign({ email: actualEmail, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
                         res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
                     }
                 }
             }
 
             // ログイン成功時にJWTトークンを発行してCookieにセット (24時間の明示的有効期限を設定してタイムアウトを防止)
-            console.log(`[Auth /api/auth/login] [Trace jwt] Signing token for email: ${email}, role: ${targetRole}`);
-            const jwtToken = jwt.sign({ email, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
-            console.log(`[Auth Login Success] Issued token for email: ${email}, role: ${targetRole}, name: ${user.name}`);
+            console.log(`[Auth /api/auth/login] [Trace jwt] Signing token for email: ${actualEmail}, role: ${targetRole}`);
+            const jwtToken = jwt.sign({ email: actualEmail, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
+            console.log(`[Auth Login Success] Issued token for email: ${actualEmail}, role: ${targetRole}, name: ${user.name}`);
             res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
 
             // Session token set in cookies
-            res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(targetRole), user: { email, role: targetRole, name: user.name, org: user.org } });
+            res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(targetRole), user: { email: actualEmail, role: targetRole, name: user.name, org: user.org } });
         } else {
-            console.log(`[Auth] ❌ Login Failed: Password incorrect for: ${email}`);
+            console.log(`[Auth] ❌ Login Failed: Password incorrect for: ${actualEmail}`);
             res.json({ success: false, error: "パスワードが間違っています。" });
         }
     } catch (e) {
@@ -2787,7 +2797,7 @@ app.get('/api/reports/csv', requireAuth, async (req, res) => {
 // --- Retailer Bulk Signage Setup Email Delivery ---
 app.post('/api/retailer/bulk-email', requireAuth, async (req, res) => {
     // ロールチェック
-    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin' && req.user.role !== 'advertiser') {
         return res.status(403).json({ success: false, error: "リテーラー権限が必要です" });
     }
     try {
@@ -2822,7 +2832,7 @@ app.post('/api/retailer/bulk-email', requireAuth, async (req, res) => {
         }
 
         for (const item of list) {
-            const storeId = `${prefix}_${item.store}`;
+            const storeId = item.store;
             const targetEmail = item.email;
             
             // Generate customized bat script content
@@ -3701,7 +3711,7 @@ app.get('/api/ad/analytics', requireAuth, async (req, res) => {
 app.get('/api/signage/playlist', async (req, res) => {
     console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
     const location = req.query.location || 'register_side';
-    const storeId = req.query.storeId || 'STORE_001'; // 安全なデフォルトフォールバック
+    const storeId = req.query.storeId || '1000001'; // 安全なデフォルトフォールバック
     
     let storeOrg = 'default_store';
     let storeArea = '';
@@ -4496,7 +4506,7 @@ You must output ONLY a valid JSON object matching the following structure:
 
             let localEventName = '地域のイベント';
             try {
-                const eventRows = await dbHelper.query.all('SELECT * FROM local_events WHERE store_id = ?', [storeId || 'STORE_001']);
+                const eventRows = await dbHelper.query.all('SELECT * FROM local_events WHERE store_id = ?', [storeId || '1000001']);
                 if (eventRows && eventRows.length > 0) {
                     const randomEvent = eventRows[Math.floor(Math.random() * eventRows.length)];
                     localEventName = randomEvent.event_name;
@@ -4525,10 +4535,10 @@ You must output ONLY a valid JSON object matching the following structure:
                 }
             }
 
-            console.log(`[AI Voice Call] Broadcasting speech text: "${speechText}" for store: ${storeId || 'STORE_001'}`);
+            console.log(`[AI Voice Call] Broadcasting speech text: "${speechText}" for store: ${storeId || '1000001'}`);
             broadcastEvent({
                 type: 'ai_voice_call',
-                storeId: storeId || 'STORE_001',
+                storeId: storeId || '1000001',
                 message: speechText,
                 gender: detectedGender,
                 age: detectedAge
@@ -4595,7 +4605,7 @@ app.post('/api/external/v1/event', (req, res) => {
 app.get('/api/external/v1/inventory', (req, res) => {
     // Mock Inventory Data
     res.json({
-        store_id: "STORE_001",
+        store_id: "1000001",
         name: "Future Supermarket",
         available_slots: [
             { id: "slot_register_main", type: "video", w: 1920, h: 1080, cpm_est: 500 },
@@ -4653,7 +4663,7 @@ const XLSX = require('xlsx');
 // Centralized Store Data (Mocking a DB for "Default Store")
 let storeData = {
     "default_store": {
-        id: "STORE_001",
+        id: "1000001",
         name: "retail-ad Demo Store",
         billing_email: "store@example.com",
         bank_info: {
@@ -6914,7 +6924,7 @@ app.post('/api/store/signages', requireAuth, async (req, res) => {
         let attempts = 0;
         const existingIds = new Set(stateObj.devices.map(d => d.id));
         while (attempts < 100) {
-            const randId = Math.floor(2000000 + Math.random() * 8000000).toString();
+            const randId = Math.floor(2000000 + Math.random() * 1000000).toString();
             if (!existingIds.has(randId)) {
                 signageId = randId;
                 break;
