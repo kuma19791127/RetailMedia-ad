@@ -1254,8 +1254,9 @@
                             <p>● 自動連携ステータス: <b>稼働中 (Active)</b></p>
                         </div>
                         <p style="font-size:13px; color:#64748b; margin-bottom:15px;">※仕訳売上データ（50,000円）を今すぐfreeeに記帳する場合は、承認と入力して「送信する」を押してください。</p>
-                        <div style="margin-bottom:15px; text-align:center;">
-                            <button onclick="trigger403Test()" class="swal2-confirm swal2-styled" style="background:#e67e22; margin:0; padding:5px 10px; font-size:11px; border-radius:4px; cursor:pointer;">⚠️ 403エラー（再認可）テスト</button>
+                        <div style="margin-bottom:15px; text-align:center; display:flex; justify-content:center; gap:10px;">
+                            <button onclick="trigger403Test()" class="swal2-confirm swal2-styled" style="background:#e67e22; margin:0; padding:6px 12px; font-size:11px; border-radius:4px; cursor:pointer; border:none; color:white;">⚠️ 403エラーテスト</button>
+                            <button onclick="runAuditApiTest()" class="swal2-confirm swal2-styled" style="background:#4f46e5; margin:0; padding:6px 12px; font-size:11px; border-radius:4px; cursor:pointer; border:none; color:white;">🛠️ 審査用APIテスト実行 (一括)</button>
                         </div>
                         `,
                         input: 'text',
@@ -1353,6 +1354,74 @@
                     const authUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=745688816102918&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&prompt=select_company`;
                     window.location.href = authUrl;
                 });
+            }, 300);
+        }
+
+        // Global helper to run all audit-required freee APIs
+        async function runAuditApiTest() {
+            Swal.close();
+            setTimeout(async () => {
+                const confirmRes = await Swal.fire({
+                    title: '🛠️ 審査用APIテスト実行',
+                    text: 'freeeの [勘定科目の追加・変更・削除] [事業所情報の更新] [取引の参照] を一括でテスト実行します。よろしいですか？',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '実行する',
+                    cancelButtonText: 'キャンセル'
+                });
+
+                if (!confirmRes.isConfirmed) return;
+
+                Swal.fire({
+                    title: 'APIテスト実行中...',
+                    html: '<div style="text-align:left; font-family:monospace; font-size:12px; background:#1e293b; color:#f8fafc; padding:15px; border-radius:8px; height:180px; overflow-y:auto; line-height:1.5;" id="audit-log-box">テストを開始しています...</div>',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const logBox = document.getElementById('audit-log-box');
+                function appendLog(msg, isErr = false) {
+                    if (logBox) {
+                        const style = isErr ? 'color:#f87171;' : '';
+                        logBox.innerHTML += `<div style="${style}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+                        logBox.scrollTop = logBox.scrollHeight;
+                    }
+                }
+
+                try {
+                    const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                    appendLog("サーバーにテスト実行をリクエスト中...");
+                    const res = await fetch(window.API_BASE_URL + '/api/freee/test-audit', {
+                        method: 'POST',
+                        headers: headers
+                    });
+
+                    const data = await res.json();
+                    
+                    if (data.logs && Array.isArray(data.logs)) {
+                        logBox.innerHTML = ''; // ログボックスをクリアして詳細ログを表示
+                        data.logs.forEach(l => {
+                            const detailsStr = l.details ? ` - ${JSON.stringify(l.details)}` : '';
+                            const isErr = l.message.includes('エラー');
+                            const style = isErr ? 'color:#f87171;' : '';
+                            logBox.innerHTML += `<div style="${style}">[${new Date(l.time).toLocaleTimeString()}] ${l.message}${detailsStr}</div>`;
+                        });
+                    }
+
+                    if (res.ok && data.success) {
+                        Swal.fire('テスト成功', 'すべての審査対象API（取引参照、勘定科目作成・変更・削除、事業所更新）が正常に呼び出されました。freee上の履歴をご確認ください。', 'success');
+                    } else {
+                        throw new Error(data.error || '一部のAPI呼び出しでエラーが発生しました。');
+                    }
+                } catch (e) {
+                    console.error("[freee Audit Test Error]", e);
+                    appendLog(`エラー: ${e.message}`, true);
+                    Swal.fire('テスト失敗', `エラーが発生しました: ${e.message}<br>※認可されていないスコープがあるか、トークンが期限切れの可能性があります。`, 'error');
+                }
             }, 300);
         }
 

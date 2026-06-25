@@ -6876,6 +6876,100 @@ app.post('/api/freee/sales', requireAuth, async (req, res) => {
     }
 });
 
+// freee app review audit API test runner
+app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
+    if (req.user.role !== 'store' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗権限が必要です" });
+    }
+    
+    const logs = [];
+    function log(message, details = null) {
+        const entry = { time: new Date().toISOString(), message, details };
+        console.log(`[freee Audit Test] ${message}`, details ? JSON.stringify(details) : '');
+        logs.push(entry);
+    }
+    
+    try {
+        log("freee監査用APIテスト実行を開始します...");
+        
+        // 1. 事業所一覧を取得して、有効な事業所IDを決定する
+        log("1. 事業所一覧 (GET /companies) の取得を開始...");
+        const companiesRes = await freeeApi.getCompanies();
+        if (!companiesRes || !companiesRes.companies || companiesRes.companies.length === 0) {
+            throw new Error("連携中の事業所が見つかりません。先にfreeeとの連携を完了してください。");
+        }
+        
+        const matched = companiesRes.companies.find(c => 
+            c.display_name && c.display_name.includes("non-logi")
+        ) || companiesRes.companies.find(c => 
+            c.name && c.name.includes("non-logi")
+        );
+        const company = matched || companiesRes.companies[0];
+        const companyId = company.id;
+        log(`使用する事業所を特定しました: ${company.display_name || company.name} (ID: ${companyId})`);
+        
+        // 2. 取引の参照 (GET /deals)
+        log("2. 取引の参照 (GET /deals) の呼び出しを開始...");
+        const dealsRes = await freeeApi.getDeals(companyId, { limit: 5 });
+        log(`取引の参照に成功しました。取得件数: ${dealsRes.deals ? dealsRes.deals.length : 0}件`, {
+            first_deal: dealsRes.deals && dealsRes.deals.length > 0 ? { id: dealsRes.deals[0].id, type: dealsRes.deals[0].type } : null
+        });
+
+        // 3. 勘定科目一覧の取得 (カテゴリIDの特定用)
+        log("3. 勘定科目カテゴリ特定のため、勘定科目一覧 (GET /account_items) を取得...");
+        const itemsRes = await freeeApi.getAccountItems(companyId);
+        let accountCategoryId = 1; // フォールバック
+        if (itemsRes && itemsRes.account_items && itemsRes.account_items.length > 0) {
+            accountCategoryId = itemsRes.account_items[0].account_category_id;
+            log(`既存の勘定科目からカテゴリIDをコピーしました: ${accountCategoryId}`);
+        }
+        
+        // 4. 勘定科目の追加 (POST /account_items)
+        log("4. 勘定科目の追加 (POST /account_items) の呼び出しを開始...");
+        const randomSuffix = Math.floor(Math.random() * 10000);
+        const testItemName = `テスト勘定科目_${randomSuffix}`;
+        const createRes = await freeeApi.createAccountItem(companyId, {
+            name: testItemName,
+            account_category_id: accountCategoryId
+        });
+        const newAccountItemId = createRes.account_item.id;
+        log(`勘定科目の追加に成功しました。作成された勘定科目: ${createRes.account_item.name} (ID: ${newAccountItemId})`);
+        
+        // 5. 勘定科目の変更 (PUT /account_items/{id})
+        log("5. 勘定科目の変更 (PUT /account_items/{id}) の呼び出しを開始...");
+        const updatedItemName = `${testItemName}_変更済`;
+        const updateRes = await freeeApi.updateAccountItem(companyId, newAccountItemId, {
+            name: updatedItemName
+        });
+        log(`勘定科目の変更に成功しました。変更後の勘定科目: ${updateRes.account_item.name}`);
+        
+        // 6. 勘定科目の削除 (DELETE /account_items/{id})
+        log("6. 勘定科目の削除 (DELETE /account_items/{id}) の呼び出しを開始...");
+        await freeeApi.deleteAccountItem(companyId, newAccountItemId);
+        log(`勘定科目の削除に成功しました。対象ID: ${newAccountItemId}`);
+        
+        // 7. 事業所情報の更新 (PUT /companies/{id})
+        log("7. 事業所情報の更新 (PUT /companies/{id}) の呼び出しを開始...");
+        const originalName = company.name;
+        const originalDisplayName = company.display_name || company.name;
+        const updateCompanyRes = await freeeApi.updateCompany(companyId, {
+            name: originalName,
+            display_name: originalDisplayName
+        });
+        log(`事業所情報の更新に成功しました。事業所名: ${updateCompanyRes.company.display_name || updateCompanyRes.company.name}`);
+        
+        log("すべての監査用APIテストが正常に完了しました！");
+        res.json({ success: true, logs });
+    } catch (e) {
+        log(`エラーが発生しました: ${e.message}`, { stack: e.stack });
+        if (e.message.includes('403') || e.message.includes('Forbidden')) {
+            return res.status(403).json({ error: "Required Scope is not granted.", require_reauth: true, logs });
+        }
+        res.status(500).json({ error: e.message, logs });
+    }
+});
+
+
 
 // --- Store Portal Revenue Endpoint ---
 app.get('/api/store/revenue', requireAuth, async (req, res) => {

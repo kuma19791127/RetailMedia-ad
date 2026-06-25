@@ -181,8 +181,70 @@ async function createSalesEntry(companyId = undefined, salesData) {
     }
 }
 
+/**
+ * 4. 勘定科目の追加 (Create Account Item)
+ */
+async function createAccountItem(companyId, accountItemData) {
+    console.log(`[freee API] Creating account item for company: ${companyId}`);
+    const payload = {
+        company_id: companyId,
+        name: accountItemData.name,
+        account_category_id: accountItemData.account_category_id,
+        tax_code: accountItemData.tax_code || 1 // デフォルト: 課税売上10%
+    };
+    return await freeeRequest('/account_items', 'POST', payload);
+}
+
+/**
+ * 5. 勘定科目の変更 (Update Account Item)
+ */
+async function updateAccountItem(companyId, accountItemId, accountItemData) {
+    console.log(`[freee API] Updating account item ${accountItemId} for company: ${companyId}`);
+    const payload = {
+        company_id: companyId,
+        name: accountItemData.name
+    };
+    return await freeeRequest(`/account_items/${accountItemId}`, 'PUT', payload);
+}
+
+/**
+ * 6. 勘定科目の削除 (Delete Account Item)
+ */
+async function deleteAccountItem(companyId, accountItemId) {
+    console.log(`[freee API] Deleting account item ${accountItemId} for company: ${companyId}`);
+    return await freeeRequest(`/account_items/${accountItemId}?company_id=${companyId}`, 'DELETE');
+}
+
+/**
+ * 7. 事業所情報の更新 (Update Company)
+ */
+async function updateCompany(companyId, companyData) {
+    console.log(`[freee API] Updating company information for company: ${companyId}`);
+    const payload = {
+        name: companyData.name,
+        display_name: companyData.display_name
+    };
+    return await freeeRequest(`/companies/${companyId}`, 'PUT', payload);
+}
+
+/**
+ * 8. 取引の参照 (Get Deals)
+ */
+async function getDeals(companyId, params = {}) {
+    console.log(`[freee API] Fetching deals for company: ${companyId}`);
+    let query = `?company_id=${companyId}`;
+    if (params.limit) query += `&limit=${params.limit}`;
+    return await freeeRequest(`/deals${query}`, 'GET');
+}
+
 module.exports = {
     getCompanies,
     getAccountItems,
-    createSalesEntry
+    createSalesEntry,
+    createAccountItem,
+    updateAccountItem,
+    deleteAccountItem,
+    updateCompany,
+    getDeals
 };
+
