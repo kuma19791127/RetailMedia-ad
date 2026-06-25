@@ -6694,6 +6694,48 @@ const getFreeeRedirectUri = (req) => {
 
 let currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
 
+// Database helpers for freee token persistence
+async function loadFreeeTokenFromDB() {
+    try {
+        const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
+        if (row && row.value) {
+            currentFreeeToken = row.value;
+            console.log("[freee Token] Loaded active token from database successfully. Length:", currentFreeeToken.length);
+        } else {
+            console.log("[freee Token] No active token found in database. Using environment fallback.");
+            currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
+        }
+    } catch (e) {
+        console.error("[freee Token] Failed to load token from database:", e.message);
+    }
+}
+
+async function saveFreeeTokenToDB(token) {
+    try {
+        await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
+        await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [token]);
+        currentFreeeToken = token;
+        console.log("[freee Token] Saved token to database and updated active cache. Length:", token.length);
+    } catch (e) {
+        console.error("[freee Token] Failed to save token to database:", e.message);
+    }
+}
+
+async function deleteFreeeTokenFromDB() {
+    try {
+        await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
+        currentFreeeToken = null;
+        console.log("[freee Token] Deleted token from database and cleared active cache.");
+    } catch (e) {
+        console.error("[freee Token] Failed to delete token from database:", e.message);
+    }
+}
+
+// Automatically load on server startup (deferred to allow db connection initialization)
+setTimeout(() => {
+    loadFreeeTokenFromDB();
+}, 2000);
+
 // Export token helper so freee_api can read active connection token dynamically
 module.exports.getFreeeToken = () => {
     return currentFreeeToken;
@@ -6764,8 +6806,8 @@ app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
         console.log("[freee OAuth Manual] Token exchange response:", tokenData);
         
         if (tokenData.access_token) {
-            currentFreeeToken = tokenData.access_token;
-            console.log("[freee OAuth Manual] Access token updated successfully via manual OOB.");
+            await saveFreeeTokenToDB(tokenData.access_token);
+            console.log("[freee OAuth Manual] Access token updated and persisted successfully via manual OOB.");
             res.json({ success: true, message: "Manual connection successful." });
         } else {
             console.warn("[freee OAuth Manual] Token exchange failed with description:", tokenData.error_description || tokenData.error);
@@ -6809,8 +6851,8 @@ app.get('/api/freee/callback', async (req, res) => {
         const tokenData = await response.json();
         
         if (tokenData.access_token) {
-            currentFreeeToken = tokenData.access_token;
-            console.log("[freee OAuth] Successfully obtained access token.");
+            await saveFreeeTokenToDB(tokenData.access_token);
+            console.log("[freee OAuth] Successfully obtained and persisted access token.");
             res.redirect('/admin?freee_connection=success');
         } else {
             console.error("[freee OAuth] Failed to get access token from freee response:", tokenData);
@@ -6823,13 +6865,13 @@ app.get('/api/freee/callback', async (req, res) => {
 });
 
 // Disconnect/Revoke freee OAuth
-app.post('/api/freee/disconnect', requireAuth, (req, res) => {
+app.post('/api/freee/disconnect', requireAuth, async (req, res) => {
     // ロールチェック (店舗または管理者のみ許可)
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     console.log("[freee OAuth] Disconnecting freee Integration...");
-    currentFreeeToken = null;
+    await deleteFreeeTokenFromDB();
     res.json({ success: true });
 });
 
@@ -6890,6 +6932,8 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     
+    console.log("[freee Audit Test] Request received. currentFreeeToken Length:", currentFreeeToken ? currentFreeeToken.length : 0, "Token Substring:", currentFreeeToken ? currentFreeeToken.substring(0, 8) + "..." : "none");
+
     const logs = [];
     function log(message, details = null) {
         const entry = { time: new Date().toISOString(), message, details };

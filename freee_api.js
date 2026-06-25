@@ -28,6 +28,8 @@ async function freeeRequest(endpoint, method = 'GET', data = null) {
     const url = `${FREEE_API_BASE}${endpoint}`;
     const token = getAccessToken();
     
+    console.log(`[freee API Request] URL: ${url}, Method: ${method}, Token Length: ${token ? token.length : 0}, Token Substring: ${token ? token.substring(0, 8) + '...' : 'none'}`);
+    
     const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
@@ -47,7 +49,7 @@ async function freeeRequest(endpoint, method = 'GET', data = null) {
     const responseData = await response.json();
 
     if (!response.ok) {
-        console.error("[freee API Error]", responseData);
+        console.error(`[freee API Error] Response Code: ${response.status}, StatusText: ${response.statusText}`, responseData);
         let errorDetail = "";
         if (responseData && responseData.errors && Array.isArray(responseData.errors)) {
             errorDetail = " - " + responseData.errors.map(err => {
