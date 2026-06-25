@@ -101,7 +101,7 @@ const getDatabaseRole = (role) => {
     return role || 'store';
 };
 const get2FASkipCookieName = (role) => {
-    return (role === 'admin' || role === 'review') ? '2fa_skip_internal' : '2fa_skip_user';
+    return '2fa_skip';
 };
 const hashPassword = (password) => {
     const salt = crypto.randomBytes(16).toString('hex');
@@ -2172,9 +2172,7 @@ app.post('/api/auth/login', async (req, res) => {
             if (req.cookies && req.cookies[skipCookieName]) {
                 try {
                     const decoded = jwt.verify(req.cookies[skipCookieName], JWT_SECRET);
-                    const roleMatched = (decoded.role === targetRole) || 
-                                        ((decoded.role === 'admin' || decoded.role === 'review') && 
-                                         (targetRole === 'admin' || targetRole === 'review'));
+                    const roleMatched = (decoded.role === targetRole);
                     if (decoded && decoded.email === actualEmail && roleMatched && decoded.skip2FA) {
                         skip2FA = true;
                     }
