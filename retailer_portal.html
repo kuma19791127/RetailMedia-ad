@@ -708,9 +708,7 @@
                     <strong style="color:#0f172a; display:block; margin-bottom:10px;">■ Android端末（既存Androidパネル等）の場合</strong>
                     1. サイネージ用Android端末 の ブラウザ等から、以下のURLを開いてプレイヤーアプリ (APK) をダウンロードし、インストールします。<br>
                     <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk" target="_blank" style="color:#2563eb; font-weight:bold; text-decoration:underline;">📥 アプリ(APK)をダウンロード</a><br>
-                    2. インストール完了後、以下の【自動セットアップ起動リンク】をAndroid端末 の ブラウザ等でタップして起動します。<br>
-                    <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold;"><span id="setup-android-link-text">litead://setup?storeId=1000001</span></code><br>
-                    3. アプリが自動で起動し、店舗IDが自動入力された状態で、即座にサイネージ の フルスクリーン再生が開始されます。<br>
+                    2. アプリを起動するだけで、端末固有のデバイスIDに基づいて自動的に店舗と紐付け（ゼロタッチ自動連携）が行われ、CMの放映が開始されます。（※手動でのID入力や連携リンクのタップは不要です）<br>
                     <br>
                     <strong style="color:#0f172a; display:block; margin-bottom:5px; margin-top:10px;">■ Windows PCの場合</strong>
                     1. 端末詳細 の 「簡易スタートガイド」または「設定手順書」 の バッチファイルをダウンロードします。<br>
@@ -1126,8 +1124,7 @@ function getWindowsRemoveInstructionsContent() {
 }
 
 function getAndroidInstructionsContent(storeId, terminalId) {
-    const termId = terminalId || "%TERMINAL_ID%";
-    return `=========================================================\r\nリテアド・サイネージ Androidアプリ導入・セットアップ手順書\r\n=========================================================\r\n\r\nこのファイルは、既存のAndroidサイネージパネル（Android OS搭載）に\r\n「リテアド・サイネージプレイヤー」アプリを導入し、セットアップするための手順書です。\r\n\r\n【店舗設定ID情報】\r\n店舗固有ID: ${storeId}\r\n端末固有ID: ${termId}\r\n\r\n---------------------------------------------------------\r\n■ セットアップ手順（自動設定）\r\n---------------------------------------------------------\r\n1. サイネージ用Android端末のブラウザ等から、以下のURLを開き、リテアド・サイネージプレイヤーアプリ (APKファイル) をダウンロード・インストールします。\r\n   【アプリ(APK)ダウンロードURL】\r\n   https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\r\n\r\n2. インストール完了後、以下の【自動セットアップ起動リンク】をAndroid端末のブラウザ等でタップして（またはQRコードから）起動します。\r\n\r\n   【自動セットアップ起動リンク】\r\n   litead://setup?storeId=${storeId}&terminal_id=${termId}\r\n\r\n3. アプリが自動で起動し、店舗ID【 ${storeId} 】および端末ID【 ${termId} 】が自動入力された状態で、即座にサイネージのフルスクリーン再生が開始されます。\r\n   （※手動でIDを入力する必要はありません）\r\n\r\n---------------------------------------------------------\r\n■ 注意事項\r\n---------------------------------------------------------\r\n・端末の電源を入れた際、自動的にリテアドアプリが起動する「自動起動（Auto Start）設定」を\r\n  Android端末本体の設定メニュー等で有効にしておくことを推奨します。\r\n・インターネット接続が常時確保されていることをご確認ください。\r\n`;
+    return `=========================================================\r\nリテアド・サイネージ Androidアプリ導入・セットアップ手順書\r\n=========================================================\r\n\r\nこのファイルは、既存のAndroidサイネージパネル（Android OS搭載）に\r\n「リテアド・サイネージプレイヤー」アプリを導入し、セットアップするための手順書です。\r\n\r\n---------------------------------------------------------\r\n■ セットアップ手順（自動ID付与・ゼロタッチ自動連携）\r\n---------------------------------------------------------\r\n1. サイネージ用Android端末のブラウザ等から、以下のURLを開き、リテアド・サイネージプレイヤーアプリ (APKファイル) をダウンロード・インストールします。\r\n   【アプリ(APK)ダウンロードURL】\r\n   https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk\r\n\r\n2. インストール完了後、アプリを起動します。\r\n   端末の固有デバイスIDに基づいて自動的に店舗との紐付け（ゼロタッチ連携）が行われ、CMの放映が自動的にスタートします。\r\n   （※手動でのID入力や、自動セットアップリンクのタップ等は一切不要です）\r\n\r\n---------------------------------------------------------\r\n■ 注意事項\r\n---------------------------------------------------------\r\n・端末の電源を入れた際、自動的にリテアドアプリが起動する「自動起動（Auto Start）設定」を\r\n  Android端末本体の設定メニュー等で有効にしておくことを推奨します。\r\n・インターネット接続が常時確保されていることをご確認ください。\r\n`;
 }
 
 function getSimpleStartInstructionsContent(storeId, terminalId) {
@@ -1485,8 +1482,6 @@ async function loadSignageDevices() {
             const storeId = currentPrefix || "1000001";
             
             // プレースホルダーと起動URLの更新
-            const androidLink = document.getElementById('setup-android-link-text');
-            if (androidLink) androidLink.innerText = `litead://setup?storeId=${storeId}`;
             const simpleUrl = document.getElementById('setup-simple-url');
             if (simpleUrl) simpleUrl.href = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
 
