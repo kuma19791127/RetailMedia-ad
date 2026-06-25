@@ -7260,6 +7260,14 @@ app.get('/api/contact', requireAuth, async (req, res) => {
             return res.status(403).json({ error: "管理者権限が必要です" });
         }
         
+        // 既読に更新 (未読を既読化)
+        try {
+            await dbHelper.query.run("UPDATE contacts SET is_read = 1 WHERE is_read = 0");
+            if (typeof saveDatabase === 'function') saveDatabase();
+        } catch (alterErr) {
+            console.error("[Contact API] Failed to update is_read status:", alterErr);
+        }
+
         const sql = "SELECT * FROM contacts ORDER BY id DESC";
         const rows = await dbHelper.query.all(sql);
         
@@ -7267,5 +7275,28 @@ app.get('/api/contact', requireAuth, async (req, res) => {
     } catch (e) {
         console.error("[Contact API] Error fetching contact inquiries:", e);
         res.status(500).json({ error: "お問い合わせ一覧の取得に失敗しました: " + e.message });
+    }
+});
+
+// 管理用：新着（未読・未処理）の数値カウントを取得するAPI
+app.get('/api/admin/unread-counts', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'review') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+    try {
+        const inquiriesResult = await dbHelper.query.all("SELECT COUNT(*) as count FROM contacts WHERE is_read = 0");
+        const inquiriesCount = inquiriesResult[0] ? (inquiriesResult[0].count || inquiriesResult[0]['COUNT(*)'] || 0) : 0;
+
+        const advertisersResult = await dbHelper.query.all("SELECT COUNT(*) as count FROM agency_referrals WHERE status = 'Pending'");
+        const advertisersCount = advertisersResult[0] ? (advertisersResult[0].count || advertisersResult[0]['COUNT(*)'] || 0) : 0;
+
+        res.json({
+            success: true,
+            inquiries: Number(inquiriesCount),
+            advertisers: Number(advertisersCount)
+        });
+    } catch (e) {
+        console.error("[Unread Counts API] Error:", e);
+        res.status(500).json({ error: e.message });
     }
 });

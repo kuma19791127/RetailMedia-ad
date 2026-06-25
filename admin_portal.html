@@ -530,8 +530,9 @@
             </div>
 
             <div class="nav-section">広告主管理 (Advertisers)</div>
-            <div class="nav-item" id="nav-advertisers" onclick="switchTab('advertisers')">
-                💰 入金・アカウント発行
+            <div class="nav-item" id="nav-advertisers" onclick="switchTab('advertisers')" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>💰 入金・アカウント発行</span>
+                <span class="badge" id="badge-advertisers" style="display: none; background: #e74c3c; color: white; border-radius: 10px; padding: 2px 6px; font-size: 11px; font-weight: bold; margin-left: 8px;">0</span>
             </div>
 
             
@@ -541,8 +542,9 @@
             </div>
 
             <div class="nav-section">📨 問い合わせ管理</div>
-            <div class="nav-item" id="nav-inquiries" onclick="switchTab('inquiries')">
-                📧 お問い合わせ一覧
+            <div class="nav-item" id="nav-inquiries" onclick="switchTab('inquiries')" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>📧 お問い合わせ一覧</span>
+                <span class="badge" id="badge-inquiries" style="display: none; background: #e74c3c; color: white; border-radius: 10px; padding: 2px 6px; font-size: 11px; font-weight: bold; margin-left: 8px;">0</span>
             </div>
 <div style="margin-top: auto; padding: 20px; border-top: 1px solid #34495e;">
                 <div style="margin-bottom: 15px; padding: 12px; background: #2c3e50; border-radius: 6px; text-align: left;">
@@ -570,6 +572,9 @@
                     <div>
                         <h1>📡 POSリアルタイム受信ログ</h1>
                         <p style="color:#7f8c8d; margin-top:5px;">各店舗の「どこでもレジ」「ポータル同期」からAdminに届く生データを監視</p>
+                    </div>
+                    <div>
+                        <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
                     </div>
                 </div>
 
@@ -612,7 +617,8 @@
                         <h1>📧 お問い合わせ一覧</h1>
                         <p style="color:#7f8c8d; margin-top:5px;">LP（紹介ページ）から送信されたお問い合わせを一覧表示・管理します</p>
                     </div>
-                    <div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
                         <button onclick="loadContactInquiries()" class="btn-action" style="background:#3498db;">🔄 更新</button>
                     </div>
                 </div>
@@ -722,6 +728,7 @@
                     <p style="color:#7f8c8d; margin-top:5px;">どこでもレジ利用手数料 (0.4%) 請求管理ダッシュボード: 店舗POS売上とシステム利用料</p>
                 </div>
                 <div style="display:flex; gap:10px;">
+                    <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
                     <button onclick="sendAllInvoices()" class="btn-action" style="background:#e67e22;">🚀
                         請求書一括自動送信</button>
                     <button onclick="loadData()" class="btn-action">🔄 データ更新</button>
@@ -783,6 +790,7 @@
                     <p style="color:#7f8c8d; margin-top:5px;">マネーローンダリングおよび不正決済のリアルタイムモニタリング</p>
                 </div>
                 <div style="display:flex; gap:10px;">
+                    <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
                     <button onclick="clearAmlLogs()" class="btn-action" style="background:#95a5a6;">🗑️ ログクリア</button>
                     <button onclick="renderAmlLogs()" class="btn-action">🔄 データ更新</button>
                 </div>
@@ -824,6 +832,7 @@
                     <p style="color:#7f8c8d; margin-top:5px;">サイネージクリエイターへの広告収益分配と振込先口座情報</p>
                 </div>
                 <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
                     <button onclick="executeAllCreatorGmoTransfers(this)" class="btn-action" style="background:#27ae60;">🏦 GMO API一括振込実行</button>
                     <button onclick="sendAllCreatorEmails()" class="btn-action" style="background:#8e44ad;">📨
                         支払通知メール一括送信</button>
@@ -860,7 +869,10 @@
                     <h1>🤝 代理店申請一覧</h1>
                     <p style="color:#7f8c8d; margin-top:5px;">代理店からの広告主紹介・コミッション管理</p>
                 </div>
-                <button onclick="loadAgencyData()" class="btn-action">🔄 データ更新</button>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
+                    <button onclick="loadAgencyData()" class="btn-action">🔄 データ更新</button>
+                </div>
             </div>
 
             <div class="card">
@@ -889,6 +901,9 @@
                 <div>
                     <h1>💰 入金・アカウント発行 (Advertiser Management)</h1>
                     <p style="color:#7f8c8d; margin-top:5px;">銀行振込等で確認できた入金を元に、企業アカウントの作成と予算付与をワンクリックで実行</p>
+                </div>
+                <div>
+                    <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
                 </div>
             </div>
 
@@ -1428,6 +1443,13 @@
             if (tabId === 'creators') loadCreatorData();
             if (tabId === 'livereg') renderLiveLogs();
             if (tabId === 'inquiries') loadContactInquiries();
+            
+            // お問い合わせや入金処理後はバッジを更新する
+            if (typeof updateNotificationBadges === 'function') {
+                if (tabId === 'inquiries' || tabId === 'advertisers' || tabId === 'agency') {
+                    setTimeout(updateNotificationBadges, 1000);
+                }
+            }
         }
 
         async function loadContactInquiries() {
@@ -2372,6 +2394,12 @@
                     loadData();
                     loadAgencyData();
                     renderLiveLogs();
+                    
+                    // バッジの初期表示とポーリング開始
+                    if (typeof updateNotificationBadges === 'function') {
+                        updateNotificationBadges();
+                        setInterval(updateNotificationBadges, 30000);
+                    }
                 } else {
                     Swal.fire('Error', data.error || 'Invalid Admin Credentials', 'error');
                 }
@@ -2621,6 +2649,43 @@
         }
 
 
+        async function updateNotificationBadges() {
+            try {
+                const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                if (!token) return;
+                
+                const res = await fetch(`${API_BASE}/api/admin/unread-counts`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success) {
+                    // お問い合わせバッジ
+                    const badgeInquiries = document.getElementById('badge-inquiries');
+                    if (badgeInquiries) {
+                        if (data.inquiries > 0) {
+                            badgeInquiries.textContent = data.inquiries;
+                            badgeInquiries.style.display = 'inline-block';
+                        } else {
+                            badgeInquiries.style.display = 'none';
+                        }
+                    }
+                    // 入金・アカウント発行バッジ (Pendingの代理店申請等)
+                    const badgeAdvertisers = document.getElementById('badge-advertisers');
+                    if (badgeAdvertisers) {
+                        if (data.advertisers > 0) {
+                            badgeAdvertisers.textContent = data.advertisers;
+                            badgeAdvertisers.style.display = 'inline-block';
+                        } else {
+                            badgeAdvertisers.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("[updateNotificationBadges Error]", err);
+            }
+        }
+
         // Auto-fill admin login credentials and handle auto-login / session restore
         document.addEventListener('DOMContentLoaded', () => {
             const savedEmail = localStorage.getItem('last_email');
@@ -2642,6 +2707,10 @@
                 loadData();
                 loadAgencyData();
                 renderLiveLogs();
+                
+                // バッジの初期表示とポーリング開始
+                updateNotificationBadges();
+                setInterval(updateNotificationBadges, 30000);
             } else if (savedEmail && savedPass) {
                 // If remember me is checked, auto login
                 handleLogin();

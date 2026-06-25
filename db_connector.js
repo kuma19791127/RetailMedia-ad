@@ -121,6 +121,7 @@ if (process.env.DATABASE_URL) {
                     contact_type VARCHAR(255),
                     message TEXT,
                     image_data TEXT,
+                    is_read INT DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -249,6 +250,16 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ PostgreSQL campaigns.target_org column added or already exists.');
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns.target_org migration error:', e.message);
+            }
+
+            // Migration path: Add is_read column to contacts table if not exists (PostgreSQL)
+            try {
+                await client.query(`
+                    ALTER TABLE contacts ADD COLUMN IF NOT EXISTS is_read INT DEFAULT 0;
+                `);
+                console.log('[DB] ✅ PostgreSQL contacts.is_read column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL contacts.is_read migration error:', e.message);
             }
 
             // Migration path: Normalize advertiser/agency/creator/retailer roles to store role (DEPRECATED - Roles are now preserved)
@@ -482,6 +493,7 @@ if (process.env.DATABASE_URL) {
                         contact_type TEXT,
                         message TEXT,
                         image_data TEXT,
+                        is_read INTEGER DEFAULT 0,
                         created_at TEXT DEFAULT CURRENT_TIMESTAMP
                     )
                 `);
@@ -681,6 +693,24 @@ if (process.env.DATABASE_URL) {
                                 console.error('[SQLite] ALTER TABLE campaigns error (target_org):', alterErr.message);
                             } else {
                                 console.log('[SQLite] ✅ campaigns.target_org column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // SQLite Migration: Add is_read column to contacts for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(contacts)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error:', err.message);
+                        return;
+                    }
+                    const hasIsRead = rows && rows.some(row => row.name === 'is_read');
+                    if (!hasIsRead) {
+                        sqliteDb.run("ALTER TABLE contacts ADD COLUMN is_read INTEGER DEFAULT 0", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE contacts error (is_read):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ contacts.is_read column added successfully.');
                             }
                         });
                     }
