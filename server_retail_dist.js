@@ -100,6 +100,9 @@ const getDatabaseRole = (role) => {
     }
     return role || 'store';
 };
+const get2FASkipCookieName = (role) => {
+    return (role === 'admin' || role === 'review') ? '2fa_skip_internal' : '2fa_skip_user';
+};
 const hashPassword = (password) => {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(password, salt, 64).toString('hex');
@@ -1962,8 +1965,9 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
                 res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
                 
                 // 5時間有効な2FAスキップクッキーを発行
+                const skipCookieName = get2FASkipCookieName(user.role);
                 const skipToken = jwt.sign({ email, role: user.role, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
-                res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
+                res.cookie(skipCookieName, skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
                 res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
             } else {
@@ -1997,8 +2001,9 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
             res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
 
             // 5時間有効な2FAスキップクッキーを発行
+            const skipCookieName = get2FASkipCookieName(user.role);
             const skipToken = jwt.sign({ email, role: user.role, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
-            res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
+            res.cookie(skipCookieName, skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
 
             res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(user.role), user: { email, role: user.role, name: user.name, org: user.org } });
         } else {
@@ -2163,9 +2168,10 @@ app.post('/api/auth/login', async (req, res) => {
 
             // 2FAスキップクッキーの検証
             let skip2FA = false;
-            if (req.cookies && req.cookies['2fa_skip']) {
+            const skipCookieName = get2FASkipCookieName(targetRole);
+            if (req.cookies && req.cookies[skipCookieName]) {
                 try {
-                    const decoded = jwt.verify(req.cookies['2fa_skip'], JWT_SECRET);
+                    const decoded = jwt.verify(req.cookies[skipCookieName], JWT_SECRET);
                     const roleMatched = (decoded.role === targetRole) || 
                                         ((decoded.role === 'admin' || decoded.role === 'review') && 
                                          (targetRole === 'admin' || targetRole === 'review'));
@@ -2195,8 +2201,9 @@ app.post('/api/auth/login', async (req, res) => {
                         if (!verified) return res.json({ success: false, error: "無効な認証コードです (Invalid 2FA Code)" });
 
                         // 2FA検証に成功したのでスキップクッキーを更新/発行
+                        const skipCookieName = get2FASkipCookieName(targetRole);
                         const skipToken = jwt.sign({ email: actualEmail, role: targetRole, skip2FA: true }, JWT_SECRET, { expiresIn: '5h' });
-                        res.cookie('2fa_skip', skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
+                        res.cookie(skipCookieName, skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
                     }
                 }
             }
