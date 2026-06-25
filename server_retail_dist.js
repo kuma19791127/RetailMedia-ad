@@ -7245,6 +7245,19 @@ app.post('/api/contact', async (req, res) => {
         
         const result = await dbHelper.query.run(sql, params);
         console.log(`[Contact API] New contact saved in database. ID: ${result ? result.lastID : 'N/A'}`);
+
+        // 特定の問い合わせタイプ（1. 広告について, 2. エンジニアリング, 5. どこでもレジ）は info@retail-ad.com にメール転送する
+        const isTransferType = ["1. 広告について", "2. エンジニアリング", "5. どこでもレジ"].some(t => type.includes(t));
+        if (isTransferType) {
+            try {
+                const subject = `【転送】お問い合わせフォームより受信 (${type})`;
+                const body = `info@retail-ad.com 担当者 様\n\nお問い合わせフォームより、営業・エンジニアリング対応が必要な問い合わせを受信しましたので転送します。\n\n--------------------------------\n[お問い合わせ内容]\n送信日時: ${new Date().toLocaleString('ja-JP')}\n会社名・店舗名: ${company || '未入力'}\nお名前: ${name}\nメールアドレス: ${email}\nお問い合わせ種別: ${type}\n\n内容:\n${message}\n--------------------------------\n\nよろしくお願いいたします。`;
+                await sendSESEmail("info@retail-ad.com", subject, body);
+                console.log(`[Contact API] Forwarded inquiry of type "${type}" to info@retail-ad.com`);
+            } catch (err) {
+                console.error("[Contact API] Failed to forward email via SES:", err);
+            }
+        }
         
         res.json({ success: true, contactId: result ? result.lastID : null, imagePath: savedImagePath });
     } catch (e) {
@@ -7260,15 +7273,15 @@ app.get('/api/contact', requireAuth, async (req, res) => {
             return res.status(403).json({ error: "管理者権限が必要です" });
         }
         
-        // 既読に更新 (未読を既読化)
+        // 既読に更新 (未読を既読化 - adminの対象種別のみ)
         try {
-            await dbHelper.query.run("UPDATE contacts SET is_read = 1 WHERE is_read = 0");
+            await dbHelper.query.run("UPDATE contacts SET is_read = 1 WHERE is_read = 0 AND contact_type NOT IN ('1. 広告について', '2. エンジニアリング', '3. レビュー', '5. どこでもレジ')");
             if (typeof saveDatabase === 'function') saveDatabase();
         } catch (alterErr) {
             console.error("[Contact API] Failed to update is_read status:", alterErr);
         }
 
-        const sql = "SELECT * FROM contacts ORDER BY id DESC";
+        const sql = "SELECT * FROM contacts WHERE contact_type NOT IN ('1. 広告について', '2. エンジニアリング', '3. レビュー', '5. どこでもレジ') ORDER BY id DESC";
         const rows = await dbHelper.query.all(sql);
         
         res.json({ success: true, data: rows });
@@ -7284,7 +7297,7 @@ app.get('/api/admin/unread-counts', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "管理者権限が必要です" });
     }
     try {
-        const inquiriesResult = await dbHelper.query.all("SELECT COUNT(*) as count FROM contacts WHERE is_read = 0");
+        const inquiriesResult = await dbHelper.query.all("SELECT COUNT(*) as count FROM contacts WHERE is_read = 0 AND contact_type NOT IN ('1. 広告について', '2. エンジニアリング', '3. レビュー', '5. どこでもレジ')");
         const inquiriesCount = inquiriesResult[0] ? (inquiriesResult[0].count || inquiriesResult[0]['COUNT(*)'] || 0) : 0;
 
         const advertisersResult = await dbHelper.query.all("SELECT COUNT(*) as count FROM agency_referrals WHERE status = 'Pending'");
@@ -7300,3 +7313,48 @@ app.get('/api/admin/unread-counts', requireAuth, async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+
+// 審査担当用：レビュー関連お問い合わせ一覧の取得（認証必須、審査担当または管理者のみ）
+app.get('/api/review/contacts', requireAuth, async (req, res) => {
+    try {
+        if (req.user.role !== 'review' && req.user.role !== 'admin') {
+            return res.status(403).json({ error: "審査担当権限が必要です" });
+        }
+        
+        // 既読に更新 (レビュー種別のみ)
+        try {
+            await dbHelper.query.run("UPDATE contacts SET is_read = 1 WHERE is_read = 0 AND contact_type = '3. レビュー'");
+            if (typeof saveDatabase === 'function') saveDatabase();
+        } catch (alterErr) {
+            console.error("[Review Contact API] Failed to update is_read status:", alterErr);
+        }
+
+        const sql = "SELECT * FROM contacts WHERE contact_type = '3. レビュー' ORDER BY id DESC";
+        const rows = await dbHelper.query.all(sql);
+        
+        res.json({ success: true, data: rows });
+    } catch (e) {
+        console.error("[Review Contact API] Error fetching reviews:", e);
+        res.status(500).json({ error: "レビューお問い合わせ一覧の取得に失敗しました: " + e.message });
+    }
+});
+
+// 審査担当用：レビュー新着（未読・未処理）の数値カウントを取得するAPI
+app.get('/api/review/unread-counts', requireAuth, async (req, res) => {
+    if (req.user.role !== 'review' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "審査担当権限が必要です" });
+    }
+    try {
+        const inquiriesResult = await dbHelper.query.all("SELECT COUNT(*) as count FROM contacts WHERE is_read = 0 AND contact_type = '3. レビュー'");
+        const inquiriesCount = inquiriesResult[0] ? (inquiriesResult[0].count || inquiriesResult[0]['COUNT(*)'] || 0) : 0;
+
+        res.json({
+            success: true,
+            inquiries: Number(inquiriesCount)
+        });
+    } catch (e) {
+        console.error("[Review Unread Counts API] Error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+

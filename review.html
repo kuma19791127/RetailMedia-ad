@@ -74,7 +74,7 @@
 
 <div class="container">
     <h1>
-        <span>🛡️ 広告主審査 (KYC) ダッシュボード</span>
+        <span>🛡️ 広告主審査 (KYC) ダッシュボード <span id="badge-review-contacts" style="background:#ef4444; color:white; border-radius:50%; padding:2px 8px; font-size:14px; margin-left:8px; display:none; vertical-align:middle;">0</span></span>
         <div style="display: flex; gap: 10px; align-items: center;">
             <button class="btn-refresh" onclick="loadKYCReq()">🔄 データ更新</button>
             <button onclick="logout()" style="background: #64748b; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">🚪 ログアウト</button>
@@ -109,6 +109,23 @@
             </tr>
         </thead>
         <tbody id="unlock-body">
+            <tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">取得中...</td></tr>
+        </tbody>
+    </table>
+
+    <h2 style="margin-top:40px; color:#1e293b; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">📧 レビューに関するお問い合わせ一覧</h2>
+    <p style="color:#64748b; font-size:14px;">お問い合わせフォームから送信された「3. レビュー」に関する問い合わせです。レビュー担当者が確認できます。</p>
+    <table>
+        <thead>
+            <tr>
+                <th>受信日時</th>
+                <th>会社名・店舗名</th>
+                <th>お名前・Email</th>
+                <th>内容</th>
+                <th>添付画像</th>
+            </tr>
+        </thead>
+        <tbody id="review-contacts-body">
             <tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">取得中...</td></tr>
         </tbody>
     </table>
@@ -293,15 +310,75 @@ async function loadKYCReq() {
         }
     }
 
+    async function updateReviewBadges() {
+        console.log("[F12 Debug] updateReviewBadges initiated");
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/review/unread-counts');
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+            const badge = document.getElementById('badge-review-contacts');
+            if (data.success && data.inquiries > 0) {
+                badge.textContent = data.inquiries;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch (e) {
+            console.error("[F12 Debug] updateReviewBadges error:", e);
+        }
+    }
+
+    async function loadReviewInquiries() {
+        console.log("[F12 Debug] loadReviewInquiries initiated");
+        try {
+            const res = await fetch(window.API_BASE_URL + '/api/review/contacts');
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+            const tbody = document.getElementById('review-contacts-body');
+            tbody.innerHTML = '';
+            
+            if (!data.success || !data.data || data.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">お問い合わせはありません。</td></tr>';
+                return;
+            }
+
+            data.data.forEach(item => {
+                const tr = document.createElement('tr');
+                const dt = new Date(item.created_at || item.id).toLocaleString('ja-JP');
+                
+                tr.innerHTML = `
+                    <td>${dt}</td>
+                    <td><b>${item.company_name || '未入力'}</b></td>
+                    <td>
+                        <b>${item.person_name}</b><br>
+                        <span style="font-size:12px; color:#64748b;">${item.email}</span>
+                    </td>
+                    <td style="white-space: pre-wrap; font-size:12px;">${item.message}</td>
+                    <td>
+                        ${item.image_data ? `<a href="${item.image_data}" target="_blank" style="display:inline-block; border:1px solid #cbd5e1; border-radius:4px; overflow:hidden; width:50px; height:50px;"><img src="${item.image_data}" style="width:100%; height:100%; object-fit:cover;"></a>` : '<span style="color:#94a3b8; font-size:11px;">添付なし</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            console.error("[F12 Debug] loadReviewInquiries error:", e);
+            document.getElementById('review-contacts-body').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">レビューお問い合わせの取得中に通信エラーが発生しました: ${e.message}</td></tr>`;
+        }
+    }
+
     // Load on start
     window.addEventListener('load', () => {
         loadKYCReq();
         loadUnlockReq();
+        loadReviewInquiries();
+        updateReviewBadges();
     });
     // Auto refresh every 5 seconds
     setInterval(() => {
         loadKYCReq();
         loadUnlockReq();
+        loadReviewInquiries();
+        updateReviewBadges();
     }, 5000);
 </script>
 
