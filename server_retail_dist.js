@@ -2166,7 +2166,10 @@ app.post('/api/auth/login', async (req, res) => {
             if (req.cookies && req.cookies['2fa_skip']) {
                 try {
                     const decoded = jwt.verify(req.cookies['2fa_skip'], JWT_SECRET);
-                    if (decoded && decoded.email === actualEmail && decoded.role === targetRole && decoded.skip2FA) {
+                    const roleMatched = (decoded.role === targetRole) || 
+                                        ((decoded.role === 'admin' || decoded.role === 'review') && 
+                                         (targetRole === 'admin' || targetRole === 'review'));
+                    if (decoded && decoded.email === actualEmail && roleMatched && decoded.skip2FA) {
                         skip2FA = true;
                     }
                 } catch (err) {
