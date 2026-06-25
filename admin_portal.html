@@ -1394,13 +1394,18 @@
                     const headers = { 'Content-Type': 'application/json' };
                     if (token) headers['Authorization'] = 'Bearer ' + token;
 
+                    console.log("[F12 Audit Test Debug] Initiating test-audit request to:", window.API_BASE_URL + '/api/freee/test-audit');
+                    console.log("[F12 Audit Test Debug] Request Headers Authorization present:", !!token);
+
                     appendLog("サーバーにテスト実行をリクエスト中...");
                     const res = await fetch(window.API_BASE_URL + '/api/freee/test-audit', {
                         method: 'POST',
                         headers: headers
                     });
 
+                    console.log("[F12 Audit Test Debug] Fetch response status:", res.status, res.statusText);
                     const data = await res.json();
+                    console.log("[F12 Audit Test Debug] Fetch response payload:", data);
                     
                     if (data.logs && Array.isArray(data.logs)) {
                         logBox.innerHTML = ''; // ログボックスをクリアして詳細ログを表示
@@ -1413,12 +1418,14 @@
                     }
 
                     if (res.ok && data.success) {
+                        console.log("[F12 Audit Test Debug] Test execution succeeded.");
                         Swal.fire('テスト成功', 'すべての審査対象API（取引参照、勘定科目作成・変更・削除、事業所更新）が正常に呼び出されました。freee上の履歴をご確認ください。', 'success');
                     } else {
+                        console.error("[F12 Audit Test Debug] Test execution failed with error:", data.error);
                         throw new Error(data.error || '一部のAPI呼び出しでエラーが発生しました。');
                     }
                 } catch (e) {
-                    console.error("[freee Audit Test Error]", e);
+                    console.error("[F12 Audit Test Debug] Catch block error:", e);
                     appendLog(`エラー: ${e.message}`, true);
                     Swal.fire('テスト失敗', `エラーが発生しました: ${e.message}<br>※認可されていないスコープがあるか、トークンが期限切れの可能性があります。`, 'error');
                 }

@@ -10,15 +10,17 @@ const FREEE_API_BASE = "https://api.freee.co.jp/api/1";
 // If you want to use the main company "non-logi", change this to 10685574
 const DEFAULT_COMPANY_ID = 10685574; 
 
+let activeAccessToken = process.env.FREEE_ACCESS_TOKEN || null;
+
+// Dynamic setter for the access token to bypass circular dependency
+function setAccessToken(token) {
+    activeAccessToken = token;
+    console.log("[freee API] Access token in API module updated. Length:", token ? token.length : 0);
+}
+
 // Helper to check what token to use (dynamic or static env)
 function getAccessToken() {
-    // Dynamically require server module or global session if available
-    const serverModule = require('./server_retail_dist');
-    const token = (serverModule && typeof serverModule.getFreeeToken === 'function') 
-        ? serverModule.getFreeeToken() 
-        : (process.env.FREEE_ACCESS_TOKEN || null);
-    
-    return token;
+    return activeAccessToken;
 }
 
 /**
@@ -250,6 +252,7 @@ async function getDeals(companyId, params = {}) {
 }
 
 module.exports = {
+    setAccessToken,
     getCompanies,
     getAccountItems,
     createSalesEntry,

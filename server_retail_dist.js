@@ -6705,6 +6705,10 @@ async function loadFreeeTokenFromDB() {
             console.log("[freee Token] No active token found in database. Using environment fallback.");
             currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
         }
+        // Push the active token to the API module to resolve circular dependency
+        if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
+            freeeApi.setAccessToken(currentFreeeToken);
+        }
     } catch (e) {
         console.error("[freee Token] Failed to load token from database:", e.message);
     }
@@ -6716,6 +6720,11 @@ async function saveFreeeTokenToDB(token) {
         await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [token]);
         currentFreeeToken = token;
         console.log("[freee Token] Saved token to database and updated active cache. Length:", token.length);
+        
+        // Push the new token to the API module to resolve circular dependency
+        if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
+            freeeApi.setAccessToken(currentFreeeToken);
+        }
     } catch (e) {
         console.error("[freee Token] Failed to save token to database:", e.message);
     }
@@ -6726,6 +6735,11 @@ async function deleteFreeeTokenFromDB() {
         await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
         currentFreeeToken = null;
         console.log("[freee Token] Deleted token from database and cleared active cache.");
+        
+        // Push the cleared token to the API module to resolve circular dependency
+        if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
+            freeeApi.setAccessToken(null);
+        }
     } catch (e) {
         console.error("[freee Token] Failed to delete token from database:", e.message);
     }
