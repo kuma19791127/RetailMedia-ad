@@ -191,7 +191,10 @@ async function createAccountItem(companyId, accountItemData) {
             company_id: companyId,
             name: accountItemData.name,
             account_category_id: accountItemData.account_category_id,
-            tax_code: accountItemData.tax_code || 1 // デフォルト: 課税売上10%
+            tax_code: accountItemData.tax_code || 1, // デフォルト: 課税売上10%
+            corresponding_expense_id: accountItemData.corresponding_expense_id !== undefined ? accountItemData.corresponding_expense_id : null,
+            corresponding_income_id: accountItemData.corresponding_income_id !== undefined ? accountItemData.corresponding_income_id : null,
+            group_name: accountItemData.group_name !== undefined ? accountItemData.group_name : null
         }
     };
     return await freeeRequest('/account_items', 'POST', payload);
@@ -205,7 +208,10 @@ async function updateAccountItem(companyId, accountItemId, accountItemData) {
     const payload = {
         account_item: {
             company_id: companyId,
-            name: accountItemData.name
+            name: accountItemData.name,
+            corresponding_expense_id: accountItemData.corresponding_expense_id !== undefined ? accountItemData.corresponding_expense_id : null,
+            corresponding_income_id: accountItemData.corresponding_income_id !== undefined ? accountItemData.corresponding_income_id : null,
+            group_name: accountItemData.group_name !== undefined ? accountItemData.group_name : null
         }
     };
     return await freeeRequest(`/account_items/${accountItemId}`, 'PUT', payload);
