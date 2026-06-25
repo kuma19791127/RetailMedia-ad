@@ -969,8 +969,13 @@
                             const data = await res.json();
                             if (res.ok && data.success) {
                                 listEl.innerHTML = '';
-                                if (data.devices && data.devices.length > 0) {
+                                
                                     const storeId = window.CURRENT_USER_ORG || "1000001";
+                                 const androidLink = document.getElementById('setup-android-link-text');
+                                 if (androidLink) androidLink.innerText = `litead://setup?storeId=${storeId}`;
+                                 const simpleUrl = document.getElementById('setup-simple-url');
+                                 if (simpleUrl) simpleUrl.href = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
+                                 if (data.devices && data.devices.length > 0) {
                                     data.devices.forEach(dev => {
                                         const div = document.createElement('div');
                                         div.style = 'padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; display:flex; flex-direction:column; gap:10px; margin-bottom:10px;';
@@ -1162,19 +1167,26 @@
             <div class="card" style="margin-top:20px; border-left: 5px solid #10b981;">
                 <h3 style="margin-top:0; color:#047857;"><i class="fa-solid fa-desktop"></i> サイネージセットアップ手順</h3>
 
-                <p style="font-size:0.9rem; color:#475569; line-height:1.6; margin-bottom: 20px;">
-                    上記の「自社サイネージ管理」にて<br>
-                    端末を追加し、<br>
-                    自動発行された<strong>7桁の数値サイネージID</strong>を<br>
-                    専用アプリに入力して<br>
-                    起動してください。
-                </p>
+                <div style="font-size:0.9rem; color:#334155; line-height:1.6; margin-bottom: 20px;">
+                    <strong style="color:#0f172a; display:block; margin-bottom:10px;">■ Android端末（既存Androidパネル等）の場合</strong>
+                    1. サイネージ用Android端末のブラウザ等から、以下のURLを開いてプレイヤーアプリ (APK) をダウンロードし、インストールします。<br>
+                    <a href="https://retail-media-db-2026.s3.us-east-1.amazonaws.com/app-debug.apk" target="_blank" style="color:#2563eb; font-weight:bold; text-decoration:underline;">📥 アプリ(APK)をダウンロード</a><br>
+                    2. インストール完了後、以下の【自動セットアップ起動リンク】をAndroid端末のブラウザ等でタップして起動します。<br>
+                    <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold;"><span id="setup-android-link-text">litead://setup?storeId=1000001</span></code><br>
+                    3. アプリが自動で起動し、店舗IDが自動入力された状態で、即座にサイネージのフルスクリーン再生が開始されます。<br>
+                    <br>
+                    <strong style="color:#0f172a; display:block; margin-bottom:5px; margin-top:10px;">■ Windows PCの場合</strong>
+                    1. 端末詳細の「簡易スタートガイド」または「設定手順書」のバッチファイルをダウンロードします。<br>
+                    2. 保存したバッチファイルを右クリックし、「管理者として実行」してください。<br>
+                    <br>
+                    <strong style="color:#0f172a; display:block; margin-bottom:5px; margin-top:10px;">■ セキュリティ設定を行わない場合</strong>
+                    1. 簡易スタートガイドを開くか、以下のURLをブラウザ（Google Chrome推奨）で開いてください。<br>
+                    <a id="setup-simple-url" href="https://retail-ad.com/signage_player.html?storeId=1000001" target="_blank" style="color:#2563eb; font-weight:bold; text-decoration:underline;">🔗 サイネージプレイヤー起動用URL</a>
+                </div>
 
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:20px; border-radius:8px; margin-bottom: 20px;">
-                    <p style="font-size:0.9rem; color:#334155; line-height:1.6;">
-                        Androidコントローラーを利用した<br>
-                        セキュアな設定方法<br>
-                        導入するにはガイドリンクをご覧ください
+                    <p style="font-size:0.9rem; color:#334155; line-height:1.6; margin-top:0;">
+                        Androidコントローラーを利用したセキュアな設定方法など、詳細な導入方法はガイドリンクをご覧ください。
                     </p>
                     <div style="margin-top:15px;">
                         <a href="app_setup_guide.html" target="_blank" style="background:#10b981; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
@@ -1188,8 +1200,7 @@
                     ・メモリ(RAM): 推奨 3GB 以上<br>
                     ・ストレージ: 空き容量 2GB 以上<br>
                     <span style="font-size:0.8rem; color:#0284c7; display:block; margin-top:5px;">
-                        ※長時間の安定した動画再生のため、<br class="mobile-br">
-                        上記スペック以上の端末を推奨します。
+                        ※長時間の安定した動画再生のため、上記スペック以上の端末を推奨します。
                     </span>
                 </div>
             </div>
