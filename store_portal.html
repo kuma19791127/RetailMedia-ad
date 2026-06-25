@@ -135,6 +135,12 @@
             font-weight: bold;
         }
 
+        .signage-form-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding-bottom: 60px;
@@ -146,6 +152,13 @@
 
             .mobile-nav {
                 display: flex !important;
+            }
+
+            .signage-form-container {
+                flex-direction: column;
+            }
+            .signage-form-container button {
+                width: 100%;
             }
         }
 
@@ -938,7 +951,7 @@
                     <p style="font-size:13px; color:#555; margin-bottom:15px;">
                         店舗内に設置されたサイネージ端末を7桁の数値IDで登録・管理します。
                     </p>
-                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <div class="signage-form-container">
                         <input type="text" id="new-signage-name" placeholder="例: レジ上メインモニター" style="flex:1; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
                         <button onclick="addSignageDevice()" class="btn-sm" style="background:#8e44ad; color:white; border:none; padding:10px 20px; font-weight:bold; border-radius:6px; cursor:pointer;">➕ 端末追加</button>
                     </div>
