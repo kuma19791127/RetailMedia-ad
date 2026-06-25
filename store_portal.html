@@ -2392,6 +2392,9 @@
 
         window.onload = () => {
             loadRevenue();
+            if (typeof loadSignageDevices === 'function') {
+                loadSignageDevices();
+            }
             setInterval(loadRevenue, 15000); // refresh revenue data occasionally
 
             // Execute POS Data Background Sync Routine
