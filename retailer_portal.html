@@ -444,7 +444,7 @@
     <div class="main-content">
         
         <!-- Dashboard Tab -->
-        <div id="tab-dashboard">
+        <div id="tab-dashboard" class="panel">
             <h1>法人専用ポータルへようこそ</h1>
 
             <div class="card" style="text-align: center;">
@@ -500,7 +500,7 @@
         </div>
 
         <!-- Store Setup Tab -->
-        <div id="tab-store-setup" style="display:none; max-width:800px; margin:0 auto; width:100%; box-sizing:border-box;">
+        <div id="tab-store-setup" class="panel" style="display:none; max-width:800px; margin:0 auto; width:100%; box-sizing:border-box;">
             <div style="position: relative; display:flex; justify-content:center; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px; min-height: 54px;">
                 <h1 style="border:none; padding:0; margin:0; text-align:center; width: 100%;">店舗サイネージの<br>セットアップ発行</h1>
                 <button onclick="switchTab('dashboard')" style="position: absolute; right: 0; background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
@@ -634,6 +634,9 @@
                                 ループ再生が開始されます。
                             </li>
                         </ol>
+                        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed #dcfce7; font-size:0.85rem; color:#16a085; font-weight:bold;">
+                            ※一括で送信・設定する場合は、同じく「店舗サイネージ設定」タブ内の少し下にある「大店舗向け一括セットアップバッチ生成 (ZIP)」セクションを使います。
+                        </div>
                     </div>
                 </div>
             </div>
@@ -688,7 +691,7 @@
         </div>
 
         <!-- Video Upload Tab -->
-        <div id="tab-video-upload" style="display:none;">
+        <div id="tab-video-upload" class="panel" style="display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom:20px;">
                 <div><h1 style="border:none; padding:0; margin:0;">ベース動画の配信<br>（クラウド保存）</h1><div style="margin-top:8px;"><a href="javascript:void(0)" onclick="showAdPolicy()" style="font-size:0.9rem; font-weight:normal; color:#3498db; text-decoration:underline; display:inline-block;">[配信・広告基準]</a></div></div>
                 <button onclick="switchTab('dashboard')" style="background:#64748b; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">戻る</button>
