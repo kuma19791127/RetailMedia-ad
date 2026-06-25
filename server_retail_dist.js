@@ -6927,9 +6927,21 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         log("3. 勘定科目カテゴリ特定のため、勘定科目一覧 (GET /account_items) を取得...");
         const itemsRes = await freeeApi.getAccountItems(companyId);
         let accountCategoryId = 1; // フォールバック
+        let correspondingExpenseId = null;
+        let correspondingIncomeId = null;
+        let groupName = null;
         if (itemsRes && itemsRes.account_items && itemsRes.account_items.length > 0) {
-            accountCategoryId = itemsRes.account_items[0].account_category_id;
-            log(`既存の勘定科目からカテゴリIDをコピーしました: ${accountCategoryId}`);
+            // 安全な勘定科目（corresponding_expense_id や corresponding_income_id が指定されていてエラーになりにくいもの）を優先
+            const safeItem = itemsRes.account_items.find(item => 
+                item.corresponding_expense_id === null && 
+                item.corresponding_income_id === null
+            ) || itemsRes.account_items[0];
+
+            accountCategoryId = safeItem.account_category_id;
+            correspondingExpenseId = safeItem.corresponding_expense_id;
+            correspondingIncomeId = safeItem.corresponding_income_id;
+            groupName = safeItem.group_name || null;
+            log(`既存の勘定科目(${safeItem.name})からパラメータをコピーしました: category=${accountCategoryId}, group=${groupName}`);
         }
         
         // 4. 勘定科目の追加 (POST /account_items)
@@ -6938,7 +6950,10 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         const testItemName = `テスト勘定科目_${randomSuffix}`;
         const createRes = await freeeApi.createAccountItem(companyId, {
             name: testItemName,
-            account_category_id: accountCategoryId
+            account_category_id: accountCategoryId,
+            corresponding_expense_id: correspondingExpenseId,
+            corresponding_income_id: correspondingIncomeId,
+            group_name: groupName
         });
         const newAccountItemId = createRes.account_item.id;
         log(`勘定科目の追加に成功しました。作成された勘定科目: ${createRes.account_item.name} (ID: ${newAccountItemId})`);
@@ -6947,7 +6962,11 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         log("5. 勘定科目の変更 (PUT /account_items/{id}) の呼び出しを開始...");
         const updatedItemName = `${testItemName}_変更済`;
         const updateRes = await freeeApi.updateAccountItem(companyId, newAccountItemId, {
-            name: updatedItemName
+            name: updatedItemName,
+            account_category_id: accountCategoryId,
+            corresponding_expense_id: correspondingExpenseId,
+            corresponding_income_id: correspondingIncomeId,
+            group_name: groupName
         });
         log(`勘定科目の変更に成功しました。変更後の勘定科目: ${updateRes.account_item.name}`);
         
