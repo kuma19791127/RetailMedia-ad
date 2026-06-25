@@ -641,10 +641,18 @@ document.body.addEventListener('click', () => {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const location = urlParams.get('location') || 'register_side';
-                const storeId = urlParams.get('storeId') || '1000001';
+                const deviceId = urlParams.get('deviceId') || '';
+                const storeId = urlParams.get('storeId') || '';
                 const terminalId = urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || 'DEMO_UNIT';
 
-                const res = await fetch(window.API_BASE_URL + `/api/signage/playlist?location=${location}&storeId=${storeId}&terminal_id=${terminalId}`);
+                let query = `?location=${location}&terminal_id=${terminalId}`;
+                if (deviceId) {
+                    query += `&deviceId=${deviceId}`;
+                } else {
+                    query += `&storeId=${storeId || '1000001'}`;
+                }
+
+                const res = await fetch(window.API_BASE_URL + `/api/signage/playlist` + query);
                 if (!res.ok) console.error(`[Signage API] Error fetching playlist! Status: ${res.status}`);
                 const newPlaylist = await res.json();
 

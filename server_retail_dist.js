@@ -3779,9 +3779,27 @@ app.get('/api/ad/analytics', requireAuth, async (req, res) => {
 
 
 app.get('/api/signage/playlist', async (req, res) => {
-    console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${req.query.storeId || 'Unknown'}, Location: ${req.query.location || 'Unknown'}`);
+    const deviceId = req.query.deviceId;
+    let storeId = req.query.storeId;
+    
+    if (deviceId) {
+        global.deviceStoreMapping = global.deviceStoreMapping || {};
+        const mappedStoreId = global.deviceStoreMapping[deviceId];
+        if (mappedStoreId) {
+            storeId = mappedStoreId;
+            console.log(`[API /api/signage/playlist] Auto-resolved Store ID ${storeId} for Device ID ${deviceId}`);
+        } else {
+            storeId = '1000001';
+            console.log(`[API /api/signage/playlist] Device ${deviceId} is not paired yet. Using default Store ID ${storeId}`);
+        }
+    }
+    
+    if (!storeId) {
+        storeId = '1000001';
+    }
+    
+    console.log(`[API /api/signage/playlist] Received playlist fetch request from Store: ${storeId}, Location: ${req.query.location || 'Unknown'}`);
     const location = req.query.location || 'register_side';
-    const storeId = req.query.storeId || '1000001'; // 安全なデフォルトフォールバック
     
     let storeOrg = 'default_store';
     let storeArea = '';
