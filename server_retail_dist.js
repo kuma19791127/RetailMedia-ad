@@ -78,6 +78,15 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
+// HTML, JS, CSS 等の静的ファイルがブラウザキャッシュされないように Cache-Control を設定
+app.use((req, res, next) => {
+    const ext = path.extname(req.path);
+    if (ext === '.html' || ext === '.js' || ext === '.css' || req.path === '/' || req.path === '/index.html') {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    }
+    next();
+});
+
 // ルートディレクトリの静的ファイル（HTML, 画像, CSS 等）を配信
 app.use(express.static(__dirname));
 
