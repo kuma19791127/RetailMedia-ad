@@ -7396,7 +7396,7 @@ app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
         console.log("[freee OAuth Manual] Token exchange response:", tokenData);
         
         if (tokenData.access_token) {
-            await saveFreeeTokenToDB(tokenData.access_token);
+            await saveFreeeTokenToDB(tokenData.access_token, tokenData.refresh_token);
             console.log("[freee OAuth Manual] Access token updated and persisted successfully via manual OOB.");
             res.json({ success: true, message: "Manual connection successful." });
         } else {
