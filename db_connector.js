@@ -210,6 +210,7 @@ if (process.env.DATABASE_URL) {
                     payout_type VARCHAR(50) NOT NULL,
                     target_id VARCHAR(255) NOT NULL,
                     amount DOUBLE PRECISION NOT NULL,
+                    payout_date VARCHAR(100),
                     status VARCHAR(50) DEFAULT 'pending',
                     error_message TEXT,
                     attempts INT DEFAULT 0,
@@ -252,6 +253,14 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ PostgreSQL creator_banks.payout_status column added or already exists.');
             } catch (e) {
                 console.error('[DB] PostgreSQL creator_banks.payout_status migration error:', e.message);
+            }
+
+            // Migration path: Add payout_date column to freee_sync_queue if not exists
+            try {
+                await client.query("ALTER TABLE freee_sync_queue ADD COLUMN IF NOT EXISTS payout_date VARCHAR(100)");
+                console.log('[DB] ✅ PostgreSQL freee_sync_queue.payout_date column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL freee_sync_queue.payout_date migration error:', e.message);
             }
 
             // Migration path: Normalize legacy store ids (STORE_001 / STORE-001 -> 1000001)
@@ -691,12 +700,31 @@ if (process.env.DATABASE_URL) {
                         payout_type TEXT NOT NULL,
                         target_id TEXT NOT NULL,
                         amount REAL NOT NULL,
+                        payout_date TEXT,
                         status TEXT DEFAULT 'pending',
                         error_message TEXT,
                         attempts INTEGER DEFAULT 0,
                         last_attempt INTEGER
                     )
                 `);
+
+                // SQLite Migration: Add payout_date column to freee_sync_queue for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(freee_sync_queue)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error (freee_sync_queue):', err.message);
+                        return;
+                    }
+                    const hasPayoutDate = rows && rows.some(row => row.name === 'payout_date');
+                    if (!hasPayoutDate) {
+                        sqliteDb.run("ALTER TABLE freee_sync_queue ADD COLUMN payout_date TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE freee_sync_queue error (payout_date):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ freee_sync_queue.payout_date column added successfully.');
+                            }
+                        });
+                    }
+                });
 
                 // Migration: Add store_id column to face_sensor_logs for SQLite if not exists
                 sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {

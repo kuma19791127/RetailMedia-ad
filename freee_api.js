@@ -151,6 +151,24 @@ async function createSalesEntry(companyId = undefined, salesData) {
         console.warn("[freee API] Failed to resolve walletable dynamically:", err.message);
     }
 
+    // 3. 税区分（tax_code）の動的解決
+    let taxCode = salesData?.taxCode;
+    if (taxCode === undefined) {
+        try {
+            const dbHelper = require('./db_connector');
+            const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_default_income_tax_code'");
+            if (row && row.value) {
+                taxCode = parseInt(row.value, 10);
+                console.log("[freee API] Resolved default income tax_code from database:", taxCode);
+            }
+        } catch (dbErr) {
+            console.warn("[freee API] Failed to query default income tax_code from DB:", dbErr.message);
+        }
+    }
+    if (taxCode === undefined) {
+        taxCode = 1; // 最終フォールバック (課税売上10%)
+    }
+
     // freee API expects a specific payload format for Deals (取引)
     const payload = {
         issue_date: issueDate,
@@ -158,7 +176,7 @@ async function createSalesEntry(companyId = undefined, salesData) {
         company_id: activeCompanyId,
         details: [
             {
-                tax_code: 1, // 課税売上10%
+                tax_code: taxCode,
                 account_item_id: accountItemId, // 動的に解決した勘定科目IDをセット
                 amount: amount,
                 description: description
@@ -334,6 +352,24 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         console.warn("[freee API] Failed to resolve walletable dynamically for payout:", err.message);
     }
 
+    // 3. 税区分（tax_code）の動的解決
+    let taxCode = payoutData?.taxCode;
+    if (taxCode === undefined) {
+        try {
+            const dbHelper = require('./db_connector');
+            const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_default_expense_tax_code'");
+            if (row && row.value) {
+                taxCode = parseInt(row.value, 10);
+                console.log("[freee API] Resolved default expense tax_code from database:", taxCode);
+            }
+        } catch (dbErr) {
+            console.warn("[freee API] Failed to query default expense tax_code from DB:", dbErr.message);
+        }
+    }
+    if (taxCode === undefined) {
+        taxCode = 0; // 最終フォールバック (対象外・非課税)
+    }
+
     // freee API 支出 (expense) 登録用ペイロード
     const payload = {
         issue_date: issueDate,
@@ -341,7 +377,7 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         company_id: activeCompanyId,
         details: [
             {
-                tax_code: 0, // 対象外・非課税
+                tax_code: taxCode,
                 account_item_id: accountItemId,
                 amount: amount,
                 description: description

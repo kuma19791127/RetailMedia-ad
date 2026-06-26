@@ -4035,13 +4035,13 @@ app.get('/api/admin/payout/export-csv', requireAuth, async (req, res) => {
                     const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
                     if (existing) {
                         await dbHelper.query.run(
-                            "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                            [finalAmount, queueId]
+                            "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                            [finalAmount, todayStr, queueId]
                         );
                     } else {
                         await dbHelper.query.run(
-                            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'agency', ?, ?, 'pending', 0)",
-                            [queueId, r.advertise_email, finalAmount]
+                            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'agency', ?, ?, ?, 'pending', 0)",
+                            [queueId, r.advertise_email, finalAmount, todayStr]
                         );
                     }
                     console.log(`[freee Queue] Agency payout task added for ${r.advertise_email}, amount: ${finalAmount}`);
@@ -5346,13 +5346,13 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                         const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
                         if (existing) {
                             await dbHelper.query.run(
-                                "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                                [shareAmount, queueId]
+                                "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                [shareAmount, todayStr, queueId]
                             );
                         } else {
                             await dbHelper.query.run(
-                                "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'store', ?, ?, 'pending', 0)",
-                                [queueId, storeId, shareAmount]
+                                "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'store', ?, ?, ?, 'pending', 0)",
+                                [queueId, storeId, shareAmount, todayStr]
                             );
                         }
                         console.log(`[freee Queue] Store payout task added for ${storeId}, amount: ${shareAmount}`);
@@ -5372,13 +5372,13 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                         const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
                         if (existing) {
                             await dbHelper.query.run(
-                                "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                                [adsenseRevenue, queueId]
+                                "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                [adsenseRevenue, todayStr, queueId]
                             );
                         } else {
                             await dbHelper.query.run(
-                                "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'store_adsense', ?, ?, 'pending', 0)",
-                                [queueId, storeId, adsenseRevenue]
+                                "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'store_adsense', ?, ?, ?, 'pending', 0)",
+                                [queueId, storeId, adsenseRevenue, todayStr]
                             );
                         }
                         console.log(`[freee Queue] Store AdSense payout task added for ${storeId}, amount: ${adsenseRevenue}`);
@@ -5403,13 +5403,13 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                     const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
                     if (existing) {
                         await dbHelper.query.run(
-                            "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                            [final_payout, queueId]
+                            "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                            [final_payout, todayStr, queueId]
                         );
                     } else {
                         await dbHelper.query.run(
-                            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'creator', ?, ?, 'pending', 0)",
-                            [queueId, email, final_payout]
+                            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'creator', ?, ?, ?, 'pending', 0)",
+                            [queueId, email, final_payout, todayStr]
                         );
                     }
                     console.log(`[freee Queue] Creator payout task added for ${email}, amount: ${final_payout}`);
@@ -7068,7 +7068,9 @@ async function refreshFreeeToken() {
                 return tokenData.access_token;
             } else {
                 console.error("[freee Token] Failed to refresh token response:", tokenData);
-                throw new Error("Token refresh request was rejected by freee.");
+                const errorStr = tokenData.error || '';
+                const errorDesc = tokenData.error_description || '';
+                throw new Error(`Token refresh request was rejected by freee: ${errorStr} - ${errorDesc}`);
             }
         } catch (e) {
             console.error("[freee Token] Error during automatic token refresh:", e.message);
@@ -7098,8 +7100,11 @@ async function executeFreeeApiCall(apiFunc) {
                 return await apiFunc(); // Retry the API call
             } catch (refreshErr) {
                 console.error("[freee Token] Failed to recover from 401 via refresh:", refreshErr.message);
-                // 本当にリフレッシュが不可能な場合（期限切れ・失効）は、DBから古いトークンをクリアして再連携を促す
-                await deleteFreeeTokenFromDB();
+                // 本当にリフレッシュが不可能な場合（期限切れ・失効：invalid_grant）のみ、DBからトークンをクリアして再連携を促す
+                if (refreshErr.message.includes('invalid_grant') || refreshErr.message.includes('invalid_request')) {
+                    console.log("[freee Token] Clear credentials due to invalid token error.");
+                    await deleteFreeeTokenFromDB();
+                }
                 throw e; // 元の 401 エラーをスローして上に伝える
             }
         }
@@ -7162,7 +7167,7 @@ async function processFreeeSyncQueue() {
                         amount: row.amount,
                         payoutType: row.payout_type,
                         targetId: row.target_id,
-                        date: new Date(now).toISOString().split('T')[0]
+                        date: row.payout_date || new Date(now).toISOString().split('T')[0]
                     });
                 });
 
@@ -7361,6 +7366,14 @@ app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
 
 // OAuth Callback Endpoint
 app.get('/api/freee/callback', async (req, res) => {
+    // 認可画面で同意キャンセルした場合などの例外エラーパラメータ検証
+    if (req.query.error) {
+        const errorType = req.query.error;
+        const errorDesc = req.query.error_description || '';
+        console.warn("[freee OAuth] Callback received error from freee accounts:", errorType, errorDesc);
+        return res.redirect(`/admin?freee_connection=error&reason=${encodeURIComponent(errorType)}&description=${encodeURIComponent(errorDesc)}`);
+    }
+
     const code = req.query.code;
     const redirectUri = getFreeeRedirectUri(req);
     
