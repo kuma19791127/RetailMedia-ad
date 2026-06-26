@@ -209,8 +209,8 @@ async function createSalesEntry(companyId = undefined, salesData) {
 async function createAccountItem(companyId, accountItemData) {
     console.log(`[freee API] Creating account item for company: ${companyId}`);
     const payload = {
+        company_id: companyId,
         account_item: {
-            company_id: companyId,
             name: accountItemData.name,
             account_category_id: accountItemData.account_category_id,
             tax_code: accountItemData.tax_code || 1, // デフォルト: 課税売上10%
@@ -228,8 +228,8 @@ async function createAccountItem(companyId, accountItemData) {
 async function updateAccountItem(companyId, accountItemId, accountItemData) {
     console.log(`[freee API] Updating account item ${accountItemId} for company: ${companyId}`);
     const payload = {
+        company_id: companyId,
         account_item: {
-            company_id: companyId,
             name: accountItemData.name,
             corresponding_expense_id: accountItemData.corresponding_expense_id !== undefined ? accountItemData.corresponding_expense_id : null,
             corresponding_income_id: accountItemData.corresponding_income_id !== undefined ? accountItemData.corresponding_income_id : null,
