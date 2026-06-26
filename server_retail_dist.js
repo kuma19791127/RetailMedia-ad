@@ -7547,6 +7547,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         // 1. 事業所一覧を取得して、有効な事業所IDを決定する
         log("1. 事業所一覧 (GET /companies) の取得を開始...");
         const companiesRes = await executeFreeeApiCall(() => freeeApi.getCompanies(), log);
+        log("取得した事業所一覧データ (raw response):", { companiesRes });
         if (!companiesRes || !companiesRes.companies || companiesRes.companies.length === 0) {
             throw new Error("連携中の事業所が見つかりません。先にfreeeとの連携を完了してください。");
         }
@@ -7558,7 +7559,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         );
         const company = matched || companiesRes.companies[0];
         const companyId = company.id;
-        log(`使用する事業所を特定しました: ${company.display_name || company.name} (ID: ${companyId})`);
+        log(`使用する事業所を特定しました: ${company.display_name || company.name} (ID: ${companyId})`, { company_object: company });
         
         // 2. 取引の参照 (GET /deals)
         log("2. 取引の参照 (GET /deals) の呼び出しを開始...");
