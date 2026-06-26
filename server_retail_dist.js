@@ -6770,59 +6770,78 @@ async function deleteFreeeTokenFromDB() {
     }
 }
 
-// Automatically refresh expired freee access token using saved refresh token
-async function refreshFreeeToken() {
-    try {
-        console.log("[freee Token] Initiating automatic token refresh...");
-        const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
-        if (!row || !row.value) {
-            throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
-        }
-        
-        const response = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                grant_type: "refresh_token",
-                client_id: FREEE_CLIENT_ID,
-                client_secret: FREEE_CLIENT_SECRET,
-                refresh_token: row.value
-            })
-        });
+let isFreeeRefreshing = false;
+let freeeRefreshPromise = null;
 
-        const tokenData = await response.json();
-        if (tokenData.access_token) {
-            await saveFreeeTokenToDB(tokenData.access_token, tokenData.refresh_token);
-            console.log("[freee Token] Token refreshed successfully.");
-            return tokenData.access_token;
-        } else {
-            console.error("[freee Token] Failed to refresh token response:", tokenData);
-            throw new Error("Token refresh request was rejected by freee.");
-        }
-    } catch (e) {
-        console.error("[freee Token] Error during automatic token refresh:", e.message);
-        throw e;
+// Automatically refresh expired freee access token using saved refresh token (Mutex applied)
+async function refreshFreeeToken() {
+    if (isFreeeRefreshing) {
+        console.log("[freee Token] Refresh is already in progress, waiting for existing promise...");
+        return freeeRefreshPromise;
     }
+    
+    isFreeeRefreshing = true;
+    freeeRefreshPromise = (async () => {
+        try {
+            console.log("[freee Token] Initiating automatic token refresh...");
+            const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
+            if (!row || !row.value) {
+                throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
+            }
+            
+            const response = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    grant_type: "refresh_token",
+                    client_id: FREEE_CLIENT_ID,
+                    client_secret: FREEE_CLIENT_SECRET,
+                    refresh_token: row.value
+                })
+            });
+
+            const tokenData = await response.json();
+            if (tokenData.access_token) {
+                await saveFreeeTokenToDB(tokenData.access_token, tokenData.refresh_token);
+                console.log("[freee Token] Token refreshed successfully.");
+                return tokenData.access_token;
+            } else {
+                console.error("[freee Token] Failed to refresh token response:", tokenData);
+                throw new Error("Token refresh request was rejected by freee.");
+            }
+        } catch (e) {
+            console.error("[freee Token] Error during automatic token refresh:", e.message);
+            throw e;
+        } finally {
+            isFreeeRefreshing = false;
+            freeeRefreshPromise = null;
+        }
+    })();
+    
+    return freeeRefreshPromise;
 }
 
-// Resilient wrapper for freee API calls with auto-refresh mechanism
+// Resilient wrapper for freee API calls with auto-refresh mechanism and safety checks
 async function executeFreeeApiCall(apiFunc) {
     try {
         await loadFreeeTokenFromDB();
         return await apiFunc();
     } catch (e) {
-        const errorMsg = e.message || '';
+        // Safe stringification to prevent property reference crashes
+        const errorMsg = String(e && e.message ? e.message : e || '');
         if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('アクセスする権限がありません')) {
             console.log("[freee Token] 401 Unauthorized detected. Attempting to refresh token...");
             try {
                 const newAccessToken = await refreshFreeeToken();
                 console.log("[freee Token] Token refreshed. Retrying original API call...");
-                return await apiFunc(); // Retry the API call with the new token
+                return await apiFunc(); // Retry the API call
             } catch (refreshErr) {
                 console.error("[freee Token] Failed to recover from 401 via refresh:", refreshErr.message);
-                throw e; // Throw original 401 error
+                // 本当にリフレッシュが不可能な場合（期限切れ・失効）は、DBから古いトークンをクリアして再連携を促す
+                await deleteFreeeTokenFromDB();
+                throw e; // 元の 401 エラーをスローして上に伝える
             }
         }
         throw e;
