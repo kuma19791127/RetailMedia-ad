@@ -6951,8 +6951,8 @@ function decryptToken(text) {
         decrypted = Buffer.concat([decrypted, decipher.final()]);
         return decrypted.toString();
     } catch (err) {
-        console.error("[Crypto] Decryption failed, returning plain text fallback:", err.message);
-        return text;
+        console.error("[Crypto] Decryption failed. Returning null to trigger safe fallback without clearing credentials:", err.message);
+        return null;
     }
 }
 
@@ -6961,8 +6961,16 @@ async function loadFreeeTokenFromDB() {
     try {
         const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
         if (row && row.value) {
-            currentFreeeToken = decryptToken(row.value);
-            console.log("[freee Token] Loaded active token from database successfully. Length:", currentFreeeToken.length);
+            const decrypted = decryptToken(row.value);
+            // 復号に失敗した(null) または `:` がまだ含まれている（復号エラー時に暗号文字列のまま返った等）場合は適用しない
+            if (decrypted && !decrypted.includes(':')) {
+                currentFreeeToken = decrypted;
+                console.log("[freee Token] Loaded active token from database successfully. Length:", currentFreeeToken.length);
+            } else {
+                console.warn("[freee Token] Decrypted token is invalid or decryption failed. Keeping current state to prevent accidental connection reset.");
+                // 暗号キーの間違いにより復号できなかった場合、連携解除にしないため、自動消去や環境変数へのフォールバックはせずそのまま終了する
+                return;
+            }
         } else {
             console.log("[freee Token] No active token found in database. Using environment fallback.");
             currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
@@ -7123,12 +7131,20 @@ async function processFreeeSyncQueue() {
         for (const row of rows) {
             const nextAttempt = (row.attempts || 0) + 1;
             const now = Date.now();
+            const originalStatus = row.status;
             
-            // 状態を processing に更新
-            await dbHelper.query.run(
-                "UPDATE freee_sync_queue SET status = 'processing', attempts = ?, last_attempt = ? WHERE id = ?",
-                [nextAttempt, now, row.id]
+            // 状態を processing に更新（楽観的ロックの獲得）。元のステータスが SELECT 時と一致していること
+            // これにより、マルチインスタンス環境下でも他のインスタンスが先に処理を開始した場合は changes (更新行数) が 0 になるため二重処理を防げる
+            const lockResult = await dbHelper.query.run(
+                "UPDATE freee_sync_queue SET status = 'processing', attempts = ?, last_attempt = ? WHERE id = ? AND status = ?",
+                [nextAttempt, now, row.id, originalStatus]
             );
+
+            const changes = lockResult ? (lockResult.changes || lockResult.rowCount || 0) : 0;
+            if (changes === 0) {
+                console.log(`[freee Queue] Task ${row.id} was already locked/processed by another instance. Skipping.`);
+                continue;
+            }
 
             try {
                 // freeeApi モジュールのロードを確認
@@ -7175,6 +7191,11 @@ async function processFreeeSyncQueue() {
 
 // Automatically load on server startup (deferred to allow db connection initialization)
 setTimeout(() => {
+    // サーバー起動時に古い不要な振込ロックを完全にクリアして起動デッドロックを防止する
+    dbHelper.query.run("DELETE FROM payout_locks")
+        .then(() => console.log("[Lock] Initialized and cleared stale payout locks on startup."))
+        .catch(err => console.error("[Lock] Failed to clear stale locks on startup:", err.message));
+
     loadFreeeTokenFromDB().then(() => {
         processFreeeSyncQueue().catch(err => console.error("[freee Queue Start] Initial run error:", err.message));
     }).catch(err => console.error("[freee Queue Start] Failed to load token on start:", err.message));
