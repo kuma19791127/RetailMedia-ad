@@ -7211,6 +7211,71 @@ module.exports.getFreeeToken = () => {
     return currentFreeeToken;
 };
 
+// --- [NEW] Admin API: Get freee sync queue status ---
+app.get('/api/admin/freee/sync-queue', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+    try {
+        const rows = await dbHelper.query.all("SELECT * FROM freee_sync_queue ORDER BY last_attempt DESC, id DESC");
+        res.json({ success: true, queue: rows });
+    } catch (e) {
+        console.error("[freee Queue API] Failed to fetch queue:", e.message);
+        res.status(500).json({ error: "同期キューの取得に失敗しました: " + e.message });
+    }
+});
+
+// --- [NEW] Admin API: Retry specific sync queue task ---
+app.post('/api/admin/freee/sync-queue/retry', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: "Task ID is required" });
+
+    try {
+        const result = await dbHelper.query.run(
+            "UPDATE freee_sync_queue SET status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+            [id]
+        );
+        const updated = result.changes || result.rowCount || 0;
+        if (updated > 0) {
+            console.log(`[freee Queue API] Reset task ${id} to pending for retry.`);
+            // 非同期で即座に処理ループを起動
+            processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Error:", err.message));
+            res.json({ success: true, message: "タスクの再試行を設定しました。" });
+        } else {
+            res.status(404).json({ error: "指定されたタスクが見つかりません" });
+        }
+    } catch (e) {
+        console.error("[freee Queue API] Failed to retry task:", e.message);
+        res.status(500).json({ error: "タスクの再試行設定に失敗しました: " + e.message });
+    }
+});
+
+// --- [NEW] Admin API: Clear/Delete specific sync queue task ---
+app.post('/api/admin/freee/sync-queue/clear', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: "Task ID is required" });
+
+    try {
+        const result = await dbHelper.query.run("DELETE FROM freee_sync_queue WHERE id = ?", [id]);
+        const deleted = result.changes || result.rowCount || 0;
+        if (deleted > 0) {
+            console.log(`[freee Queue API] Cleared/Deleted task ${id} from queue.`);
+            res.json({ success: true, message: "タスクをキューから削除しました。" });
+        } else {
+            res.status(404).json({ error: "指定されたタスクが見つかりません" });
+        }
+    } catch (e) {
+        console.error("[freee Queue API] Failed to clear task:", e.message);
+        res.status(500).json({ error: "タスクの削除に失敗しました: " + e.message });
+    }
+});
+
 // Get freee connection status
 app.get('/api/freee/status', requireAuth, (req, res) => {
     // ロールチェック (店舗または管理者のみ許可)

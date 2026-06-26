@@ -227,6 +227,47 @@ async function runIntegrationTests() {
         assert.strictEqual(payoutData.message, "GMO銀行送金が完了し、支払状況を更新しました。", "Success message should match");
         console.log("✓ POST /api/admin/payout/gmo-transfer passed.");
 
+        // 8. Test freee Queue Management APIs
+        console.log("Testing GET /api/admin/freee/sync-queue...");
+        const queueGetRes = await fetch(`${API_BASE}/api/admin/freee/sync-queue`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        assert.strictEqual(queueGetRes.status, 200, "Queue Get API status should be 200");
+        const queueGetData = await queueGetRes.json();
+        assert.ok(queueGetData.queue, "Queue list should be present");
+        console.log(`✓ GET /api/admin/freee/sync-queue passed. Items: ${queueGetData.queue.length}`);
+
+        if (queueGetData.queue.length > 0) {
+            const firstTask = queueGetData.queue[0];
+            console.log(`Testing POST /api/admin/freee/sync-queue/retry for task ${firstTask.id}...`);
+            const retryRes = await fetch(`${API_BASE}/api/admin/freee/sync-queue/retry`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id: firstTask.id })
+            });
+            assert.strictEqual(retryRes.status, 200, "Queue Retry API status should be 200");
+            const retryData = await retryRes.json();
+            assert.ok(retryData.success, "Retry should be successful");
+            console.log("✓ POST /api/admin/freee/sync-queue/retry passed.");
+
+            console.log(`Testing POST /api/admin/freee/sync-queue/clear for task ${firstTask.id}...`);
+            const clearRes = await fetch(`${API_BASE}/api/admin/freee/sync-queue/clear`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id: firstTask.id })
+            });
+            assert.strictEqual(clearRes.status, 200, "Queue Clear API status should be 200");
+            const clearData = await clearRes.json();
+            assert.ok(clearData.success, "Clear should be successful");
+            console.log("✓ POST /api/admin/freee/sync-queue/clear passed.");
+        }
+
         console.log("\n=== All GMO API Endpoint Integration Tests Passed! ===");
     } catch (e) {
         console.error("❌ Test Failed:", e);

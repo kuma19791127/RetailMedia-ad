@@ -256,22 +256,39 @@ async function getDeals(companyId, params = {}) {
  * This creates a deal (支出) in freee for payouts.
  */
 async function createPayoutEntry(companyId = undefined, payoutData) {
-    // 0. 動的に適切な事業所ID (companyId) を解決する
     let activeCompanyId = companyId;
-    try {
-        const companiesRes = await getCompanies();
-        if (companiesRes && companiesRes.companies && companiesRes.companies.length > 0) {
-            const matched = companiesRes.companies.find(c => 
-                c.display_name && c.display_name.includes("non-logi")
-            ) || companiesRes.companies.find(c => 
-                c.name && c.name.includes("non-logi")
-            );
-            activeCompanyId = matched ? matched.id : companiesRes.companies[0].id;
-            console.log("[freee API] Automatically resolved active company_id for payout:", activeCompanyId);
+
+    // 1. もし引数で指定されていなければ、DB (admin_settings) から明示的に設定されたIDを読み込む
+    if (!activeCompanyId) {
+        try {
+            const dbHelper = require('./db_connector');
+            const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_company_id'");
+            if (row && row.value) {
+                activeCompanyId = parseInt(row.value, 10);
+                console.log("[freee API] Resolved explicit company_id from database:", activeCompanyId);
+            }
+        } catch (dbErr) {
+            console.warn("[freee API] Failed to query freee_company_id from DB:", dbErr.message);
         }
-    } catch (err) {
-        console.warn("[freee API] Failed to resolve company_id dynamically for payout, using fallback:", err.message);
-        activeCompanyId = activeCompanyId || DEFAULT_COMPANY_ID;
+    }
+
+    // 2. それでも解決できない場合のみ、freee API から所属事業所リストを取得して自動解決を試みる
+    if (!activeCompanyId) {
+        try {
+            const companiesRes = await getCompanies();
+            if (companiesRes && companiesRes.companies && companiesRes.companies.length > 0) {
+                const matched = companiesRes.companies.find(c => 
+                    c.display_name && c.display_name.includes("non-logi")
+                ) || companiesRes.companies.find(c => 
+                    c.name && c.name.includes("non-logi")
+                );
+                activeCompanyId = matched ? matched.id : companiesRes.companies[0].id;
+                console.log("[freee API] Automatically resolved active company_id for payout:", activeCompanyId);
+            }
+        } catch (err) {
+            console.warn("[freee API] Failed to resolve company_id dynamically for payout, using fallback:", err.message);
+            activeCompanyId = DEFAULT_COMPANY_ID;
+        }
     }
 
     console.log(`[freee API] Creating payout entry for company: ${activeCompanyId}`);
