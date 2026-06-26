@@ -1406,6 +1406,12 @@
                     console.log("[F12 Audit Test Debug] Fetch response status:", res.status, res.statusText);
                     const data = await res.json();
                     console.log("[F12 Audit Test Debug] Fetch response payload:", data);
+                    console.log("[F12 Audit Test Debug] Details of data.logs:");
+                    if (data.logs && Array.isArray(data.logs)) {
+                        data.logs.forEach((l, idx) => {
+                            console.log(`[F12 Audit Log ${idx}] Time: ${l.time}, Message: ${l.message}, Details:`, l.details);
+                        });
+                    }
                     
                     if (data.logs && Array.isArray(data.logs)) {
                         logBox.innerHTML = ''; // ログボックスをクリアして詳細ログを表示
