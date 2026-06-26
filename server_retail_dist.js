@@ -7038,10 +7038,14 @@ async function refreshFreeeToken() {
     isFreeeRefreshing = true;
     freeeRefreshPromise = (async () => {
         try {
-            console.log("[freee Token] Initiating automatic token refresh...");
             const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
             if (!row || !row.value) {
                 throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
+            }
+            
+            const decryptedRefresh = decryptToken(row.value);
+            if (!decryptedRefresh || decryptedRefresh.includes(':')) {
+                throw new Error("リフレッシュトークンの復号に失敗しました、または無効なデータ形式です。");
             }
             
             const response = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
@@ -7053,7 +7057,7 @@ async function refreshFreeeToken() {
                     grant_type: "refresh_token",
                     client_id: FREEE_CLIENT_ID,
                     client_secret: FREEE_CLIENT_SECRET,
-                    refresh_token: row.value
+                    refresh_token: decryptedRefresh
                 })
             });
 
