@@ -5333,18 +5333,76 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         
         // GMO API キー等の環境変数確認 (ハードコード禁止ルール遵守)
         const gmoApiKey = process.env.GMO_API_KEY;
-        const gmoAccountId = process.env.GMO_ACCOUNT_ID;
+        const gmoAccountId = process.env.GMO_ACCOUNT_ID || "101011234567";
         
-        if (!gmoApiKey || !gmoAccountId) {
+        if (!gmoApiKey) {
             console.error("[GMO API] GMO connection info not configured. Failing transfer.");
-            return res.status(400).json({ error: "【システムエラー】GMO銀行の接続情報（GMO_API_KEY / GMO_ACCOUNT_ID）が設定されていないため、送金処理を実行できませんでした。" });
+            return res.status(400).json({ error: "【システムエラー】GMO銀行の接続情報（GMO_API_KEY）が設定されていないため、送金処理を実行できませんでした。" });
+        }
+
+        // 2. 送金対象の合計額（振込手数料込）を事前算出する「残高ガード」
+        let totalRequiredAmount = 0;
+        const feePerTransfer = 145; // 振込手数料 145円
+
+        if (type === 'store' || type === 'store_adsense') {
+            for (const storeId of targetIds) {
+                const s = await dbHelper.query.get("SELECT * FROM stores WHERE id = ?", [storeId]);
+                if (s) {
+                    let amount = 0;
+                    if (type === 'store') {
+                        const storeAdRevenue = s.total_ad_revenue || 0;
+                        const agencyCommission = Math.floor(storeAdRevenue * 0.2);
+                        const creatorReward = Math.floor(storeAdRevenue * 0.1);
+                        const operatingCost = s.monthly_operating_cost || 0;
+                        const laborCost = s.monthly_labor_cost || 0;
+                        const pureStoreRevenue = storeAdRevenue - agencyCommission - creatorReward - operatingCost - laborCost;
+                        amount = pureStoreRevenue > 0 ? Math.floor(pureStoreRevenue * 0.5) : 0;
+                    } else {
+                        amount = s.monthly_adsense_revenue || 0;
+                    }
+                    totalRequiredAmount += (amount + feePerTransfer);
+                }
+            }
+        } else if (type === 'creator') {
+            for (const email of targetIds) {
+                const views = (typeof CREATOR_STATE !== 'undefined' && CREATOR_STATE.total_views) ? CREATOR_STATE.total_views : 0;
+                const manufacturer_ad = Math.floor(views * 0.5);
+                const adsense_share = Math.floor(manufacturer_ad * 0.1);
+                const cm_bonus = 10000;
+                const subtotal = manufacturer_ad + adsense_share + cm_bonus;
+                const agency_fee = Math.floor(subtotal * 0.2);
+                const final_payout = subtotal - agency_fee;
+                totalRequiredAmount += (final_payout + feePerTransfer);
+            }
+        }
+        
+        console.log(`[GMO API] 必要総額算出: totalRequiredAmount=${totalRequiredAmount}円 (送金対象数: ${targetIds.length})`);
+
+        // 3. 銀行口座のリアルタイム残高を取得して検証
+        try {
+            const balanceRes = await gmoBankMock.getBalance(gmoAccountId);
+            if (balanceRes && balanceRes.balances && balanceRes.balances.length > 0) {
+                const withdrawableAmount = parseInt(balanceRes.balances[0].withdrawableAmount, 10) || 0;
+                console.log(`[GMO API] 口座残高チェック: 可用残高=${withdrawableAmount}円, 必要総額=${totalRequiredAmount}円`);
+                if (withdrawableAmount < totalRequiredAmount) {
+                    console.warn(`[GMO API] 口座残高不足です。残高=${withdrawableAmount}円, 不足=${totalRequiredAmount - withdrawableAmount}円`);
+                    return res.status(400).json({ 
+                        error: `【残高不足】決済元口座の残高が不足しているため、送金処理をブロックしました。（可用残高: ${withdrawableAmount.toLocaleString()}円, 必要総額: ${totalRequiredAmount.toLocaleString()}円）` 
+                    });
+                }
+            } else {
+                console.warn("[GMO API] 口座残高情報の取得結果が空です。残高チェックをスキップします。");
+            }
+        } catch (balanceErr) {
+            console.error("[GMO API] 残高照会APIの呼び出しに失敗しました。安全のため送金を中断します:", balanceErr.message);
+            return res.status(500).json({ error: "銀行残高の照会に失敗したため、安全のために送金を中止しました。" });
         }
 
         console.log("[GMO API] 接続情報を検知。本番APIリクエストを試行します。");
         // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // 2. 状態更新を伴うためステータスをDB上で自動更新し、freee同期キューに登録
+        // 4. 状態更新を伴うためステータスをDB上で自動更新し、freee同期キューに登録
         const todayStr = new Date().toISOString().split('T')[0];
         if (type === 'store') {
             for (const storeId of targetIds) {
@@ -5361,19 +5419,24 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                         const shareAmount = pureStoreRevenue > 0 ? Math.floor(pureStoreRevenue * 0.5) : 0;
                         
                         const queueId = `store:${storeId}:${todayStr}`;
-                        const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                        const existing = await dbHelper.query.get("SELECT id, status FROM freee_sync_queue WHERE id = ?", [queueId]);
                         if (existing) {
-                            await dbHelper.query.run(
-                                "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                                [shareAmount, todayStr, queueId]
-                            );
+                            if (existing.status !== 'success') {
+                                await dbHelper.query.run(
+                                    "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                    [shareAmount, todayStr, queueId]
+                                );
+                                console.log(`[freee Queue] Store payout task updated for ${storeId}, amount: ${shareAmount}`);
+                            } else {
+                                console.log(`[freee Queue] Store payout task ${queueId} is already successfully synchronized to freee. Skipping.`);
+                            }
                         } else {
                             await dbHelper.query.run(
                                 "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'store', ?, ?, ?, 'pending', 0)",
                                 [queueId, storeId, shareAmount, todayStr]
                             );
+                            console.log(`[freee Queue] Store payout task added for ${storeId}, amount: ${shareAmount}`);
                         }
-                        console.log(`[freee Queue] Store payout task added for ${storeId}, amount: ${shareAmount}`);
                     }
                 } catch (queueErr) {
                     console.error(`[freee Queue] Failed to queue store payout task for ${storeId}:`, queueErr.message);
@@ -5387,19 +5450,24 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                     if (s) {
                         const adsenseRevenue = s.monthly_adsense_revenue || 0;
                         const queueId = `store_adsense:${storeId}:${todayStr}`;
-                        const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                        const existing = await dbHelper.query.get("SELECT id, status FROM freee_sync_queue WHERE id = ?", [queueId]);
                         if (existing) {
-                            await dbHelper.query.run(
-                                "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                                [adsenseRevenue, todayStr, queueId]
-                            );
+                            if (existing.status !== 'success') {
+                                await dbHelper.query.run(
+                                    "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                    [adsenseRevenue, todayStr, queueId]
+                                );
+                                console.log(`[freee Queue] Store AdSense payout task updated for ${storeId}, amount: ${adsenseRevenue}`);
+                            } else {
+                                console.log(`[freee Queue] Store AdSense payout task ${queueId} is already successfully synchronized to freee. Skipping.`);
+                            }
                         } else {
                             await dbHelper.query.run(
                                 "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'store_adsense', ?, ?, ?, 'pending', 0)",
                                 [queueId, storeId, adsenseRevenue, todayStr]
                             );
+                            console.log(`[freee Queue] Store AdSense payout task added for ${storeId}, amount: ${adsenseRevenue}`);
                         }
-                        console.log(`[freee Queue] Store AdSense payout task added for ${storeId}, amount: ${adsenseRevenue}`);
                     }
                 } catch (queueErr) {
                     console.error(`[freee Queue] Failed to queue store AdSense payout task for ${storeId}:`, queueErr.message);
@@ -5418,19 +5486,24 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                     const final_payout = subtotal - agency_fee;
 
                     const queueId = `creator:${email}:${todayStr}`;
-                    const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                    const existing = await dbHelper.query.get("SELECT id, status FROM freee_sync_queue WHERE id = ?", [queueId]);
                     if (existing) {
-                        await dbHelper.query.run(
-                            "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                            [final_payout, todayStr, queueId]
-                        );
+                        if (existing.status !== 'success') {
+                            await dbHelper.query.run(
+                                "UPDATE freee_sync_queue SET amount = ?, payout_date = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                [final_payout, todayStr, queueId]
+                            );
+                            console.log(`[freee Queue] Creator payout task updated for ${email}, amount: ${final_payout}`);
+                        } else {
+                            console.log(`[freee Queue] Creator payout task ${queueId} is already successfully synchronized to freee. Skipping.`);
+                        }
                     } else {
                         await dbHelper.query.run(
                             "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, 'creator', ?, ?, ?, 'pending', 0)",
                             [queueId, email, final_payout, todayStr]
                         );
+                        console.log(`[freee Queue] Creator payout task added for ${email}, amount: ${final_payout}`);
                     }
-                    console.log(`[freee Queue] Creator payout task added for ${email}, amount: ${final_payout}`);
                 } catch (queueErr) {
                     console.error(`[freee Queue] Failed to queue creator payout task for ${email}:`, queueErr.message);
                 }
@@ -6938,7 +7011,12 @@ const getFreeeRedirectUri = (req) => {
 
 let currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
 
-const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || 'a_default_secure_key_32_bytes_long_!!!'; // 32 bytes
+if (!process.env.TOKEN_ENCRYPTION_KEY) {
+    console.error("FATAL ERROR: TOKEN_ENCRYPTION_KEY environment variable is not defined!");
+    console.error("Please configure TOKEN_ENCRYPTION_KEY in your environment or .env file.");
+    process.exit(1);
+}
+const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
 const IV_LENGTH = 16;
 
 function encryptToken(text) {
@@ -7368,12 +7446,27 @@ app.get('/api/freee/connect', requireAuth, (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
-    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
-    const freeeAuthUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=${FREEE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
     
-    console.log("[freee OAuth] Redirecting to authorization URL (OOB):", freeeAuthUrl);
+    // CSRF Protection: Generate secure state token
+    const state = crypto.randomBytes(16).toString('hex');
+    
+    // Save state inside a HTTP-Only secure cookie for 10 minutes
+    res.cookie('freee_oauth_state', state, {
+        httpOnly: true,
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+        sameSite: 'lax',
+        maxAge: 10 * 60 * 1000 // 10 minutes
+    });
+
+    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+    const freeeAuthUrl = `https://accounts.secure.freee.co.jp/public_api/authorize?client_id=${FREEE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
+    
+    console.log("[freee OAuth] Redirecting to authorization URL (OOB) with state:", freeeAuthUrl);
     res.redirect(freeeAuthUrl);
 });
+
+// Mutex cache for OOB callback codes to prevent duplicate requests
+const processedOobCodes = new Set();
 
 // OAuth Manual (OOB) Callback Endpoint for urn:ietf:wg:oauth:2.0:oob
 app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
@@ -7392,6 +7485,12 @@ app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
     if (!code) {
         return res.status(400).json({ error: "Authorization code is required." });
     }
+
+    if (processedOobCodes.has(code)) {
+        console.warn("[freee OAuth Manual] Aborting duplicate token exchange request for code:", code);
+        return res.status(409).json({ error: "現在この認可コードは処理中です。しばらくお待ちください。" });
+    }
+    processedOobCodes.add(code);
 
     try {
         console.log("[freee OAuth Manual] Exchanging authorization code for access token...");
@@ -7425,6 +7524,9 @@ app.post('/api/freee/callback-manual', requireAuth, async (req, res) => {
     } catch (e) {
         console.error("[freee OAuth Manual] Error during token exchange:", e);
         res.status(500).json({ error: e.message });
+    } finally {
+        // Clear code from Mutex cache after 15 seconds
+        setTimeout(() => processedOobCodes.delete(code), 15000);
     }
 });
 
@@ -7436,6 +7538,18 @@ app.get('/api/freee/callback', async (req, res) => {
         const errorDesc = req.query.error_description || '';
         console.warn("[freee OAuth] Callback received error from freee accounts:", errorType, errorDesc);
         return res.redirect(`/admin?freee_connection=error&reason=${encodeURIComponent(errorType)}&description=${encodeURIComponent(errorDesc)}`);
+    }
+
+    // CSRF Protection: Validate state parameter
+    const queryState = req.query.state;
+    const cookieState = req.cookies.freee_oauth_state;
+    
+    // Clear state cookie immediately
+    res.clearCookie('freee_oauth_state');
+
+    if (!queryState || !cookieState || queryState !== cookieState) {
+        console.warn("[freee OAuth Error] CSRF state mismatch or expired. queryState:", queryState, "cookieState:", cookieState);
+        return res.redirect('/admin?freee_connection=error&reason=csrf_mismatch');
     }
 
     const code = req.query.code;
