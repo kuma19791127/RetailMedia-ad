@@ -6913,6 +6913,7 @@ app.get('/api/freee/companies', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     try {
+        await loadFreeeTokenFromDB();
         const result = await freeeApi.getCompanies();
         res.json(result);
     } catch (e) {
@@ -6930,6 +6931,7 @@ app.get('/api/freee/accounts', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     try {
+        await loadFreeeTokenFromDB();
         const companyId = req.query.companyId || undefined;
         const result = await freeeApi.getAccountItems(companyId);
         res.json(result);
@@ -6947,6 +6949,7 @@ app.post('/api/freee/sales', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     try {
+        await loadFreeeTokenFromDB();
         const companyId = req.body.companyId || undefined;
         const result = await freeeApi.createSalesEntry(companyId, req.body);
         res.json(result);
@@ -6975,6 +6978,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
     
     try {
         log("freee監査用APIテスト実行を開始します...");
+        await loadFreeeTokenFromDB();
         
         // 1. 事業所一覧を取得して、有効な事業所IDを決定する
         log("1. 事業所一覧 (GET /companies) の取得を開始...");
