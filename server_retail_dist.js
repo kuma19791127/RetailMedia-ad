@@ -6732,12 +6732,18 @@ async function loadFreeeTokenFromDB() {
     }
 }
 
-async function saveFreeeTokenToDB(token) {
+async function saveFreeeTokenToDB(accessToken, refreshToken) {
     try {
         await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
-        await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [token]);
-        currentFreeeToken = token;
-        console.log("[freee Token] Saved token to database and updated active cache. Length:", token.length);
+        await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [accessToken]);
+        
+        if (refreshToken) {
+            await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_refresh_token'");
+            await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_refresh_token', ?)", [refreshToken]);
+        }
+        
+        currentFreeeToken = accessToken;
+        console.log("[freee Token] Saved token to database and updated active cache. Length:", accessToken.length);
         
         // Push the new token to the API module to resolve circular dependency
         if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
@@ -6751,8 +6757,9 @@ async function saveFreeeTokenToDB(token) {
 async function deleteFreeeTokenFromDB() {
     try {
         await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
+        await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_refresh_token'");
         currentFreeeToken = null;
-        console.log("[freee Token] Deleted token from database and cleared active cache.");
+        console.log("[freee Token] Deleted token and refresh token from database and cleared active cache.");
         
         // Push the cleared token to the API module to resolve circular dependency
         if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
@@ -6760,6 +6767,65 @@ async function deleteFreeeTokenFromDB() {
         }
     } catch (e) {
         console.error("[freee Token] Failed to delete token from database:", e.message);
+    }
+}
+
+// Automatically refresh expired freee access token using saved refresh token
+async function refreshFreeeToken() {
+    try {
+        console.log("[freee Token] Initiating automatic token refresh...");
+        const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
+        if (!row || !row.value) {
+            throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
+        }
+        
+        const response = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                grant_type: "refresh_token",
+                client_id: FREEE_CLIENT_ID,
+                client_secret: FREEE_CLIENT_SECRET,
+                refresh_token: row.value
+            })
+        });
+
+        const tokenData = await response.json();
+        if (tokenData.access_token) {
+            await saveFreeeTokenToDB(tokenData.access_token, tokenData.refresh_token);
+            console.log("[freee Token] Token refreshed successfully.");
+            return tokenData.access_token;
+        } else {
+            console.error("[freee Token] Failed to refresh token response:", tokenData);
+            throw new Error("Token refresh request was rejected by freee.");
+        }
+    } catch (e) {
+        console.error("[freee Token] Error during automatic token refresh:", e.message);
+        throw e;
+    }
+}
+
+// Resilient wrapper for freee API calls with auto-refresh mechanism
+async function executeFreeeApiCall(apiFunc) {
+    try {
+        await loadFreeeTokenFromDB();
+        return await apiFunc();
+    } catch (e) {
+        const errorMsg = e.message || '';
+        if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('アクセスする権限がありません')) {
+            console.log("[freee Token] 401 Unauthorized detected. Attempting to refresh token...");
+            try {
+                const newAccessToken = await refreshFreeeToken();
+                console.log("[freee Token] Token refreshed. Retrying original API call...");
+                return await apiFunc(); // Retry the API call with the new token
+            } catch (refreshErr) {
+                console.error("[freee Token] Failed to recover from 401 via refresh:", refreshErr.message);
+                throw e; // Throw original 401 error
+            }
+        }
+        throw e;
     }
 }
 
@@ -6883,8 +6949,8 @@ app.get('/api/freee/callback', async (req, res) => {
         const tokenData = await response.json();
         
         if (tokenData.access_token) {
-            await saveFreeeTokenToDB(tokenData.access_token);
-            console.log("[freee OAuth] Successfully obtained and persisted access token.");
+            await saveFreeeTokenToDB(tokenData.access_token, tokenData.refresh_token);
+            console.log("[freee OAuth] Successfully obtained and persisted access token and refresh token.");
             res.redirect('/admin?freee_connection=success');
         } else {
             console.error("[freee OAuth] Failed to get access token from freee response:", tokenData);
@@ -6913,8 +6979,7 @@ app.get('/api/freee/companies', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     try {
-        await loadFreeeTokenFromDB();
-        const result = await freeeApi.getCompanies();
+        const result = await executeFreeeApiCall(() => freeeApi.getCompanies());
         res.json(result);
     } catch (e) {
         // Return 403 error on permission issues (Scope requirement update test)
@@ -6931,9 +6996,8 @@ app.get('/api/freee/accounts', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     try {
-        await loadFreeeTokenFromDB();
         const companyId = req.query.companyId || undefined;
-        const result = await freeeApi.getAccountItems(companyId);
+        const result = await executeFreeeApiCall(() => freeeApi.getAccountItems(companyId));
         res.json(result);
     } catch (e) {
         if (e.message.includes('403') || e.message.includes('Forbidden')) {
@@ -6949,9 +7013,8 @@ app.post('/api/freee/sales', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     try {
-        await loadFreeeTokenFromDB();
         const companyId = req.body.companyId || undefined;
-        const result = await freeeApi.createSalesEntry(companyId, req.body);
+        const result = await executeFreeeApiCall(() => freeeApi.createSalesEntry(companyId, req.body));
         res.json(result);
     } catch (e) {
         if (e.message.includes('403') || e.message.includes('Forbidden')) {
@@ -6978,11 +7041,10 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
     
     try {
         log("freee監査用APIテスト実行を開始します...");
-        await loadFreeeTokenFromDB();
         
         // 1. 事業所一覧を取得して、有効な事業所IDを決定する
         log("1. 事業所一覧 (GET /companies) の取得を開始...");
-        const companiesRes = await freeeApi.getCompanies();
+        const companiesRes = await executeFreeeApiCall(() => freeeApi.getCompanies());
         if (!companiesRes || !companiesRes.companies || companiesRes.companies.length === 0) {
             throw new Error("連携中の事業所が見つかりません。先にfreeeとの連携を完了してください。");
         }
@@ -6998,14 +7060,14 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         
         // 2. 取引の参照 (GET /deals)
         log("2. 取引の参照 (GET /deals) の呼び出しを開始...");
-        const dealsRes = await freeeApi.getDeals(companyId, { limit: 5 });
+        const dealsRes = await executeFreeeApiCall(() => freeeApi.getDeals(companyId, { limit: 5 }));
         log(`取引の参照に成功しました。取得件数: ${dealsRes.deals ? dealsRes.deals.length : 0}件`, {
             first_deal: dealsRes.deals && dealsRes.deals.length > 0 ? { id: dealsRes.deals[0].id, type: dealsRes.deals[0].type } : null
         });
-
+ 
         // 3. 勘定科目一覧の取得 (カテゴリIDの特定用)
         log("3. 勘定科目カテゴリ特定のため、勘定科目一覧 (GET /account_items) を取得...");
-        const itemsRes = await freeeApi.getAccountItems(companyId);
+        const itemsRes = await executeFreeeApiCall(() => freeeApi.getAccountItems(companyId));
         let accountCategoryId = 1; // フォールバック
         let correspondingExpenseId = null;
         let correspondingIncomeId = null;
@@ -7016,7 +7078,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
                 item.corresponding_expense_id === null && 
                 item.corresponding_income_id === null
             ) || itemsRes.account_items[0];
-
+ 
             accountCategoryId = safeItem.account_category_id;
             correspondingExpenseId = safeItem.corresponding_expense_id;
             correspondingIncomeId = safeItem.corresponding_income_id;
@@ -7028,41 +7090,41 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         log("4. 勘定科目の追加 (POST /account_items) の呼び出しを開始...");
         const randomSuffix = Math.floor(Math.random() * 10000);
         const testItemName = `テスト勘定科目_${randomSuffix}`;
-        const createRes = await freeeApi.createAccountItem(companyId, {
+        const createRes = await executeFreeeApiCall(() => freeeApi.createAccountItem(companyId, {
             name: testItemName,
             account_category_id: accountCategoryId,
             corresponding_expense_id: correspondingExpenseId,
             corresponding_income_id: correspondingIncomeId,
             group_name: groupName
-        });
+        }));
         const newAccountItemId = createRes.account_item.id;
         log(`勘定科目の追加に成功しました。作成された勘定科目: ${createRes.account_item.name} (ID: ${newAccountItemId})`);
         
         // 5. 勘定科目の変更 (PUT /account_items/{id})
         log("5. 勘定科目の変更 (PUT /account_items/{id}) の呼び出しを開始...");
         const updatedItemName = `${testItemName}_変更済`;
-        const updateRes = await freeeApi.updateAccountItem(companyId, newAccountItemId, {
+        const updateRes = await executeFreeeApiCall(() => freeeApi.updateAccountItem(companyId, newAccountItemId, {
             name: updatedItemName,
             account_category_id: accountCategoryId,
             corresponding_expense_id: correspondingExpenseId,
             corresponding_income_id: correspondingIncomeId,
             group_name: groupName
-        });
+        }));
         log(`勘定科目の変更に成功しました。変更後の勘定科目: ${updateRes.account_item.name}`);
         
         // 6. 勘定科目の削除 (DELETE /account_items/{id})
         log("6. 勘定科目の削除 (DELETE /account_items/{id}) の呼び出しを開始...");
-        await freeeApi.deleteAccountItem(companyId, newAccountItemId);
+        await executeFreeeApiCall(() => freeeApi.deleteAccountItem(companyId, newAccountItemId));
         log(`勘定科目の削除に成功しました。対象ID: ${newAccountItemId}`);
         
         // 7. 事業所情報の更新 (PUT /companies/{id})
         log("7. 事業所情報の更新 (PUT /companies/{id}) の呼び出しを開始...");
         const originalName = company.name;
         const originalDisplayName = company.display_name || company.name;
-        const updateCompanyRes = await freeeApi.updateCompany(companyId, {
+        const updateCompanyRes = await executeFreeeApiCall(() => freeeApi.updateCompany(companyId, {
             name: originalName,
             display_name: originalDisplayName
-        });
+        }));
         log(`事業所情報の更新に成功しました。事業所名: ${updateCompanyRes.company.display_name || updateCompanyRes.company.name}`);
         
         log("すべての監査用APIテストが正常に完了しました！");
