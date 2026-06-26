@@ -309,33 +309,82 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         }
     }
 
+    // 冪等性チェック (Idempotency Guard) - 重複起票を防ぐ
+    const uniqueKey = payoutData?.queueId || payoutData?.uniqueKey || '';
+    if (uniqueKey) {
+        try {
+            const searchRes = await getDeals(activeCompanyId, { limit: 100 });
+            if (searchRes && searchRes.deals && searchRes.deals.length > 0) {
+                const existingDeal = searchRes.deals.find(deal => 
+                    deal.details && deal.details.some(detail => detail.description && detail.description.includes(uniqueKey))
+                );
+                if (existingDeal) {
+                    console.log(`[freee API] [Idempotency Guard] Found existing deal for key: ${uniqueKey}, Deal ID: ${existingDeal.id}. Skipping creation.`);
+                    return existingDeal;
+                }
+            }
+        } catch (searchErr) {
+            console.warn(`[freee API] [Idempotency Guard] Failed to check existing deals (will proceed with creation):`, searchErr.message);
+        }
+    }
+
     console.log(`[freee API] Creating payout entry for company: ${activeCompanyId}`);
 
-    const amount = payoutData?.amount || 0;
+    const baseAmount = payoutData?.amount || 0;
     const payoutType = payoutData?.payoutType || 'store'; // 'store', 'creator', 'agency'
     const targetId = payoutData?.targetId || 'unknown';
     const issueDate = payoutData?.date || new Date().toISOString().split('T')[0];
     
-    let description = `GMO銀行振込完了に伴う自動連動仕訳 (${payoutType === 'creator' ? 'クリエイター報酬' : payoutType === 'agency' ? '代理店紹介料' : '店舗広告収益分配'}) - ID: ${targetId}`;
+    const uniqueTag = uniqueKey ? `[Ref:${uniqueKey}] ` : '';
+    let description = `${uniqueTag}GMO銀行振込完了に伴う自動連動仕訳 (${payoutType === 'creator' ? 'クリエイター報酬' : payoutType === 'agency' ? '代理店紹介料' : '店舗広告収益分配'}) - ID: ${targetId}`;
 
     // 1. 動的に適切な勘定科目のIDを探す
-    // クリエイター/店舗/代理店は「支払手数料」または「外注費」にマッピング
     let accountItemId = null;
+    let feeItemId = null;
+    let withholdingItemId = null;
+
     try {
         const itemsRes = await getAccountItems(activeCompanyId);
         if (itemsRes && itemsRes.account_items) {
-            const matchItem = itemsRes.account_items.find(item => 
-                item.name.includes("支払手数料") || 
-                item.name.includes("外注費") || 
-                item.name.includes("広告宣伝費")
+            // メインの経費科目を特定
+            let targetNames = [];
+            if (payoutType === 'creator') {
+                targetNames = ["外注費", "広告宣伝費", "支払手数料"];
+            } else if (payoutType === 'agency') {
+                targetNames = ["支払手数料", "広告宣伝費", "業務委託料"];
+            } else {
+                targetNames = ["支払手数料", "外注費", "売上戻し"];
+            }
+
+            for (const name of targetNames) {
+                const match = itemsRes.account_items.find(item => item.name.includes(name));
+                if (match) {
+                    accountItemId = match.id;
+                    break;
+                }
+            }
+            if (!accountItemId && itemsRes.account_items.length > 0) {
+                accountItemId = itemsRes.account_items[0].id;
+            }
+
+            // 支払手数料科目の特定
+            const matchFee = itemsRes.account_items.find(item => item.name.includes("支払手数料"));
+            if (matchFee) {
+                feeItemId = matchFee.id;
+            }
+
+            // 預り金科目（源泉所得税）の特定
+            const matchWithholding = itemsRes.account_items.find(item => 
+                item.name.includes("預り金") || 
+                item.name.includes("源泉所得税") || 
+                item.name.includes("源泉")
             );
-            if (matchItem) {
-                accountItemId = matchItem.id;
-                console.log("[freee API] Resolved payout account_item_id:", accountItemId);
+            if (matchWithholding) {
+                withholdingItemId = matchWithholding.id;
             }
         }
     } catch (err) {
-        console.warn("[freee API] Failed to resolve account item id dynamically for payout:", err.message);
+        console.warn("[freee API] Failed to resolve account items dynamically for payout:", err.message);
     }
 
     // 2. 動的に決済口座のIDを探す
@@ -367,7 +416,69 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         }
     }
     if (taxCode === undefined) {
-        taxCode = 0; // 最終フォールバック (対象外・非課税)
+        taxCode = 0; // 最終フォールバック
+    }
+
+    // 支払手数料と源泉徴収の金額を計算して明細（details）を構築
+    const feeAmount = 145; // 振込手数料 145円固定
+    let details = [];
+    let paymentAmount = baseAmount;
+
+    if (payoutType === 'creator') {
+        // クリエイター（個人）の源泉徴収（10.21%）を計算
+        // baseAmount を「手取り額（net）」とみなし、額面総額（gross）を逆算する。
+        // gross = net / 0.8979
+        const grossAmount = Math.floor(baseAmount / 0.8979);
+        const withholdingTax = grossAmount - baseAmount;
+
+        // 1. 経費（外注費）明細（借方）
+        details.push({
+            tax_code: taxCode,
+            account_item_id: accountItemId,
+            amount: grossAmount,
+            description: `[額面総額] ${description}`
+        });
+
+        // 2. 源泉徴収（預り金）明細（貸方、マイナス値で控除）
+        if (withholdingItemId && withholdingTax > 0) {
+            details.push({
+                tax_code: 0, // 対象外・非課税
+                account_item_id: withholdingItemId,
+                amount: -withholdingTax,
+                description: `[源泉徴収税控除 10.21%] ${description}`
+            });
+        }
+
+        // 3. 支払手数料明細（借方、自社負担手数料）
+        if (feeItemId) {
+            details.push({
+                tax_code: taxCode,
+                account_item_id: feeItemId,
+                amount: feeAmount,
+                description: `[振込手数料] ${description}`
+            });
+            paymentAmount = baseAmount + feeAmount;
+        }
+    } else {
+        // 店舗や代理店の場合（源泉徴収なし）
+        // 1. メイン経費（外注費/紹介料/手数料等）明細（借方）
+        details.push({
+            tax_code: taxCode,
+            account_item_id: accountItemId,
+            amount: baseAmount,
+            description: description
+        });
+
+        // 2. 支払手数料明細（借方、自社負担手数料）
+        if (feeItemId) {
+            details.push({
+                tax_code: taxCode,
+                account_item_id: feeItemId,
+                amount: feeAmount,
+                description: `[振込手数料] ${description}`
+            });
+            paymentAmount = baseAmount + feeAmount;
+        }
     }
 
     // freee API 支出 (expense) 登録用ペイロード
@@ -375,17 +486,10 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         issue_date: issueDate,
         type: "expense",      // expense = 支出
         company_id: activeCompanyId,
-        details: [
-            {
-                tax_code: taxCode,
-                account_item_id: accountItemId,
-                amount: amount,
-                description: description
-            }
-        ],
+        details: details,
         payments: walletableId ? [
             {
-                amount: amount,
+                amount: paymentAmount,
                 date: issueDate,
                 from_walletable_type: walletableType,
                 from_walletable_id: walletableId

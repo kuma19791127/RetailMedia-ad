@@ -7309,7 +7309,8 @@ async function processFreeeSyncQueue() {
                         amount: row.amount,
                         payoutType: row.payout_type,
                         targetId: row.target_id,
-                        date: row.payout_date || new Date(now).toISOString().split('T')[0]
+                        date: row.payout_date || new Date(now).toISOString().split('T')[0],
+                        queueId: row.id
                     });
                 });
 
