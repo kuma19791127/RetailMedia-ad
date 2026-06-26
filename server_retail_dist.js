@@ -4026,7 +4026,32 @@ app.get('/api/admin/payout/export-csv', requireAuth, async (req, res) => {
                 
                 // 自動的に status = 'Exported' に更新
                 await dbHelper.query.run("UPDATE agency_referrals SET status = 'Exported' WHERE advertise_email = ?", [r.advertise_email]);
+
+                // freee自動仕訳キューにタスクを挿入 (SELECT ➔ INSERT/UPDATE 方式で PostgreSQL と SQLite の互換性を担保)
+                try {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const amount = r.price || 0;
+                    const queueId = `agency:${r.advertise_email}:${todayStr}`;
+                    const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                    if (existing) {
+                        await dbHelper.query.run(
+                            "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                            [amount, queueId]
+                        );
+                    } else {
+                        await dbHelper.query.run(
+                            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'agency', ?, ?, 'pending', 0)",
+                            [queueId, r.advertise_email, amount]
+                        );
+                    }
+                    console.log(`[freee Queue] Agency payout task added for ${r.advertise_email}, amount: ${amount}`);
+                } catch (queueErr) {
+                    console.error("[freee Queue] Failed to queue agency payout task:", queueErr.message);
+                }
             }
+
+            // キューの非同期処理をキック
+            processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Error:", err.message));
 
             res.setHeader('Content-Type', 'text/csv; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename=gmo_payout_agency_${Date.now()}.csv`);
@@ -5301,19 +5326,104 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // 2. 状態更新を伴うためステータスをDB上で自動更新
-        if (type === 'store' || type === 'store_adsense') {
+        // 2. 状態更新を伴うためステータスをDB上で自動更新し、freee同期キューに登録
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (type === 'store') {
             for (const storeId of targetIds) {
                 await dbHelper.query.run("UPDATE stores SET monthly_payout_status = 'paid' WHERE id = ?", [storeId]);
+                try {
+                    const s = await dbHelper.query.get("SELECT * FROM stores WHERE id = ?", [storeId]);
+                    if (s) {
+                        const storeAdRevenue = s.total_ad_revenue || 0;
+                        const agencyCommission = Math.floor(storeAdRevenue * 0.2);
+                        const creatorReward = Math.floor(storeAdRevenue * 0.1);
+                        const operatingCost = s.monthly_operating_cost || 0;
+                        const laborCost = s.monthly_labor_cost || 0;
+                        const pureStoreRevenue = storeAdRevenue - agencyCommission - creatorReward - operatingCost - laborCost;
+                        const shareAmount = pureStoreRevenue > 0 ? Math.floor(pureStoreRevenue * 0.5) : 0;
+                        
+                        const queueId = `store:${storeId}:${todayStr}`;
+                        const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                        if (existing) {
+                            await dbHelper.query.run(
+                                "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                [shareAmount, queueId]
+                            );
+                        } else {
+                            await dbHelper.query.run(
+                                "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'store', ?, ?, 'pending', 0)",
+                                [queueId, storeId, shareAmount]
+                            );
+                        }
+                        console.log(`[freee Queue] Store payout task added for ${storeId}, amount: ${shareAmount}`);
+                    }
+                } catch (queueErr) {
+                    console.error(`[freee Queue] Failed to queue store payout task for ${storeId}:`, queueErr.message);
+                }
+            }
+        } else if (type === 'store_adsense') {
+            for (const storeId of targetIds) {
+                await dbHelper.query.run("UPDATE stores SET monthly_payout_status = 'paid' WHERE id = ?", [storeId]);
+                try {
+                    const s = await dbHelper.query.get("SELECT * FROM stores WHERE id = ?", [storeId]);
+                    if (s) {
+                        const adsenseRevenue = s.monthly_adsense_revenue || 0;
+                        const queueId = `store_adsense:${storeId}:${todayStr}`;
+                        const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                        if (existing) {
+                            await dbHelper.query.run(
+                                "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                                [adsenseRevenue, queueId]
+                            );
+                        } else {
+                            await dbHelper.query.run(
+                                "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'store_adsense', ?, ?, 'pending', 0)",
+                                [queueId, storeId, adsenseRevenue]
+                            );
+                        }
+                        console.log(`[freee Queue] Store AdSense payout task added for ${storeId}, amount: ${adsenseRevenue}`);
+                    }
+                } catch (queueErr) {
+                    console.error(`[freee Queue] Failed to queue store AdSense payout task for ${storeId}:`, queueErr.message);
+                }
             }
         } else if (type === 'creator') {
             for (const email of targetIds) {
                 await dbHelper.query.run("UPDATE creator_banks SET payout_status = 'paid' WHERE email = ?", [email]);
+                try {
+                    const views = (typeof CREATOR_STATE !== 'undefined' && CREATOR_STATE.total_views) ? CREATOR_STATE.total_views : 0;
+                    const manufacturer_ad = Math.floor(views * 0.5);
+                    const adsense_share = Math.floor(manufacturer_ad * 0.1);
+                    const cm_bonus = 10000;
+                    const subtotal = manufacturer_ad + adsense_share + cm_bonus;
+                    const agency_fee = Math.floor(subtotal * 0.2);
+                    const final_payout = subtotal - agency_fee;
+
+                    const queueId = `creator:${email}:${todayStr}`;
+                    const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
+                    if (existing) {
+                        await dbHelper.query.run(
+                            "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
+                            [final_payout, queueId]
+                        );
+                    } else {
+                        await dbHelper.query.run(
+                            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'creator', ?, ?, 'pending', 0)",
+                            [queueId, email, final_payout]
+                        );
+                    }
+                    console.log(`[freee Queue] Creator payout task added for ${email}, amount: ${final_payout}`);
+                } catch (queueErr) {
+                    console.error(`[freee Queue] Failed to queue creator payout task for ${email}:`, queueErr.message);
+                }
             }
         }
         
         // 状態更新を伴うため必須ルール1に基づき saveDatabase() を呼び出す
         if (typeof saveDatabase === 'function') saveDatabase();
+
+        // キューの非同期処理をキック
+        processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Error:", err.message));
         
         res.json({ success: true, message: "GMO銀行送金が完了し、支払状況を更新しました。" });
     } catch (e) {
@@ -6810,12 +6920,48 @@ const getFreeeRedirectUri = (req) => {
 
 let currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
 
+const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || 'a_default_secure_key_32_bytes_long_!!!'; // 32 bytes
+const IV_LENGTH = 16;
+
+function encryptToken(text) {
+    if (!text) return null;
+    try {
+        const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+        const iv = crypto.randomBytes(IV_LENGTH);
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        let encrypted = cipher.update(text);
+        encrypted = Buffer.concat([encrypted, cipher.final()]);
+        return iv.toString('hex') + ':' + encrypted.toString('hex');
+    } catch (err) {
+        console.error("[Crypto] Encryption failed:", err.message);
+        return text;
+    }
+}
+
+function decryptToken(text) {
+    if (!text) return null;
+    if (!text.includes(':')) return text; // 暗号化されていない古いデータのフォールバック
+    try {
+        const textParts = text.split(':');
+        const iv = Buffer.from(textParts.shift(), 'hex');
+        const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+        const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+        let decrypted = decipher.update(encryptedText);
+        decrypted = Buffer.concat([decrypted, decipher.final()]);
+        return decrypted.toString();
+    } catch (err) {
+        console.error("[Crypto] Decryption failed, returning plain text fallback:", err.message);
+        return text;
+    }
+}
+
 // Database helpers for freee token persistence
 async function loadFreeeTokenFromDB() {
     try {
         const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
         if (row && row.value) {
-            currentFreeeToken = row.value;
+            currentFreeeToken = decryptToken(row.value);
             console.log("[freee Token] Loaded active token from database successfully. Length:", currentFreeeToken.length);
         } else {
             console.log("[freee Token] No active token found in database. Using environment fallback.");
@@ -6832,12 +6978,15 @@ async function loadFreeeTokenFromDB() {
 
 async function saveFreeeTokenToDB(accessToken, refreshToken) {
     try {
+        const encryptedAccess = encryptToken(accessToken);
+        const encryptedRefresh = encryptToken(refreshToken);
+
         await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
-        await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [accessToken]);
+        await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [encryptedAccess]);
         
         if (refreshToken) {
             await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_refresh_token'");
-            await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_refresh_token', ?)", [refreshToken]);
+            await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_refresh_token', ?)", [encryptedRefresh]);
         }
         
         currentFreeeToken = accessToken;
@@ -6946,10 +7095,95 @@ async function executeFreeeApiCall(apiFunc) {
     }
 }
 
+let isProcessingQueue = false;
+
+async function processFreeeSyncQueue() {
+    if (isProcessingQueue) {
+        console.log("[freee Queue] Queue processing is already in progress, skipping.");
+        return;
+    }
+    isProcessingQueue = true;
+    console.log("[freee Queue] Starting freee_sync_queue processing...");
+
+    try {
+        // PostgreSQL または SQLite で安全に動くクエリ
+        // attempts が 3 未満で、未処理（pending）または失敗（failed）したタスクを順に取得
+        const rows = await dbHelper.query.all(
+            "SELECT * FROM freee_sync_queue WHERE status = 'pending' OR (status = 'failed' AND attempts < 3) ORDER BY last_attempt ASC"
+        );
+
+        if (!rows || rows.length === 0) {
+            console.log("[freee Queue] No pending tasks found in queue.");
+            isProcessingQueue = false;
+            return;
+        }
+
+        console.log(`[freee Queue] Found ${rows.length} pending tasks to process.`);
+
+        for (const row of rows) {
+            const nextAttempt = (row.attempts || 0) + 1;
+            const now = Date.now();
+            
+            // 状態を processing に更新
+            await dbHelper.query.run(
+                "UPDATE freee_sync_queue SET status = 'processing', attempts = ?, last_attempt = ? WHERE id = ?",
+                [nextAttempt, now, row.id]
+            );
+
+            try {
+                // freeeApi モジュールのロードを確認
+                if (typeof freeeApi === 'undefined') {
+                    throw new Error("freeeApi module is not loaded.");
+                }
+
+                // 支出仕訳の登録を実行 (トークンの自動更新機能付きラッパー経由で呼び出す)
+                await executeFreeeApiCall(async () => {
+                    return await freeeApi.createPayoutEntry(undefined, {
+                        amount: row.amount,
+                        payoutType: row.payout_type,
+                        targetId: row.target_id,
+                        date: new Date(now).toISOString().split('T')[0]
+                    });
+                });
+
+                // 成功したら status = 'success'
+                await dbHelper.query.run(
+                    "UPDATE freee_sync_queue SET status = 'success', error_message = NULL WHERE id = ?",
+                    [row.id]
+                );
+                console.log(`[freee Queue] ✅ Successfully synced task ${row.id} to freee.`);
+            } catch (err) {
+                console.error(`[freee Queue] ❌ Failed to process task ${row.id}:`, err.message);
+                const nextStatus = nextAttempt >= 3 ? 'failed' : 'pending';
+                await dbHelper.query.run(
+                    "UPDATE freee_sync_queue SET status = ?, error_message = ? WHERE id = ?",
+                    [nextStatus, err.message || "Unknown error", row.id]
+                );
+            }
+
+            // レートリミット回避のため、1.5秒のウェイトを設ける
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
+    } catch (e) {
+        console.error("[freee Queue] Fatal error during queue processing:", e.message);
+    } finally {
+        isProcessingQueue = false;
+        console.log("[freee Queue] Completed freee_sync_queue processing.");
+    }
+}
+
 // Automatically load on server startup (deferred to allow db connection initialization)
 setTimeout(() => {
-    loadFreeeTokenFromDB();
-}, 2000);
+    loadFreeeTokenFromDB().then(() => {
+        processFreeeSyncQueue().catch(err => console.error("[freee Queue Start] Initial run error:", err.message));
+    }).catch(err => console.error("[freee Queue Start] Failed to load token on start:", err.message));
+}, 3000);
+
+// 30分ごとにバックグラウンドで同期キューの再処理を実行
+setInterval(() => {
+    processFreeeSyncQueue().catch(err => console.error("[freee Queue Interval] Error:", err.message));
+}, 1800000);
 
 // Export token helper so freee_api can read active connection token dynamically
 module.exports.getFreeeToken = () => {

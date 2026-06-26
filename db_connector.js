@@ -204,6 +204,17 @@ if (process.env.DATABASE_URL) {
                     lock_key VARCHAR(255) PRIMARY KEY,
                     created_at BIGINT
                 );
+
+                CREATE TABLE IF NOT EXISTS freee_sync_queue (
+                    id VARCHAR(255) PRIMARY KEY,
+                    payout_type VARCHAR(50) NOT NULL,
+                    target_id VARCHAR(255) NOT NULL,
+                    amount DOUBLE PRECISION NOT NULL,
+                    status VARCHAR(50) DEFAULT 'pending',
+                    error_message TEXT,
+                    attempts INT DEFAULT 0,
+                    last_attempt BIGINT
+                );
             `);
 
             // Migration path: Drop existing primary key constraint and recreate as composite if not already done
@@ -671,6 +682,19 @@ if (process.env.DATABASE_URL) {
                     CREATE TABLE IF NOT EXISTS payout_locks (
                         lock_key TEXT PRIMARY KEY,
                         created_at INTEGER
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS freee_sync_queue (
+                        id TEXT PRIMARY KEY,
+                        payout_type TEXT NOT NULL,
+                        target_id TEXT NOT NULL,
+                        amount REAL NOT NULL,
+                        status TEXT DEFAULT 'pending',
+                        error_message TEXT,
+                        attempts INTEGER DEFAULT 0,
+                        last_attempt INTEGER
                     )
                 `);
 

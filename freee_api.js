@@ -251,6 +251,106 @@ async function getDeals(companyId, params = {}) {
     return await freeeRequest(`/deals${query}`, 'GET');
 }
 
+/**
+ * 9. 支出（報酬・経費）の自動仕訳登録 (Create Expense Journal Entry / 取引)
+ * This creates a deal (支出) in freee for payouts.
+ */
+async function createPayoutEntry(companyId = undefined, payoutData) {
+    // 0. 動的に適切な事業所ID (companyId) を解決する
+    let activeCompanyId = companyId;
+    try {
+        const companiesRes = await getCompanies();
+        if (companiesRes && companiesRes.companies && companiesRes.companies.length > 0) {
+            const matched = companiesRes.companies.find(c => 
+                c.display_name && c.display_name.includes("non-logi")
+            ) || companiesRes.companies.find(c => 
+                c.name && c.name.includes("non-logi")
+            );
+            activeCompanyId = matched ? matched.id : companiesRes.companies[0].id;
+            console.log("[freee API] Automatically resolved active company_id for payout:", activeCompanyId);
+        }
+    } catch (err) {
+        console.warn("[freee API] Failed to resolve company_id dynamically for payout, using fallback:", err.message);
+        activeCompanyId = activeCompanyId || DEFAULT_COMPANY_ID;
+    }
+
+    console.log(`[freee API] Creating payout entry for company: ${activeCompanyId}`);
+
+    const amount = payoutData?.amount || 0;
+    const payoutType = payoutData?.payoutType || 'store'; // 'store', 'creator', 'agency'
+    const targetId = payoutData?.targetId || 'unknown';
+    const issueDate = payoutData?.date || new Date().toISOString().split('T')[0];
+    
+    let description = `GMO銀行振込完了に伴う自動連動仕訳 (${payoutType === 'creator' ? 'クリエイター報酬' : payoutType === 'agency' ? '代理店紹介料' : '店舗広告収益分配'}) - ID: ${targetId}`;
+
+    // 1. 動的に適切な勘定科目のIDを探す
+    // クリエイター/店舗/代理店は「支払手数料」または「外注費」にマッピング
+    let accountItemId = null;
+    try {
+        const itemsRes = await getAccountItems(activeCompanyId);
+        if (itemsRes && itemsRes.account_items) {
+            const matchItem = itemsRes.account_items.find(item => 
+                item.name.includes("支払手数料") || 
+                item.name.includes("外注費") || 
+                item.name.includes("広告宣伝費")
+            );
+            if (matchItem) {
+                accountItemId = matchItem.id;
+                console.log("[freee API] Resolved payout account_item_id:", accountItemId);
+            }
+        }
+    } catch (err) {
+        console.warn("[freee API] Failed to resolve account item id dynamically for payout:", err.message);
+    }
+
+    // 2. 動的に決済口座のIDを探す
+    let walletableId = null;
+    let walletableType = "bank_account";
+    try {
+        const walletablesRes = await freeeRequest(`/walletables?company_id=${activeCompanyId}`);
+        if (walletablesRes && walletablesRes.walletables && walletablesRes.walletables.length > 0) {
+            walletableId = walletablesRes.walletables[0].id;
+            walletableType = walletablesRes.walletables[0].type;
+            console.log("[freee API] Resolved payout walletable_id:", walletableId, "type:", walletableType);
+        }
+    } catch (err) {
+        console.warn("[freee API] Failed to resolve walletable dynamically for payout:", err.message);
+    }
+
+    // freee API 支出 (expense) 登録用ペイロード
+    const payload = {
+        issue_date: issueDate,
+        type: "expense",      // expense = 支出
+        company_id: activeCompanyId,
+        details: [
+            {
+                tax_code: 0, // 対象外・非課税
+                account_item_id: accountItemId,
+                amount: amount,
+                description: description
+            }
+        ],
+        payments: walletableId ? [
+            {
+                amount: amount,
+                date: issueDate,
+                from_walletable_type: walletableType,
+                from_walletable_id: walletableId
+            }
+        ] : [],
+        receipt_ids: []
+    };
+
+    try {
+        const result = await freeeRequest('/deals', 'POST', payload);
+        console.log("[freee API] Payout entry created successfully:", result);
+        return result;
+    } catch (e) {
+        console.error("[freee API] Failed to create payout deal. Error details:", e.message);
+        throw e;
+    }
+}
+
 module.exports = {
     setAccessToken,
     getCompanies,
@@ -260,6 +360,7 @@ module.exports = {
     updateAccountItem,
     deleteAccountItem,
     updateCompany,
-    getDeals
+    getDeals,
+    createPayoutEntry
 };
 
