@@ -48,10 +48,21 @@ const app = express();
 app.use(cookieParser());
 
 // Global CORS & Credentials config (applied before any route definition)
+const allowedOriginRegex = /^(https:\/\/([a-zA-Z0-9-]+\.)*(ad-retail\.media|retail-ad\.com)|http:\/\/localhost(:\d+)?|http:\/\/127\.0\.0\.1(:\d+)?)$/;
+
+const isOriginAllowed = (origin) => {
+    if (!origin) return false;
+    return allowedOriginRegex.test(origin);
+};
+
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        callback(null, true); // Allow any origin dynamically with credentials
+        if (isOriginAllowed(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -60,7 +71,7 @@ app.use(cors({
 
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin && origin !== 'null') {
+    if (origin && isOriginAllowed(origin)) {
         res.header('Access-Control-Allow-Origin', origin);
         res.header('Access-Control-Allow-Credentials', 'true');
     } else {
@@ -156,24 +167,31 @@ const requireAuth = (req, res, next) => {
 
 // Middleware: Admin, Bank, and freee APIs Authorization Reinforcement
 app.use((req, res, next) => {
-    const path = req.path;
+    let rawPath = req.path || '';
+    
+    // Block potential path traversal attempts or control characters
+    if (rawPath.includes('..') || /[\x00-\x1F\x7F]/.test(rawPath)) {
+        return res.status(400).json({ error: "Bad Request: Invalid path format" });
+    }
+
+    // Normalize: convert backslashes, collapse multiple slashes, lowercase, and strip trailing slash
+    let cleanPath = rawPath.replace(/\\/g, '/').replace(/\/+/g, '/').toLowerCase();
+    if (cleanPath.length > 1 && cleanPath.endsWith('/')) {
+        cleanPath = cleanPath.slice(0, -1);
+    }
     
     // Check if the path targets administrative, banking, or accounting APIs
-    const isAdminApi = path.startsWith('/api/admin/');
-    const isBankApi = path.startsWith('/api/bank/');
-    const isFreeeApi = path.startsWith('/api/freee/');
+    const isAdminApi = cleanPath.startsWith('/api/admin');
+    const isBankApi = cleanPath.startsWith('/api/bank');
+    const isFreeeApi = cleanPath.startsWith('/api/freee');
     
     if (isAdminApi || isBankApi || isFreeeApi) {
         // Exclude endpoints that do not require admin session validation:
-        // - POS transaction sync endpoints (accessed by POS/AnyWhere Regi system)
-        // - Agency portals referrals submit/status endpoints (accessed by agencies)
-        // - Anywhere Regi password reset/billing email setting (accessed before authentication)
-        // - freee OAuth redirect callback (accessed by external redirect without headers)
-        const isSalesSync = path === '/api/admin/sales' || path === '/api/admin/sales/sync-batch';
-        const isAgencyApi = path === '/api/admin/agency-submit' || path === '/api/admin/agency';
-        const isBillingEmailSetup = path === '/api/admin/settings/billing-email';
-        const isFreeeCallback = path === '/api/freee/callback';
-        const isSalesHistory = path === '/api/admin/sales-history';
+        const isSalesSync = cleanPath === '/api/admin/sales' || cleanPath === '/api/admin/sales/sync-batch';
+        const isAgencyApi = cleanPath === '/api/admin/agency-submit' || cleanPath === '/api/admin/agency';
+        const isBillingEmailSetup = cleanPath === '/api/admin/settings/billing-email';
+        const isFreeeCallback = cleanPath === '/api/freee/callback';
+        const isSalesHistory = cleanPath === '/api/admin/sales-history';
         
         if (isSalesSync || isAgencyApi || isBillingEmailSetup || isFreeeCallback || isSalesHistory) {
             return next();
