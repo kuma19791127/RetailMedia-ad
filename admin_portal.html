@@ -2115,16 +2115,33 @@
 
         async function executeGmoTransfer(targetId, type, amount, btnElement) {
             let label = type === 'creator' ? 'クリエイター' : '店舗';
-            const result = await Swal.fire({
+            const confirmResult = await Swal.fire({
                 title: '🏦 GMO銀行送金の実行',
                 text: `この${label}へ GMOあおぞらネット銀行API経由で振込を実行します。金額: ¥${amount.toLocaleString()}。よろしいですか？`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: '送金を実行する',
+                confirmButtonText: '進む',
                 cancelButtonText: 'キャンセル'
             });
 
-            if (!result.isConfirmed) return;
+            if (!confirmResult.isConfirmed) return;
+
+            // 2FA認証コードの入力ポップアップ
+            const totpResult = await Swal.fire({
+                title: '🔑 二段階認証',
+                text: '安全な支払送金処理のため、6桁の認証コードを入力してください。',
+                input: 'text',
+                inputPlaceholder: '6桁 of コード',
+                showCancelButton: true,
+                confirmButtonText: '送金を実行する',
+                cancelButtonText: 'キャンセル',
+                inputValidator: (value) => {
+                    if (!value || value.length !== 6) return '6桁の数字を入力してください';
+                }
+            });
+
+            if (!totpResult.isConfirmed) return;
+            const totpCode = totpResult.value;
 
             try {
                 btnElement.innerText = "⏳ 送金中...";
@@ -2133,7 +2150,7 @@
                 const res = await fetch(`${API_BASE}/api/admin/payout/gmo-transfer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: type, targetIds: [targetId] })
+                    body: JSON.stringify({ type: type, targetIds: [targetId], totpCode: totpCode })
                 });
 
                 const data = await res.json();
@@ -2141,6 +2158,9 @@
                     Swal.fire('送金成功', data.message, 'success');
                     btnElement.innerText = "🏦 送金完了";
                     btnElement.style.background = "#95a5a6";
+                    btnElement.disabled = true;
+                    if (typeof loadData === 'function') loadData(); // ダッシュボード再表示
+                    if (typeof loadCreatorData === 'function') loadCreatorData(); // クリエイター一覧再表示
                 } else {
                     Swal.fire('エラー', data.error || '送金処理に失敗しました', 'error');
                     btnElement.innerText = type === 'creator' ? "🏦 GMO送金" : "🏦 GMO振込";
@@ -2643,7 +2663,7 @@
                 // 代理店の未払い報酬（ステータスが verified のもの）を取得
                 const agencyRes = await fetch(window.API_BASE_URL + '/api/admin/agency');
                 const agencies = await agencyRes.json();
-                const pendingAgencies = agencies.filter(a => a.status === 'verified');
+                const pendingAgencies = agencies.filter(a => a.status && a.status.toLowerCase() === 'verified');
                 
                 if (pendingAgencies.length === 0) {
                     Swal.fire('データなし', '現在、処理待ちの代理店報酬はありません。', 'info');
@@ -2655,42 +2675,33 @@
                     html: `代理店報酬 <b>${pendingAgencies.length}件</b> をGMOあおぞらネット銀行の指定フォーマット（CSV）で出力します。<br><br><span style="font-size:0.8rem; color:#666;">※ダウンロード後、GMOの管理画面から「一括振込・総合振込」＞「GMOあおぞらネット銀行指定形式（CSV）」を選択してアップロードしてください。</span>`,
                     icon: 'info',
                     showCancelButton: true,
-                    confirmButtonText: 'CSVダウンロード'
+                    confirmButtonText: 'CSVダウンロード',
+                    cancelButtonText: 'キャンセル'
                 });
 
                 if (confirm.isConfirmed) {
-                    // GMO指定CSVの標準的フォーマット（金融機関コード,支店コード,預金種別(1=普通),口座番号,受取人名,金額）
-                    let csvContent = "\uFEFF"; // BOM for Excel compatibility if needed
-                    // ヘッダー行なし、または指定フォーマットに従う（GMO形式は基本的にデータ行のみ、または1行目から）
-
-                    // 代理店のデータをCSVに追加
-                    pendingAgencies.forEach(a => {
-                        const amount = a.price || 0;
-                        const finalAmount = amount - 145; // 仮の振込手数料
-                        // 代理店の銀行口座情報は現在UI未実装のため仮の値をセット
-                        const bankCode = "0000"; 
-                        const branchCode = "000"; 
-                        const accountType = "1"; 
-                        const accountNum = "9999999"; // 要確認
-                        const holderName = a.agency_name ? a.agency_name.replace(/ /g, '') : "ダイリテン";
-                        
-                        csvContent += `${bankCode},${branchCode},${accountType},${accountNum},${holderName},${finalAmount}\r\n`;
-                    });
-
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
+                    // サーバー側CSVエクスポートエンドポイントからダウンロードを実行
+                    const downloadUrl = `${window.API_BASE_URL}/api/admin/payout/export-csv?type=agency`;
+                    
+                    // 一時的な隠しアンカーリンクを作成してダウンロードをトリガー
                     const link = document.createElement("a");
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", `gmo_payout_${Date.now()}.csv`);
+                    link.href = downloadUrl;
+                    link.setAttribute("download", "");
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
 
-                    Swal.fire('出力完了', 'CSVファイルをダウンロードしました。GMOのシステムにアップロード後、各申請の「ステータス」を処理済みに更新してください。', 'success');
+                    Swal.fire({
+                        title: '出力完了',
+                        text: 'CSVの生成とダウンロードを開始しました。出力された代理店報酬のステータスは自動的に「Exported（出力済）」に更新されます。',
+                        icon: 'success'
+                    }).then(() => {
+                        if (typeof loadAgencyData === 'function') loadAgencyData(); // データを再読み込みして画面上のステータスを更新
+                    });
                 }
             } catch (e) {
                 console.error(e);
-                Swal.fire('エラー', 'CSVの生成に失敗しました。', 'error');
+                Swal.fire('エラー', 'CSVの生成に失敗しました。: ' + e.message, 'error');
             }
         }
 

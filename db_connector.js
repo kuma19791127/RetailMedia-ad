@@ -199,6 +199,11 @@ if (process.env.DATABASE_URL) {
                     event_date VARCHAR(100),
                     description TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS payout_locks (
+                    lock_key VARCHAR(255) PRIMARY KEY,
+                    created_at BIGINT
+                );
             `);
 
             // Migration path: Drop existing primary key constraint and recreate as composite if not already done
@@ -220,6 +225,22 @@ if (process.env.DATABASE_URL) {
                 console.log('[DB] ✅ PostgreSQL face_sensor_logs.store_id column added or already exists.');
             } catch (e) {
                 console.error('[DB] PostgreSQL face_sensor_logs.store_id migration error:', e.message);
+            }
+
+            // Migration path: Add monthly_payout_status column to stores if not exists
+            try {
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS monthly_payout_status VARCHAR(50) DEFAULT 'unpaid'");
+                console.log('[DB] ✅ PostgreSQL stores.monthly_payout_status column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL stores.monthly_payout_status migration error:', e.message);
+            }
+
+            // Migration path: Add payout_status column to creator_banks if not exists
+            try {
+                await client.query("ALTER TABLE creator_banks ADD COLUMN IF NOT EXISTS payout_status VARCHAR(50) DEFAULT 'unpaid'");
+                console.log('[DB] ✅ PostgreSQL creator_banks.payout_status column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL creator_banks.payout_status migration error:', e.message);
             }
 
             // Migration path: Normalize legacy store ids (STORE_001 / STORE-001 -> 1000001)
@@ -646,6 +667,13 @@ if (process.env.DATABASE_URL) {
                     )
                 `);
 
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS payout_locks (
+                        lock_key TEXT PRIMARY KEY,
+                        created_at INTEGER
+                    )
+                `);
+
                 // Migration: Add store_id column to face_sensor_logs for SQLite if not exists
                 sqliteDb.all("PRAGMA table_info(face_sensor_logs)", (err, rows) => {
                     if (err) {
@@ -659,6 +687,42 @@ if (process.env.DATABASE_URL) {
                                 console.error('[SQLite] ALTER TABLE face_sensor_logs error:', alterErr.message);
                             } else {
                                 console.log('[SQLite] ✅ face_sensor_logs.store_id column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // SQLite Migration: Add monthly_payout_status column to stores for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error (stores):', err.message);
+                        return;
+                    }
+                    const hasStatus = rows && rows.some(row => row.name === 'monthly_payout_status');
+                    if (!hasStatus) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN monthly_payout_status TEXT DEFAULT 'unpaid'", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (monthly_payout_status):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.monthly_payout_status column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // SQLite Migration: Add payout_status column to creator_banks for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(creator_banks)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error (creator_banks):', err.message);
+                        return;
+                    }
+                    const hasStatus = rows && rows.some(row => row.name === 'payout_status');
+                    if (!hasStatus) {
+                        sqliteDb.run("ALTER TABLE creator_banks ADD COLUMN payout_status TEXT DEFAULT 'unpaid'", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE creator_banks error (payout_status):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ creator_banks.payout_status column added successfully.');
                             }
                         });
                     }

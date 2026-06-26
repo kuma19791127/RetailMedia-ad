@@ -3991,7 +3991,51 @@ app.get('/api/admin/agency', requireAuth, async (req, res) => {
         }
     } catch (err) {
         console.error("Failed to get agency referrals from DB:", err);
-        res.status(500).json({ error: "紹介一覧の取得に失敗しました" });
+        res.status(500).json({ error: "紹介一覧 of 取得に失敗しました" });
+    }
+});
+
+// 代理店紹介報酬などのGMOあおぞらネット銀行指定形式CSVエクスポート（および自動ステータス変更）
+app.get('/api/admin/payout/export-csv', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+    const { type } = req.query;
+    
+    try {
+        if (type === 'agency') {
+            const rows = await dbHelper.query.all("SELECT * FROM agency_referrals WHERE status = 'Verified'");
+            if (rows.length === 0) {
+                return res.status(400).json({ error: "CSV出力対象の『Verified（確認済）』データが存在しません。" });
+            }
+
+            // GMO CSV形式の生成 (BOMなし, 宛先銀行, 支店, 種別(1), 口座, 受取人名, 金額)
+            let csvContent = "";
+            for (const r of rows) {
+                const amount = r.price || 0;
+                const finalAmount = Math.max(0, amount - 145); // 手数料145円控除
+                
+                // 口座情報は仮
+                const bankCode = "0033"; 
+                const branchCode = "101"; 
+                const accountType = "1"; 
+                const accountNum = "9999999"; 
+                const holderName = r.agency_email.split('@')[0].toUpperCase();
+                
+                csvContent += `${bankCode},${branchCode},${accountType},${accountNum},${holderName},${finalAmount}\r\n`;
+                
+                // 自動的に status = 'Exported' に更新
+                await dbHelper.query.run("UPDATE agency_referrals SET status = 'Exported' WHERE advertise_email = ?", [r.advertise_email]);
+            }
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename=gmo_payout_agency_${Date.now()}.csv`);
+            return res.send(csvContent);
+        }
+        return res.status(400).json({ error: "指定されたタイプが無効です。" });
+    } catch (err) {
+        console.error("[CSV Export] Error:", err.message);
+        res.status(500).json({ error: "CSVの出力処理に失敗しました" });
     }
 });
 
@@ -4160,7 +4204,8 @@ app.get('/api/admin/creators', requireAuth, async (req, res) => {
                 adsense_share: adsense_share,
                 cm_bonus: cm_bonus,
                 agency_fee: agency_fee,
-                payout: final_payout
+                payout: final_payout,
+                status: bd.payout_status === 'paid' ? "支払済" : "未払"
             };
         });
         res.json({ success: true, list });
@@ -5072,7 +5117,7 @@ app.get('/api/admin/dashboard', requireAuth, async (req, res) => {
                 total_net_revenue: pureStoreRevenue,
                 ad_revenue_share: shareAmount,
                 bank_info: bank_info,
-                status: "未払",
+                status: s.monthly_payout_status === 'paid' ? "支払済" : "未払",
                 email: s.billing_email
             });
         }
@@ -5176,7 +5221,30 @@ app.post('/api/admin/creators/send-email', requireAuth, async (req, res) => {
   res.json({ success: true, message: "Email triggered successfully" });
 });
 
-const processingGmoTransfers = new Set(); // Mutex lock for GMO Transfers
+// DBを利用した分散Mutexロックの獲得
+async function acquirePayoutLock(lockKey) {
+    const now = Date.now();
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
+    
+    // 期限切れロック（5分以上前）を自動削除してデッドロックを防止
+    try {
+        await dbHelper.query.run("DELETE FROM payout_locks WHERE created_at < ?", [fiveMinutesAgo]);
+        await dbHelper.query.run("INSERT INTO payout_locks (lock_key, created_at) VALUES (?, ?)", [lockKey, now]);
+        return true;
+    } catch (err) {
+        console.warn(`[Lock] Failed to acquire lock for key: ${lockKey}, error: ${err.message}`);
+        return false;
+    }
+}
+
+// DBを利用した分散Mutexロックの解除
+async function releasePayoutLock(lockKey) {
+    try {
+        await dbHelper.query.run("DELETE FROM payout_locks WHERE lock_key = ?", [lockKey]);
+    } catch (err) {
+        console.error(`[Lock] Failed to release lock for key: ${lockKey}, error: ${err.message}`);
+    }
+}
 
 // GMOあおぞらネット銀行 API 振込実行 (またはデモ送金)
 app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
@@ -5185,18 +5253,37 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "管理者権限が必要です" });
     }
 
-    const { type, targetIds } = req.body;
+    const { type, targetIds, totpCode } = req.body;
     if (!type || !targetIds || !Array.isArray(targetIds) || targetIds.length === 0) {
         return res.status(400).json({ error: "Invalid request parameters" });
+    }
+
+    // 1. 二段階認証 (2FA) トークンの再検証
+    if (!totpCode) {
+        return res.status(401).json({ error: "安全な送金処理のため、二段階認証（2FA）コードの入力が必要です。" });
+    }
+    try {
+        const speakeasy = require('speakeasy');
+        const adminUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [req.user.email, 'admin']);
+        if (!adminUser || !adminUser.two_factor_secret) {
+            return res.status(400).json({ error: "管理者の二段階認証（2FA）が設定されていません。セキュリティ設定から有効にしてください。" });
+        }
+        const verified = speakeasy.totp.verify({ secret: adminUser.two_factor_secret, encoding: 'base32', token: totpCode, window: 2 });
+        if (!verified) {
+            return res.status(401).json({ error: "二段階認証コードが間違っています。再入力してください。" });
+        }
+    } catch (totpErr) {
+        return res.status(500).json({ error: "二段階認証の検証中にエラーが発生しました: " + totpErr.message });
     }
     
     // Mutexロックの獲得（二重実行防止。IDの並び順が異なっても確実に同じロックキーにするためソート）
     const sortedIds = [...targetIds].sort();
     const lockKey = `${type}:${sortedIds.join(',')}`;
-    if (processingGmoTransfers.has(lockKey)) {
+    
+    const locked = await acquirePayoutLock(lockKey);
+    if (!locked) {
         return res.status(409).json({ error: "現在、同じ対象への送金処理を実行中です。" });
     }
-    processingGmoTransfers.add(lockKey);
     
     try {
         console.log(`[GMO API] 送金処理開始: type=${type}, targets=${targetIds.join(', ')}`);
@@ -5214,15 +5301,26 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
         await new Promise(resolve => setTimeout(resolve, 1000));
         
+        // 2. 状態更新を伴うためステータスをDB上で自動更新
+        if (type === 'store' || type === 'store_adsense') {
+            for (const storeId of targetIds) {
+                await dbHelper.query.run("UPDATE stores SET monthly_payout_status = 'paid' WHERE id = ?", [storeId]);
+            }
+        } else if (type === 'creator') {
+            for (const email of targetIds) {
+                await dbHelper.query.run("UPDATE creator_banks SET payout_status = 'paid' WHERE email = ?", [email]);
+            }
+        }
+        
         // 状態更新を伴うため必須ルール1に基づき saveDatabase() を呼び出す
         if (typeof saveDatabase === 'function') saveDatabase();
         
-        res.json({ success: true, message: "GMO銀行送金が完了しました。" });
+        res.json({ success: true, message: "GMO銀行送金が完了し、支払状況を更新しました。" });
     } catch (e) {
         console.error("[GMO API] ❌ 送金エラー:", e);
         res.status(500).json({ error: e.message });
     } finally {
-        processingGmoTransfers.delete(lockKey); // 確実なロック解除
+        await releasePayoutLock(lockKey); // 確実なロック解除
     }
 });
 
