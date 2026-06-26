@@ -4028,23 +4028,23 @@ app.get('/api/admin/payout/export-csv', requireAuth, async (req, res) => {
                 await dbHelper.query.run("UPDATE agency_referrals SET status = 'Exported' WHERE advertise_email = ?", [r.advertise_email]);
 
                 // freee自動仕訳キューにタスクを挿入 (SELECT ➔ INSERT/UPDATE 方式で PostgreSQL と SQLite の互換性を担保)
+                // 金額の不一致を回避するため、手数料145円控除後の finalAmount を登録する
                 try {
                     const todayStr = new Date().toISOString().split('T')[0];
-                    const amount = r.price || 0;
                     const queueId = `agency:${r.advertise_email}:${todayStr}`;
                     const existing = await dbHelper.query.get("SELECT id FROM freee_sync_queue WHERE id = ?", [queueId]);
                     if (existing) {
                         await dbHelper.query.run(
                             "UPDATE freee_sync_queue SET amount = ?, status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE id = ?",
-                            [amount, queueId]
+                            [finalAmount, queueId]
                         );
                     } else {
                         await dbHelper.query.run(
                             "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, status, attempts) VALUES (?, 'agency', ?, ?, 'pending', 0)",
-                            [queueId, r.advertise_email, amount]
+                            [queueId, r.advertise_email, finalAmount]
                         );
                     }
-                    console.log(`[freee Queue] Agency payout task added for ${r.advertise_email}, amount: ${amount}`);
+                    console.log(`[freee Queue] Agency payout task added for ${r.advertise_email}, amount: ${finalAmount}`);
                 } catch (queueErr) {
                     console.error("[freee Queue] Failed to queue agency payout task:", queueErr.message);
                 }
