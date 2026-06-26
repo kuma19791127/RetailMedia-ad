@@ -6938,9 +6938,25 @@ function encryptToken(text) {
     }
 }
 
-function decryptToken(text) {
+function decryptToken(text, logCallback = null) {
+    function log(message, details = null) {
+        console.log(`[Crypto] ${message}`, details ? JSON.stringify(details) : '');
+        if (logCallback) logCallback(`[Crypto] ${message}`, details);
+    }
+    function logError(message, err) {
+        console.error(`[Crypto Error] ${message}`, err.message);
+        if (logCallback) logCallback(`[Crypto Error] ${message}: ${err.message}`);
+    }
+
     if (!text) return null;
-    if (!text.includes(':')) return text; // 暗号化されていない古いデータのフォールバック
+    if (!text.includes(':')) {
+        log("Token is not encrypted. Using as-is (legacy fallback).");
+        return text; 
+    }
+    
+    // 暗号キーのソースを出力
+    log(`Encryption Key Source: ${process.env.TOKEN_ENCRYPTION_KEY ? "Environment Variable (TOKEN_ENCRYPTION_KEY)" : "Default Secure Fallback Key"}`);
+    
     try {
         const textParts = text.split(':');
         const iv = Buffer.from(textParts.shift(), 'hex');
@@ -6949,31 +6965,40 @@ function decryptToken(text) {
         const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
         let decrypted = decipher.update(encryptedText);
         decrypted = Buffer.concat([decrypted, decipher.final()]);
+        log("Decryption succeeded.");
         return decrypted.toString();
     } catch (err) {
-        console.error("[Crypto] Decryption failed. Returning null to trigger safe fallback without clearing credentials:", err.message);
+        logError("Decryption failed. Returning null to trigger safe fallback without clearing credentials.", err);
         return null;
     }
 }
 
 // Database helpers for freee token persistence
-async function loadFreeeTokenFromDB() {
+async function loadFreeeTokenFromDB(logCallback = null) {
+    function log(message, details = null) {
+        console.log(`[freee Token] ${message}`, details ? JSON.stringify(details) : '');
+        if (logCallback) logCallback(`[freee Token] ${message}`, details);
+    }
+
     try {
+        log("Loading freee token from database...");
         const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
         if (row && row.value) {
-            const decrypted = decryptToken(row.value);
+            log("Found encrypted freee_access_token in database. Attempting decryption...");
+            const decrypted = decryptToken(row.value, logCallback);
             // 復号に失敗した(null) または `:` がまだ含まれている（復号エラー時に暗号文字列のまま返った等）場合は適用しない
             if (decrypted && !decrypted.includes(':')) {
                 currentFreeeToken = decrypted;
-                console.log("[freee Token] Loaded active token from database successfully. Length:", currentFreeeToken.length);
+                log(`Loaded active token from database successfully. Length: ${currentFreeeToken.length}`);
             } else {
-                console.warn("[freee Token] Decrypted token is invalid or decryption failed. Keeping current state to prevent accidental connection reset.");
+                log("WARNING: Decrypted token is invalid or decryption failed. Keeping current state to prevent accidental connection reset.");
                 // 暗号キーの間違いにより復号できなかった場合、連携解除にしないため、自動消去や環境変数へのフォールバックはせずそのまま終了する
                 return;
             }
         } else {
-            console.log("[freee Token] No active token found in database. Using environment fallback.");
+            log("No active token found in database. Using environment fallback...");
             currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
+            log(`Environment fallback token length: ${currentFreeeToken ? currentFreeeToken.length : 0}`);
         }
         // Push the active token to the API module to resolve circular dependency
         if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
@@ -6981,6 +7006,7 @@ async function loadFreeeTokenFromDB() {
         }
     } catch (e) {
         console.error("[freee Token] Failed to load token from database:", e.message);
+        if (logCallback) logCallback(`[freee Token Error] Failed to load token from database: ${e.message}`);
     }
 }
 
@@ -7029,24 +7055,33 @@ let isFreeeRefreshing = false;
 let freeeRefreshPromise = null;
 
 // Automatically refresh expired freee access token using saved refresh token (Mutex applied)
-async function refreshFreeeToken() {
+async function refreshFreeeToken(logCallback = null) {
+    function log(message, details = null) {
+        console.log(`[freee Token] ${message}`, details ? JSON.stringify(details) : '');
+        if (logCallback) logCallback(`[freee Token] ${message}`, details);
+    }
+
     if (isFreeeRefreshing) {
-        console.log("[freee Token] Refresh is already in progress, waiting for existing promise...");
+        log("Refresh is already in progress, waiting for existing promise...");
         return freeeRefreshPromise;
     }
     
     isFreeeRefreshing = true;
     freeeRefreshPromise = (async () => {
         try {
+            log("Starting token refresh process...");
             const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
             if (!row || !row.value) {
                 throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
             }
             
-            const decryptedRefresh = decryptToken(row.value);
+            log("Found encrypted refresh token in database. Attempting decryption...");
+            const decryptedRefresh = decryptToken(row.value, logCallback);
             if (!decryptedRefresh || decryptedRefresh.includes(':')) {
                 throw new Error("リフレッシュトークンの復号に失敗しました、または無効なデータ形式です。");
             }
+            
+            log(`Decrypted refresh token length: ${decryptedRefresh.length}. Client ID: ${FREEE_CLIENT_ID ? 'configured' : 'missing'}`);
             
             const response = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
                 method: "POST",
@@ -7061,19 +7096,22 @@ async function refreshFreeeToken() {
                 })
             });
 
+            log(`Refresh request sent. HTTP Status: ${response.status} ${response.statusText}`);
             const tokenData = await response.json();
             if (tokenData.access_token) {
                 await saveFreeeTokenToDB(tokenData.access_token, tokenData.refresh_token);
-                console.log("[freee Token] Token refreshed successfully.");
+                log("Token refreshed successfully and saved to database.");
                 return tokenData.access_token;
             } else {
                 console.error("[freee Token] Failed to refresh token response:", tokenData);
                 const errorStr = tokenData.error || '';
                 const errorDesc = tokenData.error_description || '';
+                log(`Token refresh request rejected: ${errorStr} - ${errorDesc}`, tokenData);
                 throw new Error(`Token refresh request was rejected by freee: ${errorStr} - ${errorDesc}`);
             }
         } catch (e) {
             console.error("[freee Token] Error during automatic token refresh:", e.message);
+            log(`Error during automatic token refresh: ${e.message}`);
             throw e;
         } finally {
             isFreeeRefreshing = false;
@@ -7085,24 +7123,32 @@ async function refreshFreeeToken() {
 }
 
 // Resilient wrapper for freee API calls with auto-refresh mechanism and safety checks
-async function executeFreeeApiCall(apiFunc) {
+async function executeFreeeApiCall(apiFunc, logCallback = null) {
+    function log(message, details = null) {
+        console.log(`[freee API Call] ${message}`, details ? JSON.stringify(details) : '');
+        if (logCallback) logCallback(`[freee API Call] ${message}`, details);
+    }
+
     try {
-        await loadFreeeTokenFromDB();
+        log("Loading active token...");
+        await loadFreeeTokenFromDB(logCallback);
+        log("Invoking API function...");
         return await apiFunc();
     } catch (e) {
-        // Safe stringification to prevent property reference crashes
         const errorMsg = String(e && e.message ? e.message : e || '');
+        log(`API call encountered error: ${errorMsg}`);
+        
         if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('アクセスする権限がありません')) {
-            console.log("[freee Token] 401 Unauthorized detected. Attempting to refresh token...");
+            log("401 Unauthorized detected. Attempting automatic token refresh...");
             try {
-                const newAccessToken = await refreshFreeeToken();
-                console.log("[freee Token] Token refreshed. Retrying original API call...");
+                const newAccessToken = await refreshFreeeToken(logCallback);
+                log("Token refresh succeeded. Retrying original API call...");
                 return await apiFunc(); // Retry the API call
             } catch (refreshErr) {
-                console.error("[freee Token] Failed to recover from 401 via refresh:", refreshErr.message);
+                log(`Failed to recover from 401 via token refresh: ${refreshErr.message}`);
                 // 本当にリフレッシュが不可能な場合（期限切れ・失効：invalid_grant）のみ、DBからトークンをクリアして再連携を促す
                 if (refreshErr.message.includes('invalid_grant') || refreshErr.message.includes('invalid_request')) {
-                    console.log("[freee Token] Clear credentials due to invalid token error.");
+                    log("Invalid grant/request error. Clearing stored credentials to trigger re-authorization...");
                     await deleteFreeeTokenFromDB();
                 }
                 throw e; // 元の 401 エラーをスローして上に伝える
@@ -7484,6 +7530,8 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         return res.status(403).json({ error: "店舗権限が必要です" });
     }
     
+    console.log("[F12 Debug] POST /api/freee/test-audit triggered. currentFreeeToken length:", currentFreeeToken ? currentFreeeToken.length : 0);
+    console.log("[F12 Debug] FREEE_CLIENT_ID exists:", !!FREEE_CLIENT_ID, "FREEE_CLIENT_SECRET exists:", !!FREEE_CLIENT_SECRET);
     console.log("[freee Audit Test] Request received. currentFreeeToken Length:", currentFreeeToken ? currentFreeeToken.length : 0, "Token Substring:", currentFreeeToken ? currentFreeeToken.substring(0, 8) + "..." : "none");
 
     const logs = [];
@@ -7498,7 +7546,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         
         // 1. 事業所一覧を取得して、有効な事業所IDを決定する
         log("1. 事業所一覧 (GET /companies) の取得を開始...");
-        const companiesRes = await executeFreeeApiCall(() => freeeApi.getCompanies());
+        const companiesRes = await executeFreeeApiCall(() => freeeApi.getCompanies(), log);
         if (!companiesRes || !companiesRes.companies || companiesRes.companies.length === 0) {
             throw new Error("連携中の事業所が見つかりません。先にfreeeとの連携を完了してください。");
         }
@@ -7514,14 +7562,14 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         
         // 2. 取引の参照 (GET /deals)
         log("2. 取引の参照 (GET /deals) の呼び出しを開始...");
-        const dealsRes = await executeFreeeApiCall(() => freeeApi.getDeals(companyId, { limit: 5 }));
+        const dealsRes = await executeFreeeApiCall(() => freeeApi.getDeals(companyId, { limit: 5 }), log);
         log(`取引の参照に成功しました。取得件数: ${dealsRes.deals ? dealsRes.deals.length : 0}件`, {
             first_deal: dealsRes.deals && dealsRes.deals.length > 0 ? { id: dealsRes.deals[0].id, type: dealsRes.deals[0].type } : null
         });
  
         // 3. 勘定科目一覧の取得 (カテゴリIDの特定用)
         log("3. 勘定科目カテゴリ特定のため、勘定科目一覧 (GET /account_items) を取得...");
-        const itemsRes = await executeFreeeApiCall(() => freeeApi.getAccountItems(companyId));
+        const itemsRes = await executeFreeeApiCall(() => freeeApi.getAccountItems(companyId), log);
         let accountCategoryId = 1; // フォールバック
         let correspondingExpenseId = null;
         let correspondingIncomeId = null;
@@ -7550,7 +7598,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
             corresponding_expense_id: correspondingExpenseId,
             corresponding_income_id: correspondingIncomeId,
             group_name: groupName
-        }));
+        }), log);
         const newAccountItemId = createRes.account_item.id;
         log(`勘定科目の追加に成功しました。作成された勘定科目: ${createRes.account_item.name} (ID: ${newAccountItemId})`);
         
@@ -7563,12 +7611,12 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
             corresponding_expense_id: correspondingExpenseId,
             corresponding_income_id: correspondingIncomeId,
             group_name: groupName
-        }));
+        }), log);
         log(`勘定科目の変更に成功しました。変更後の勘定科目: ${updateRes.account_item.name}`);
         
         // 6. 勘定科目の削除 (DELETE /account_items/{id})
         log("6. 勘定科目の削除 (DELETE /account_items/{id}) の呼び出しを開始...");
-        await executeFreeeApiCall(() => freeeApi.deleteAccountItem(companyId, newAccountItemId));
+        await executeFreeeApiCall(() => freeeApi.deleteAccountItem(companyId, newAccountItemId), log);
         log(`勘定科目の削除に成功しました。対象ID: ${newAccountItemId}`);
         
         // 7. 事業所情報の更新 (PUT /companies/{id})
@@ -7578,7 +7626,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         const updateCompanyRes = await executeFreeeApiCall(() => freeeApi.updateCompany(companyId, {
             name: originalName,
             display_name: originalDisplayName
-        }));
+        }), log);
         log(`事業所情報の更新に成功しました。事業所名: ${updateCompanyRes.company.display_name || updateCompanyRes.company.name}`);
         
         log("すべての監査用APIテストが正常に完了しました！");
