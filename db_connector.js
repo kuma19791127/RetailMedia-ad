@@ -263,6 +263,20 @@ if (process.env.DATABASE_URL) {
                 console.error('[DB] PostgreSQL freee_sync_queue.payout_date migration error:', e.message);
             }
 
+            // JCT Invoice Number (T-number) migrations for creator_banks and stores (PostgreSQL)
+            try {
+                await client.query("ALTER TABLE creator_banks ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)");
+                console.log('[DB] ✅ PostgreSQL creator_banks.invoice_number column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL creator_banks.invoice_number migration error:', e.message);
+            }
+            try {
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)");
+                console.log('[DB] ✅ PostgreSQL stores.invoice_number column added or already exists.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL stores.invoice_number migration error:', e.message);
+            }
+
             // Migration path: Normalize legacy store ids (STORE_001 / STORE-001 -> 1000001)
             try {
                 await client.query("UPDATE users SET org = '1000001' WHERE org = 'STORE_001' OR org = 'STORE-001'");
@@ -775,6 +789,42 @@ if (process.env.DATABASE_URL) {
                                 console.error('[SQLite] ALTER TABLE creator_banks error (payout_status):', alterErr.message);
                             } else {
                                 console.log('[SQLite] ✅ creator_banks.payout_status column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // SQLite Migration: Add invoice_number column to creator_banks if not exists
+                sqliteDb.all("PRAGMA table_info(creator_banks)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error (creator_banks for invoice_number):', err.message);
+                        return;
+                    }
+                    const hasCol = rows && rows.some(row => row.name === 'invoice_number');
+                    if (!hasCol) {
+                        sqliteDb.run("ALTER TABLE creator_banks ADD COLUMN invoice_number TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE creator_banks error (invoice_number):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ creator_banks.invoice_number column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // SQLite Migration: Add invoice_number column to stores if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error (stores for invoice_number):', err.message);
+                        return;
+                    }
+                    const hasCol = rows && rows.some(row => row.name === 'invoice_number');
+                    if (!hasCol) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN invoice_number TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (invoice_number):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.invoice_number column added successfully.');
                             }
                         });
                     }

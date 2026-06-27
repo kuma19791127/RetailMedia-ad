@@ -5,6 +5,7 @@
 
 require('dotenv').config();
 const FREEE_API_BASE = "https://api.freee.co.jp/api/1";
+const invoiceValidator = require('./invoice_validator');
 
 // 開発用テスト事業所 (Development Test Company)
 // If you want to use the main company "non-logi", change this to 10685574
@@ -335,6 +336,13 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
     console.log(`[freee API] Creating payout entry for company: ${activeCompanyId}`);
 
     const baseAmount = payoutData?.amount || 0;
+    
+    // 1. 0円または1円未満の自動スキップ (エラー3対応)
+    if (baseAmount === 0 || (baseAmount > 0 && baseAmount < 1)) {
+        console.log(`[freee API] [Zero-Amount Skip] Payout amount is 0 or less than 1 (${baseAmount}). Skipped API call.`);
+        return { success: true, skipped: true, reason: "Zero or under 1 yen skipped" };
+    }
+
     const payoutType = payoutData?.payoutType || 'store'; // 'store', 'creator', 'agency'
     const targetId = payoutData?.targetId || 'unknown';
     const issueDate = payoutData?.date || new Date().toISOString().split('T')[0];
@@ -405,7 +413,7 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         console.warn("[freee API] Failed to resolve walletable dynamically for payout:", err.message);
     }
 
-    // 3. 税区分（tax_code）の動的解決
+    // 3. 税区分（tax_code）の動的解決と適格請求書（T番号）バリデーションによる免税フォールバック
     let taxCode = payoutData?.taxCode;
     if (taxCode === undefined) {
         try {
@@ -423,74 +431,110 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         taxCode = 0; // 最終フォールバック
     }
 
+    // T番号の検証と免税フォールバック (無効または未登録の場合は taxCode = 0 に強制更新)
+    try {
+        const dbHelper = require('./db_connector');
+        let dbInvoiceNumber = null;
+        if (payoutType === 'creator') {
+            const row = await dbHelper.query.get("SELECT invoice_number FROM creator_banks WHERE email = ?", [targetId]);
+            dbInvoiceNumber = row ? row.invoice_number : null;
+        } else if (payoutType === 'store') {
+            const row = await dbHelper.query.get("SELECT invoice_number FROM stores WHERE id = ?", [targetId]);
+            dbInvoiceNumber = row ? row.invoice_number : null;
+        }
+        
+        const isInvoiceValid = invoiceValidator.verifyInvoiceNumber(dbInvoiceNumber);
+        if (!isInvoiceValid) {
+            console.log(`[freee API] JCT Registration Number is missing or invalid (${dbInvoiceNumber}) for target ${targetId}. Falling back to taxCode = 0 (Exempt).`);
+            taxCode = 0;
+        } else {
+            console.log(`[freee API] JCT Registration Number verified successfully: ${dbInvoiceNumber}`);
+        }
+    } catch (migErr) {
+        console.warn("[freee API] JCT Registration Number validation failed/bypassed:", migErr.message);
+    }
+
+    const isReversal = baseAmount < 0;
+    const absoluteAmount = Math.abs(baseAmount);
+
     // 支払手数料と源泉徴収の金額を計算して明細（details）を構築
     const feeAmount = 145; // 振込手数料 145円固定
     let details = [];
-    let paymentAmount = baseAmount;
+    let paymentAmount = absoluteAmount;
 
-    if (payoutType === 'creator') {
-        // クリエイター（個人）の源泉徴収（10.21%）を計算
-        // baseAmount を「手取り額（net）」とみなし、額面総額（gross）を逆算する。
-        // gross = net / 0.8979
-        const grossAmount = Math.floor(baseAmount / 0.8979);
-        const withholdingTax = grossAmount - baseAmount;
-
-        // 1. 経費（外注費）明細（借方）
+    if (isReversal) {
+        // 組戻しの場合は手数料・源泉徴収を行わず、額面金額のみを「戻し入れ」として登録する
         details.push({
             tax_code: taxCode,
             account_item_id: accountItemId,
-            amount: grossAmount,
-            description: `[額面総額] ${description}`
+            amount: absoluteAmount,
+            description: `[組戻し・反対仕訳] ${description}`
         });
-
-        // 2. 源泉徴収（預り金）明細（貸方、マイナス値で控除）
-        if (withholdingItemId && withholdingTax > 0) {
-            details.push({
-                tax_code: 0, // 対象外・非課税
-                account_item_id: withholdingItemId,
-                amount: -withholdingTax,
-                description: `[源泉徴収税控除 10.21%] ${description}`
-            });
-        }
-
-        // 3. 支払手数料明細（借方、自社負担手数料）
-        if (feeItemId) {
-            details.push({
-                tax_code: taxCode,
-                account_item_id: feeItemId,
-                amount: feeAmount,
-                description: `[振込手数料] ${description}`
-            });
-            paymentAmount = baseAmount + feeAmount;
-        }
     } else {
-        // 店舗や代理店の場合（源泉徴収なし）
-        // 1. メイン経費（外注費/紹介料/手数料等）明細（借方）
-        details.push({
-            tax_code: taxCode,
-            account_item_id: accountItemId,
-            amount: baseAmount,
-            description: description
-        });
+        if (payoutType === 'creator') {
+            // クリエイター（個人）の源泉徴収（10.21%）を計算
+            // baseAmount を「手取り額（net）」とみなし、額面総額（gross）を逆算する。
+            // gross = net / 0.8979
+            const grossAmount = Math.floor(baseAmount / 0.8979);
+            const withholdingTax = grossAmount - baseAmount;
 
-        // 2. 支払手数料明細（借方、自社負担手数料）
-        if (feeItemId) {
+            // 1. 経費（外注費）明細（借方）
             details.push({
                 tax_code: taxCode,
-                account_item_id: feeItemId,
-                amount: feeAmount,
-                description: `[振込手数料] ${description}`
+                account_item_id: accountItemId,
+                amount: grossAmount,
+                description: `[額面総額] ${description}`
             });
-            paymentAmount = baseAmount + feeAmount;
+
+            // 2. 源泉徴収（預り金）明細（貸方、マイナス値で控除）
+            if (withholdingItemId && withholdingTax > 0) {
+                details.push({
+                    tax_code: 0, // 対象外・非課税
+                    account_item_id: withholdingItemId,
+                    amount: -withholdingTax,
+                    description: `[源泉徴収税控除 10.21%] ${description}`
+                });
+            }
+
+            // 3. 支払手数料明細（借方、自社負担手数料）
+            if (feeItemId) {
+                details.push({
+                    tax_code: taxCode,
+                    account_item_id: feeItemId,
+                    amount: feeAmount,
+                    description: `[振込手数料] ${description}`
+                });
+                paymentAmount = baseAmount + feeAmount;
+            }
+        } else {
+            // 店舗や代理店の場合（源泉徴収なし）
+            // 1. メイン経費（外注費/紹介料/手数料等）明細（借方）
+            details.push({
+                tax_code: taxCode,
+                account_item_id: accountItemId,
+                amount: baseAmount,
+                description: description
+            });
+
+            // 2. 支払手数料明細（借方、自社負担手数料）
+            if (feeItemId) {
+                details.push({
+                    tax_code: taxCode,
+                    account_item_id: feeItemId,
+                    amount: feeAmount,
+                    description: `[振込手数料] ${description}`
+                });
+                paymentAmount = baseAmount + feeAmount;
+            }
         }
     }
 
-    // freee API 支出 (expense) 登録用ペイロード
+    // freee API 支出 (expense) / 収入 (income) 登録用ペイロード
     const payload = {
         issue_date: issueDate,
-        type: "expense",      // expense = 支出
+        type: isReversal ? "income" : "expense", // 組戻しの場合は収入 (income) にして赤黒相殺
         company_id: activeCompanyId,
-        unique_key: uniqueKey || undefined, // 重複検知キーを指定して二重起票を防止 (第40回監査対応)
+        unique_key: uniqueKey || undefined,
         details: details,
         payments: walletableId ? [
             {
@@ -505,10 +549,10 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
 
     try {
         const result = await freeeRequest('/deals', 'POST', payload);
-        console.log("[freee API] Payout entry created successfully:", result);
+        console.log(`[freee API] Deal created successfully (Reversal=${isReversal}):`, result);
         return result;
     } catch (e) {
-        console.error("[freee API] Failed to create payout deal. Error details:", e.message);
+        console.error("[freee API] Failed to create deal. Error details:", e.message);
         throw e;
     }
 }

@@ -28,7 +28,23 @@ const path = require('path');
 const os = require('os');
 try { require('dotenv').config(); } catch (e) { console.log('[System] dotenv module not found, skipping.'); }
 
+/**
+ * 環境変数を安全に取得する共通ヘルパー関数 (クォートの自動トリムおよび標準化)
+ * (ルール3、ルール14、およびルール15に基づくマッピング共通化)
+ */
+function getEnv(key, defaultValue = "") {
+    const rawVal = process.env[key];
+    if (rawVal === undefined || rawVal === null) {
+        return defaultValue;
+    }
+    if (typeof rawVal === 'string') {
+        return rawVal.replace(/^['"]+|['"]+$/g, '').trim();
+    }
+    return String(rawVal);
+}
+
 const fs = require('fs');
+const invoiceValidator = require('./invoice_validator');
 
 const adEngine = require('./ad_engine');
 const signageServer = require('./signage_server');
@@ -731,7 +747,7 @@ app.get('/api/kyc/status', requireAuth, async (req, res) => {
 
 // Serve uploads from S3 (Fallback to local if no S3)
 app.get('/uploads/:filename', async (req, res) => {
-    const filename = req.params.filename;
+    const filename = path.basename(req.params.filename);
     // Basic local check
     const localPath = require('path').join(__dirname, 'uploads', filename);
     if (fs.existsSync(localPath)) {
@@ -4130,9 +4146,17 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
     processingCreatorBankUpdates.add(email);
 
     try {
-        const { bankName, branchName, accountNum, holderName, idBase64 } = req.body;
+        const { bankName, branchName, accountNum, holderName, idBase64, invoiceNumber } = req.body;
         if (!holderName) return res.status(400).json({ error: "必要な情報が不足しています" });
         if (!idBase64) return res.status(400).json({ error: "身分証画像が必要です" });
+
+        // JCT登録番号（T番号）の検証
+        if (invoiceNumber) {
+            const isTValid = invoiceValidator.verifyInvoiceNumber(invoiceNumber);
+            if (!isTValid) {
+                return res.status(400).json({ error: "【登録番号エラー】入力されたインボイス登録番号（T番号）の形式またはチェックディジットが正しくありません。" });
+            }
+        }
 
         let mimeType = 'image/jpeg';
         let base64Data = idBase64;
@@ -4142,8 +4166,7 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
             base64Data = match[2];
         }
 
-        const rawKey = process.env.GEMINI_API_KEY || '';
-        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        const GEMINI_API_KEY = getEnv('GEMINI_API_KEY');
 
         let useDemoFallback = false;
         if (!GEMINI_API_KEY) {
@@ -4158,7 +4181,7 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
 以下の身分証画像を読み取り、書かれている「氏名（本名）」を抽出してください。
 その後、申請者が入力した口座名義（カタカナ）「${holderName}」と同一人物であるか厳密に判定してください。
 もし氏名の読みと口座名義が一致していれば match: true、偽名や別人の口座（法人口座含む）であれば match: false としてください。
-必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
+必ず以下のJSON形式のみを出力してください（Markdown of バッククォートは不要です）。
 {"match": true, "detected_name": "山田 太郎", "reason": "読みが一致するため"}`;
 
             let requestSuccess = false;
@@ -4196,16 +4219,17 @@ app.post('/api/creator/bank', requireAuth, async (req, res) => {
         }
         
         await dbHelper.query.run(
-            `INSERT INTO creator_banks (email, bank_name, branch_name, account_number, account_holder, id_base64, timestamp) 
-             VALUES (?, ?, ?, ?, ?, ?, ?) 
+            `INSERT INTO creator_banks (email, bank_name, branch_name, account_number, account_holder, id_base64, timestamp, invoice_number) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
              ON CONFLICT(email) DO UPDATE SET 
                 bank_name = EXCLUDED.bank_name, 
                 branch_name = EXCLUDED.branch_name, 
                 account_number = EXCLUDED.account_number, 
                 account_holder = EXCLUDED.account_holder, 
                 id_base64 = EXCLUDED.id_base64,
-                timestamp = EXCLUDED.timestamp`,
-            [email, bankName, branchName, accountNum, holderName, idBase64, Date.now()]
+                timestamp = EXCLUDED.timestamp,
+                invoice_number = EXCLUDED.invoice_number`,
+            [email, bankName, branchName, accountNum, holderName, idBase64, Date.now(), invoiceNumber || null]
         );
         console.log(`[Creator] Bank Info Updated & KYC Passed in DB for: ${email}`);
         res.json({ success: true, message: "本人確認（KYC）を通過し、口座情報を保存しました" });
@@ -4884,9 +4908,17 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
         const area = req.body.area || store.area || '';
         const prefecture = req.body.prefecture || store.prefecture || '';
         const store_type = req.body.store_type || store.store_type || '';
+        const invoiceNumber = req.body.invoice_number || bank.invoice_number || '';
+
+        if (invoiceNumber) {
+            const isTValid = invoiceValidator.verifyInvoiceNumber(invoiceNumber);
+            if (!isTValid) {
+                return res.status(400).json({ error: "【登録番号エラー】入力されたインボイス登録番号（T番号）の形式またはチェックディジットが正しくありません。" });
+            }
+        }
         
         await dbHelper.query.run(
-            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ?, bank_email = ?, area = ?, prefecture = ?, store_type = ? WHERE id = ?`,
+            `UPDATE stores SET billing_email = ?, bank_name = ?, branch_name = ?, account_number = ?, account_holder = ?, bank_email = ?, area = ?, prefecture = ?, store_type = ?, invoice_number = ? WHERE id = ?`,
             [
                 billing_email,
                 bank.bank_name || store.bank_name || '',
@@ -4897,12 +4929,12 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
                 area,
                 prefecture,
                 store_type,
+                invoiceNumber || store.invoice_number || null,
                 storeId
             ]
         );
 
         console.log(`[Store] Settings Updated for ${storeId}`);
-        if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -5332,8 +5364,8 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         console.log(`[GMO API] 送金処理開始: type=${type}, targets=${targetIds.join(', ')}`);
         
         // GMO API キー等の環境変数確認 (ハードコード禁止ルール遵守)
-        const gmoApiKey = process.env.GMO_API_KEY;
-        const gmoAccountId = process.env.GMO_ACCOUNT_ID || "101011234567";
+        const gmoApiKey = getEnv('GMO_API_KEY');
+        const gmoAccountId = getEnv('GMO_ACCOUNT_ID', '101011234567');
         
         if (!gmoApiKey) {
             console.error("[GMO API] GMO connection info not configured. Failing transfer.");
@@ -5523,10 +5555,6 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
                 }
             }
         }
-        
-        // 状態更新を伴うため必須ルール1に基づき saveDatabase() を呼び出す
-        if (typeof saveDatabase === 'function') saveDatabase();
-
         // キューの非同期処理をキック
         processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Error:", err.message));
         
@@ -5536,6 +5564,55 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         res.status(500).json({ error: e.message });
     } finally {
         await releasePayoutLock(lockKey); // 確実なロック解除
+    }
+});
+
+app.post('/api/admin/payout/gmo-reversal', requireAuth, async (req, res) => {
+    // ロールチェック (管理者のみ許可) - 特権昇格脆弱性の排除 (エラー4対応)
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+
+    const { type, targetId, amount } = req.body;
+    if (!type || !targetId || amount === undefined) {
+        return res.status(400).json({ error: "パラメータ（type, targetId, amount）が不足しています。" });
+    }
+
+    const valAmount = parseFloat(amount);
+    if (isNaN(valAmount) || valAmount <= 0) {
+        return res.status(400).json({ error: "無効な金額です。正の額面金額を指定してください。" });
+    }
+
+    try {
+        console.log(`[Reversal] 組戻し処理開始: type=${type}, targetId=${targetId}, amount=${valAmount}`);
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        // 1. 対象の支払ステータスを unpaid に戻す (直接DB更新、saveDatabase呼び出し完全廃止)
+        if (type === 'store') {
+            await dbHelper.query.run("UPDATE stores SET monthly_payout_status = 'unpaid' WHERE id = ?", [targetId]);
+        } else if (type === 'creator') {
+            await dbHelper.query.run("UPDATE creator_banks SET payout_status = 'unpaid' WHERE email = ?", [targetId]);
+        } else {
+            return res.status(400).json({ error: "無効な種別です。" });
+        }
+
+        // 2. freee同期キューにマイナスの金額（反対仕訳）のタスクを挿入
+        const queueId = `reversal:${type}:${targetId}:${Date.now()}`;
+        const negativeAmount = -valAmount;
+        
+        await dbHelper.query.run(
+            "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, ?, ?, ?, ?, 'pending', 0)",
+            [queueId, type, targetId, negativeAmount, todayStr]
+        );
+        console.log(`[freee Queue] Reversal payout task added for ${targetId}, amount: ${negativeAmount}`);
+
+        // キューの非同期処理をキック
+        processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Reversal error:", err.message));
+
+        res.json({ success: true, message: "組戻し処理が完了し、支払ステータスを未払いに戻しました。反対仕訳キューを登録しました。" });
+    } catch (e) {
+        console.error("[Reversal] ❌ 組戻し処理失敗:", e);
+        res.status(500).json({ error: e.message });
     }
 });
 
@@ -6535,8 +6612,7 @@ const GEMINI_MODELS_PRIORITY = [
 ];
 
 async function callGeminiAPI(prompt, responseMimeType = null, systemInstruction = null, mediaBase64 = null, mediaMimeType = null) {
-    const rawKey = process.env.GEMINI_API_KEY || '';
-    const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+    const GEMINI_API_KEY = getEnv('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY not configured');
     }
@@ -7014,8 +7090,8 @@ app.post('/api/bank/transfer', requireAuth, async (req, res) => {
 const freeeApi = require('./freee_api');
 
 // OAuth App Credentials
-const FREEE_CLIENT_ID = (process.env.FREEE_CLIENT_ID || "").trim();
-const FREEE_CLIENT_SECRET = (process.env.FREEE_CLIENT_SECRET || "").trim();
+const FREEE_CLIENT_ID = getEnv('FREEE_CLIENT_ID');
+const FREEE_CLIENT_SECRET = getEnv('FREEE_CLIENT_SECRET');
 // Callback URL (This server's callback endpoint)
 const getFreeeRedirectUri = (req) => {
     const host = req.get('host');
@@ -7023,14 +7099,14 @@ const getFreeeRedirectUri = (req) => {
     return `${protocol}://${host}/api/freee/callback`;
 };
 
-let currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
+let currentFreeeToken = getEnv('FREEE_ACCESS_TOKEN');
 
-if (!process.env.TOKEN_ENCRYPTION_KEY) {
+const ENCRYPTION_KEY = getEnv('TOKEN_ENCRYPTION_KEY');
+if (!ENCRYPTION_KEY) {
     console.error("FATAL ERROR: TOKEN_ENCRYPTION_KEY environment variable is not defined!");
     console.error("Please configure TOKEN_ENCRYPTION_KEY in your environment or .env file.");
     process.exit(1);
 }
-const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
 const IV_LENGTH = 16;
 
 function encryptToken(text) {
@@ -7214,6 +7290,22 @@ async function refreshFreeeToken(logCallback = null) {
     freeeRefreshPromise = (async () => {
         try {
             log("Starting token refresh process...");
+            
+            // マルチコンテナ環境でのリフレッシュトークン競合（ダブル・リフレッシュ・ロックアウト）対策 (エラー2対応)
+            log("Checking if another instance already refreshed the token...");
+            const dbAccessTokenRow = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
+            if (dbAccessTokenRow && dbAccessTokenRow.value) {
+                const decryptedAccess = decryptToken(dbAccessTokenRow.value, logCallback);
+                if (decryptedAccess && decryptedAccess !== currentFreeeToken) {
+                    log("Another instance has already refreshed the token. Syncing cache with DB and skipping fetch.");
+                    currentFreeeToken = decryptedAccess;
+                    if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
+                        freeeApi.setAccessToken(currentFreeeToken);
+                    }
+                    return currentFreeeToken;
+                }
+            }
+
             const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
             if (!row || !row.value) {
                 throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
@@ -7345,6 +7437,16 @@ async function processFreeeSyncQueue() {
                 continue;
             }
 
+            // 支払額0円/1円未満の仕訳登録拒否による無限ポイント消費とAPIブロック防止対策 (エラー3対応)
+            if (Math.abs(row.amount) < 1) {
+                console.log(`[freee Queue] Task ${row.id} has amount < 1 JPY (${row.amount}). Skipped sync to freee.`);
+                await dbHelper.query.run(
+                    "UPDATE freee_sync_queue SET status = 'skipped', error_message = 'Amount is less than 1 JPY, sync skipped.' WHERE id = ?",
+                    [row.id]
+                );
+                continue;
+            }
+
             try {
                 // freeeApi モジュールのロードを確認
                 if (typeof freeeApi === 'undefined') {
@@ -7371,9 +7473,10 @@ async function processFreeeSyncQueue() {
             } catch (err) {
                 console.error(`[freee Queue] ❌ Failed to process task ${row.id}:`, err.message);
                 const nextStatus = nextAttempt >= 3 ? 'failed' : 'pending';
+                const truncatedError = (err.message || "Unknown error").substring(0, 500); // エラーメッセージ制限
                 await dbHelper.query.run(
                     "UPDATE freee_sync_queue SET status = ?, error_message = ? WHERE id = ?",
-                    [nextStatus, err.message || "Unknown error", row.id]
+                    [nextStatus, truncatedError, row.id]
                 );
             }
 
