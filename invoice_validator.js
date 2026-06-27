@@ -11,19 +11,20 @@ const dns = require('dns').promises;
 function verifyCheckDigit(numStr) {
     if (numStr.length !== 13) return false;
     
-    // Check digit algorithm for JCT Registration Number:
-    // 1. Separate digits 1 to 12.
-    // 2. Sum digits in even positions (weighted by 2) and odd positions (weighted by 1) from the right:
-    //    Weights from left to right (digits 1 to 12): 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2
-    // 3. Sum = d1*1 + d2*2 + ... + d12*2
+    // Check digit algorithm for JCT Registration Number (NTA Standard):
+    // 1. Separate the first digit as check digit, and digits 2 to 13 as base number.
+    // 2. Weights for digits 2 to 13 from left to right: 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1
+    // 3. Sum = d2*2 + d3*1 + ... + d13*1
     // 4. Check digit = 9 - (Sum % 9)
     // 5. If Check digit is 0, it becomes 9.
     const digits = numStr.split('').map(Number);
-    const weights = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2];
+    const checkDigit = digits[0];
+    const baseDigits = digits.slice(1);
+    const weights = [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1];
     
     let sum = 0;
     for (let i = 0; i < 12; i++) {
-        sum += digits[i] * weights[i];
+        sum += baseDigits[i] * weights[i];
     }
     
     let calculated = 9 - (sum % 9);
@@ -31,9 +32,8 @@ function verifyCheckDigit(numStr) {
         calculated = 9;
     }
     
-    const actual = digits[12];
-    console.log(`[NTA API Validation] T-Number "${numStr}" check digit verified. calculated=${calculated}, actual=${actual}`);
-    return calculated === actual;
+    console.log(`[NTA API Validation] T-Number "${numStr}" check digit verified. calculated=${calculated}, actual=${checkDigit}`);
+    return calculated === checkDigit;
 }
 
 /**
