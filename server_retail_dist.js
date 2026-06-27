@@ -7849,6 +7849,9 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         logs.push(entry);
     }
     
+    let newAccountItemId = null;
+    let companyId = null;
+
     try {
         log("freee監査用APIテスト実行を開始します...");
         
@@ -7866,7 +7869,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
             c.name && c.name.includes("non-logi")
         );
         const company = matched || companiesRes.companies[0];
-        const companyId = company.id;
+        companyId = company.id;
         log(`使用する事業所を特定しました: ${company.display_name || company.name} (ID: ${companyId})`, { company_object: company });
         
         // 2. 取引の参照 (GET /deals)
@@ -7908,7 +7911,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
             corresponding_income_id: correspondingIncomeId,
             group_name: groupName
         }), log);
-        const newAccountItemId = createRes.account_item.id;
+        newAccountItemId = createRes.account_item.id;
         log(`勘定科目の追加に成功しました。作成された勘定科目: ${createRes.account_item.name} (ID: ${newAccountItemId})`);
         
         // 5. 勘定科目の変更 (PUT /account_items/{id})
@@ -7927,6 +7930,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         log("6. 勘定科目の削除 (DELETE /account_items/{id}) の呼び出しを開始...");
         await executeFreeeApiCall(() => freeeApi.deleteAccountItem(companyId, newAccountItemId), log);
         log(`勘定科目の削除に成功しました。対象ID: ${newAccountItemId}`);
+        newAccountItemId = null; // 削除成功したため初期化
         
         // 7. 事業所情報の更新 (PUT /companies/{id})
         log("7. 事業所情報の更新 (PUT /companies/{id}) の呼び出しを開始...");
@@ -7942,6 +7946,18 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         res.json({ success: true, logs });
     } catch (e) {
         log(`エラーが発生しました: ${e.message}`, { stack: e.stack });
+        
+        // エラー発生時のクリーンアップ処理（残骸の自動削除）
+        if (newAccountItemId && companyId) {
+            try {
+                log(`[Cleanup] テスト中にエラーが発生したため、作成された勘定科目 (ID: ${newAccountItemId}) の自動削除を試みます...`);
+                await executeFreeeApiCall(() => freeeApi.deleteAccountItem(companyId, newAccountItemId), log);
+                log("[Cleanup] 自動クリーンアップ削除に成功しました。");
+            } catch (cleanupErr) {
+                log(`[Cleanup Error] 勘定科目の自動クリーンアップ削除に失敗しました: ${cleanupErr.message}`);
+            }
+        }
+
         if (e.message.includes('403') || e.message.includes('Forbidden')) {
             return res.status(403).json({ error: "Required Scope is not granted.", require_reauth: true, logs });
         }
