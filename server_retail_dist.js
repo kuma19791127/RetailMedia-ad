@@ -7183,8 +7183,21 @@ async function loadFreeeTokenFromDB(logCallback = null) {
             }
         } else {
             log("No active token found in database. Using environment fallback...");
-            currentFreeeToken = process.env.FREEE_ACCESS_TOKEN || null;
-            log(`Environment fallback token length: ${currentFreeeToken ? currentFreeeToken.length : 0}`);
+            const envAccess = getEnv("FREEE_ACCESS_TOKEN", "");
+            const envRefresh = getEnv("FREEE_REFRESH_TOKEN", "");
+            if (envAccess) {
+                currentFreeeToken = envAccess;
+                log(`Environment fallback token length: ${currentFreeeToken.length}`);
+                
+                // Automatically migrate environment fallback tokens to DB
+                log("Automatically persisting environment tokens to database...");
+                saveFreeeTokenToDB(envAccess, envRefresh).catch(err => {
+                    log(`Failed to auto-persist environment tokens to DB: ${err.message}`);
+                });
+            } else {
+                currentFreeeToken = null;
+                log("No environment fallback access token found.");
+            }
         }
         // Push the active token to the API module to resolve circular dependency
         if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
@@ -7306,14 +7319,25 @@ async function refreshFreeeToken(logCallback = null) {
                 }
             }
 
+            let decryptedRefresh = null;
             const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
-            if (!row || !row.value) {
-                throw new Error("リフレッシュトークンがデータベースに存在しません。手動連携が必要です。");
+            if (row && row.value) {
+                log("Found encrypted refresh token in database. Attempting decryption...");
+                decryptedRefresh = decryptToken(row.value, logCallback);
+            } else {
+                log("No refresh token in database. Checking environment fallback...");
+                const envRefresh = getEnv("FREEE_REFRESH_TOKEN", "");
+                if (envRefresh) {
+                    decryptedRefresh = envRefresh;
+                    log("Using environment fallback refresh token.");
+                }
+            }
+
+            if (!decryptedRefresh) {
+                throw new Error("リフレッシュトークンがデータベースおよび環境変数に存在しません。手動連携が必要です。");
             }
             
-            log("Found encrypted refresh token in database. Attempting decryption...");
-            const decryptedRefresh = decryptToken(row.value, logCallback);
-            if (!decryptedRefresh || decryptedRefresh.includes(':')) {
+            if (decryptedRefresh.includes(':')) {
                 throw new Error("リフレッシュトークンの復号に失敗しました、または無効なデータ形式です。");
             }
             
