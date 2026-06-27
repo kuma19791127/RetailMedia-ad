@@ -7655,6 +7655,20 @@ app.get('/api/freee/connect', requireAuth, (req, res) => {
     res.redirect(freeeAuthUrl);
 });
 
+// Dynamic temp debug endpoint to safely fetch decrypted freee tokens for local verification
+app.get('/api/freee/debug-token-dump-secure', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: "Unauthorized" });
+    try {
+        const accessTokenRow = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
+        const refreshTokenRow = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
+        const decryptedAccess = accessTokenRow ? decryptToken(accessTokenRow.value) : null;
+        const decryptedRefresh = refreshTokenRow ? decryptToken(refreshTokenRow.value) : null;
+        res.json({ access: decryptedAccess, refresh: decryptedRefresh });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Mutex cache for OOB callback codes to prevent duplicate requests
 const processedOobCodes = new Set();
 
