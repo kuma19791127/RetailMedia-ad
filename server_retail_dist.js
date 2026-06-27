@@ -7168,6 +7168,13 @@ async function loadFreeeTokenFromDB(logCallback = null) {
 
     try {
         log("Loading freee token from database...");
+        
+        // F12 Debug logs for env variable inspection
+        const envKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('FREEE') || k.toUpperCase().includes('TOKEN'));
+        log(`[F12 Env Debug] Found environment keys containing FREEE/TOKEN: ${JSON.stringify(envKeys)}`);
+        log(`[F12 Env Debug] FREEE_REFRESH_TOKEN exists: ${!!process.env.FREEE_REFRESH_TOKEN} (length: ${process.env.FREEE_REFRESH_TOKEN ? process.env.FREEE_REFRESH_TOKEN.length : 0})`);
+        log(`[F12 Env Debug] FREEE_ACCESS_TOKEN exists: ${!!process.env.FREEE_ACCESS_TOKEN} (length: ${process.env.FREEE_ACCESS_TOKEN ? process.env.FREEE_ACCESS_TOKEN.length : 0})`);
+
         const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_access_token'");
         if (row && row.value) {
             log("Found encrypted freee_access_token in database. Attempting decryption...");
@@ -7320,6 +7327,13 @@ async function refreshFreeeToken(logCallback = null) {
             }
 
             let decryptedRefresh = null;
+            
+            // F12 Debug logs for env variable status during refresh
+            const envKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('FREEE') || k.toUpperCase().includes('TOKEN'));
+            log(`[F12 Env Debug in Refresh] Found environment keys containing FREEE/TOKEN: ${JSON.stringify(envKeys)}`);
+            log(`[F12 Env Debug in Refresh] FREEE_REFRESH_TOKEN exists in process.env: ${!!process.env.FREEE_REFRESH_TOKEN} (length: ${process.env.FREEE_REFRESH_TOKEN ? process.env.FREEE_REFRESH_TOKEN.length : 0})`);
+            log(`[F12 Env Debug in Refresh] FREEE_ACCESS_TOKEN exists in process.env: ${!!process.env.FREEE_ACCESS_TOKEN} (length: ${process.env.FREEE_ACCESS_TOKEN ? process.env.FREEE_ACCESS_TOKEN.length : 0})`);
+
             const row = await dbHelper.query.get("SELECT value FROM admin_settings WHERE key = 'freee_refresh_token'");
             if (row && row.value) {
                 log("Found encrypted refresh token in database. Attempting decryption...");
