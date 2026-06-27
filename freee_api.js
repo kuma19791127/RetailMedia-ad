@@ -49,7 +49,18 @@ async function freeeRequest(endpoint, method = 'GET', data = null) {
     }
 
     const response = await fetch(url, options);
-    const responseData = await response.json();
+    
+    let responseData = null;
+    if (response.status !== 204) {
+        const text = await response.text();
+        if (text) {
+            try {
+                responseData = JSON.parse(text);
+            } catch (e) {
+                responseData = { message: text };
+            }
+        }
+    }
 
     if (!response.ok) {
         console.error(`[freee API Error] Response Code: ${response.status}, StatusText: ${response.statusText}`, responseData);
@@ -236,6 +247,8 @@ async function updateAccountItem(companyId, accountItemId, accountItemData) {
         company_id: companyId,
         account_item: {
             name: accountItemData.name,
+            account_category_id: accountItemData.account_category_id,
+            tax_code: accountItemData.tax_code || 1,
             corresponding_expense_id: accountItemData.corresponding_expense_id !== undefined ? accountItemData.corresponding_expense_id : null,
             corresponding_income_id: accountItemData.corresponding_income_id !== undefined ? accountItemData.corresponding_income_id : null,
             group_name: accountItemData.group_name !== undefined ? accountItemData.group_name : null
