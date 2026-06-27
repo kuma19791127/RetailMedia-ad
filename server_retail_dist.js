@@ -5399,8 +5399,22 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         }
 
         console.log("[GMO API] 接続情報を検知。本番APIリクエストを試行します。");
-        // 振込APIを呼び出す (executeGMOBankTransfer等の内部処理に相当)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 振込APIを呼び出す (gmoBankMock.requestTransferを実質的に実行してバリデーションチェック。第40回監査対応)
+        const senderName = req.body.senderName || "カ)リテアド";
+        try {
+            console.log(`[GMO API] Initiating requestTransfer with senderName: "${senderName}"`);
+            const transferRes = await gmoBankMock.requestTransfer({
+                accountId: gmoAccountId,
+                amount: String(totalRequiredAmount - (targetIds.length * feePerTransfer)), // 手数料控除後の実支払額
+                senderName: senderName
+            });
+            console.log("[GMO API] 銀行振込受付完了レスポンス:", JSON.stringify(transferRes));
+        } catch (transferErr) {
+            console.error("[GMO API] ❌ 銀行振込APIの実行に失敗しました。送金処理を中止します:", transferErr.message);
+            return res.status(500).json({ 
+                error: `【送金エラー】銀行送金APIの呼び出しに失敗しました: ${transferErr.message}` 
+            });
+        }
         
         // 4. 状態更新を伴うためステータスをDB上で自動更新し、freee同期キューに登録
         const todayStr = new Date().toISOString().split('T')[0];
@@ -7107,27 +7121,61 @@ async function loadFreeeTokenFromDB(logCallback = null) {
 }
 
 async function saveFreeeTokenToDB(accessToken, refreshToken) {
+    console.log("[freee Token] saveFreeeTokenToDB call initiated. Preparing to encrypt and persist token data...");
+    const previousToken = currentFreeeToken;
+    let transactionActive = false;
+
     try {
         const encryptedAccess = encryptToken(accessToken);
         const encryptedRefresh = encryptToken(refreshToken);
 
+        console.log("[freee Token DB Transaction] Beginning transaction...");
+        await dbHelper.query.run("BEGIN TRANSACTION");
+        transactionActive = true;
+
+        console.log("[freee Token DB Transaction] Clearing old access token...");
         await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_access_token'");
+        console.log("[freee Token DB Transaction] Inserting encrypted access token...");
         await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_access_token', ?)", [encryptedAccess]);
         
         if (refreshToken) {
+            console.log("[freee Token DB Transaction] Clearing old refresh token...");
             await dbHelper.query.run("DELETE FROM admin_settings WHERE key = 'freee_refresh_token'");
+            console.log("[freee Token DB Transaction] Inserting encrypted refresh token...");
             await dbHelper.query.run("INSERT INTO admin_settings (key, value) VALUES ('freee_refresh_token', ?)", [encryptedRefresh]);
         }
         
+        console.log("[freee Token DB Transaction] Committing transaction...");
+        await dbHelper.query.run("COMMIT");
+        transactionActive = false;
+        
+        // Update memory cache ONLY after transaction succeeds completely
         currentFreeeToken = accessToken;
-        console.log("[freee Token] Saved token to database and updated active cache. Length:", accessToken.length);
+        console.log("[freee Token] Saved token to database successfully and updated active cache. Length:", accessToken.length);
         
         // Push the new token to the API module to resolve circular dependency
         if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
             freeeApi.setAccessToken(currentFreeeToken);
         }
     } catch (e) {
-        console.error("[freee Token] Failed to save token to database:", e.message);
+        console.error("[freee Token Error] Failed to save token to database. Initiating rollback sequence. Error:", e.message);
+        
+        if (transactionActive) {
+            try {
+                console.warn("[freee Token DB Transaction] Rolling back database transaction...");
+                await dbHelper.query.run("ROLLBACK");
+            } catch (rollbackErr) {
+                console.error("[freee Token DB Transaction] Rollback failed:", rollbackErr.message);
+            }
+        }
+        
+        // Restore memory cache to the previous safe state
+        currentFreeeToken = previousToken;
+        if (typeof freeeApi !== 'undefined' && typeof freeeApi.setAccessToken === 'function') {
+            freeeApi.setAccessToken(currentFreeeToken);
+        }
+        
+        throw e; // Propagate exception to trigger caller's error recovery flow
     }
 }
 

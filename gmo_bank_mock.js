@@ -96,11 +96,77 @@ async function getDepositTransactions(accountId = "101011234567", dateFrom, date
 }
 
 /**
+/**
+ * 振込依頼人名 (senderName) の標準化バリデータ (第40回監査対応)
+ * 全銀フォーマット：半角カナ、大文字英数字、スペース、記号 ()-. のみに標準化し、最大40文字に切り詰める。
+ */
+function normalizeSenderName(name) {
+    if (!name) return "";
+    
+    console.log(`[GMO Bank Validator] Original senderName: "${name}"`);
+
+    // 全角英数字を半角に変換
+    let normalized = name.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+    });
+
+    // 全角カタカナを半角カタカナに変換するマッピング
+    const kanaMap = {
+        'ア': 'ｱ', 'イ': 'ｲ', 'ウ': 'ｳ', 'エ': 'ｴ', 'オ': 'ｵ',
+        'カ': 'ｶ', 'キ': 'ｷ', 'ク': 'ｸ', 'ケ': 'ｹ', 'コ': 'ｺ',
+        'サ': 'ｻ', 'シ': 'ｼ', 'ス': 'ｽ', 'セ': 'ｾ', 'ソ': 'ｿ',
+        'タ': 'ﾀ', 'チ': 'ﾁ', 'ツ': 'ﾂ', 'テ': 'ﾃ', 'ト': 'ﾄ',
+        'ナ': 'ﾅ', 'ニ': 'ﾆ', 'ヌ': 'ﾇ', 'ネ': 'ﾈ', 'ノ': 'ﾉ',
+        'ハ': 'ﾊ', 'ヒ': 'ﾋ', 'フ': 'ﾌ', 'ヘ': 'ﾍ', 'ホ': 'ﾎ',
+        'マ': 'ﾏ', 'ミ': 'ﾐ', 'ム': 'ﾑ', 'メ': 'ﾒ', 'モ': 'ﾓ',
+        'ヤ': 'ﾔ', 'ユ': 'ﾕ', 'ヨ': 'ﾖ',
+        'ラ': 'ﾗ', 'リ': 'ﾘ', 'ル': 'ﾙ', 'レ': 'ﾚ', 'ロ': 'ﾛ',
+        'ワ': 'ﾜ', 'ヲ': 'ｦ', 'ン': 'ﾝ',
+        'ァ': 'ｧ', 'ィ': 'ｨ', 'ゥ': 'ｳ', 'ェ': 'ｴ', 'ォ': 'ｵ',
+        'ッ': 'ｯ', 'ャ': 'ｬ', 'ュ': 'ｭ', 'ョ': 'ｮ',
+        'ガ': 'ｶﾞ', 'ギ': 'ｷﾞ', 'グ': 'ｸﾞ', 'ゲ': 'ｹﾞ', 'ゴ': 'ｺﾞ',
+        'ザ': 'ｻﾞ', 'ジ': 'ｼﾞ', 'ズ': 'ｽﾞ', 'ゼ': 'ｾﾞ', 'ゾ': 'ｿﾞ',
+        'ダ': 'ﾀﾞ', 'ヂ': 'ﾁﾞ', 'ヅ': 'ﾂﾞ', 'デ': 'ﾃﾞ', 'ド': 'ﾄﾞ',
+        'バ': 'ﾊﾞ', 'ビ': 'ﾋﾞ', 'ブ': 'ﾌﾞ', 'ベ': 'ﾍﾞ', 'ボ': 'ﾎﾞ',
+        'パ': 'ﾊﾟ', 'ピ': 'ﾋﾟ', 'プ': 'ﾌﾟ', 'ペ': 'ﾍﾟ', 'ポ': 'ﾎﾟ',
+        'ヴ': 'ｳﾞ', 'ヷ': 'ﾜﾞ', 'ヺ': 'ｦﾞ',
+        'ー': 'ｰ', '◌゙': 'ﾞ', '◌ﾟ': 'ﾟ', '　': ' '
+    };
+    
+    let reg = new RegExp(Object.keys(kanaMap).join('|'), 'g');
+    normalized = normalized.replace(reg, (match) => kanaMap[match] || match);
+
+    // 大文字に統一
+    normalized = normalized.toUpperCase();
+    
+    // 許可されていない文字を除去 (半角カナ \uFF61-\uFF9F、大文字英数字、スペース、記号 ()-./)
+    normalized = normalized.replace(/[^A-Z0-9\(\)\-\.\/\s\uFF61-\uFF9F]/g, "");
+
+    // 連続するスペースを1つに統合し、前後のスペースを削除
+    normalized = normalized.replace(/\s+/g, " ").trim();
+
+    // 最大40文字に切り詰め
+    normalized = normalized.slice(0, 40);
+
+    console.log(`[GMO Bank Validator] Normalized senderName: "${normalized}"`);
+    return normalized;
+}
+
+/**
  * 4. 振込依頼 (Transfer Request / 総合振込)
  */
 async function requestTransfer(transferData) {
     console.log("[GMO Bank Mock] requestTransfer called with data:", transferData);
     
+    // 振込依頼人名の標準化と検証 (第40回監査対応)
+    const senderName = transferData.senderName || "カ)リテアド";
+    const cleanSenderName = normalizeSenderName(senderName);
+    
+    if (senderName && senderName.length > 0 && cleanSenderName.length === 0) {
+        console.error(`[GMO Bank Mock Error] requestTransfer failed: senderName contains invalid characters only.`);
+        throw new Error("振込依頼人名に使用できない文字のみが含まれています。半角カナ、英数字、スペース、記号()-.のみが使用可能です。");
+    }
+
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -110,6 +176,7 @@ async function requestTransfer(transferData) {
         status: "ACCEPTED",
         transferAmount: transferData.amount || "0",
         fee: "145",
+        senderName: cleanSenderName,
         acceptedAt: new Date().toISOString()
     };
 }
@@ -118,5 +185,6 @@ module.exports = {
     getAccounts,
     getBalance,
     getDepositTransactions,
-    requestTransfer
+    requestTransfer,
+    normalizeSenderName // 外部からバリデーションとして再利用できるようにエクスポート
 };

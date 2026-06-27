@@ -169,11 +169,15 @@ async function createSalesEntry(companyId = undefined, salesData) {
         taxCode = 1; // 最終フォールバック (課税売上10%)
     }
 
+    const uniqueKey = salesData?.uniqueKey || salesData?.queueId || `sales-${issueDate}-${amount}-${activeCompanyId}`;
+    console.log(`[freee API] [createSalesEntry] Resolving unique_key for idempotency check: ${uniqueKey}`);
+
     // freee API expects a specific payload format for Deals (取引)
     const payload = {
         issue_date: issueDate,
         type: "income",      // income = 収入 (売上)
         company_id: activeCompanyId,
+        unique_key: uniqueKey, // 重複検知キーを指定して二重起票を防止 (第40回監査対応)
         details: [
             {
                 tax_code: taxCode,
@@ -486,6 +490,7 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
         issue_date: issueDate,
         type: "expense",      // expense = 支出
         company_id: activeCompanyId,
+        unique_key: uniqueKey || undefined, // 重複検知キーを指定して二重起票を防止 (第40回監査対応)
         details: details,
         payments: walletableId ? [
             {
