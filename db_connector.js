@@ -463,6 +463,16 @@ if (process.env.DATABASE_URL) {
             } catch (e) {
                 console.error('[DB] PostgreSQL campaigns table migration failed (target_store_types):', e.message);
             }
+            
+            // Migration: Set default area, prefecture, store_type for stores if null/empty
+            try {
+                await client.query("UPDATE stores SET area = '関東' WHERE area IS NULL OR area = ''");
+                await client.query("UPDATE stores SET prefecture = '東京都' WHERE prefecture IS NULL OR prefecture = ''");
+                await client.query("UPDATE stores SET store_type = 'スーパーマーケット' WHERE store_type IS NULL OR store_type = ''");
+                console.log('[DB] ✅ PostgreSQL stores table area defaults migrated.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL stores area defaults migration failed:', e.message);
+            }
 
             console.log('[DB] ✅ PostgreSQLのテーブル初期化が完了しました。');
         } catch (e) {
@@ -945,6 +955,11 @@ if (process.env.DATABASE_URL) {
                             sqliteDb.run("UPDATE users SET org = '1000001' WHERE email = 'buzzkun0807@gmail.com'");
                             sqliteDb.run("UPDATE stores SET id = '1000001' WHERE id = 'STORE_001' OR id = 'STORE-001'");
                             sqliteDb.run("UPDATE signage_states SET store_id = '1000001' WHERE store_id = 'STORE_001' OR store_id = 'STORE-001'");
+                            
+                            // Set default area, prefecture, store_type values
+                            sqliteDb.run("UPDATE stores SET area = '関東' WHERE area IS NULL OR area = ''");
+                            sqliteDb.run("UPDATE stores SET prefecture = '東京都' WHERE prefecture IS NULL OR prefecture = ''");
+                            sqliteDb.run("UPDATE stores SET store_type = 'スーパーマーケット' WHERE store_type IS NULL OR store_type = ''");
                         });
                     }
                 });

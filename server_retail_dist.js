@@ -1925,7 +1925,7 @@ app.post('/api/auth/register', async (req, res) => {
             orgId = await generateUniqueStoreId();
             // stores テーブルにも初期レコードを作成
             await dbHelper.query.run(
-                'INSERT INTO stores (id, name, billing_email) VALUES (?, ?, ?)',
+                "INSERT INTO stores (id, name, billing_email, area, prefecture, store_type) VALUES (?, ?, ?, '関東', '東京都', 'スーパーマーケット')",
                 [orgId, `${email}の店舗`, email]
             );
             console.log(`[Auth] 🏪 Store created with 7-digit ID: ${orgId}`);
@@ -4933,7 +4933,7 @@ app.post('/api/store/settings', requireAuth, async (req, res) => {
         let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
         if (!store) {
             await dbHelper.query.run(
-                'INSERT INTO stores (id, name, billing_email) VALUES (?, ?, ?)',
+                "INSERT INTO stores (id, name, billing_email, area, prefecture, store_type) VALUES (?, ?, ?, '関東', '東京都', 'スーパーマーケット')",
                 [storeId, storeId, req.user.email]
             );
             store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
@@ -8224,7 +8224,7 @@ app.get('/api/store/revenue', requireAuth, async (req, res) => {
         let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
         if (!store) {
             await dbHelper.query.run(
-                'INSERT INTO stores (id, name, billing_email) VALUES (?, ?, ?)',
+                "INSERT INTO stores (id, name, billing_email, area, prefecture, store_type) VALUES (?, ?, ?, '関東', '東京都', 'スーパーマーケット')",
                 [storeId, storeId, req.user.email]
             );
             store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);

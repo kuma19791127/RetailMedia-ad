@@ -223,6 +223,16 @@ async function initSchema() {
             // Already exists, ignore
         }
 
+        // Migration: Set default area, prefecture, store_type for stores if null/empty
+        try {
+            await query.run("UPDATE stores SET area = '関東' WHERE area IS NULL OR area = ''");
+            await query.run("UPDATE stores SET prefecture = '東京都' WHERE prefecture IS NULL OR prefecture = ''");
+            await query.run("UPDATE stores SET store_type = 'スーパーマーケット' WHERE store_type IS NULL OR store_type = ''");
+            console.log('[Database] ✅ SQLite stores default area parameters updated successfully.');
+        } catch (e) {
+            console.error('[Database] Failed to set stores default area:', e.message);
+        }
+
         console.log('[Database] Database tables initialized successfully.');
     } catch (err) {
         console.error('[Database] Error initializing database tables:', err.message);
