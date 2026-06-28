@@ -2241,8 +2241,7 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            // Enforce 2FA verification for all roles
-            if (true) {
+            if (targetRole !== 'advertiser') {
                 // If 2FA is not setup, require setup (QR Code display)
                 if (!user.two_factor_secret) {
                     return res.json({ success: true, require2FASetup: true, email: actualEmail, redirect: getRedirectUrl(targetRole), role: targetRole });
