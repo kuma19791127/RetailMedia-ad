@@ -856,6 +856,11 @@
              const savedPass = localStorage.getItem('retailMediaSavedPassword');
              const savedRole = localStorage.getItem('retailMediaSavedRole');
              
+             // URLパラメータからroleを取得
+             const urlParams = new URLSearchParams(window.location.search);
+             const paramRole = urlParams.get('role');
+             const activeRole = paramRole || savedRole;
+             
              if (savedEmail) document.getElementById('email').value = savedEmail;
              if (savedPass) document.getElementById('password').value = savedPass;
              if (savedEmail || savedPass) {
@@ -879,12 +884,12 @@
                  });
              }
              
-             if (savedRole) {
+             if (activeRole) {
                  // Auto-select the saved role
                  const roleChips = document.querySelectorAll('.role-chip');
                  roleChips.forEach(chip => {
-                     if (chip.getAttribute('onclick').includes(savedRole)) {
-                         selectRole(savedRole, chip);
+                     if (chip.getAttribute('onclick').includes(activeRole)) {
+                         selectRole(activeRole, chip);
                      }
                  });
              }
