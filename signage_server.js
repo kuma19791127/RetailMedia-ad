@@ -205,6 +205,74 @@ module.exports = {
             }
         }
 
+        // --- AI Match Engine Playlist Automation ---
+        try {
+            const adEngine = require('./ad_engine');
+            const creators = playlist.filter(item => item.id && String(item.id).startsWith('creator_'));
+            const ads = playlist.filter(item => item.id && String(item.id).startsWith('ad_') && item.status === 'active');
+            const others = playlist.filter(item => !creators.includes(item) && !ads.includes(item));
+
+            if (creators.length > 0 && ads.length > 0) {
+                let matchedPairs = [];
+                let usedCreators = new Set();
+                let usedAds = new Set();
+
+                // 1. マッチスコアを全ペアでスキャンして高親和性のペア抽出
+                for (const video of creators) {
+                    for (const ad of ads) {
+                        const score = adEngine.calculateAdCreatorMatch(video, ad);
+                        if (score >= 0.80) {
+                            matchedPairs.push({ video, ad, score });
+                        }
+                    }
+                }
+
+                // スコアが高い順にソート
+                matchedPairs.sort((a, b) => b.score - a.score);
+
+                let optimizedPlaylist = [];
+                let pairedItems = new Set();
+
+                // 2. マッチしたペアをプレイリストに配置（80%以上連続配置、90%以上2倍ブースト）
+                matchedPairs.forEach(pair => {
+                    if (!usedCreators.has(pair.video.id) && !usedAds.has(pair.ad.id)) {
+                        usedCreators.add(pair.video.id);
+                        usedAds.add(pair.ad.id);
+
+                        // 連続配置
+                        optimizedPlaylist.push(pair.video);
+                        optimizedPlaylist.push(pair.ad);
+
+                        pairedItems.add(pair.video.id);
+                        pairedItems.add(pair.ad.id);
+
+                        // 90%以上は2倍露出ブースト
+                        if (pair.score >= 0.90) {
+                            optimizedPlaylist.push(pair.video);
+                            optimizedPlaylist.push(pair.ad);
+                            console.log(`[AI Match Playlist] Dynamic Boost applied (2x Exposure) for matched pair: Creator(${pair.video.title}) + Ad(${pair.ad.title}) with score ${pair.score}`);
+                        } else {
+                            console.log(`[AI Match Playlist] Sequential alignment applied for matched pair: Creator(${pair.video.title}) + Ad(${pair.ad.title}) with score ${pair.score}`);
+                        }
+                    }
+                });
+
+                // 3. ペアにならなかった残りのコンテンツを挿入
+                creators.forEach(video => {
+                    if (!pairedItems.has(video.id)) optimizedPlaylist.push(video);
+                });
+                ads.forEach(ad => {
+                    if (!pairedItems.has(ad.id)) optimizedPlaylist.push(ad);
+                });
+
+                // 4. プレイリスト全体を再構築
+                playlist.length = 0;
+                playlist.push(...optimizedPlaylist, ...others);
+            }
+        } catch (matchErr) {
+            console.error("[AI Match Playlist] Error during playlist optimization:", matchErr.message);
+        }
+
         if (playlist.length > 0) return playlist;
         return state.default;
     },

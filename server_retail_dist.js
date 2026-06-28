@@ -5678,6 +5678,54 @@ app.post('/api/admin/payout/gmo-reversal', requireAuth, async (req, res) => {
     }
 });
 
+// --- [NEW] Admin API: Get current AI match delivery status for signage ---
+app.get('/api/admin/signage/match-status', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+
+    try {
+        const adEngine = require('./ad_engine');
+        const playlist = signageServer.getPlaylist('register_side', false);
+        const creators = playlist.filter(item => item.id && String(item.id).startsWith('creator_'));
+        const ads = playlist.filter(item => item.id && String(item.id).startsWith('ad_') && item.status === 'active');
+
+        let matchStatusList = [];
+
+        for (const video of creators) {
+            for (const ad of ads) {
+                const score = adEngine.calculateAdCreatorMatch(video, ad);
+                let appliedStatus = 'none';
+                if (score >= 0.90) {
+                    appliedStatus = 'sequential_and_2x_boost';
+                } else if (score >= 0.80) {
+                    appliedStatus = 'sequential';
+                }
+
+                matchStatusList.push({
+                    creator_video_id: video.id,
+                    creator_video_title: video.title,
+                    ad_id: ad.id,
+                    ad_title: ad.title,
+                    sponsor: ad.sponsor || ad.brand || 'Unknown',
+                    match_score: score,
+                    applied_action: appliedStatus
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            total_active_creators: creators.length,
+            total_active_ads: ads.length,
+            matching_optimizations: matchStatusList
+        });
+    } catch (err) {
+        console.error("[Match Status API] Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 
 // Square SSoT Validation Endpoint

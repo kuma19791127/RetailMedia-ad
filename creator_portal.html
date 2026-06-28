@@ -1161,7 +1161,7 @@ h2 {
                             <h4 style="margin:0 0 10px 0; color:#3b82f6;">${ad.title}</h4>
                             <p style="font-size:0.85rem; color:#64748b; margin:0 0 10px 0;">${ad.description}</p>
                             <div style="font-weight:bold; color:#ea580c; margin-bottom:10px;">想定報酬: ${ad.rewardRate}</div>
-                            <button style="width:100%; background:#2563eb; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="alert('この案件への参加希望を送信しました。')">提携を申し込む</button>
+                            <button style="width:100%; background:#2563eb; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="applySponsorMatch('${ad.sponsor}', '${ad.title}', ${ad.matchScore})">提携を申し込む</button>
                         </div>
                     `).join('');
                 }
@@ -1170,6 +1170,25 @@ h2 {
             console.error(e);
             alert("マッチングデータの取得に失敗しました。");
         }
+    }
+
+    function applySponsorMatch(sponsor, title, matchScore) {
+        let message = `AI判定による相性マッチ率は <b>${matchScore}%</b> です。<br><br>`;
+        if (matchScore >= 90) {
+            message += `🚀 極めて高い親和性が検知されたため、プレイリスト内での連続配信および露出頻度が<b>自動で2倍にブースト</b>されました！`;
+        } else if (matchScore >= 80) {
+            message += `✨ 高い親和性が検知されたため、プレイリスト内で<b>自動的に抱き合わせ連続配信</b>されるように配信順が最適化されました！`;
+        } else {
+            message += `💡 相性スコアに基づいて、プレイリストの配信配分が自動で調整されました。`;
+        }
+
+        Swal.fire({
+            title: '🤝 スポンサー提携の自動最適化',
+            html: `<div style="text-align:left; font-size:0.9rem; line-height:1.5; background:#f8fafc; padding:15px; border-radius:8px; color:#475569;">${message}</div>`,
+            icon: 'success',
+            confirmButtonText: '閉じる',
+            confirmButtonColor: '#2563eb'
+        });
     }
 </script>
 

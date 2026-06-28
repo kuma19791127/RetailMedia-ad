@@ -199,5 +199,51 @@ module.exports = {
         return {
             os_share: { "iOS": 75, "Android": 25 }
         };
+    },
+
+    calculateAdCreatorMatch: (video, ad) => {
+        if (!video || !ad) return 0.50;
+
+        const videoTitle = (video.title || '').toLowerCase();
+        const adTitle = (ad.title || ad.name || '').toLowerCase();
+        const sponsor = (ad.sponsor || ad.brand || '').toLowerCase();
+
+        // 1. アルコール・居酒屋・ビール等の文脈マッチ (92%〜98%)
+        const alcoholVideoKeywords = ['餃子', '焼き鳥', '居酒屋', 'ビール', 'お酒', '酒場', 'レビュー', 'の作り方', '酒'];
+        const alcoholAdKeywords = ['ビール', '酒', '極み生', 'フェア', 'クラフト', '酒造'];
+
+        const hasAlcoholVideo = alcoholVideoKeywords.some(kw => videoTitle.includes(kw));
+        const hasAlcoholAd = alcoholAdKeywords.some(kw => adTitle.includes(kw) || sponsor.includes(kw));
+
+        if (hasAlcoholVideo && hasAlcoholAd) {
+            // A社「極み生」15秒CMへの具体的なクロスセル提案マッチ
+            if (adTitle.includes('極み生') || sponsor.includes('a社') || sponsor.includes('ビールメーカー')) {
+                return 0.98; // 98% マッチ
+            }
+            // ご当地酒造B社クラフトビールへのローカル文脈マッチ
+            return 0.92; // 92% マッチ
+        }
+
+        // 2. おつまみ・激辛・スナック関連マッチ (88%)
+        const snackVideoKeywords = ['料理', 'おつまみ', '辛', '激辛', '揚げ物', 'スナック'];
+        const snackAdKeywords = ['スナック', '菓子', 'つまみ', '激辛', 'c社', 'メーカーc'];
+
+        const hasSnackVideo = snackVideoKeywords.some(kw => videoTitle.includes(kw));
+        const hasSnackAd = snackAdKeywords.some(kw => adTitle.includes(kw) || sponsor.includes(kw));
+
+        if ((hasSnackVideo || hasAlcoholVideo) && hasSnackAd) {
+            return 0.88; // 88% マッチ
+        }
+
+        // 3. タイトルやスポンサー名に含まれる直接的なキーワード部分一致によるフォールバックマッチ
+        let matchScore = 0.50;
+        const commonKeywords = ['料理', 'グルメ', '食品', '飲料', 'ごはん', 'ランチ', 'カフェ', '肉'];
+        commonKeywords.forEach(kw => {
+            if (videoTitle.includes(kw) && (adTitle.includes(kw) || sponsor.includes(kw))) {
+                matchScore = Math.max(matchScore, 0.75);
+            }
+        });
+
+        return matchScore;
     }
 };
