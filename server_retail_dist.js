@@ -5606,10 +5606,72 @@ app.post('/api/admin/payout/gmo-reversal', requireAuth, async (req, res) => {
         );
         console.log(`[freee Queue] Reversal payout task added for ${targetId}, amount: ${negativeAmount}`);
 
+        // 3. 管理者および対象者（店舗/クリエイター）へのメール通知
+        try {
+            let targetEmail = null;
+            let targetName = targetId;
+            if (type === 'store') {
+                const store = await dbHelper.query.get("SELECT name, billing_email FROM stores WHERE id = ?", [targetId]);
+                if (store) {
+                    targetEmail = store.billing_email;
+                    targetName = store.name;
+                }
+            } else if (type === 'creator') {
+                targetEmail = targetId;
+                const creator = await dbHelper.query.get("SELECT account_holder FROM creator_banks WHERE email = ?", [targetId]);
+                if (creator) {
+                    targetName = creator.account_holder || targetId;
+                }
+            }
+
+            // 管理者への警告メール送信
+            const adminSubject = `【組戻し発生】振込失敗通知 (${targetName})`;
+            const adminBody = `以下の支払について、銀行の組戻し（振込失敗）が検知されたため、システム上のステータスを「未払い」に戻し、freee会計への反対仕訳を登録しました。\n\n` +
+                              `【対象】: ${targetName} (${type === 'store' ? '店舗' : 'クリエイター'})\n` +
+                              `【ID/Email】: ${targetId}\n` +
+                              `【金額】: ${valAmount}円\n\n` +
+                              `振込先口座情報（名義・番号等）に誤りがある可能性が高いため、確認と修正を行ってください。`;
+            sendSystemNotificationEmail(adminSubject, adminBody).catch(e => console.error("[Reversal Alert] Admin email failed:", e.message));
+
+            // 店舗/クリエイターへの警告と口座再登録案内メール送信
+            if (targetEmail) {
+                const userSubject = `【要確認】お振込エラーと口座情報再確認のお願い`;
+                const userBody = `${targetName} 様\n\n` +
+                                 `いつもリテアドをご利用いただきありがとうございます。\n\n` +
+                                 `今回ご指定の口座への報酬/収益のお振込（金額: ${valAmount}円）におきまして、銀行側での振込エラー（口座情報や名義の相違など）が発生し、振込が完了しませんでした。\n\n` +
+                                 `お手数ですが、リテアドの管理画面にログインの上、「口座情報設定」から口座番号や名義人（半角カタカナ）が正しく登録されているか再度ご確認と修正をお願いいたします。\n\n` +
+                                 `修正が確認でき次第、次回の振込処理にて再送金を行わせていただきます。\n\n` +
+                                 `※本メールは送信専用です。ご不明な点がございましたらサポートまでお問い合わせください。`;
+                
+                const smtpUser = process.env.SMTP_USER;
+                if (smtpUser) {
+                    const nodemailer = require('nodemailer');
+                    const transporter = nodemailer.createTransport({
+                        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+                        port: parseInt(process.env.SMTP_PORT || '587', 10),
+                        secure: (process.env.SMTP_PORT || '587') === '465',
+                        auth: { user: smtpUser, pass: process.env.SMTP_PASS }
+                    });
+                    transporter.sendMail({
+                        from: `"リテアド 事務局" <${smtpUser}>`,
+                        to: targetEmail,
+                        subject: userSubject,
+                        text: userBody
+                    }).then(() => {
+                        console.log(`[Reversal Alert] Notification email sent to user: ${targetEmail}`);
+                    }).catch(userMailErr => {
+                        console.error("[Reversal Alert] Failed to send user notification email:", userMailErr.message);
+                    });
+                }
+            }
+        } catch (mailErr) {
+            console.error("[Reversal Alert] Notification logic failed:", mailErr.message);
+        }
+
         // キューの非同期処理をキック
         processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Reversal error:", err.message));
 
-        res.json({ success: true, message: "組戻し処理が完了し、支払ステータスを未払いに戻しました。反対仕訳キューを登録しました。" });
+        res.json({ success: true, message: "組戻し処理が完了し、支払ステータスを未払いに戻しました。反対仕訳キューを登録しました。メールでアラートを送信しました。" });
     } catch (e) {
         console.error("[Reversal] ❌ 組戻し処理失敗:", e);
         res.status(500).json({ error: e.message });
@@ -7432,6 +7494,40 @@ async function executeFreeeApiCall(apiFunc, logCallback = null) {
     }
 }
 
+// 汎用システムエラーメール通知ヘルパー
+async function sendSystemNotificationEmail(subject, textContent) {
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = process.env.SMTP_PORT || '587';
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const adminEmail = 'info@retail-ad.com';
+
+    if (!smtpUser || !smtpPass) {
+        console.warn("[Email Alert] SMTP authentication credentials not set. Bypassing email send.");
+        return;
+    }
+
+    try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+            host: smtpHost,
+            port: parseInt(smtpPort, 10),
+            secure: smtpPort === '465',
+            auth: { user: smtpUser, pass: smtpPass }
+        });
+
+        await transporter.sendMail({
+            from: `"リテアド システムアラート" <${smtpUser}>`,
+            to: adminEmail,
+            subject: `【リテアド警告】${subject}`,
+            text: textContent
+        });
+        console.log(`[Email Alert] System warning email sent successfully: ${subject}`);
+    } catch (err) {
+        console.error("[Email Alert] Failed to send system warning email:", err.message);
+    }
+}
+
 let isProcessingQueue = false;
 
 async function processFreeeSyncQueue() {
@@ -7443,6 +7539,21 @@ async function processFreeeSyncQueue() {
     console.log("[freee Queue] Starting freee_sync_queue processing...");
 
     try {
+        // 自動自己修復（セルフヒーリング）：24時間以内に失敗したタスクを自動で pending に戻す
+        const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+        try {
+            const recoverResult = await dbHelper.query.run(
+                "UPDATE freee_sync_queue SET status = 'pending', attempts = 0, error_message = NULL, last_attempt = NULL WHERE status = 'failed' AND last_attempt > ?",
+                [oneDayAgo]
+            );
+            const recoveredCount = recoverResult ? (recoverResult.changes || recoverResult.rowCount || 0) : 0;
+            if (recoveredCount > 0) {
+                console.log(`[freee Queue Recovery] Automatically recovered ${recoveredCount} failed tasks from the last 24 hours to pending status.`);
+            }
+        } catch (recoverErr) {
+            console.error("[freee Queue Recovery] Failed to auto-recover failed tasks:", recoverErr.message);
+        }
+
         // PostgreSQL または SQLite で安全に動くクエリ
         // attempts が 3 未満で、未処理（pending）または失敗（failed）したタスクを順に取得
         const rows = await dbHelper.query.all(
@@ -7516,6 +7627,19 @@ async function processFreeeSyncQueue() {
                     "UPDATE freee_sync_queue SET status = ?, error_message = ? WHERE id = ?",
                     [nextStatus, truncatedError, row.id]
                 );
+
+                if (nextStatus === 'failed') {
+                    const mailSubject = `freee会計 自動同期エラー (ID: ${row.id})`;
+                    const mailBody = `freee会計への自動仕訳連携が3回連続で失敗し、処理が停止しました。\n\n` +
+                                     `【タスクID】: ${row.id}\n` +
+                                     `【対象タイプ】: ${row.payout_type}\n` +
+                                     `【対象ID】: ${row.target_id}\n` +
+                                     `【金額】: ${row.amount}円\n` +
+                                     `【発生日】: ${row.payout_date}\n` +
+                                     `【エラー原因】: ${truncatedError}\n\n` +
+                                     `管理画面にログインし、同期履歴から再試行または削除を行ってください。`;
+                    sendSystemNotificationEmail(mailSubject, mailBody).catch(e => console.error("[freee Queue] Email alert failed:", e.message));
+                }
             }
 
             // レートリミット回避のため、1.5秒のウェイトを設ける
@@ -7542,10 +7666,10 @@ setTimeout(() => {
     }).catch(err => console.error("[freee Queue Start] Failed to load token on start:", err.message));
 }, 3000);
 
-// 30分ごとにバックグラウンドで同期キューの再処理を実行
+// 1時間ごとにバックグラウンドで同期キューの再処理と自動リカバリを実行
 setInterval(() => {
     processFreeeSyncQueue().catch(err => console.error("[freee Queue Interval] Error:", err.message));
-}, 1800000);
+}, 3600000);
 
 // Export token helper so freee_api can read active connection token dynamically
 module.exports.getFreeeToken = () => {

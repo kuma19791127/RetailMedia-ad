@@ -541,6 +541,22 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
             }
         }
     }
+    // 支払金額（paymentAmount）と明細（details）の合計金額の整合性チェック・自動調整 (1円ズレ防止)
+    if (details.length > 0) {
+        const detailsSum = details.reduce((sum, item) => sum + item.amount, 0);
+        const diff = paymentAmount - detailsSum;
+        if (diff !== 0) {
+            console.log(`[freee API Payout] Discrepancy of ${diff} JPY detected between payment amount (${paymentAmount}) and details sum (${detailsSum}). Automatically adjusting...`);
+            const feeDetail = details.find(item => item.account_item_id === feeItemId);
+            if (feeDetail) {
+                feeDetail.amount += diff;
+                console.log(`[freee API Payout] Adjusted fee amount by ${diff} JPY. New fee amount: ${feeDetail.amount}`);
+            } else {
+                details[0].amount += diff;
+                console.log(`[freee API Payout] Adjusted first detail amount by ${diff} JPY. New amount: ${details[0].amount}`);
+            }
+        }
+    }
 
     // freee API 支出 (expense) / 収入 (income) 登録用ペイロード
     const payload = {

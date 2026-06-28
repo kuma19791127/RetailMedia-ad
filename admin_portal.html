@@ -464,7 +464,11 @@
 
 <body>
 
-    
+    <!-- freee 同期エラー緊急アラートバナー -->
+    <div id="freee-error-banner" style="display:none; background:#ef4444; color:#fff; padding:10px 20px; text-align:center; font-weight:bold; font-size:0.9rem; z-index:9999; box-shadow:0 2px 4px rgba(0,0,0,0.1); position:relative;">
+        ⚠️ freee会計との同期エラーが <span id="freee-error-count">0</span> 件発生しています。
+        <button onclick="openSyncQueueModal()" style="margin-left:15px; background:#fff; color:#ef4444; border:none; padding:4px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.8rem;">履歴とエラーを管理</button>
+    </div>
 
     <!-- Login Overlay -->
     <!-- Fix: Explicitly set aria-hidden="false" and role="dialog" to prevent accessibility tools from hiding the focused element -->
@@ -552,6 +556,7 @@
                     <p style="margin:4px 0 8px 0; color:#bdc3c7; font-size:0.75rem; line-height: 1.35;">APIキーを使用して「振込」や「仕訳」を自動化します。</p>
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <button onclick="syncFreeeApi()" style="background:#10b981; color:#fff; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(16,185,129,0.2);">☁️ freee 自動記帳</button>
+                        <button onclick="openSyncQueueModal()" style="background:#3b82f6; color:#fff; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(59,130,246,0.2);">📋 freee 同期履歴とエラー管理</button>
                         <button onclick="syncGmoApi()" style="background:#14b8a6; color:#fff; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(20,184,166,0.2);">🏦 GMO銀行 自動振込</button>
                     </div>
                 </div>
@@ -1162,6 +1167,229 @@
         });
 
 
+        // freee同期エラーバナーの更新
+        async function updateFreeeErrorBanner() {
+            try {
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success && Array.isArray(data.queue)) {
+                    const failedTasks = data.queue.filter(t => t.status === 'failed');
+                    const banner = document.getElementById('freee-error-banner');
+                    if (banner) {
+                        if (failedTasks.length > 0) {
+                            document.getElementById('freee-error-count').innerText = failedTasks.length;
+                            banner.style.display = 'block';
+                        } else {
+                            banner.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("[freee Banner] Failed to update error banner:", e);
+            }
+        }
+
+        // 定期的にバナーを更新（5分ごと＆データ更新時）
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFreeeErrorBanner();
+            setInterval(updateFreeeErrorBanner, 300000);
+        });
+
+        // freee同期履歴・エラー管理モーダルのオープン
+        async function openSyncQueueModal() {
+            try {
+                Swal.fire({
+                    title: '同期履歴を読み込み中...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue');
+                if (!res.ok) throw new Error("APIレスポンスエラー");
+                const data = await res.json();
+                Swal.close();
+
+                if (!data.success || !Array.isArray(data.queue)) {
+                    Swal.fire('エラー', '同期履歴の取得に失敗しました。', 'error');
+                    return;
+                }
+
+                renderQueueTableModal(data.queue);
+            } catch (e) {
+                Swal.fire('エラー', '通信に失敗しました: ' + e.message, 'error');
+            }
+        }
+
+        // モーダルの描画
+        function renderQueueTableModal(queue) {
+            let tableRows = '';
+            if (queue.length === 0) {
+                tableRows = `<tr><td colspan="8" style="text-align:center; padding:20px; color:#64748b;">同期タスク履歴は空です</td></tr>`;
+            } else {
+                queue.forEach(t => {
+                    let statusBadge = '';
+                    if (t.status === 'success') {
+                        statusBadge = `<span class="badge" style="background:#10b981; color:#fff;">成功</span>`;
+                    } else if (t.status === 'pending') {
+                        statusBadge = `<span class="badge" style="background:#f59e0b; color:#fff;">保留中</span>`;
+                    } else if (t.status === 'processing') {
+                        statusBadge = `<span class="badge" style="background:#3b82f6; color:#fff;">処理中</span>`;
+                    } else if (t.status === 'failed') {
+                        statusBadge = `<span class="badge" style="background:#ef4444; color:#fff;">失敗</span>`;
+                    } else if (t.status === 'skipped') {
+                        statusBadge = `<span class="badge" style="background:#94a3b8; color:#fff;">スキップ</span>`;
+                    }
+
+                    const errMsg = t.error_message ? `<div style="max-width:200px; max-height:80px; overflow-y:auto; font-size:11px; color:#ef4444; text-align:left; white-space:pre-wrap;">${escapeHtml(t.error_message)}</div>` : '-';
+                    const attemptsText = `${t.attempts || 0} / 3`;
+
+                    // 操作ボタン
+                    let actionButtons = '';
+                    if (t.status === 'failed' || t.status === 'pending') {
+                        actionButtons = `
+                            <button onclick="retrySyncQueueTask('${t.id}')" style="background:#3b82f6; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:4px;">再試行</button>
+                            <button onclick="clearSyncQueueTask('${t.id}')" style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;">削除</button>
+                        `;
+                    } else {
+                        actionButtons = `<span style="color:#94a3b8; font-size:11px;">-</span>`;
+                    }
+
+                    // 発生日フォーマット
+                    const dateStr = t.payout_date || '-';
+
+                    tableRows += `
+                        <tr style="border-bottom:1px solid #e2e8f0;">
+                            <td style="padding:10px; font-size:12px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(t.id)}">${escapeHtml(t.id)}</td>
+                            <td style="padding:10px; font-size:12px; font-weight:bold;">${escapeHtml(t.payout_type)}</td>
+                            <td style="padding:10px; font-size:12px; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(t.target_id)}">${escapeHtml(t.target_id)}</td>
+                            <td style="padding:10px; font-size:12px; font-weight:bold; text-align:right;">¥${Number(t.amount).toLocaleString()}</td>
+                            <td style="padding:10px; font-size:12px; text-align:center;">${dateStr}</td>
+                            <td style="padding:10px; text-align:center;">${statusBadge}<br><small style="color:#64748b; font-size:10px;">(試行: ${attemptsText})</small></td>
+                            <td style="padding:10px; font-size:11px;">${errMsg}</td>
+                            <td style="padding:10px; text-align:center; white-space:nowrap;">${actionButtons}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            Swal.fire({
+                title: '📋 freee 同期履歴とエラー管理',
+                html: `
+                    <div style="max-height:450px; overflow-y:auto; margin-top:10px;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+                                    <th style="padding:8px; font-size:11px; color:#475569;">タスクID</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569;">種別</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569;">対象ID</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569; text-align:right;">支払額</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569; text-align:center;">発生日</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569; text-align:center;">状態</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569;">エラー詳細</th>
+                                    <th style="padding:8px; font-size:11px; color:#475569; text-align:center;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `,
+                width: '950px',
+                showConfirmButton: true,
+                confirmButtonText: '閉じる'
+            });
+        }
+
+        // 手動再試行実行
+        async function retrySyncQueueTask(id) {
+            try {
+                Swal.close();
+                Swal.fire({
+                    title: 'タスクの再試行を設定中...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue/retry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                Swal.close();
+
+                if (data.success) {
+                    Swal.fire('成功', 'タスクを再試行キュー（保留中）にリセットしました。', 'success').then(() => {
+                        openSyncQueueModal();
+                        updateFreeeErrorBanner();
+                    });
+                } else {
+                    Swal.fire('エラー', data.error || '再試行に失敗しました。', 'error');
+                }
+            } catch (e) {
+                Swal.fire('エラー', '通信に失敗しました: ' + e.message, 'error');
+            }
+        }
+
+        // タスクのクリア（削除）
+        async function clearSyncQueueTask(id) {
+            try {
+                const confirmRes = await Swal.fire({
+                    title: '本当に削除しますか？',
+                    text: 'この同期タスクをキューから削除します。二度と復旧できません。',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: '削除する',
+                    cancelButtonText: 'キャンセル'
+                });
+
+                if (!confirmRes.isConfirmed) {
+                    openSyncQueueModal();
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'タスクを削除中...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                Swal.close();
+
+                if (data.success) {
+                    Swal.fire('削除完了', 'タスクをキューから削除しました。', 'success').then(() => {
+                        openSyncQueueModal();
+                        updateFreeeErrorBanner();
+                    });
+                } else {
+                    Swal.fire('エラー', data.error || '削除に失敗しました。', 'error');
+                }
+            } catch (e) {
+                Swal.fire('エラー', '通信に失敗しました: ' + e.message, 'error');
+            }
+        }
+
+        // HTMLエスケープヘルパー
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         async function syncFreeeApi() {
             try {
                 Swal.fire({
@@ -1754,6 +1982,7 @@
 
         async function loadData() {
             try {
+                updateFreeeErrorBanner();
                 const res = await fetch(`${API_BASE}/api/admin/dashboard`);
                 const data = await res.json();
 
