@@ -1614,7 +1614,22 @@ function showAdPolicy() {
 
 
         // Auto-fill login credentials if stored in LocalStorage
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if already authenticated via active API session (e.g. from store portal)
+            try {
+                const meRes = await fetch((window.API_BASE_URL || '') + '/api/user/me');
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    if (meData.user && (meData.user.role === 'store' || meData.user.role === 'retailer')) {
+                        console.log("[Auth] Already logged in as store/retailer. Restoring session.");
+                        sessionStorage.setItem('retailMediaAuth', 'true');
+                        sessionStorage.setItem('retailUserEmail', meData.user.email);
+                    }
+                }
+            } catch (err) {
+                console.error("[Auth] Failed to check active user session:", err);
+            }
+
             const savedEmail = localStorage.getItem('last_email');
             const savedPass = localStorage.getItem('last_password');
             if (savedEmail) {
