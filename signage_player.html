@@ -643,7 +643,8 @@ document.body.addEventListener('click', () => {
                 const location = urlParams.get('location') || 'register_side';
                 const deviceId = urlParams.get('deviceId') || '';
                 const storeId = urlParams.get('storeId') || '';
-                const terminalId = urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || 'DEMO_UNIT';
+                const defaultTerminalId = storeId ? `${storeId}-01` : 'DEMO_UNIT';
+                const terminalId = urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || defaultTerminalId;
 
                 let query = `?location=${location}&terminal_id=${terminalId}`;
                 if (deviceId) {
@@ -1501,7 +1502,9 @@ document.body.addEventListener('click', () => {
     <script>
         function getTerminalId() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || 'DEMO_UNIT';
+            const storeId = urlParams.get('storeId') || '';
+            const defaultTerminalId = storeId ? `${storeId}-01` : 'DEMO_UNIT';
+            return urlParams.get('terminal_id') || localStorage.getItem('retail_terminal_id') || defaultTerminalId;
         }
 
         function updateTerminalBadge() {

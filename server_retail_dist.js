@@ -1967,18 +1967,7 @@ app.post('/api/auth/2fa/setup', async (req, res) => {
             }
         }
         
-        // 2FA共通化: advertiser または store ロールの場合、もう片方のロールで既にシークレットが設定されていればそれを再利用する
-        let existingSecret = null;
-        if (targetRole === 'advertiser' || targetRole === 'store') {
-            const otherRole = targetRole === 'advertiser' ? 'store' : 'advertiser';
-            const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
-            if (otherUser && otherUser.two_factor_secret) {
-                existingSecret = otherUser.two_factor_secret;
-            }
-            if (user && user.two_factor_secret) {
-                existingSecret = user.two_factor_secret;
-            }
-        }
+        let existingSecret = user ? user.two_factor_secret : null;
 
         if (existingSecret) {
             const otpauth_url = speakeasy.otpauthURL({ secret: existingSecret, label: label, encoding: 'base32' });
@@ -2006,17 +1995,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
         const targetRole = getDatabaseRole(role || 'store');
         let user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
         
-        // 2FA共通化: 相手側のロールが2FAを有効にしている場合は、こちら側にも自動同期
-        if (targetRole === 'advertiser' || targetRole === 'store') {
-            if (user && !user.two_factor_secret) {
-                const otherRole = targetRole === 'advertiser' ? 'store' : 'advertiser';
-                const otherUser = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, otherRole]);
-                if (otherUser && otherUser.two_factor_secret) {
-                    await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [otherUser.two_factor_secret, email, targetRole]);
-                    user.two_factor_secret = otherUser.two_factor_secret;
-                }
-            }
-        }
+
 
         if (user && user.two_factor_secret) {
             const verified = speakeasy.totp.verify({ secret: user.two_factor_secret, encoding: 'base32', token: token, window: 2 });
@@ -2050,12 +2029,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
         const user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? AND role = ?', [email, targetRole]);
 
         if (verified && user) {
-            // 同一メールアドレスの advertiser と store の両方の 2FA シークレットを同期して更新
-            if (targetRole === 'advertiser' || targetRole === 'store') {
-                await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND (role = \'advertiser\' OR role = \'store\')', [secret, email]);
-            } else {
-                await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [secret, email, targetRole]);
-            }
+            await dbHelper.query.run('UPDATE users SET two_factor_secret = ? WHERE email = ? AND role = ?', [secret, email, targetRole]);
 
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
@@ -2127,18 +2101,10 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
             }
         }
 
-        // 同一メールアドレスの advertiser と store の両方の 2FA シークレットをリセット
-        if (targetRole === 'advertiser' || targetRole === 'store') {
-            await dbHelper.query.run(
-                'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND (role = \'advertiser\' OR role = \'store\')',
-                [user.email]
-            );
-        } else {
-            await dbHelper.query.run(
-                'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
-                [user.email, targetRole]
-            );
-        }
+        await dbHelper.query.run(
+            'UPDATE users SET two_factor_secret = NULL WHERE email = ? AND role = ?',
+            [user.email, targetRole]
+        );
 
         console.log(`[Auth] 🔐 2FA Secret Reset for: ${user.email} (${targetRole}) - Authorized (Admin: ${isAdmin})`);
         
@@ -2241,8 +2207,7 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            if (targetRole !== 'advertiser') {
-                // If 2FA is not setup, require setup (QR Code display)
+            if (true) {
                 if (!user.two_factor_secret) {
                     return res.json({ success: true, require2FASetup: true, email: actualEmail, redirect: getRedirectUrl(targetRole), role: targetRole });
                 }
