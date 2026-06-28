@@ -208,7 +208,62 @@ module.exports = {
         const adTitle = (ad.title || ad.name || '').toLowerCase();
         const sponsor = (ad.sponsor || ad.brand || '').toLowerCase();
 
-        // 1. アルコール・居酒屋・ビール等の文脈マッチ (92%〜98%)
+        // 1. AI Context Metadata (Geminiによる映像・トーン意味解析) に基づくセマンティックマッチ
+        let contextMatchScore = 0.50;
+        let contextFound = false;
+
+        if (video.context && typeof video.context === 'object') {
+            contextFound = true;
+            const foodItems = video.context.food_items || [];
+            const tone = (video.context.tone || '').toLowerCase();
+            const desc = (video.context.description || '').toLowerCase();
+
+            // アルコール・ビール関連広告とのマッチング
+            const isBeerAd = adTitle.includes('ビール') || sponsor.includes('ビール') || adTitle.includes('極み生') || sponsor.includes('酒造') || adTitle.includes('酒');
+            if (isBeerAd) {
+                // ビールやアルコールが映像に含まれる、または晩酌トーンである場合
+                const hasBeerOrAlcohol = foodItems.some(f => f.includes('ビール') || f.includes('酒') || f.includes('アルコール') || f.includes('ワイン') || f.includes('サワー'));
+                const hasBeerSnacks = foodItems.some(f => f.includes('餃子') || f.includes('焼き鳥') || f.includes('唐揚げ') || f.includes('おつまみ') || f.includes('肉'));
+                const isDrinkingTone = tone.includes('晩酌') || tone.includes('飲み') || tone.includes('居酒屋') || desc.includes('ビール') || desc.includes('飲む');
+
+                if (hasBeerOrAlcohol && isDrinkingTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.98); // 最高マッチ
+                } else if (hasBeerSnacks && isDrinkingTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.95);
+                } else if (hasBeerSnacks || isDrinkingTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.88);
+                }
+            }
+
+            // スナック・おつまみ関連広告とのマッチング
+            const isSnackAd = adTitle.includes('スナック') || adTitle.includes('菓子') || adTitle.includes('おつまみ') || sponsor.includes('c社') || sponsor.includes('メーカーc');
+            if (isSnackAd) {
+                const hasSnacks = foodItems.some(f => f.includes('つまみ') || f.includes('スナック') || f.includes('唐揚げ') || f.includes('ポテト') || f.includes('辛'));
+                const isSnackTone = tone.includes('おやつ') || tone.includes('晩酌') || tone.includes('おつまみ') || desc.includes('つまみ') || desc.includes('お菓子');
+
+                if (hasSnacks && isSnackTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.92);
+                } else if (hasSnacks || isSnackTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.85);
+                }
+            }
+
+            // 一般食品広告とのマッチング
+            const isFoodAd = adTitle.includes('食') || adTitle.includes('料理') || sponsor.includes('食品') || sponsor.includes('レストラン');
+            if (isFoodAd) {
+                const hasFood = foodItems.length > 0;
+                const isCookingTone = tone.includes('料理') || tone.includes('グルメ') || tone.includes('食事') || desc.includes('作る') || desc.includes('食べる');
+
+                if (hasFood && isCookingTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.90);
+                } else if (hasFood || isCookingTone) {
+                    contextMatchScore = Math.max(contextMatchScore, 0.80);
+                }
+            }
+        }
+
+        // 2. キーワードベースのフォールバックマッチング（context が無い、またはスコアが低い場合）
+        let keywordScore = 0.50;
         const alcoholVideoKeywords = ['餃子', '焼き鳥', '居酒屋', 'ビール', 'お酒', '酒場', 'レビュー', 'の作り方', '酒'];
         const alcoholAdKeywords = ['ビール', '酒', '極み生', 'フェア', 'クラフト', '酒造'];
 
@@ -216,15 +271,13 @@ module.exports = {
         const hasAlcoholAd = alcoholAdKeywords.some(kw => adTitle.includes(kw) || sponsor.includes(kw));
 
         if (hasAlcoholVideo && hasAlcoholAd) {
-            // A社「極み生」15秒CMへの具体的なクロスセル提案マッチ
             if (adTitle.includes('極み生') || sponsor.includes('a社') || sponsor.includes('ビールメーカー')) {
-                return 0.98; // 98% マッチ
+                keywordScore = 0.98;
+            } else {
+                keywordScore = 0.92;
             }
-            // ご当地酒造B社クラフトビールへのローカル文脈マッチ
-            return 0.92; // 92% マッチ
         }
 
-        // 2. おつまみ・激辛・スナック関連マッチ (88%)
         const snackVideoKeywords = ['料理', 'おつまみ', '辛', '激辛', '揚げ物', 'スナック'];
         const snackAdKeywords = ['スナック', '菓子', 'つまみ', '激辛', 'c社', 'メーカーc'];
 
@@ -232,18 +285,48 @@ module.exports = {
         const hasSnackAd = snackAdKeywords.some(kw => adTitle.includes(kw) || sponsor.includes(kw));
 
         if ((hasSnackVideo || hasAlcoholVideo) && hasSnackAd) {
-            return 0.88; // 88% マッチ
+            keywordScore = Math.max(keywordScore, 0.88);
         }
 
-        // 3. タイトルやスポンサー名に含まれる直接的なキーワード部分一致によるフォールバックマッチ
-        let matchScore = 0.50;
         const commonKeywords = ['料理', 'グルメ', '食品', '飲料', 'ごはん', 'ランチ', 'カフェ', '肉'];
         commonKeywords.forEach(kw => {
             if (videoTitle.includes(kw) && (adTitle.includes(kw) || sponsor.includes(kw))) {
-                matchScore = Math.max(matchScore, 0.75);
+                keywordScore = Math.max(keywordScore, 0.75);
             }
         });
 
-        return matchScore;
+        // 基本スコアを AI コンテキストマッチとキーワードマッチの最大値とする
+        let baseScore = contextFound ? Math.max(contextMatchScore, keywordScore) : keywordScore;
+
+        // 3. リアルタイム実績フィードバック（POS売上貢献度＆CM視聴維持率）による動的補正
+        // POS貢献度 (uplift): 例: "+12%" -> 12
+        // CM離脱率 (skip): 例: "15%" -> 15 (離脱率が低いほど高評価、基準は30%とする)
+        let upliftVal = 0;
+        if (video.uplift && typeof video.uplift === 'string') {
+            upliftVal = parseFloat(video.uplift.replace(/[+%]/g, '')) || 0;
+        } else if (typeof video.uplift === 'number') {
+            upliftVal = video.uplift;
+        }
+
+        let skipVal = 30; // デフォルト基準値
+        if (video.skip && typeof video.skip === 'string') {
+            skipVal = parseFloat(video.skip.replace(/%/g, '')) || 30;
+        } else if (typeof video.skip === 'number') {
+            skipVal = video.skip;
+        }
+
+        // 実績スコアの計算 (POS売上貢献度は高いほど良く、CM離脱率は低いほど良い)
+        const posPerformanceScore = Math.min(1.0, upliftVal / 20.0); // 20%以上の向上で満点
+        const retentionPerformanceScore = Math.max(0.0, Math.min(1.0, (50.0 - skipVal) / 40.0)); // 離脱率10%以下で満点、50%以上で0点
+
+        // AI判定(40%) + POS実績(30%) + 視聴維持実績(30%) で最終スコアを動的にブレンド
+        // ※実績データが存在しない場合は、AI判定基準のみとする
+        let finalScore = baseScore;
+        const hasPerformanceData = upliftVal > 0 || skipVal !== 30;
+        if (hasPerformanceData) {
+            finalScore = (baseScore * 0.4) + (posPerformanceScore * 0.3) + (retentionPerformanceScore * 0.3);
+        }
+
+        return Math.round(finalScore * 100) / 100;
     }
 };

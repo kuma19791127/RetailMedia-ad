@@ -1049,6 +1049,8 @@ app.get('/api/creator/stats', requireAuth, (req, res) => {
                 v.views = stats.views;
                 v.attention = stats.views > 0 ? Math.round(stats.totalAttention / stats.views) : v.attention;
                 v.skip = stats.views > 0 ? Math.round(stats.totalSkip / stats.views) : v.skip;
+                const totalUp = stats.totalUplift || 0;
+                v.uplift = stats.views > 0 ? "+" + Math.round(totalUp / stats.views) + "%" : v.uplift;
                 v.status = stats.status; // Sync active or ban status
                 v.revenue = v.views * 5; // Simulating 5 yen per view payout
             }
@@ -1193,7 +1195,12 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
 
                 return res.json({
                     safe: true,
-                    message: "【AI審査フォールバック】YouTube制限のため、メタデータ Heuristics により正常に承認されました"
+                    message: "【AI審査フォールバック】YouTube制限のため、メタデータ Heuristics により正常に承認されました",
+                    context: {
+                        food_items: lowerTitle.includes("ビール") ? ["ビール"] : (lowerTitle.includes("餃子") ? ["餃子"] : []),
+                        tone: "コンテンツ紹介",
+                        description: title || "YouTube動画"
+                    }
                 });
             }
         } else {
@@ -1236,7 +1243,11 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
 
 【出力フォーマット】
 いかなる理由があっても、必ず以下のJSON形式のみを出力してください（Markdownのバッククォートは不要です）。
-{"safe": false, "reason": "〇〇のルールに抵触するため"} または {"safe": true, "reason": "問題ありません"}`;
+{"safe": false, "reason": "〇〇のルールに抵触するため"}
+または
+{"safe": true, "reason": "問題ありません", "context": {"food_items": ["焼き鳥", "ビール"], "tone": "料理、美味しい晩酌、食事シーン", "description": "ビールと焼き鳥を美味しく楽しむ動画"}}
+
+※ context 内の各プロパティには、動画からAIが読み取った内容を日本語で具体的に記載してください。`;
 
         let aiResponseText = "";
         let requestSuccess = false;
@@ -1261,7 +1272,7 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
             if (aiResult.safe === false) {
                 return res.json({ safe: false, message: '【配信停止】AI判定によりポリシー違反が検出されました:\n' + aiResult.reason });
             } else {
-                return res.json({ safe: true, message: aiResult.reason });
+                return res.json({ safe: true, message: aiResult.reason, context: aiResult.context || null });
             }
         } catch(e) {
             if (aiResponseText.includes('FAIL') || aiResponseText.includes('"safe": false') || aiResponseText.includes('"safe":false')) {
@@ -1280,7 +1291,7 @@ app.post('/api/creator/review-content', requireAuth, async (req, res) => {
 
 app.post('/api/creator/upload', requireAuth, (req, res) => {
     console.log(`[API /api/creator/upload] Received new creator video upload request. Data size: ${JSON.stringify(req.body).length} bytes`);
-    const { title, src, format, isAd } = req.body;
+    const { title, src, format, isAd, context } = req.body;
     
     // Use authenticated email
     const creatorEmail = req.user.email || 'Guest';
@@ -1302,7 +1313,8 @@ app.post('/api/creator/upload', requireAuth, (req, res) => {
         format: format || "縦型 (Shorts)",
         views: 0, revenue: 0, status: 'active',
         attention: "--", skip: "--", uplift: "--", rank: '-', color: '#64748b',
-        creatorEmail: creatorEmail
+        creatorEmail: creatorEmail,
+        context: context || null
     };
     CREATOR_STATE.videos.unshift(newVideo);
 
@@ -1314,9 +1326,10 @@ app.post('/api/creator/upload', requireAuth, (req, res) => {
             url: finalUrl,
             duration: 45,
             status: 'active', // Forces it to be active
-        isAd: isAd,
+            isAd: isAd,
             brand: "Creator",
-            youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : null
+            youtube_url: (finalUrl && !finalUrl.startsWith('data:') && finalUrl.includes('youtu')) ? finalUrl : null,
+            context: newVideo.context
         };
         signageServer.injectCampaign('9:16', adData, 'PAID'); // Inject as PAID so it joins the loop
         console.log(`[Creator] Video Uploaded & Linked to Signage Loop: ${adData.title}`);
@@ -4299,7 +4312,7 @@ app.get('/api/analytics/track', (req, res) => {
         const skip = parseInt(skipStr);
 
         if (!creatorStats[adId]) {
-            creatorStats[adId] = { views: 0, totalAttention: 0, totalSkip: 0, status: 'active' };
+            creatorStats[adId] = { views: 0, totalAttention: 0, totalSkip: 0, totalUplift: 0, status: 'active' };
         }
 
         const stats = creatorStats[adId];
@@ -4308,6 +4321,20 @@ app.get('/api/analytics/track', (req, res) => {
             stats.views++;
             stats.totalAttention += attention;
             stats.totalSkip += skip;
+
+            // Simulate POS Uplift based on content relevance
+            let simulatedUplift = Math.floor(Math.random() * 6) + 3; // default: 3% - 8%
+            if (CREATOR_STATE.videos) {
+                const matchedVid = CREATOR_STATE.videos.find(v => String(v.id) === String(adId) || `creator_${v.id}` === String(adId));
+                if (matchedVid) {
+                    const title = (matchedVid.title || "").toLowerCase();
+                    const hasHighRelevance = ['餃子', '焼き鳥', '居酒屋', 'ビール', 'お酒', 'レビュー'].some(kw => title.includes(kw));
+                    if (hasHighRelevance) {
+                        simulatedUplift = Math.floor(Math.random() * 10) + 12; // 12% - 21% uplift
+                    }
+                }
+            }
+            stats.totalUplift = (stats.totalUplift || 0) + simulatedUplift;
 
             const avgAttention = stats.totalAttention / stats.views;
             const avgSkip = stats.totalSkip / stats.views;
