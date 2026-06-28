@@ -473,7 +473,7 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
     // 支払手数料と源泉徴収の金額を計算して明細（details）を構築
     const feeAmount = 145; // 振込手数料 145円固定
     let details = [];
-    let paymentAmount = absoluteAmount;
+    let paymentAmount = payoutData?.paymentAmount !== undefined ? Math.abs(payoutData.paymentAmount) : absoluteAmount;
 
     if (isReversal) {
         // 組戻しの場合は手数料・源泉徴収を行わず、額面金額のみを「戻し入れ」として登録する
@@ -549,11 +549,19 @@ async function createPayoutEntry(companyId = undefined, payoutData) {
             console.log(`[freee API Payout] Discrepancy of ${diff} JPY detected between payment amount (${paymentAmount}) and details sum (${detailsSum}). Automatically adjusting...`);
             const feeDetail = details.find(item => item.account_item_id === feeItemId);
             if (feeDetail) {
+                // 手数料は一律10%課税のため、手数料があればそこで吸収
                 feeDetail.amount += diff;
                 console.log(`[freee API Payout] Adjusted fee amount by ${diff} JPY. New fee amount: ${feeDetail.amount}`);
             } else {
-                details[0].amount += diff;
-                console.log(`[freee API Payout] Adjusted first detail amount by ${diff} JPY. New amount: ${details[0].amount}`);
+                // 手数料明細がない、または複数税率混在時の消費税再計算エラーを極限まで防ぐため、
+                // 税区分 0（対象外・非課税）の「調整額」明細を1行動的に追加してズレを相殺
+                details.push({
+                    tax_code: 0, // 非課税・対象外
+                    account_item_id: accountItemId || 1, // メインの経費科目またはデフォルト
+                    amount: diff,
+                    description: "[端数自動調整分] 消費税端数による金額ズレの非課税調整"
+                });
+                console.log(`[freee API Payout] Appended dynamic non-taxable adjustment line of ${diff} JPY to ensure sum integrity.`);
             }
         }
     }
