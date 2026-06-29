@@ -8660,6 +8660,18 @@ app.post('/api/contact', async (req, res) => {
             return res.status(400).json({ error: "必須項目（お名前、メールアドレス、お問い合わせ種別、内容）を入力してください" });
         }
 
+        // 過去の同一メールアドレスからのお問い合わせ履歴が存在するかチェック (2回目判定)
+        let prevContacts = [];
+        try {
+            prevContacts = await dbHelper.query.all(
+                "SELECT * FROM contacts WHERE email = ? ORDER BY id DESC LIMIT 1",
+                [email]
+            );
+        } catch (dbErr) {
+            console.error("[Contact API] Failed to fetch previous contact history:", dbErr);
+        }
+        const isSecondTime = prevContacts.length > 0;
+
         let savedImagePath = null;
         if (image && image.includes(';base64,')) {
             try {
@@ -8687,7 +8699,6 @@ app.post('/api/contact', async (req, res) => {
                 console.log(`[Contact API] Image saved successfully to: ${savedImagePath}`);
             } catch (err) {
                 console.error("[Contact API] Failed to save contact image file:", err);
-                // 画像保存失敗でも、お問い合わせ自体の作成は続行する
             }
         }
 
@@ -8704,16 +8715,117 @@ app.post('/api/contact', async (req, res) => {
         // 特定の問い合わせタイプ（1. 広告について, 2. エンジニアリング, 5. どこでもレジ）は info@retail-ad.com にメール転送する
         const isTransferType = ["1. 広告について", "2. エンジニアリング", "5. どこでもレジ"].some(t => type.includes(t));
         if (isTransferType) {
+            // --- Gemini APIによる返信ドラフトの自動生成 (アプローチ1) ---
+            let aiDraft = "";
             try {
-                const subject = `【転送】お問い合わせフォームより受信 (${type})`;
-                const body = `info@retail-ad.com 担当者 様\n\nお問い合わせフォームより、営業・エンジニアリング対応が必要な問い合わせを受信しましたので転送します。\n\n--------------------------------\n[お問い合わせ内容]\n送信日時: ${new Date().toLocaleString('ja-JP')}\n会社名・店舗名: ${company || '未入力'}\nお名前: ${name}\nメールアドレス: ${email}\nお問い合わせ種別: ${type}\n\n内容:\n${message}\n--------------------------------\n\nよろしくお願いいたします。`;
+                const rawKey = process.env.GEMINI_API_KEY || '';
+                const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+
+                const promptText = `あなたはリテールメディアプラットフォーム「リテアド」の親切丁寧なカスタマーサポート担当AIです。
+以下のお問い合わせ内容に対して、ビジネスメールとしてふさわしい時候の挨拶や署名（リテアド カスタマーサポート）を含め、相手の課題に寄り添った丁寧な返信メールのドラフト（日本語）を1通作成してください。
+
+【お問い合わせ情報】
+・お名前: ${name} 様
+・会社名・店舗名: ${company || "未記入"}
+・お問い合わせ種別: ${type}
+・お問い合わせ内容:
+${message}
+
+返信メールの本文テキストのみを出力してください。挨拶から署名まで完結した形式にしてください。`;
+
+                if (GEMINI_API_KEY) {
+                    let aiResponseText = "";
+                    let requestSuccess = false;
+                    try {
+                        aiResponseText = await callGeminiAPI(promptText, 'text/plain', null, null, null);
+                        requestSuccess = true;
+                    } catch (err) {
+                        console.warn("[Contact AI] callGeminiAPI failed:", err.message);
+                    }
+
+                    if (requestSuccess && aiResponseText) {
+                        aiDraft = aiResponseText.trim();
+                    } else {
+                        throw new Error("No response text from Gemini");
+                    }
+                } else {
+                    // APIキー未設定時のデモ用フォールバック
+                    aiDraft = `【AIデモ返信ドラフト】\n${name} 様\n\nいつもお世話になっております。リテアド カスタマーサポートでございます。\nこの度は「${type}」に関してお問い合わせいただき、誠にありがとうございます。\n\nご記入いただきました内容（「${message.substring(0, 30)}...」）につきまして、担当部署にて確認の上、速やかに詳細をご連絡差し上げます。\n今しばらくお待ちいただけますようお願い申し上げます。\n\n引き続きよろしくお願いいたします。\n\n------------------\nリテアド カスタマーサポート\ninfo@retail-ad.com`;
+                }
+            } catch (geminiErr) {
+                console.error("[Contact AI] Failed to generate AI draft reply:", geminiErr);
+                aiDraft = `【自動フォールバック】AI返信ドラフトの生成中にエラーが発生しました。\n手動にて以下の問い合わせ内容を確認のうえ、ご返信をお願いいたします。`;
+            }
+
+            // --- 転送メールの送信 (2回目判定による警告埋め込み) ---
+            try {
+                let subject = "";
+                let body = "";
+
+                if (isSecondTime) {
+                    // 2回目（インシデント警告モード）
+                    subject = `【重要・要手動確認(2回目)】お問い合わせフォームより受信 (${type})`;
+                    body = `info@retail-ad.com 担当者 様
+
+⚠️【警告：重要インシデントの可能性】
+同一のメールアドレス（${email}）から複数回（2回目以降）のお問い合わせを受信しました。
+これは緊急度・重要度が高いインシデントの可能性があります。人間による直接の確認と手動での対応を最優先でお願いいたします。
+
+--------------------------------
+[今回（2回目）のお問い合わせ内容]
+送信日時: ${new Date().toLocaleString('ja-JP')}
+会社名・店舗名: ${company || '未入力'}
+お名前: ${name}
+メールアドレス: ${email}
+お問い合わせ種別: ${type}
+
+内容:
+${message}
+--------------------------------
+
+[前回（1回目）のお問い合わせ内容]
+送信日時: ${prevContacts[0].id ? new Date(Number(prevContacts[0].id)).toLocaleString('ja-JP') : '不明'}
+内容:
+${prevContacts[0].message}
+--------------------------------
+
+【AIによる参考返信ドラフト案】
+${aiDraft}
+
+よろしくお願いいたします。`;
+                } else {
+                    // 1回目（通常モード）
+                    subject = `【転送】お問い合わせフォームより受信 (${type})`;
+                    body = `info@retail-ad.com 担当者 様
+
+お問い合わせフォームより、営業・エンジニアリング対応が必要な問い合わせを受信しましたので転送します。
+
+--------------------------------
+[お問い合わせ内容]
+送信日時: ${new Date().toLocaleString('ja-JP')}
+会社名・店舗名: ${company || '未入力'}
+お名前: ${name}
+メールアドレス: ${email}
+お問い合わせ種別: ${type}
+
+内容:
+${message}
+--------------------------------
+
+【AIによる返信ドラフト案（自動生成）】
+${aiDraft}
+
+よろしくお願いいたします。`;
+                }
+
                 await sendSESEmail("info@retail-ad.com", subject, body);
-                console.log(`[Contact API] Forwarded inquiry of type "${type}" to info@retail-ad.com`);
+                console.log(`[Contact API] Forwarded inquiry of type "${type}" to info@retail-ad.com. Second-time incident: ${isSecondTime}`);
             } catch (err) {
                 console.error("[Contact API] Failed to forward email via SES:", err);
             }
         }
         
+        if (typeof saveDatabase === 'function') saveDatabase();
         res.json({ success: true, contactId: result ? result.lastID : null, imagePath: savedImagePath });
     } catch (e) {
         console.error("[Contact API] Error creating contact inquiry:", e);
