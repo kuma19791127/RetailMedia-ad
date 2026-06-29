@@ -98,6 +98,7 @@ async function initSchema() {
                 area TEXT,
                 prefecture TEXT,
                 store_type TEXT,
+                address TEXT,
                 total_pos_sales REAL DEFAULT 0.0,
                 total_ad_revenue REAL DEFAULT 0.0,
                 monthly_operating_cost REAL DEFAULT 0.0,
@@ -179,6 +180,14 @@ async function initSchema() {
         try {
             await query.run("ALTER TABLE stores ADD COLUMN store_type TEXT");
             console.log('[Database] ✅ SQLite stores table migrated (added store_type).');
+        } catch (e) {
+            // Already exists, ignore
+        }
+
+        // Migration: Add address to stores if not exists
+        try {
+            await query.run("ALTER TABLE stores ADD COLUMN address TEXT");
+            console.log('[Database] ✅ SQLite stores table migrated (added address).');
         } catch (e) {
             // Already exists, ignore
         }

@@ -294,9 +294,36 @@ app.get('/api/products/master', requireAuth, async (req, res) => {
 });
 
 // --- Profile Management ---
+const PREFECTURE_TO_AREA = {
+    '北海道': '北海道東北',
+    '青森県': '北海道東北', '岩手県': '北海道東北', '宮城県': '北海道東北', '秋田県': '北海道東北', '山形県': '北海道東北', '福島県': '北海道東北',
+    '茨城県': '関東', '栃木県': '関東', '群馬県': '関東', '埼玉県': '関東', '千葉県': '関東', '東京都': '関東', '神奈川県': '関東',
+    '新潟県': '中部', '富山県': '中部', '石川県': '中部', '福井県': '中部', '山梨県': '中部', '長野県': '中部', '岐阜県': '中部', '静岡県': '中部', '愛知県': '中部',
+    '三重県': '関西', '滋賀県': '関西', '京都府': '関西', '大阪府': '関西', '兵庫県': '関西', '奈良県': '関西', '和歌山県': '関西',
+    '鳥取県': '関西', '島根県': '関西', '岡山県': '関西', '広島県': '関西', '山口県': '関西',
+    '徳島県': '関西', '香川県': '関西', '愛媛県': '関西', '高知県': '関西',
+    '福岡県': '九州', '佐賀県': '九州', '長崎県': '九州', '熊本県': '九州', '大分県': '九州', '宮崎県': '九州', '鹿児島県': '九州', '沖縄県': '九州'
+};
+
+const detectPrefectureAndArea = (address) => {
+    if (!address) return { prefecture: '', area: '' };
+    for (const pref of Object.keys(PREFECTURE_TO_AREA)) {
+        if (address.includes(pref)) {
+            return { prefecture: pref, area: PREFECTURE_TO_AREA[pref] };
+        }
+    }
+    for (const pref of Object.keys(PREFECTURE_TO_AREA)) {
+        const shortPref = pref.replace(/[都道府県]$/, '');
+        if (address.includes(shortPref)) {
+            return { prefecture: pref, area: PREFECTURE_TO_AREA[pref] };
+        }
+    }
+    return { prefecture: '', area: '' };
+};
+
 const saveProfileHandler = async (req, res) => {
     console.log("[Profile API Debug] saveProfileHandler triggered with body:", req.body);
-    const { email, org, name, type, password } = req.body;
+    const { email, org, name, type, password, address, store_type } = req.body;
     if(!email) return res.json({success: false, error: "Email is required"});
     
     // 所有者検証 (本人のメールアドレス、または管理者のみ許可)
@@ -306,9 +333,10 @@ const saveProfileHandler = async (req, res) => {
     }
     
     // DB (users テーブル) への同期およびパスワードハッシュの更新
+    let targetRole = 'store';
     try {
-        const existingUser = await dbHelper.query.get('SELECT role FROM users WHERE email = ?', [email]);
-        const targetRole = existingUser ? existingUser.role : getDatabaseRole(req.user.role);
+        const existingUser = await dbHelper.query.get('SELECT role, org FROM users WHERE email = ?', [email]);
+        targetRole = existingUser ? existingUser.role : getDatabaseRole(req.user.role);
         
         if (password) {
             console.log("[Profile API Debug] Password change detected. Hashing new password...");
@@ -325,6 +353,29 @@ const saveProfileHandler = async (req, res) => {
             );
             console.log(`[Profile API Debug] Successfully updated name and org in DB for: ${email}`);
         }
+
+        // 店舗・リテーラーロールの場合、storesテーブルも同期
+        if (targetRole === 'store' || targetRole === 'retailer') {
+            const storeId = org || (existingUser ? existingUser.org : null) || req.user.org || req.user.email;
+            if (storeId) {
+                console.log(`[Profile API Debug] Syncing address and store_type for storeId: ${storeId}`);
+                const { prefecture, area } = detectPrefectureAndArea(address);
+                
+                let store = await dbHelper.query.get('SELECT * FROM stores WHERE id = ?', [storeId]);
+                if (!store) {
+                    await dbHelper.query.run(
+                        "INSERT INTO stores (id, name, billing_email, address, store_type, prefecture, area) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [storeId, name || storeId, email, address || '', store_type || '', prefecture, area]
+                    );
+                } else {
+                    await dbHelper.query.run(
+                        "UPDATE stores SET address = ?, store_type = ?, prefecture = ?, area = ? WHERE id = ?",
+                        [address || '', store_type || '', prefecture, area, storeId]
+                    );
+                }
+                console.log(`[Profile API Debug] stores table successfully synced.`);
+            }
+        }
     } catch (dbErr) {
         console.error("[Profile API Debug] DB Synchronization Error:", dbErr.stack || dbErr.message || dbErr);
     }
@@ -335,7 +386,7 @@ const saveProfileHandler = async (req, res) => {
         await s3Client.send(new PutObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET_NAME || S3_BUCKET_NAME,
             Key: key,
-            Body: JSON.stringify({ email, org, name, type, updatedAt: new Date() }),
+            Body: JSON.stringify({ email, org, name, type, address, store_type, updatedAt: new Date() }),
             ContentType: 'application/json'
         }));
         console.log(`[Profile API Debug] S3 upload successful for: ${email}`);
@@ -381,15 +432,46 @@ const getProfileHandler = async (req, res) => {
         });
         const body = await streamToString(data.Body);
         console.log(`[Profile API Debug] Successfully retrieved profile from S3 for: ${email}`);
-        res.json({ success: true, profile: JSON.parse(body) });
+        const profile = JSON.parse(body);
+
+        // 店舗・リテーラーの場合、storesテーブルから最新の address, store_type を取得してマージ
+        try {
+            const user = await dbHelper.query.get('SELECT role, org FROM users WHERE email = ?', [email]);
+            if (user && (user.role === 'store' || user.role === 'retailer')) {
+                const storeId = user.org || email;
+                const store = await dbHelper.query.get('SELECT address, store_type FROM stores WHERE id = ?', [storeId]);
+                if (store) {
+                    profile.address = store.address || profile.address || '';
+                    profile.store_type = store.store_type || profile.store_type || '';
+                    profile.prefecture = store.prefecture || '';
+                    profile.area = store.area || '';
+                }
+            }
+        } catch (dbErr) {
+            console.error("[Profile API Debug] DB Fetch Error in getProfileHandler:", dbErr);
+        }
+
+        res.json({ success: true, profile });
     } catch(e) {
         console.log(`[Profile API Debug] Profile not found in S3 (falling back to user record): ${e.message}`);
         // S3にプロファイルファイルがない場合でも、DBから基本情報を取得して返却するフォールバック
         try {
-            const user = await dbHelper.query.get('SELECT name, org FROM users WHERE email = ?', [email]);
+            const user = await dbHelper.query.get('SELECT name, org, role FROM users WHERE email = ?', [email]);
             if (user) {
                 console.log(`[Profile API Debug] Found user in DB as fallback: name=${user.name}, org=${user.org}`);
-                return res.json({ success: true, profile: { email, org: user.org || '', name: user.name || '', type: '' } });
+                const profile = { email, org: user.org || '', name: user.name || '', type: user.role || '', address: '', store_type: '', prefecture: '', area: '' };
+                
+                if (user.role === 'store' || user.role === 'retailer') {
+                    const storeId = user.org || email;
+                    const store = await dbHelper.query.get('SELECT address, store_type, prefecture, area FROM stores WHERE id = ?', [storeId]);
+                    if (store) {
+                        profile.address = store.address || '';
+                        profile.store_type = store.store_type || '';
+                        profile.prefecture = store.prefecture || '';
+                        profile.area = store.area || '';
+                    }
+                }
+                return res.json({ success: true, profile });
             }
         } catch (dbErr) {
             console.error("[Profile API Debug] Fallback DB Fetch Error:", dbErr);

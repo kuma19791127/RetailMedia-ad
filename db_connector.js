@@ -71,6 +71,7 @@ if (process.env.DATABASE_URL) {
                     area VARCHAR(100),
                     prefecture VARCHAR(255),
                     store_type VARCHAR(255),
+                    address VARCHAR(500),
                     total_pos_sales DOUBLE PRECISION DEFAULT 0.0,
                     total_ad_revenue DOUBLE PRECISION DEFAULT 0.0,
                     monthly_operating_cost DOUBLE PRECISION DEFAULT 0.0,
@@ -448,6 +449,14 @@ if (process.env.DATABASE_URL) {
                 console.error('[DB] ❌ PostgreSQL stores table migration failed (store_type):', e.message);
             }
 
+            // Migration path: Add address column to stores table if not exists
+            try {
+                await client.query("ALTER TABLE stores ADD COLUMN IF NOT EXISTS address VARCHAR(500)");
+                console.log('[DB] ✅ PostgreSQL stores table migrated (added address).');
+            } catch (e) {
+                console.error('[DB] ❌ PostgreSQL stores table migration failed (address):', e.message);
+            }
+
             // Migration path: Add target_prefectures column to campaigns table if not exists
             try {
                 await client.query("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS target_prefectures TEXT");
@@ -577,6 +586,7 @@ if (process.env.DATABASE_URL) {
                         area TEXT,
                         prefecture TEXT,
                         store_type TEXT,
+                        address TEXT,
                         total_pos_sales REAL DEFAULT 0.0,
                         total_ad_revenue REAL DEFAULT 0.0,
                         monthly_operating_cost REAL DEFAULT 0.0,
@@ -1126,6 +1136,24 @@ if (process.env.DATABASE_URL) {
                                 console.error('[SQLite] ALTER TABLE stores error (store_type):', alterErr.message);
                             } else {
                                 console.log('[SQLite] ✅ stores.store_type column added successfully.');
+                            }
+                        });
+                    }
+                });
+
+                // Migration: Add address column to stores for SQLite if not exists
+                sqliteDb.all("PRAGMA table_info(stores)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error for stores:', err.message);
+                        return;
+                    }
+                    const hasAddress = rows && rows.some(row => row.name === 'address');
+                    if (!hasAddress) {
+                        sqliteDb.run("ALTER TABLE stores ADD COLUMN address TEXT", (alterErr) => {
+                            if (alterErr) {
+                                console.error('[SQLite] ALTER TABLE stores error (address):', alterErr.message);
+                            } else {
+                                console.log('[SQLite] ✅ stores.address column added successfully.');
                             }
                         });
                     }
