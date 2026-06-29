@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リテアド ポータルデータフロー図・エディタ</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(20, 30, 55, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.3);
+            --accent-green: #10b981;
+            --accent-green-glow: rgba(16, 185, 129, 0.3);
+            --accent-purple: #8b5cf6;
+            --accent-purple-glow: rgba(139, 92, 246, 0.3);
+            --accent-orange: #f59e0b;
+            --accent-orange-glow: rgba(245, 158, 11, 0.3);
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.3);
+            --accent-cyan: #06b6d4;
+            --accent-cyan-glow: rgba(6, 182, 212, 0.3);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            min-width: 1100px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        button.btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        button.btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        /* 編集可能なテキスト領域 */
+        [contenteditable="true"] {
+            outline: none;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        [contenteditable="true"]:hover {
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+        }
+
+        [contenteditable="true"]:focus {
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        /* ダイヤグラムのコンテナ */
+        .diagram-container {
+            position: relative;
+            width: 1000px;
+            height: 820px;
+            margin: 0 auto;
+            border: 1px solid var(--border-color);
+            background: rgba(10, 15, 30, 0.45);
+            border-radius: 12px;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        /* SVGの接続線 */
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 各ポータルカード */
+        .portal-card {
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            width: 240px;
+            padding: 16px;
+            box-sizing: border-box;
+            z-index: 10;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .portal-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .portal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+        }
+
+        .portal-header i {
+            font-size: 1.2rem;
+        }
+
+        .portal-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* 1. 管理者ポータル */
+        #portal-admin {
+            top: 40px;
+            left: 380px;
+            border-left: 4px solid var(--accent-red);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1);
+        }
+        #portal-admin:hover {
+            box-shadow: 0 4px 25px var(--accent-red-glow);
+        }
+        #portal-admin .portal-header { color: var(--accent-red); }
+
+        /* 2. 広告主ダッシュボード */
+        #portal-advertiser {
+            top: 260px;
+            left: 80px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+        }
+        #portal-advertiser:hover {
+            box-shadow: 0 4px 25px var(--primary-glow);
+        }
+        #portal-advertiser .portal-header { color: var(--primary); }
+
+        /* 3. 店舗オーナーポータル */
+        #portal-store {
+            top: 260px;
+            left: 680px;
+            border-left: 4px solid var(--accent-green);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1);
+        }
+        #portal-store:hover {
+            box-shadow: 0 4px 25px var(--accent-green-glow);
+        }
+        #portal-store .portal-header { color: var(--accent-green); }
+
+        /* 4. 代理店ポータル */
+        #portal-agency {
+            top: 500px;
+            left: 80px;
+            border-left: 4px solid var(--accent-purple);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+        }
+        #portal-agency:hover {
+            box-shadow: 0 4px 25px var(--accent-purple-glow);
+        }
+        #portal-agency .portal-header { color: var(--accent-purple); }
+
+        /* 5. クリエイターポータル */
+        #portal-creator {
+            top: 500px;
+            left: 680px;
+            border-left: 4px solid var(--accent-orange);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1);
+        }
+        #portal-creator:hover {
+            box-shadow: 0 4px 25px var(--accent-orange-glow);
+        }
+        #portal-creator .portal-header { color: var(--accent-orange); }
+
+        /* 6. POSレジ */
+        #portal-pos {
+            top: 680px;
+            left: 380px;
+            border-left: 4px solid var(--accent-cyan);
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.1);
+        }
+        #portal-pos:hover {
+            box-shadow: 0 4px 25px var(--accent-cyan-glow);
+        }
+        #portal-pos .portal-header { color: var(--accent-cyan); }
+
+        /* フロー矢印の説明ラベル */
+        .flow-label {
+            position: absolute;
+            background: rgba(11, 15, 25, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.72rem;
+            max-width: 180px;
+            line-height: 1.3;
+            z-index: 20;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        #flow-agency-to-admin { top: 380px; left: 245px; }
+        #flow-admin-to-advertiser { top: 160px; left: 190px; }
+        #flow-admin-to-store { top: 160px; left: 630px; }
+        #flow-advertiser-to-store { top: 290px; left: 410px; }
+        #flow-creator-to-admin { top: 380px; left: 580px; }
+        #flow-creator-to-advertiser { top: 440px; left: 430px; }
+        #flow-creator-to-store { top: 410px; left: 740px; }
+        #flow-pos-to-store { top: 580px; left: 520px; }
+        #flow-pos-to-agency { top: 620px; left: 220px; }
+
+        .tips {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-network-wired"></i> リテアド主要ポータル連携・データフロー図エディタ</h1>
+        <div class="controls">
+            <button onclick="resetTexts()"><i class="fa-solid fa-rotate-left"></i> リセット</button>
+            <button class="btn-primary" onclick="copyHTML()"><i class="fa-solid fa-copy"></i> HTMLコードをコピー</button>
+        </div>
+    </header>
+
+    <div class="diagram-container" id="diagram">
+        <svg class="connections-svg">
+            <defs>
+                <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6"/>
+                </marker>
+                <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981"/>
+                </marker>
+                <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#8b5cf6"/>
+                </marker>
+                <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b"/>
+                </marker>
+                <marker id="arrow-cyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#06b6d4"/>
+                </marker>
+                <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444"/>
+                </marker>
+            </defs>
+
+            <!-- 接続線描画 -->
+            <path d="M 200 500 Q 200 410 380 120" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="4 2" marker-end="url(#arrow-purple)"/>
+            <path d="M 380 70 Q 200 70 200 260" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)" marker-start="url(#arrow-red)"/>
+            <path d="M 620 70 Q 800 70 800 260" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)" marker-start="url(#arrow-red)"/>
+            <path d="M 800 500 Q 800 410 620 120" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-orange)"/>
+            <path d="M 320 310 L 680 310" fill="none" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)"/>
+            <path d="M 680 550 Q 500 550 320 370" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-orange)" marker-start="url(#arrow-orange)"/>
+            <path d="M 800 500 L 800 370" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)" marker-start="url(#arrow-green)"/>
+            <path d="M 500 680 Q 560 620 680 370" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+            <path d="M 380 710 Q 250 710 200 610" fill="none" stroke="#06b6d4" stroke-width="2" stroke-dasharray="4 2" marker-end="url(#arrow-cyan)"/>
+        </svg>
+
+        <!-- ポータルカード -->
+        <div class="portal-card" id="portal-admin">
+            <div class="portal-header"><i class="fa-solid fa-user-shield"></i> <span contenteditable="true" id="txt-admin-title">管理者ポータル (admin)</span></div>
+            <div class="portal-desc" contenteditable="true" id="txt-admin-desc">ユーザー一覧の管理・削除、紹介案件の承認審査、ロック解除申請の審査、決済・振込連携状況の監視。</div>
+        </div>
+
+        <div class="portal-card" id="portal-advertiser">
+            <div class="portal-header"><i class="fa-solid fa-rectangle-ad"></i> <span contenteditable="true" id="txt-adv-title">広告主ダッシュボード</span></div>
+            <div class="portal-desc" contenteditable="true" id="txt-adv-desc">キャンペーン作成（予算・プラン指定）、広告素材アップロード、インプレッション消化レポート参照。</div>
+        </div>
+
+        <div class="portal-card" id="portal-store">
+            <div class="portal-header"><i class="fa-solid fa-shop"></i> <span contenteditable="true" id="txt-store-title">店舗オーナーポータル</span></div>
+            <div class="portal-desc" contenteditable="true" id="txt-store-desc">店舗情報の編集、サイネージ端末の連携状態・稼働監視、及び決済売上履歴・緊急配信の制御。</div>
+        </div>
+
+        <div class="portal-card" id="portal-agency">
+            <div class="portal-header"><i class="fa-solid fa-handshake"></i> <span contenteditable="true" id="txt-agency-title">代理店ポータル</span></div>
+            <div class="portal-desc" contenteditable="true" id="txt-agency-desc">新規広告主の紹介案件申請（予算額指定）および申請状況一覧の参照。</div>
+        </div>
+
+        <div class="portal-card" id="portal-creator">
+            <div class="portal-header"><i class="fa-solid fa-clapperboard"></i> <span contenteditable="true" id="txt-creator-title">クリエイターポータル</span></div>
+            <div class="portal-desc" contenteditable="true" id="txt-creator-desc">動画コンテンツの登録・審査申請、再生統計（収益金）の参照、本人確認（KYC）の登録。</div>
+        </div>
+
+        <div class="portal-card" id="portal-pos">
+            <div class="portal-header"><i class="fa-solid fa-cash-register"></i> <span contenteditable="true" id="txt-pos-title">POSレジ・どこでも小売</span></div>
+            <div class="portal-desc" contenteditable="true" id="txt-pos-desc">実店舗のレジ取引連携（store_idバインド）および取引明細の確認、売上データの同期。</div>
+        </div>
+
+        <!-- 矢印説明ラベル -->
+        <div class="flow-label" id="flow-agency-to-admin" contenteditable="true" id="lbl-agency-admin">紹介案件の申請 & 承認審査</div>
+        <div class="flow-label" id="flow-admin-to-advertiser" contenteditable="true" id="lbl-admin-adv">アカウント管理・ロック解除 / キャンペーン監視</div>
+        <div class="flow-label" id="flow-admin-to-store" contenteditable="true" id="lbl-admin-store">サイネージ配信許可 / 特権監視制御</div>
+        <div class="flow-label" id="flow-advertiser-to-store" contenteditable="true" id="lbl-adv-store">キャンペーンデータ<br>(予算・ターゲット・素材)</div>
+        <div class="flow-label" id="flow-creator-to-admin" contenteditable="true" id="lbl-creator-admin">KYC本人確認申請 /<br>売上金の一括自動振込</div>
+        <div class="flow-label" id="flow-creator-to-advertiser" contenteditable="true" id="lbl-creator-adv">クリエイター動画の登録 /<br>キャンペーンへの利用</div>
+        <div class="flow-label" id="flow-creator-to-store" contenteditable="true" id="lbl-creator-store">再生統計・収益分配</div>
+        <div class="flow-label" id="flow-pos-to-store" contenteditable="true" id="lbl-pos-store">レジ売上・取引明細同期<br>(店舗売上の自動確定)</div>
+        <div class="flow-label" id="flow-pos-to-agency" contenteditable="true" id="lbl-pos-agency">店舗取引の紹介元バインド</div>
+    </div>
+
+    <div class="tips">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>図内のすべてのテキストは直接ダブルクリックして編集可能です。編集後、右上のボタンからHTMLコードをコピーして保存いただけます。</span>
+    </div>
+
+    <script>
+        const originalTexts = {};
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                originalTexts[el.id] = el.innerHTML;
+            });
+        });
+
+        function resetTexts() {
+            if(confirm("編集したテキストをすべて初期状態に戻しますか？")) {
+                Object.keys(originalTexts).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = originalTexts[id];
+                });
+            }
+        }
+
+        function copyHTML() {
+            const currentHTML = document.documentElement.outerHTML;
+            navigator.clipboard.writeText(currentHTML).then(() => {
+                alert("編集結果が含まれたHTMLコード全体をクリップボードにコピーしました！\nこのコードを .html ファイルとして保存することで、編集内容を永続化できます。");
+            }).catch(err => {
+                console.error("コピーに失敗しました:", err);
+                alert("コピーに失敗しました。");
+            });
+        }
+    </script>
+</body>
+</html>
