@@ -985,25 +985,83 @@
         let tempSteps = [];
         let pendingVideoBase64 = null;
 
-        function renderCreatorManuals() {
-    const list = document.getElementById('manuals-list');
-    list.innerHTML = '';
-    
-    // Group by category
-    const grouped = {};
-    dbManuals.forEach((m, idx) => {
-        const cat = m.category || '未分類';
-        if(!grouped[cat]) grouped[cat] = [];
-        grouped[cat].push({m, idx});
-    });
+        function buildCategoryTree(manuals) {
+            const root = { children: {}, manuals: [] };
+            manuals.forEach((m, idx) => {
+                const catPath = m.category || '未分類';
+                const parts = catPath.split('/').map(p => p.trim()).filter(Boolean);
+                let current = root;
+                parts.forEach(part => {
+                    if (!current.children[part]) {
+                        current.children[part] = { children: {}, manuals: [] };
+                    }
+                    current = current.children[part];
+                });
+                current.manuals.push({ m, idx });
+            });
+            return root;
+        }
 
-    for(const cat in grouped) {
-        list.innerHTML += `<div style="font-weight:bold; color:#38bdf8; margin: 15px 0 5px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">📁 ${cat}</div>`;
-        grouped[cat].forEach(item => {
-            list.innerHTML += `<div class="manual-card" onclick="openEditManual(${item.idx})" style="margin-bottom:8px; padding:10px;"><div><h3 style="color:var(--primary); font-size:1.1rem; margin:0;">${item.m.name}</h3><p style="font-size:0.85rem; color:#cbd5e1; margin-top:5px;">${item.m.desc}</p></div><i class="fa-solid fa-chevron-right"></i></div>`;
-        });
-    }
-}
+        function generateCategoryTreeHTML(node, name = '', depth = 0, isCreator = true) {
+            let html = '';
+            
+            // Render child folders recursively
+            for (const key in node.children) {
+                const childNode = node.children[key];
+                const indent = depth * 15;
+                html += `
+                <details open style="margin-left: ${indent}px; margin-bottom: 10px; border-left: 2px solid rgba(56, 189, 248, 0.3); padding-left: 12px; transition: all 0.3s ease;">
+                    <summary style="font-weight: bold; color: #38bdf8; cursor: pointer; padding: 6px 0; list-style: none; display: flex; align-items: center; gap: 6px; font-size: 1.05rem;">
+                        <i class="fa-solid fa-folder-open" style="color: #38bdf8;"></i> ${key}
+                    </summary>
+                    <div style="margin-top: 5px;">
+                        ${generateCategoryTreeHTML(childNode, key, depth + 1, isCreator)}
+                    </div>
+                </details>`;
+            }
+            
+            // Render manuals in current folder
+            node.manuals.forEach(item => {
+                const indent = depth * 15;
+                if (isCreator) {
+                    html += `
+                    <div class="manual-card" onclick="openEditManual(${item.idx})" style="margin-left: ${indent}px; margin-bottom: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="color: var(--primary); font-size: 1.1rem; margin: 0;">${item.m.name}</h3>
+                            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 5px; margin-bottom: 0;">${item.m.desc || '説明なし'}</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right" style="color: var(--primary);"></i>
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="glass panel manual-card" onclick="launchAntiGravity(${item.idx})" style="margin-left: ${indent}px; margin-bottom: 12px; padding: 15px; border: 1px solid var(--primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); transition: all 0.3s ease;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-rocket" style="color: var(--primary);"></i> ${item.m.name}
+                            </h3>
+                            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 5px; margin-bottom: 0;">${item.m.desc || '説明なし'}</p>
+                        </div>
+                        <button class="btn" style="padding: 8px 16px; font-size: 0.9rem;">学習スタート</button>
+                    </div>`;
+                }
+            });
+            
+            return html;
+        }
+
+        function renderCreatorManuals() {
+            const list = document.getElementById('manuals-list');
+            list.innerHTML = '';
+            
+            const tree = buildCategoryTree(dbManuals);
+            const html = generateCategoryTreeHTML(tree, 'Root', 0, true);
+            
+            if (html.trim() === '') {
+                list.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;">マニュアルがありません。新規作成してください。</div>`;
+            } else {
+                list.innerHTML = html;
+            }
+        }
         function createNewManual() {
             dbManuals.push({ id: Date.now(), name: "新規マニュアル", desc: "", version: 0, steps: [] });
             openEditManual(dbManuals.length - 1);
@@ -1295,9 +1353,16 @@
         function renderUserManuals() {
             const list = document.getElementById('user-manuals-list');
             list.innerHTML = '';
-            dbManuals.forEach((m, idx) => {
-                list.innerHTML += `<div class="glass panel" style="padding:20px; text-align:center; border:1px solid var(--primary); cursor:pointer;" onclick="launchAntiGravity(${idx})"><i class="fa-solid fa-rocket" style="font-size:2rem; color:var(--primary); margin-bottom:10px;"></i><h3 style="margin-bottom:10px;">${m.name}</h3><button class="btn" style="width:100%;">START学習設定</button></div>`;
-            });
+            list.style.display = 'block'; // Ensure block layout for category tree structure
+            
+            const tree = buildCategoryTree(dbManuals);
+            const html = generateCategoryTreeHTML(tree, 'Root', 0, false);
+            
+            if (html.trim() === '') {
+                list.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;">学習可能なマニュアルがありません。</div>`;
+            } else {
+                list.innerHTML = html;
+            }
         }
         let agManual = null; let agStepIdx = 0;
         function launchAntiGravity(idx) {
