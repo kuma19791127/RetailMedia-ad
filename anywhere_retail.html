@@ -231,7 +231,7 @@
         <button onclick="reconcileSales()" class="menu-btn" style="background:#10b981;">⚖️ 売上照合 (データの監査・照合)</button>
 
         <button onclick="openStaffScanner()" class="menu-btn" style="background:#ec4899;">🛒 商品を店員が読む</button>
-        <button onclick="approveCancelRequest()" class="menu-btn" style="background:#14b8a6;">↩️ キャンセル承認 (1タップ承認)</button>
+        <button onclick="showCancelHistory()" class="menu-btn" style="background:#14b8a6;">↩️ キャンセル履歴 (自動返金済)</button>
         <button onclick="window.open('business_lp.html', '_blank')" class="menu-btn" style="background:#8b5cf6;">📺 サイネージ広告</button>
         
         <button class="menu-btn" style="background:#ef4444; margin-top:20px;" onclick="doLogout()">ログアウト</button>
@@ -488,67 +488,48 @@ function copyQrUrl() {
     Swal.fire({toast:true, position:'top-end', icon:'success', title:'URLをコピーしました！<br>LINE等で送信できます', showConfirmButton:false, timer:3000});
 }
 
-    async function approveCancelRequest() {
+    async function showCancelHistory() {
         const email = document.getElementById('user-email-display').innerText.split(' / ')[1] || document.getElementById('input-email').value || 'store@demo.com';
         try {
-            Swal.fire({title: '通信中...', text: 'キャンセル申請データを取得しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            Swal.fire({title: '通信中...', text: 'キャンセル履歴データを取得しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
             
-            // サーバーから対象店舗の未承認キャンセル申請一覧を取得
-            const res = await fetch(window.API_BASE_URL + `/api/pos/cancel-requests?store_id=${email}`);
+            // サーバーから対象店舗の承認済み（自動返金完了）キャンセル履歴を取得
+            const res = await fetch(window.API_BASE_URL + `/api/pos/cancel-requests?store_id=${email}&status=APPROVED`);
             const data = await res.json();
             
             if(!data.success || !data.requests || data.requests.length === 0) {
-                Swal.fire('情報', '現在、承認待ちのキャンセル申請はありません。', 'info');
+                Swal.fire('情報', '現在、自動キャンセルの履歴はありません。', 'info');
                 return;
             }
             
-            // 最新の申請を表示
-            const request = data.requests[0];
-            const d = new Date(parseInt(request.timestamp)).toLocaleString('ja-JP');
-            const itemsHtml = request.items.map(item => `<li>${item.name || item.title || '商品'} x ${item.quantity || 1} (¥${item.price})</li>`).join('');
+            let historyHtml = data.requests.map(request => {
+                const d = new Date(parseInt(request.timestamp)).toLocaleString('ja-JP');
+                const itemsHtml = request.items.map(item => `<li>${item.name || item.title || '商品'} x ${item.quantity || 1} (¥${item.price})</li>`).join('');
+                return `
+                    <div style="border-bottom:1px solid #E2E8F0; padding:12px 0; text-align:left; font-size:13px;">
+                        <span style="color:#64748B; font-size:11px;">${d}</span><br>
+                        <b>決済ID:</b> ${request.transaction_id}<br>
+                        <b>返金タイプ:</b> <span style="color:#10B981; font-weight:bold;">${request.type === 'PARTIAL' ? '一部返金' : '全額返金'}</span><br>
+                        <b>返金金額:</b> <strong style="color:#EF4444;">¥${request.amount}</strong><br>
+                        <b>返金商品:</b>
+                        <ul style="margin:5px 0 0 0; padding-left:20px; color:#475569; font-size:12px;">
+                            ${itemsHtml || '<li>(なし)</li>'}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
             
             Swal.fire({
-                title: 'キャンセル申請の承認',
-                html: `<div style="text-align:left; font-size:14px;">
-                    以下のキャンセル申請を承認して返金処理を実行しますか？<br><br>
-                    <b>申請日時:</b> ${d}<br>
-                    <b>申請タイプ:</b> <span style="color:#2563eb; font-weight:bold;">${request.type === 'PARTIAL' ? '一部商品キャンセル' : '全商品キャンセル'}</span><br>
-                    <b>返金金額:</b> <strong style="color:#ef4444;">¥${request.amount}</strong><br>
-                    <b>元決済ID:</b> ${request.transaction_id}<br><br>
-                    <b>対象商品:</b>
-                    <ul style="margin: 5px 0; padding-left: 20px; max-height: 100px; overflow-y: auto;">
-                        ${itemsHtml || '<li>(なし)</li>'}
-                    </ul>
+                title: '自動キャンセル（返金）履歴',
+                html: `<div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
+                    ${historyHtml}
                 </div>`,
-                icon: 'warning',
-                showCancelButton: true,
                 confirmButtonColor: '#10B981',
-                cancelButtonColor: '#d33',
-                confirmButtonText: '1タップで承認・返金する',
-                cancelButtonText: '閉じる'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({title: '処理中...', text: '返金処理および売上差引を実行しています', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-                    
-                    const refundRes = await fetch(window.API_BASE_URL + '/api/pos/approve-cancel', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            requestId: request.id
-                        })
-                    });
-                    const refundData = await refundRes.json();
-                    
-                    if(refundData.success) {
-                        Swal.fire('承認完了', 'キャンセルの承認および返金処理が完了しました。店舗売上から差し引かれました。', 'success');
-                    } else {
-                        Swal.fire('エラー', refundData.error || '返金処理に失敗しました。', 'error');
-                    }
-                }
+                confirmButtonText: '閉じる'
             });
         } catch(e) {
-            console.error("Cancel approval error:", e);
-            Swal.fire('エラー', '通信に失敗しました', 'error');
+            console.error("Fetch cancel history error:", e);
+            Swal.fire('エラー', '履歴の取得に失敗しました', 'error');
         }
     }
 
