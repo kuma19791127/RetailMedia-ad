@@ -608,17 +608,30 @@
         }
 
         async function fetchManualChat() {
-            if (!currentUser) return; // Skip if not logged in to prevent 403 Forbidden
+            if (!currentUser) {
+                console.warn("[F12 Debug Frontend] fetchManualChat skipped: currentUser is null");
+                return; // Skip if not logged in to prevent 403 Forbidden
+            }
+            console.log("[F12 Debug Frontend] fetchManualChat starting. Current User:", currentUser);
             try {
-                const res = await fetch(window.API_BASE_URL + '/api/manualhelp/chat');
+                const url = window.API_BASE_URL + '/api/manualhelp/chat';
+                console.log("[F12 Debug Frontend] Fetching chat from URL:", url);
+                const res = await fetch(url);
+                console.log("[F12 Debug Frontend] fetchManualChat HTTP Status:", res.status);
+                if (res.status === 403) {
+                    console.error("[F12 Debug Frontend] 403 Forbidden received. User role might be unauthorized on backend.");
+                }
                 const data = await res.json();
+                console.log("[F12 Debug Frontend] fetchManualChat data:", data);
                 if(data.success && data.chat && data.chat.length > 0) {
                     chatMessages = data.chat;
                     localStorage.setItem('ag_chat', JSON.stringify(chatMessages));
-            syncManualChat();
+                    syncManualChat();
                     if(window.location.hash.includes('chat')) renderChat();
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("[F12 Debug Frontend] fetchManualChat exception:", e);
+            }
         }
         
         async function syncManualChat() {
