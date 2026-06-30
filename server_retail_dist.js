@@ -2233,7 +2233,7 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     console.log("[API /api/auth/login] Request body:", req.body);
-    const { email, password, role, name, org, totpCode } = req.body;
+    const { email, password, role, name, org, totpCode, clientType } = req.body;
     if (!email || !password) {
         console.warn("[Auth /api/auth/login] Missing fields: email or password missing");
         return res.status(400).json({ error: "Missing fields" });
@@ -2323,8 +2323,9 @@ app.post('/api/auth/login', async (req, res) => {
                 }
             }
 
-            // Enforce 2FA verification for all roles
-            if (true) {
+            // Enforce 2FA verification for all roles EXCEPT manualhelp and shift_manager
+            const isServiceBypass = (clientType === 'manualhelp' || clientType === 'shift_manager');
+            if (!isServiceBypass) {
                 // If 2FA is not setup, require setup (QR Code display)
                 if (!user.two_factor_secret) {
                     return res.json({ success: true, require2FASetup: true, email: actualEmail, redirect: getRedirectUrl(targetRole), role: targetRole });
@@ -2346,6 +2347,8 @@ app.post('/api/auth/login', async (req, res) => {
                         res.cookie(skipCookieName, skipToken, getCookieOptions(req, 5 * 60 * 60 * 1000));
                     }
                 }
+            } else {
+                console.log(`[Auth /api/auth/login] 2FA Bypassed for clientType: ${clientType}`);
             }
 
             // ログイン成功時にJWTトークンを発行してCookieにセット (24時間の明示的有効期限を設定してタイムアウトを防止)
