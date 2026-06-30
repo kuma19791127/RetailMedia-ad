@@ -178,12 +178,40 @@ const getCookieOptions = (req, maxAge = null) => {
 
 // Middleware: API Authentication
 const requireAuth = (req, res, next) => {
-    let token = req.cookies.token;
+    let token = null;
     
-    // Support Authorization header for cross-domain Bearer tokens (safeguard for third-party cookie restrictions)
+    // 1. Prioritize Authorization header (Bearer token) from LocalStorage to support independent multi-session tabs
     const authHeader = req.headers.authorization;
-    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
+    }
+    
+    // 2. Fallback to path-based role Cookie to isolate sessions across different portal tabs
+    if (!token && req.cookies) {
+        const path = req.path || '';
+        if (path.startsWith('/api/admin')) {
+            token = req.cookies.token_admin;
+        } else if (path.startsWith('/api/review') || path.startsWith('/api/kyc')) {
+            token = req.cookies.token_review;
+        } else if (path.startsWith('/api/store') || path.startsWith('/api/pos')) {
+            token = req.cookies.token_store;
+        } else if (path.startsWith('/api/advertiser') || path.startsWith('/api/campaigns')) {
+            token = req.cookies.token_advertiser;
+        } else if (path.startsWith('/api/creator')) {
+            token = req.cookies.token_creator;
+        } else if (path.startsWith('/api/agency')) {
+            token = req.cookies.token_agency;
+        }
+    }
+    
+    // 3. Fallback to any other active role Cookie if path-based was not found
+    if (!token && req.cookies) {
+        token = req.cookies.token_admin || req.cookies.token_review || req.cookies.token_store || req.cookies.token_advertiser || req.cookies.token_creator || req.cookies.token_agency;
+    }
+    
+    // 4. Ultimate fallback to global generic 'token' Cookie
+    if (!token && req.cookies) {
+        token = req.cookies.token;
     }
 
     if (!token) return res.status(401).json({ error: "Unauthorized: No token provided" });
@@ -242,10 +270,32 @@ app.use((req, res, next) => {
         }
         
         // Execute requireAuth validation logic
-        let token = req.cookies.token;
+        let token = null;
         const authHeader = req.headers.authorization;
-        if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        if (authHeader && authHeader.startsWith('Bearer ')) {
             token = authHeader.substring(7);
+        }
+        if (!token && req.cookies) {
+            const path = req.path || '';
+            if (path.startsWith('/api/admin')) {
+                token = req.cookies.token_admin;
+            } else if (path.startsWith('/api/review') || path.startsWith('/api/kyc')) {
+                token = req.cookies.token_review;
+            } else if (path.startsWith('/api/store') || path.startsWith('/api/pos')) {
+                token = req.cookies.token_store;
+            } else if (path.startsWith('/api/advertiser') || path.startsWith('/api/campaigns')) {
+                token = req.cookies.token_advertiser;
+            } else if (path.startsWith('/api/creator')) {
+                token = req.cookies.token_creator;
+            } else if (path.startsWith('/api/agency')) {
+                token = req.cookies.token_agency;
+            }
+        }
+        if (!token && req.cookies) {
+            token = req.cookies.token_admin || req.cookies.token_review || req.cookies.token_store || req.cookies.token_advertiser || req.cookies.token_creator || req.cookies.token_agency;
+        }
+        if (!token && req.cookies) {
+            token = req.cookies.token;
         }
 
         if (!token) {
@@ -2285,6 +2335,7 @@ app.post('/api/auth/register', async (req, res) => {
 
         const token = jwt.sign({ email, role: dbRole, org: orgId }, JWT_SECRET, { expiresIn: '24h' });
         res.cookie('token', token, getCookieOptions(req, 24 * 60 * 60 * 1000));
+        res.cookie(`token_${dbRole}`, token, getCookieOptions(req, 24 * 60 * 60 * 1000));
         res.json({ success: true, redirect: getRedirectUrl(dbRole) });
     } catch (e) {
         console.error("[Auth Register Error]", e);
@@ -2368,6 +2419,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
             if (verified) {
                 const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
                 res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
+                res.cookie(`token_${user.role}`, jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
                 
                 // 5時間有効な2FAスキップクッキーを発行
                 const skipCookieName = get2FASkipCookieName(user.role);
@@ -2404,6 +2456,7 @@ app.post('/api/auth/2fa/enable', async (req, res) => {
 
             const jwtToken = jwt.sign({ email, role: user.role, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
+            res.cookie(`token_${user.role}`, jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
 
             // 5時間有効な2FAスキップクッキーを発行
             const skipCookieName = get2FASkipCookieName(user.role);
@@ -2445,9 +2498,12 @@ app.post('/api/auth/reset-2fa', async (req, res) => {
 
         // 管理者権限チェック (トークンがクッキーまたはヘッダーにある場合)
         let isAdmin = false;
-        let token = req.cookies ? req.cookies.token : null;
+        let token = null;
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
+        }
+        if (!token) {
+            token = req.cookies ? req.cookies.token : null;
         }
         if (token) {
             try {
@@ -2631,6 +2687,7 @@ app.post('/api/auth/login', async (req, res) => {
             const jwtToken = jwt.sign({ email: actualEmail, role: targetRole, name: user.name, org: user.org }, JWT_SECRET, { expiresIn: '24h' });
             console.log(`[Auth Login Success] Issued token for email: ${actualEmail}, role: ${targetRole}, name: ${user.name}`);
             res.cookie('token', jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
+            res.cookie(`token_${targetRole}`, jwtToken, getCookieOptions(req, 24 * 60 * 60 * 1000));
 
             // Session token set in cookies
             res.json({ success: true, token: jwtToken, redirect: getRedirectUrl(targetRole), user: { email: actualEmail, role: targetRole, name: user.name, org: user.org } });
@@ -2679,9 +2736,12 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
         // 管理者セッションの検証 (CookieまたはBearerヘッダー)
         let isAdmin = false;
-        let token = req.cookies ? req.cookies.token : null;
+        let token = null;
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
+        }
+        if (!token) {
+            token = req.cookies ? req.cookies.token : null;
         }
         if (token) {
             try {
@@ -2765,7 +2825,13 @@ app.post('/api/auth/logout', (req, res) => {
     }
     
     res.clearCookie('token', opts);
-    console.log(`[Auth /api/auth/logout] Cookie 'token' cleared successfully with options: ${JSON.stringify(opts)}`);
+    res.clearCookie('token_store', opts);
+    res.clearCookie('token_admin', opts);
+    res.clearCookie('token_review', opts);
+    res.clearCookie('token_advertiser', opts);
+    res.clearCookie('token_agency', opts);
+    res.clearCookie('token_creator', opts);
+    console.log(`[Auth /api/auth/logout] Session cookies cleared successfully with options: ${JSON.stringify(opts)}`);
     res.json({ success: true });
 });
 
