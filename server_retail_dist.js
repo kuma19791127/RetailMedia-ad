@@ -2498,51 +2498,63 @@ app.post('/api/auth/login', async (req, res) => {
                 console.log(`[Auth /api/auth/login] Fallback match: Found user as advertiser role.`);
             }
         }
+        if (!user) {
+            // Universal fallback: If not found with the requested role, query by email/org only to locate the user
+            user = await dbHelper.query.get('SELECT * FROM users WHERE email = ? OR org = ? LIMIT 1', [email, email]);
+            if (user) {
+                dbRole = user.role;
+                console.log(`[Auth /api/auth/login] Universal Fallback match: Found user with registered role: ${dbRole}`);
+            }
+        }
         console.log(`[Auth /api/auth/login] [Trace 2] DB query completed. User found: ${!!user}`);
 
         if (!user) {
-            console.log(`[Auth] Login failed: User matching identifier ${email} with role ${dbRole} not found`);
+            console.log(`[Auth] Login failed: User matching identifier ${email} not found in database`);
             return res.status(401).json({ error: "ユーザーが存在しないか、パスワードが正しくありません。" });
         }
 
         const actualEmail = user.email; // Use verified email for all session bindings
 
-        // Update name, org, and role if provided and different
+        // Update name, org, and role if provided and different (restricted to demo accounts only for safety)
         let updated = false;
         let updateSql = 'UPDATE users SET ';
         const updateParams = [];
         
-        if (name && user.name !== name) {
-            updateSql += 'name = ?, ';
-            updateParams.push(name);
-            user.name = name;
-            updated = true;
-        }
-        if (org && user.org !== org) {
-            updateSql += 'org = ?, ';
-            updateParams.push(org);
-            user.org = org;
-            updated = true;
-        }
-        const targetRoleToUpdate = getDatabaseRole(role);
-        if (role && user.role !== targetRoleToUpdate && !actualEmail.includes('@demo.com')) {
-            updateSql += 'role = ?, ';
-            updateParams.push(targetRoleToUpdate);
-            user.role = targetRoleToUpdate;
-            updated = true;
-        }
-        
-        if (updated) {
-            updateSql = updateSql.slice(0, -2) + ' WHERE email = ? AND role = ?';
-            updateParams.push(actualEmail, dbRole);
-            await dbHelper.query.run(updateSql, updateParams);
+        const isDemoUser = actualEmail.includes('@demo.com');
+        if (isDemoUser) {
+            if (name && user.name !== name) {
+                updateSql += 'name = ?, ';
+                updateParams.push(name);
+                user.name = name;
+                updated = true;
+            }
+            if (org && user.org !== org) {
+                updateSql += 'org = ?, ';
+                updateParams.push(org);
+                user.org = org;
+                updated = true;
+            }
+            const targetRoleToUpdate = getDatabaseRole(role);
+            if (role && user.role !== targetRoleToUpdate) {
+                updateSql += 'role = ?, ';
+                updateParams.push(targetRoleToUpdate);
+                user.role = targetRoleToUpdate;
+                updated = true;
+            }
+            
+            if (updated) {
+                updateSql = updateSql.slice(0, -2) + ' WHERE email = ? AND role = ?';
+                updateParams.push(actualEmail, dbRole);
+                await dbHelper.query.run(updateSql, updateParams);
+            }
         }
 
         console.log(`[Auth /api/auth/login] [Trace 3] Verifying password...`);
         const passwordMatched = verifyPassword(password, user.password);
         console.log(`[Auth /api/auth/login] [Trace 4] Password match result: ${passwordMatched}`);
         if (passwordMatched) {
-            const targetRole = role || user.role;
+            // Prioritize user's registered role in the DB to ensure session role integrity
+            const targetRole = user.role || role;
             
             // 2FA共通化: advertiser または store ロールの場合、もう片方が 2FA シークレットを設定していれば同期
             if (dbRole === 'advertiser' || dbRole === 'store') {

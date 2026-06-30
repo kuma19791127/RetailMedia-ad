@@ -781,7 +781,6 @@
         // --- Auth functions ---
         async function doLogin(e) {
             if (e) e.preventDefault();
-            const org = "Demo Corp";
             const name = document.getElementById('login-name').value.trim();
             const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-pass') ? document.getElementById('login-pass').value : 'demo1234!!';
@@ -792,7 +791,8 @@
                 return; 
             }
             
-            const body = { email: email, password: pass, role: role, name: name, org: org, clientType: 'manualhelp' };
+            // Do not send hardcoded 'org' to backend to avoid overwriting the user's correct organization in DB.
+            const body = { email: email, password: pass, role: role, name: name, clientType: 'manualhelp' };
             console.log("[F12 Debug Frontend] Attempting login with body:", { ...body, password: "***" });
             
             try {
@@ -810,7 +810,8 @@
                 console.log("[F12 Debug Frontend] Login response data:", data);
                 if (data.success) {
                     console.log("[F12 Debug Frontend] Login success directly");
-                    loginSuccess(email, pass, name, org, role, data.user);
+                    const serverOrg = (data.user && data.user.org) ? data.user.org : "Demo Corp";
+                    loginSuccess(email, pass, name, serverOrg, role, data.user);
                 } else {
                     console.warn("[F12 Debug Frontend] Login failed:", data.error);
                     Swal.fire('エラー', data.error || 'パスワードが間違っています。', 'error');
@@ -818,7 +819,8 @@
             } catch(e) {
                 console.error(e);
                 // Fallback for demo
-                currentUser = { org, name, email, role, avatar: name.charAt(0) };
+                const fallbackOrg = "Demo Corp";
+                currentUser = { org: fallbackOrg, name, email, role, avatar: name.charAt(0) };
                 localStorage.setItem('ag_user', JSON.stringify(currentUser));
                 window.location.hash = '#' + role;
                 checkRoute();
