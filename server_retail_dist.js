@@ -271,7 +271,7 @@ app.get('/api/db-status', requireAuth, async (req, res) => {
     }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 
 // --- Product Master API ---
