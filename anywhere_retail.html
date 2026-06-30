@@ -324,8 +324,10 @@
         window.location.replace('index.html?logout=true');
     }
     document.addEventListener('DOMContentLoaded', () => {
-        localStorage.setItem('last_active_service', 'anywhere_retail.html');
         const savedEmail = localStorage.getItem('last_email');
+        if (savedEmail) {
+            localStorage.setItem('last_active_service', 'anywhere_retail.html');
+        }
         const savedPass = localStorage.getItem('last_password');
         if (savedEmail) document.getElementById('input-email').value = savedEmail;
         if (savedPass) document.getElementById('input-pass').value = savedPass;

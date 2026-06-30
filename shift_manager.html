@@ -1464,8 +1464,10 @@
             document.getElementById('main-app').style.display = 'none';
         }
         document.addEventListener('DOMContentLoaded', () => {
-            localStorage.setItem('last_active_service', 'shift_manager.html');
             const savedEmail = localStorage.getItem('last_email');
+            if (savedEmail) {
+                localStorage.setItem('last_active_service', 'shift_manager.html');
+            }
             const savedPass = localStorage.getItem('last_password');
             if (savedEmail) document.getElementById('login-email').value = savedEmail;
             const passEl = document.getElementById('login-password') || document.getElementById('login-pass');

@@ -402,7 +402,10 @@
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            localStorage.setItem('last_active_service', 'agency_portal.html');
+            const savedEmail = localStorage.getItem('last_email');
+            if (savedEmail) {
+                localStorage.setItem('last_active_service', 'agency_portal.html');
+            }
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
                 document.querySelectorAll('h1, h2, h3, p, .subtitle, li, .card p').forEach(el => {
