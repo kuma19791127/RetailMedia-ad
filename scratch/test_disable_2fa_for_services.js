@@ -42,14 +42,18 @@ async function runTest() {
     // Let's launch the server as a subprocess and make HTTP requests to it. That is the most realistic E2E test.
     
     const { exec } = require('child_process');
+    const path = require('path');
     const port = 5123;
     process.env.PORT = port;
     process.env.NODE_ENV = 'test';
     process.env.GEMINI_API_KEY = 'mock'; // prevent crash on init
     process.env.TOKEN_ENCRYPTION_KEY = 'mock_encryption_key_32_bytes_long_!';
     
-    console.log(`Starting mock server on port ${port}...`);
-    const serverProcess = exec(`node server_retail_dist.js`, { env: process.env });
+    console.log(`Starting mock server on port ${port} from directory ${path.resolve(__dirname, '..')}...`);
+    const serverProcess = exec(`node server_retail_dist.js`, { 
+        env: process.env,
+        cwd: path.resolve(__dirname, '..')
+    });
 
     // Pipe outputs to help debugging
     serverProcess.stdout.on('data', (data) => {
@@ -57,6 +61,9 @@ async function runTest() {
     });
     serverProcess.stderr.on('data', (data) => {
         console.error(`[Server Stderr] ${data.trim()}`);
+    });
+    serverProcess.on('error', (err) => {
+        console.error(`[Server Process Error] Failed to start server:`, err);
     });
 
     console.log(`Mock server started. Waiting for server to accept connections on port ${port}...`);
