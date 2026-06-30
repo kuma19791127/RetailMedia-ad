@@ -8656,7 +8656,9 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         log(`勘定科目の削除に成功しました。対象ID: ${newAccountItemId}`);
         newAccountItemId = null; // 削除成功したため初期化
         
-        // 7. 事業所情報の更新 (PUT /companies/{id})
+        // 7. 事業所情報の更新 (PUT /companies/{id}) - freee仕様変更により新規アプリで使用不可となったためスキップ
+        log("7. 事業所情報の更新 (PUT /companies/{id}) [スキップ] freee仕様変更により新規アプリで権限が無効化されたため、テストをスキップします。");
+        /*
         log("7. 事業所情報の更新 (PUT /companies/{id}) の呼び出しを開始...");
         const originalName = company.name;
         const originalDisplayName = company.display_name || company.name;
@@ -8669,6 +8671,7 @@ app.post('/api/freee/test-audit', requireAuth, async (req, res) => {
         } catch (companyErr) {
             log(`[INFO] 事業所情報の更新は 404 (Not Found) になりました。これはfreee APIが会社基本情報の変更を許可していないための想定内の挙動です。テストを継続します。`);
         }
+        */
         
         log("すべての監査用APIテストが正常に完了しました！");
         res.json({ success: true, logs });
