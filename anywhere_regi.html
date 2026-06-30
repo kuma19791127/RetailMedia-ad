@@ -37,6 +37,7 @@
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #2563EB;
@@ -148,9 +149,8 @@
     <script>
     function updateProfileDisplay() { 
         if(document.getElementById('header-user-info')) {
-            const org = localStorage.getItem('demo_org') || "Demo Store";
             const email = localStorage.getItem('demo_email') || (currentSession ? currentSession.email : "store@demo.com");
-            document.getElementById('header-user-info').innerHTML = org + ' <br class="mobile-br">[' + email + '] <i class="fa-solid fa-pen" style="font-size:10px;"></i>';
+            document.getElementById('header-user-info').innerText = email;
         }
     }
       if ('serviceWorker' in navigator) {
@@ -376,7 +376,8 @@
             <div style="font-weight:bold; color:#2563EB; display:flex; align-items:center; gap:8px;">
                 <span style="font-size:1.2rem;">📱</span>
                 <span id="header-chain-name">どこでもレジ</span>
-                <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px; cursor:pointer;" onclick="openProfileModal(false)" title="プロフィール編集"></span>
+                <i class="fa-solid fa-pen-to-square" style="cursor:pointer; color:#94a3b8; font-size:16px; margin-left:10px;" onclick="openProfileModal(false)" title="プロフィール編集"></i>
+                <span id="header-user-info" style="font-size:0.7rem; color:#888; font-weight:normal; margin-left:10px;"></span>
             </div>
             <div class="header-buttons" style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
                 <button class="btn-sm btn-logout nav-btn-mobile" onclick="logout()" style="padding:8px 8px;">ログアウト</button>
@@ -1024,7 +1025,7 @@ window.addEventListener('DOMContentLoaded', () => {
         function initPosScreen(session) {
             document.getElementById('page-login').classList.remove('active');
             document.getElementById('page-pos').classList.add('active');
-            document.getElementById('header-user-info').innerText = session.email;
+            updateProfileDisplay();
 
             const select = document.getElementById('store-select');
             select.innerHTML = "";
