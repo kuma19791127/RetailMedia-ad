@@ -328,5 +328,121 @@ module.exports = {
         }
 
         return Math.round(finalScore * 100) / 100;
+    },
+
+    generateCrossSellText: async (adItem, locationType = "その他") => {
+        if (!adItem) return "おすすめ！注目商品はこちら！";
+        
+        const adTitle = adItem.title || adItem.name || "おすすめ商品";
+        const sponsor = adItem.sponsor || adItem.brand || "";
+        const location = locationType || "その他";
+
+        // プリセットフォールバックの判定ロジック
+        const getFallbackText = () => {
+            const titleLower = adTitle.toLowerCase();
+            const sponsorLower = sponsor.toLowerCase();
+            
+            const isBeer = titleLower.includes('ビール') || titleLower.includes('極み生') || sponsorLower.includes('ビール') || titleLower.includes('酒');
+            const isSnack = titleLower.includes('スナック') || titleLower.includes('菓子') || titleLower.includes('つまみ') || sponsorLower.includes('メーカーc') || sponsorLower.includes('c社');
+
+            if (location === "お酒売り場") {
+                if (isSnack) {
+                    return `お酒のお供に！ビールによく合う「${adTitle}」はいかがですか？`;
+                }
+                if (isBeer) {
+                    return `今夜は冷えたビールで！おすすめの「${adTitle}」を販売中！`;
+                }
+                return `お酒売り場おすすめ！今夜の晩酌のお供に「${adTitle}」をどうぞ！`;
+            }
+            
+            if (location === "惣菜売り場") {
+                if (isBeer) {
+                    return `美味しいお惣菜と一緒に！「${adTitle}」で今夜は乾杯！`;
+                }
+                if (isSnack) {
+                    return `食後のデザート・おやつに！「${adTitle}」もご一緒にどうぞ！`;
+                }
+                return `惣菜コーナーおすすめ！お惣菜のお供に「${adTitle}」はいかがですか？`;
+            }
+
+            if (location === "レジ横") {
+                if (isSnack) {
+                    return `小腹が空いたら！レジ横の「${adTitle}」もご一緒に！`;
+                }
+                return `お買い忘れはありませんか？レジ横にて「${adTitle}」販売中！`;
+            }
+
+            // デフォルト
+            if (isBeer) {
+                return `今夜の晩酌にぴったり！冷えた「${adTitle}」はいかがですか？`;
+            }
+            if (isSnack) {
+                return `おやつやビールのおつまみに！大人気の「${adTitle}」！`;
+            }
+            return `店長おすすめ！今一押しの「${adTitle}」をぜひお試しください！`;
+        };
+
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.log(`[AdEngine AI] No GEMINI_API_KEY configured. Using high-quality preset fallback.`);
+            return getFallbackText();
+        }
+
+        const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro'];
+        const prompt = `あなたはスーパーのデジタルサイネージに表示する提案テロップ（字幕）を作成するAIです。
+以下の情報から、店内の来店客に対してクロスセルを促す魅力的なキャッチコピーを1行（30字以内）で作成してください。
+
+【現在設置されている売り場】
+${location}
+
+【放映中の広告商品】
+商品名: ${adTitle}
+ブランド/スポンサー: ${sponsor}
+
+出力はキャッチコピーのテキスト1行のみにしてください。余計な説明や装飾は一切不要です。`;
+
+        for (const model of models) {
+            try {
+                console.log(`[AdEngine AI] Attempting cross-sell text generation with model ${model}...`);
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        text: prompt
+                                    }
+                                ]
+                            }
+                        ]
+                    })
+                });
+
+                if (response.ok) {
+                    const resJson = await response.json();
+                    if (resJson.candidates && resJson.candidates[0] && resJson.candidates[0].content && resJson.candidates[0].content.parts && resJson.candidates[0].content.parts[0]) {
+                        const generatedText = resJson.candidates[0].content.parts[0].text.trim().replace(/\n/g, ' ');
+                        if (generatedText) {
+                            console.log(`[AdEngine AI] Successfully generated text using ${model}: "${generatedText}"`);
+                            return generatedText;
+                        }
+                    }
+                } else {
+                    const errText = await response.text();
+                    console.warn(`[AdEngine AI] Model ${model} returned non-200 status: ${response.status}. Details: ${errText}`);
+                }
+            } catch (err) {
+                console.error(`[AdEngine AI] Error calling model ${model}:`, err.message);
+            }
+        }
+
+        console.warn(`[AdEngine AI] All Gemini models failed or returned empty results. Falling back to preset.`);
+        return getFallbackText();
     }
 };

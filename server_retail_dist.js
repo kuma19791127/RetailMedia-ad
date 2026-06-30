@@ -3923,6 +3923,7 @@ app.get('/api/ad/analytics', requireAuth, async (req, res) => {
 app.get('/api/signage/playlist', async (req, res) => {
     const deviceId = req.query.deviceId;
     let storeId = req.query.storeId;
+    let locationType = "その他";
     
     if (deviceId) {
         global.deviceStoreMapping = global.deviceStoreMapping || {};
@@ -3933,6 +3934,22 @@ app.get('/api/signage/playlist', async (req, res) => {
         } else {
             storeId = '1000001';
             console.log(`[API /api/signage/playlist] Device ${deviceId} is not paired yet. Using default Store ID ${storeId}`);
+        }
+
+        try {
+            const row = await dbHelper.query.get('SELECT * FROM signage_states WHERE store_id = ?', [storeId]);
+            if (row && row.state_json) {
+                const stateObj = JSON.parse(row.state_json);
+                if (stateObj && Array.isArray(stateObj.devices)) {
+                    const dev = stateObj.devices.find(d => d.id === deviceId);
+                    if (dev && dev.location_type) {
+                        locationType = dev.location_type;
+                        console.log(`[API /api/signage/playlist] Device ${deviceId} has location_type: ${locationType}`);
+                    }
+                }
+            }
+        } catch (dbErr) {
+            console.error(`[API /api/signage/playlist] Failed to fetch device location_type:`, dbErr.message);
         }
     }
     
@@ -3959,7 +3976,30 @@ app.get('/api/signage/playlist', async (req, res) => {
         console.error(`[API /api/signage/playlist] Failed to fetch store metadata from DB:`, dbErr.message);
     }
 
-    let playlist = signageServer.getPlaylist(location, false, storeId, storeOrg, storeArea, storePrefecture, storeType);
+    let playlist = signageServer.getPlaylist(location, false, storeId, storeOrg, storeArea, storePrefecture, storeType, locationType);
+
+    // AI提案クロスセルテキストの自動生成と各広告へのマッピング
+    const adEngine = require('./ad_engine');
+    if (playlist && playlist.length > 0) {
+        playlist = await Promise.all(playlist.map(async (item) => {
+            if (item && typeof item === 'object') {
+                try {
+                    const aiText = await adEngine.generateCrossSellText(item, locationType);
+                    return {
+                        ...item,
+                        ai_cross_sell_text: aiText
+                    };
+                } catch (e) {
+                    console.error(`[API /api/signage/playlist] Failed to generate cross sell text for item ${item.id}:`, e.message);
+                    return {
+                        ...item,
+                        ai_cross_sell_text: `注目！「${item.title || item.name || 'おすすめ商品'}」を販売中！`
+                    };
+                }
+            }
+            return item;
+        }));
+    }
 
     // [Fix] Handle Default "Spaghetti" Demo Content in Production Mode
     if (playlist && playlist.length > 0 && playlist[0].id === 'ad_default') {
@@ -8381,7 +8421,7 @@ app.post('/api/store/signages', requireAuth, async (req, res) => {
     if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
         return res.status(403).json({ error: "店舗またはリテーラー権限が必要です" });
     }
-    const { name } = req.body;
+    const { name, location_type } = req.body;
     try {
         const storeId = req.user.org || req.user.email;
         let row = await dbHelper.query.get('SELECT * FROM signage_states WHERE store_id = ?', [storeId]);
@@ -8414,6 +8454,7 @@ app.post('/api/store/signages', requireAuth, async (req, res) => {
         const newDevice = {
             id: signageId,
             name: name || "サイネージ端末",
+            location_type: location_type || "その他",
             status: "active",
             createdAt: new Date().toISOString()
         };
@@ -8425,9 +8466,47 @@ app.post('/api/store/signages', requireAuth, async (req, res) => {
             await dbHelper.query.run('INSERT INTO signage_states (store_id, state_json) VALUES (?, ?)', [storeId, JSON.stringify(stateObj)]);
         }
 
+        if (typeof saveDatabase === 'function') saveDatabase();
+
         res.json({ success: true, device: newDevice });
     } catch (e) {
         console.error("[Add Signage Error]", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.put('/api/store/signages/:id', requireAuth, async (req, res) => {
+    if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "店舗またはリテーラー権限が必要です" });
+    }
+    const signageId = req.params.id;
+    const { name, location_type } = req.body;
+    try {
+        const storeId = req.user.org || req.user.email;
+        let row = await dbHelper.query.get('SELECT * FROM signage_states WHERE store_id = ?', [storeId]);
+        if (!row || !row.state_json) {
+            return res.status(404).json({ error: "サイネージ設定が見つかりません" });
+        }
+
+        let stateObj = JSON.parse(row.state_json);
+        if (stateObj && Array.isArray(stateObj.devices)) {
+            const dev = stateObj.devices.find(d => d.id === signageId);
+            if (dev) {
+                if (name !== undefined) dev.name = name;
+                if (location_type !== undefined) dev.location_type = location_type;
+                await dbHelper.query.run('UPDATE signage_states SET state_json = ? WHERE store_id = ?', [JSON.stringify(stateObj), storeId]);
+                
+                if (typeof saveDatabase === 'function') saveDatabase();
+                
+                res.json({ success: true, device: dev });
+            } else {
+                res.status(404).json({ error: "対象デバイスが見つかりません" });
+            }
+        } else {
+            res.status(404).json({ error: "対象デバイスが見つかりません" });
+        }
+    } catch (e) {
+        console.error("[Update Signage Error]", e);
         res.status(500).json({ error: e.message });
     }
 });
@@ -8448,6 +8527,9 @@ app.delete('/api/store/signages/:id', requireAuth, async (req, res) => {
         if (stateObj && Array.isArray(stateObj.devices)) {
             stateObj.devices = stateObj.devices.filter(d => d.id !== signageId);
             await dbHelper.query.run('UPDATE signage_states SET state_json = ? WHERE store_id = ?', [JSON.stringify(stateObj), storeId]);
+            
+            if (typeof saveDatabase === 'function') saveDatabase();
+            
             res.json({ success: true, message: "サイネージを削除しました" });
         } else {
             res.status(404).json({ error: "対象デバイスが見つかりません" });

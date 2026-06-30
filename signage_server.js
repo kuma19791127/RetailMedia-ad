@@ -80,7 +80,7 @@ function matchPrefectureAndStoreType(ad, requestStorePrefecture, requestStoreTyp
 }
 
 module.exports = {
-    getPlaylist: (locationId, isProduction = false, requestStoreId = null, requestStoreOrg = null, requestStoreArea = null, requestStorePrefecture = null, requestStoreType = null) => {
+    getPlaylist: (locationId, isProduction = false, requestStoreId = null, requestStoreOrg = null, requestStoreArea = null, requestStorePrefecture = null, requestStoreType = null, locationType = "その他") => {
         const state = STATE["register_side"];
 
         // --- Priority 1: Emergency / Voice Interrupt (Targeted) ---
@@ -273,7 +273,14 @@ module.exports = {
             console.error("[AI Match Playlist] Error during playlist optimization:", matchErr.message);
         }
 
-        if (playlist.length > 0) return playlist;
+        if (playlist.length > 0) {
+            playlist.forEach(item => {
+                if (item && typeof item === 'object') {
+                    item.location_type = locationType || "その他";
+                }
+            });
+            return playlist;
+        }
         return state.default;
     },
 
