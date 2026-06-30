@@ -614,6 +614,8 @@
                             `,
                             showCancelButton: true,
                             confirmButtonText: '設定してログイン',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             preConfirm: () => {
                                 return document.getElementById('totp-setup-code').value;
                             }
@@ -654,6 +656,8 @@
                             inputPlaceholder: '123456',
                             showCancelButton: true,
                             confirmButtonText: '認証してログイン',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputAttributes: {
                                 autocomplete: 'one-time-code'
                             },
@@ -667,7 +671,9 @@
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonText: 'はい、再設定する',
-                                        cancelButtonText: 'キャンセル'
+                                        cancelButtonText: 'キャンセル',
+                                        allowOutsideClick: false,
+                                        allowEscapeKey: false
                                     });
                                     if (confirmReset.isConfirmed) {
                                         console.log("[Auth] Sending reset 2FA request for email:", email, "with password length:", password ? password.length : 0);
@@ -717,7 +723,9 @@
                                     showCancelButton: true,
                                     confirmButtonText: '閉じる',
                                     cancelButtonText: '2FAを再設定する',
-                                    cancelButtonColor: '#d33'
+                                    cancelButtonColor: '#d33',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false
                                 }).then(async (result) => {
                                     if (result.dismiss === Swal.DismissReason.cancel) {
                                         console.log("[Auth] Requesting 2FA reset from error dialog... with password length:", password ? password.length : 0);

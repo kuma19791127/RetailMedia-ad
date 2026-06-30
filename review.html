@@ -431,6 +431,8 @@ async function loadKYCReq() {
                             showCancelButton: true,
                             confirmButtonText: '認証',
                             cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputValidator: (value) => {
                                 if (!value || value.length !== 6) return '6桁の数字を入力してください';
                             }
@@ -480,10 +482,12 @@ async function loadKYCReq() {
                                 <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${setupData.secret}</code></p>
                             `,
                             input: 'text',
-                            inputPlaceholder: '6桁のコード',
+                            inputPlaceholder: '6桁 of コード',
                             showCancelButton: true,
                             confirmButtonText: '有効化する',
                             cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputValidator: (value) => {
                                 if (!value || value.length !== 6) return '6桁の数字を入力してください';
                             }

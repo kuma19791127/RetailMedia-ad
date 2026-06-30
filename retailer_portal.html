@@ -856,6 +856,7 @@
                 const response = await fetch(window.API_BASE_URL + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email: email, password: pass, role: 'store' })
                 });
                 console.log("[Auth] Response status:", response.status);
@@ -877,6 +878,8 @@
                             showCancelButton: true,
                             confirmButtonText: '認証',
                             cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputValidator: (value) => {
                                 if (!value || value.length !== 6) return '6桁の数字を入力してください';
                             },
@@ -891,7 +894,9 @@
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonText: 'はい、再設定する',
-                                        cancelButtonText: 'キャンセル'
+                                        cancelButtonText: 'キャンセル',
+                                        allowOutsideClick: false,
+                                        allowEscapeKey: false
                                     });
                                     if (confirmReset.isConfirmed) {
                                         try {
@@ -900,6 +905,7 @@
                                             const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json' },
+                                                credentials: 'include',
                                                 body: JSON.stringify({ email, password: passVal, role: 'store' })
                                             });
                                             console.log("[Auth] Reset 2FA response status:", resetRes.status);
@@ -931,6 +937,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, token: totpCode, role: 'store' })
                         });
                         console.log("[Auth] 2FA verification response status:", verifyRes.status);
@@ -951,7 +958,9 @@
                                 showCancelButton: true,
                                 confirmButtonText: '閉じる',
                                 cancelButtonText: '2FAを再設定する',
-                                cancelButtonColor: '#d33'
+                                cancelButtonColor: '#d33',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false
                             }).then(async (result) => {
                                 if (result.dismiss === Swal.DismissReason.cancel) {
                                     try {
@@ -960,6 +969,7 @@
                                         const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
+                                            credentials: 'include',
                                             body: JSON.stringify({ email, password: passVal, role: 'store' })
                                         });
                                         const resetData = await resetRes.json();
@@ -986,6 +996,7 @@
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, role: 'store' })
                         });
                         console.log("[Auth] 2FA setup response status:", setupRes.status);
@@ -1008,6 +1019,8 @@
                             showCancelButton: true,
                             confirmButtonText: '有効化する',
                             cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputValidator: (value) => {
                                 if (!value || value.length !== 6) return '6桁の数字を入力してください';
                             }
@@ -1023,6 +1036,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: 'store' })
                         });
                         console.log("[Auth] 2FA enable response status:", verifyRes.status);

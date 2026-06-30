@@ -2366,10 +2366,12 @@
                 title: '🔑 二段階認証',
                 text: '安全な支払送金処理のため、6桁の認証コードを入力してください。',
                 input: 'text',
-                inputPlaceholder: '6桁 of コード',
+                inputPlaceholder: '6桁のコード',
                 showCancelButton: true,
                 confirmButtonText: '送金を実行する',
                 cancelButtonText: 'キャンセル',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
                 inputValidator: (value) => {
                     if (!value || value.length !== 6) return '6桁の数字を入力してください';
                 }
@@ -2385,6 +2387,7 @@
                 const res = await fetch(`${API_BASE}/api/admin/payout/gmo-transfer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ type: type, targetIds: [targetId], totpCode: totpCode })
                 });
 
@@ -2604,6 +2607,8 @@
                         showCancelButton: true,
                         confirmButtonText: '有効化する',
                         cancelButtonText: 'キャンセル',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
                         inputValidator: (value) => {
                             if (!value || value.length !== 6) return '6桁の数字を入力してください';
                         }
@@ -2640,6 +2645,8 @@
                         showCancelButton: true,
                         confirmButtonText: '検証する',
                         cancelButtonText: 'キャンセル',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
                         showDenyButton: true,
                         denyButtonText: '2FAを再設定する',
                         denyButtonColor: '#d33',
@@ -2673,7 +2680,9 @@
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonText: 'はい、再設定する',
-                            cancelButtonText: 'キャンセル'
+                            cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
                         });
                         if (confirmReset.isConfirmed) {
                             console.log("[Auth] Sending reset 2FA request for admin:", user, "with password length:", pass ? pass.length : 0);
@@ -2768,7 +2777,9 @@
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'はい、設定する',
-                cancelButtonText: 'キャンセル'
+                cancelButtonText: 'キャンセル',
+                allowOutsideClick: false,
+                allowEscapeKey: false
             });
 
             if (!confirmSetup.isConfirmed) return;
@@ -2804,10 +2815,12 @@
                         <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${qrData.secret}</code></p>
                     `,
                     input: 'text',
-                    inputPlaceholder: '6桁のコード',
+                    inputPlaceholder: '6桁 of コード',
                     showCancelButton: true,
                     confirmButtonText: '有効化する',
                     cancelButtonText: 'キャンセル',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
                     inputValidator: (value) => {
                         if (!value || value.length !== 6) return '6桁の数字を入力してください';
                     }
