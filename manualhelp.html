@@ -786,8 +786,10 @@
                             showCancelButton: true,
                             confirmButtonText: '認証',
                             cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputValidator: (value) => {
-                                if (!value || value.length !== 6) return '6桁 of 数字を入力してください';
+                                if (!value || value.length !== 6) return '6桁の数字を入力してください';
                             }
                         });
 
@@ -803,6 +805,7 @@
                         const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/verify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, token: totpCode, role: role })
                         });
                         console.log("[F12 Debug Frontend] 2FA verification response status:", verifyRes.status);
@@ -831,6 +834,7 @@
                         const setupRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, role: role })
                         });
                         console.log("[F12 Debug Frontend] 2FA setup response status:", setupRes.status);
@@ -852,6 +856,8 @@
                             showCancelButton: true,
                             confirmButtonText: '有効化する',
                             cancelButtonText: 'キャンセル',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
                             inputValidator: (value) => {
                                 if (!value || value.length !== 6) return '6桁の数字を入力してください';
                             }
@@ -869,6 +875,7 @@
                         const enableRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify({ email, token: totpCode, secret: setupData.secret, role: role })
                         });
                         console.log("[F12 Debug Frontend] 2FA enable response status:", enableRes.status);
