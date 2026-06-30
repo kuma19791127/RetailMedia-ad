@@ -61,6 +61,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
 const app = express();
+app.set('trust proxy', true); // Trust reverse proxy headers (App Runner / ALB)
 app.use(cookieParser());
 
 // Global CORS & Credentials config (applied before any route definition)
@@ -158,7 +159,12 @@ const verifyPassword = (password, storedHash) => {
 };
 
 const getCookieOptions = (req, maxAge = null) => {
-    const isProd = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const host = (req && req.headers && req.headers.host) ? req.headers.host.toLowerCase() : '';
+    const isProd = process.env.NODE_ENV === 'production' || 
+                   (req && req.secure) || 
+                   (req && req.headers && req.headers['x-forwarded-proto'] === 'https') ||
+                   host.includes('retail-ad.com') || 
+                   host.includes('awsapprunner.com');
     const opts = {
         httpOnly: true,
         sameSite: isProd ? 'none' : 'lax',
