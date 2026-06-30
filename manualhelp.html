@@ -705,8 +705,10 @@
         const SQUARE_LOCATION_ID = "LZYJ3X6XZQ8ZN";
 
         document.addEventListener('DOMContentLoaded', () => {
-            localStorage.setItem('last_active_service', 'manualhelp.html');
             const savedEmail = localStorage.getItem('last_email');
+            if (savedEmail) {
+                localStorage.setItem('last_active_service', 'manualhelp.html');
+            }
             const savedPass = localStorage.getItem('last_password');
             if (savedEmail) document.getElementById('login-email').value = savedEmail;
             const passEl = document.getElementById('login-pass');
