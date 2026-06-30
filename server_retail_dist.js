@@ -123,7 +123,7 @@ app.use((req, res, next) => {
         "font-src 'self' data: https:; " +
         "img-src 'self' data: blob: https: http:; " +
         "connect-src 'self' https: http: wss: ws:; " +
-        "frame-src 'self' https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com https://googleads.g.doubleclick.net https://www.google.com; " +
+        "frame-src 'self' https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com https://googleads.g.doubleclick.net https://www.google.com https://*.adtrafficquality.google https://ep2.adtrafficquality.google; " +
         "manifest-src 'self' https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com;"
     );
     next();
