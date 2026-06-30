@@ -1169,6 +1169,7 @@
 
         // freee同期エラーバナーの更新
         async function updateFreeeErrorBanner() {
+            if (sessionStorage.getItem('retailMediaAuth') !== 'true') return;
             try {
                 const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue');
                 if (!res.ok) return;
