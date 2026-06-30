@@ -120,7 +120,7 @@ app.use((req, res, next) => {
         "default-src 'self' https: http: 'unsafe-inline' 'unsafe-eval' data: blob:; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareupsandbox.com https://js.squareup.com https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com https://unpkg.com https://cdn.jsdelivr.net https://pagead2.googlesyndication.com https://adservice.google.com https://adservice.google.co.jp https://googleads.g.doubleclick.net https://www.google.com; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://use.fontawesome.com https://cdn.jsdelivr.net; " +
-        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://use.fontawesome.com; " +
+        "font-src 'self' data: https:; " +
         "img-src 'self' data: blob: https: http:; " +
         "connect-src 'self' https: http: wss: ws:; " +
         "frame-src 'self' https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com https://googleads.g.doubleclick.net https://www.google.com; " +
