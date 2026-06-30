@@ -91,6 +91,17 @@ if (process.env.DATABASE_URL) {
                     timestamp BIGINT
                 );
 
+                CREATE TABLE IF NOT EXISTS cancel_requests (
+                    id VARCHAR(255) PRIMARY KEY,
+                    transaction_id VARCHAR(255),
+                    store_id VARCHAR(255),
+                    type VARCHAR(50),
+                    items TEXT,
+                    amount DOUBLE PRECISION,
+                    status VARCHAR(50) DEFAULT 'PENDING',
+                    timestamp BIGINT
+                );
+
                 CREATE TABLE IF NOT EXISTS sensor_logs (
                     id SERIAL PRIMARY KEY,
                     timestamp VARCHAR(100),
@@ -629,6 +640,19 @@ if (process.env.DATABASE_URL) {
                 `);
 
                 sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS cancel_requests (
+                        id TEXT PRIMARY KEY,
+                        transaction_id TEXT,
+                        store_id TEXT,
+                        type TEXT,
+                        items TEXT,
+                        amount REAL,
+                        status TEXT DEFAULT 'PENDING',
+                        timestamp INTEGER
+                    )
+                `);
+
+                sqliteDb.run(`
                     CREATE TABLE IF NOT EXISTS withdrawal_requests (
                         id TEXT PRIMARY KEY,
                         email TEXT NOT NULL,
@@ -757,6 +781,113 @@ if (process.env.DATABASE_URL) {
                                 console.log('[SQLite] ✅ freee_sync_queue.payout_date column added successfully.');
                             }
                         });
+                    }
+                });
+
+                // SQLite Migration: Migrate pos_transactions if created with legacy schema (from db.js)
+                sqliteDb.all("PRAGMA table_info(pos_transactions)", (err, rows) => {
+                    if (err) {
+                        console.error('[SQLite] PRAGMA table_info error (pos_transactions):', err.message);
+                        return;
+                    }
+                    if (rows && rows.length > 0) {
+                        const idCol = rows.find(r => r.name === 'id');
+                        const isIntegerId = idCol && idCol.type && idCol.type.toUpperCase() === 'INTEGER';
+                        
+                        if (isIntegerId) {
+                            console.log('[SQLite Migration] 🚨 Legacy INTEGER id detected in pos_transactions. Starting table reconstruction...');
+                            
+                            sqliteDb.serialize(() => {
+                                // 1. Rename old table
+                                sqliteDb.run("ALTER TABLE pos_transactions RENAME TO pos_transactions_old", (renameErr) => {
+                                    if (renameErr) {
+                                        console.error('[SQLite Migration] Failed to rename old pos_transactions:', renameErr.message);
+                                        return;
+                                    }
+                                    
+                                    // 2. Create new table with proper TEXT id and other columns
+                                    sqliteDb.run(`
+                                        CREATE TABLE pos_transactions (
+                                            id TEXT PRIMARY KEY,
+                                            company_name TEXT,
+                                            store_name TEXT,
+                                            total_amount REAL,
+                                            billing_email TEXT,
+                                            items TEXT,
+                                            status TEXT,
+                                            timestamp INTEGER
+                                        )
+                                    `, (createErr) => {
+                                        if (createErr) {
+                                            console.error('[SQLite Migration] Failed to create new pos_transactions table:', createErr.message);
+                                            return;
+                                        }
+                                        
+                                        // 3. Migrate existing data if any (mapping old id to string)
+                                        sqliteDb.all("SELECT * FROM pos_transactions_old", (selectErr, oldRows) => {
+                                            if (selectErr) {
+                                                console.error('[SQLite Migration] Failed to select from pos_transactions_old:', selectErr.message);
+                                                return;
+                                            }
+                                            
+                                            if (oldRows && oldRows.length > 0) {
+                                                console.log(`[SQLite Migration] Migrating ${oldRows.length} transactions from legacy table...`);
+                                                const stmt = sqliteDb.prepare("INSERT INTO pos_transactions (id, company_name, store_name, total_amount, billing_email, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                                                for (const oldRow of oldRows) {
+                                                    const newId = `tx_legacy_${oldRow.id}`;
+                                                    const company = oldRow.store_id || 'default_store';
+                                                    const store = oldRow.store_id || 'default_store';
+                                                    const amount = oldRow.total_amount || 0;
+                                                    const email = 'store@demo.com';
+                                                    const itemsStr = '[]';
+                                                    const status = 'completed';
+                                                    const ts = Number(oldRow.timestamp) || Date.now();
+                                                    stmt.run(newId, company, store, amount, email, itemsStr, status, ts);
+                                                }
+                                                stmt.finalize();
+                                            }
+                                            
+                                            // 4. Drop old table
+                                            sqliteDb.run("DROP TABLE pos_transactions_old", (dropErr) => {
+                                                if (dropErr) {
+                                                    console.error('[SQLite Migration] Failed to drop pos_transactions_old:', dropErr.message);
+                                                } else {
+                                                    console.log('[SQLite Migration] ✅ pos_transactions table successfully reconstructed to TEXT id schema.');
+                                                }
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        } else {
+                            // Already TEXT id, just perform column additions if any are missing
+                            const cols = rows.map(r => r.name);
+                            if (!cols.includes('company_name')) {
+                                sqliteDb.run("ALTER TABLE pos_transactions ADD COLUMN company_name TEXT", (alterErr) => {
+                                    if (alterErr) console.error('[SQLite] ALTER TABLE pos_transactions ADD COLUMN company_name error:', alterErr.message);
+                                });
+                            }
+                            if (!cols.includes('store_name')) {
+                                sqliteDb.run("ALTER TABLE pos_transactions ADD COLUMN store_name TEXT", (alterErr) => {
+                                    if (alterErr) console.error('[SQLite] ALTER TABLE pos_transactions ADD COLUMN store_name error:', alterErr.message);
+                                });
+                            }
+                            if (!cols.includes('billing_email')) {
+                                sqliteDb.run("ALTER TABLE pos_transactions ADD COLUMN billing_email TEXT", (alterErr) => {
+                                    if (alterErr) console.error('[SQLite] ALTER TABLE pos_transactions ADD COLUMN billing_email error:', alterErr.message);
+                                });
+                            }
+                            if (!cols.includes('items')) {
+                                sqliteDb.run("ALTER TABLE pos_transactions ADD COLUMN items TEXT", (alterErr) => {
+                                    if (alterErr) console.error('[SQLite] ALTER TABLE pos_transactions ADD COLUMN items error:', alterErr.message);
+                                });
+                            }
+                            if (!cols.includes('status')) {
+                                sqliteDb.run("ALTER TABLE pos_transactions ADD COLUMN status TEXT", (alterErr) => {
+                                    if (alterErr) console.error('[SQLite] ALTER TABLE pos_transactions ADD COLUMN status error:', alterErr.message);
+                                });
+                            }
+                        }
                     }
                 });
 

@@ -1677,6 +1677,195 @@ app.post('/api/payment/square-refund', requireAuth, async (req, res) => {
     }
 });
 
+
+// --- CANCEL REQUEST APIs ---
+app.post('/api/pos/cancel-request', async (req, res) => {
+    try {
+        const transactionId = req.body.transactionId || req.body.transaction_id;
+        const storeId = req.body.storeId || req.body.store_id;
+        const { type, items, amount } = req.body;
+        if (!transactionId || !storeId) {
+            return res.status(400).json({ success: false, error: 'transactionId and storeId are required' });
+        }
+        
+        const id = "CR" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        const timestamp = Date.now();
+        const itemsStr = JSON.stringify(items || []);
+        
+        await dbHelper.query.run(
+            'INSERT INTO cancel_requests (id, transaction_id, store_id, type, items, amount, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, transactionId, storeId, type, itemsStr, Number(amount), 'PENDING', timestamp]
+        );
+        
+        console.log(`[Cancel Request] Created: ${id} for transaction: ${transactionId}`);
+        res.json({ success: true, requestId: id });
+    } catch (e) {
+        console.error("Failed to create cancel request:", e);
+        res.status(500).json({ success: false, error: 'キャンセル申請の保存に失敗しました' });
+    }
+});
+
+app.get('/api/pos/cancel-requests', requireAuth, async (req, res) => {
+    try {
+        // ロールチェック
+        if (req.user.role !== 'store' && req.user.role !== 'retailer' && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'アクセス権限がありません' });
+        }
+        
+        const storeId = req.query.store_id || 'default_store';
+        
+        // 所有者検証
+        const userPrefix = req.user.org || req.user.email;
+        if (req.user.role !== 'admin' && storeId !== userPrefix) {
+            return res.status(403).json({ success: false, error: '他店舗のデータを取得する権限がありません' });
+        }
+        
+        const rows = await dbHelper.query.all(
+            'SELECT * FROM cancel_requests WHERE store_id = ? AND status = ? ORDER BY timestamp DESC',
+            [storeId, 'PENDING']
+        );
+        
+        const formatted = rows.map(r => {
+            let parsedItems = [];
+            try {
+                parsedItems = JSON.parse(r.items || '[]');
+            } catch (jsonErr) {
+                console.error("JSON parse error for items in cancel_requests:", jsonErr);
+            }
+            return {
+                id: r.id,
+                transaction_id: r.transaction_id,
+                store_id: r.store_id,
+                type: r.type,
+                items: parsedItems,
+                amount: r.amount,
+                status: r.status,
+                timestamp: r.timestamp
+            };
+        });
+        
+        res.json({ success: true, requests: formatted });
+    } catch (e) {
+        console.error("Failed to fetch cancel requests:", e);
+        res.status(500).json({ success: false, error: 'キャンセル申請一覧の取得に失敗しました' });
+    }
+});
+
+app.post('/api/pos/approve-cancel', requireAuth, async (req, res) => {
+    // ロールチェック (管理者/店舗オーナー/リテーラーのみ許可)
+    const userRole = req.user.role;
+    if (userRole !== 'admin' && userRole !== 'store' && userRole !== 'retailer') {
+        return res.status(403).json({ success: false, error: 'この操作を実行する権限がありません' });
+    }
+
+    const { requestId } = req.body;
+    if (!requestId) {
+        return res.status(400).json({ success: false, error: 'requestId is required' });
+    }
+
+    try {
+        // 申請データを取得
+        const request = await dbHelper.query.get('SELECT * FROM cancel_requests WHERE id = ?', [requestId]);
+        if (!request) {
+            return res.status(404).json({ success: false, error: 'キャンセル申請が見つかりません' });
+        }
+        if (request.status !== 'PENDING') {
+            return res.status(400).json({ success: false, error: '既に処理済みの申請です' });
+        }
+
+        const transactionId = request.transaction_id;
+        const amount = request.amount;
+        const store_id = request.store_id;
+
+        console.log(`[Approve Cancel] Processing refund for txn: ${transactionId}, amount: ¥${amount}, store: ${store_id}`);
+
+        // デモトランザクション ID の場合は、即座に成功を返す
+        if (transactionId.startsWith('demo_tx_') || transactionId.startsWith('tx_') || transactionId.startsWith('TX')) {
+            console.log(`[Approve Cancel API] Demo transaction refund bypassed.`);
+            
+            // 登録されている売上総額から引く
+            if (typeof storeData !== 'undefined' && storeData[store_id]) {
+                storeData[store_id].total_pos_sales = Math.max(0, storeData[store_id].total_pos_sales - Number(amount));
+            } else if (typeof storeData !== 'undefined' && storeData["default_store"]) {
+                storeData["default_store"].total_pos_sales = Math.max(0, storeData["default_store"].total_pos_sales - Number(amount));
+            }
+            
+            // SQLite/PostgreSQLの店舗売上データも減額
+            try {
+                const store = await dbHelper.query.get('SELECT total_pos_sales FROM stores WHERE id = ?', [store_id]);
+                if (store) {
+                    const newSales = Math.max(0, (store.total_pos_sales || 0) - Number(amount));
+                    await dbHelper.query.run('UPDATE stores SET total_pos_sales = ? WHERE id = ?', [newSales, store_id]);
+                }
+            } catch (dbErr) {
+                console.error("Failed to update store sales in DB:", dbErr);
+            }
+
+            // 申請ステータスを APPROVED に更新
+            await dbHelper.query.run('UPDATE cancel_requests SET status = ? WHERE id = ?', ['APPROVED', requestId]);
+
+            if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: S3/JSON保存
+            return res.json({ success: true, refundId: `demo_ref_${Date.now()}` });
+        }
+
+        const customFetch = fetch;
+        const crypto = require('crypto');
+        
+        // Square Refund API をコール
+        const idempotencyKey = crypto.randomUUID();
+        const requestBody = {
+            payment_id: transactionId,
+            idempotency_key: idempotencyKey,
+            amount_money: { amount: Number(amount), currency: 'JPY' },
+            reason: request.type === 'PARTIAL' ? '顧客による一部商品キャンセル申請承認' : '顧客による全商品キャンセル申請承認'
+        };
+
+        const refundRes = await customFetch('https://connect.squareup.com/v2/refunds', {
+            method: 'POST',
+            headers: {
+                'Square-Version': '2024-03-20',
+                'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || ''}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const refundData = await refundRes.json();
+        
+        if (!refundRes.ok || refundData.errors) {
+            console.error(`[Square Refund API Error]`, refundData.errors);
+            return res.status(400).json({ success: false, error: 'Squareでの返金処理に失敗しました。' });
+        }
+
+        // 売上総額から控除
+        if (typeof storeData !== 'undefined' && storeData[store_id]) {
+            storeData[store_id].total_pos_sales = Math.max(0, storeData[store_id].total_pos_sales - Number(amount));
+        } else if (typeof storeData !== 'undefined' && storeData["default_store"]) {
+            storeData["default_store"].total_pos_sales = Math.max(0, storeData["default_store"].total_pos_sales - Number(amount));
+        }
+
+        try {
+            const store = await dbHelper.query.get('SELECT total_pos_sales FROM stores WHERE id = ?', [store_id]);
+            if (store) {
+                const newSales = Math.max(0, (store.total_pos_sales || 0) - Number(amount));
+                await dbHelper.query.run('UPDATE stores SET total_pos_sales = ? WHERE id = ?', [newSales, store_id]);
+            }
+        } catch (dbErr) {
+            console.error("Failed to update store sales in DB:", dbErr);
+        }
+
+        // 申請ステータスを APPROVED に更新
+        await dbHelper.query.run('UPDATE cancel_requests SET status = ? WHERE id = ?', ['APPROVED', requestId]);
+
+        if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: S3/JSON保存
+
+        res.json({ success: true, refundId: refundData.refund.id });
+    } catch (e) {
+        console.error("Square refund request failed:", e);
+        res.status(500).json({ success: false, error: '返金処理の通信エラーが発生しました' });
+    }
+});
+
 // --- RETAILER DASHBOARD APIs ---
 app.get('/api/retailer/dashboard', requireAuth, async (req, res) => {
     // ロールチェック (ストア/リテーラー/管理者以外を拒否)

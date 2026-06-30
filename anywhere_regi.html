@@ -422,6 +422,11 @@
             <div class="total-display"><span>Total:</span>¥<span id="total-display">0</span></div>
             <div id="items"></div>
         </div>
+
+        <!-- 最近のレシート (キャンセル申請) -->
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="openRecentReceipts()" class="menu-btn" style="background:#475569; padding: 12px; font-size: 14px; width: 100%; border-radius: 10px; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s;">🧾 最近のレシート・キャンセル申請</button>
+        </div>
     </div>
 
     <!-- 3. Payment Screen -->
@@ -1223,6 +1228,20 @@ function playBeep() {
                     if(localLog.length > 50) localLog.pop();
                     localStorage.setItem(logKey, JSON.stringify(localLog));
 
+                    // --- Save to recent purchases for cancellation ---
+                    const recentKey = 'recent_purchases_' + (currentSession ? currentSession.storeName : "default");
+                    const recentPurchases = JSON.parse(localStorage.getItem(recentKey) || '[]');
+                    recentPurchases.unshift({
+                        transactionId: txData.transactionId,
+                        storeId: currentSession ? currentSession.email : 'store@demo.com',
+                        amount: total,
+                        items: cartItems.map(i => ({ janCode: i.janCode, name: i.name, price: i.price })),
+                        timestamp: Date.now(),
+                        status: 'COMPLETED'
+                    });
+                    if (recentPurchases.length > 5) recentPurchases.pop();
+                    localStorage.setItem(recentKey, JSON.stringify(recentPurchases));
+
                     Swal.fire({
                         icon: 'success',
                         title: '決済完了',
@@ -1514,6 +1533,118 @@ function switchPaymentTab(tab) {
         btn.innerHTML = '<i class="fas fa-utensils"></i> AIにレシピを聞く';
         btn.disabled = false;
     }
+
+    async function openRecentReceipts() {
+        const recentKey = 'recent_purchases_' + (currentSession ? currentSession.storeName : "default");
+        const recentPurchases = JSON.parse(localStorage.getItem(recentKey) || '[]');
+        
+        if (recentPurchases.length === 0) {
+            Swal.fire('情報', '最近の購入履歴はありません。', 'info');
+            return;
+        }
+
+        let html = '<div style="text-align: left; max-height: 400px; overflow-y: auto;">';
+        recentPurchases.forEach((p, idx) => {
+            const d = new Date(p.timestamp).toLocaleString('ja-JP');
+            html += `
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #f8fafc; color:#333;">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom: 6px;">
+                        <span>${d}</span>
+                        <span>ID: ${p.transactionId}</span>
+                    </div>
+                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; display:flex; justify-content:space-between;">
+                        <span>合計金額: ¥${p.amount.toLocaleString()}</span>
+                        <span style="color:${p.status === 'COMPLETED' ? '#10b981' : p.status === 'CANCEL_PENDING' ? '#f59e0b' : '#ef4444'};">
+                            ${p.status === 'COMPLETED' ? '決済完了' : p.status === 'CANCEL_PENDING' ? 'キャンセル申請中' : 'キャンセル済'}
+                        </span>
+                    </div>
+                    <ul style="margin: 0 0 10px 0; padding-left: 20px; font-size: 13px;">
+                        ${p.items.map((item, itemIdx) => `
+                            <li style="margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>${item.name} (¥${item.price})</span>
+                                ${p.status === 'COMPLETED' ? `
+                                    <button onclick="submitCancelRequest('${p.transactionId}', 'PARTIAL', ${itemIdx})" style="background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer; font-weight: bold;">
+                                        一部キャンセル
+                                    </button>
+                                ` : ''}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    ${p.status === 'COMPLETED' ? `
+                        <div style="text-align: right;">
+                            <button onclick="submitCancelRequest('${p.transactionId}', 'FULL')" style="background: #ef4444; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-weight: bold; transition:0.2s;">
+                                全商品をキャンセル申請
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: '🧾 最近のお買い物レシート',
+            html: html,
+            showConfirmButton: true,
+            confirmButtonText: '閉じる',
+            confirmButtonColor: '#475569'
+        });
+    }
+
+    async function submitCancelRequest(transactionId, type, itemIndex = null) {
+        const recentKey = 'recent_purchases_' + (currentSession ? currentSession.storeName : "default");
+        const recentPurchases = JSON.parse(localStorage.getItem(recentKey) || '[]');
+        const pIndex = recentPurchases.findIndex(p => p.transactionId === transactionId);
+        if (pIndex === -1) return;
+
+        const p = recentPurchases[pIndex];
+        const storeId = currentSession ? currentSession.email : 'store@demo.com';
+
+        let targetItems = [];
+        let refundAmount = 0;
+
+        if (type === 'FULL') {
+            targetItems = p.items;
+            refundAmount = p.amount;
+        } else {
+            const targetItem = p.items[itemIndex];
+            targetItems = [targetItem];
+            refundAmount = targetItem.price;
+        }
+
+        try {
+            Swal.fire({title: '申請中...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            
+            const res = await fetch(window.API_BASE_URL + '/api/pos/cancel-request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    transaction_id: transactionId,
+                    store_id: storeId,
+                    type: type,
+                    items: targetItems,
+                    amount: refundAmount
+                })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                p.status = 'CANCEL_PENDING';
+                localStorage.setItem(recentKey, JSON.stringify(recentPurchases));
+                
+                Swal.fire('申請完了', 'キャンセル申請を送信しました。店員による承認をお待ちください。', 'success').then(() => {
+                    openRecentReceipts(); // ダイアログを再描画
+                });
+            } else {
+                Swal.fire('エラー', data.error || 'キャンセル申請に失敗しました。', 'error');
+            }
+        } catch (e) {
+            console.error("Cancel request failed:", e);
+            Swal.fire('エラー', '通信に失敗しました。', 'error');
+        }
+    }
+    window.openRecentReceipts = openRecentReceipts;
+    window.submitCancelRequest = submitCancelRequest;
         </script>
 
     <script>
