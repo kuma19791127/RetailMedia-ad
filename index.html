@@ -17,7 +17,6 @@
             console.log("[F12 Debug] Logout detected. Setting logged_out=true in localStorage and clearing active tokens...");
             localStorage.setItem('logged_out', 'true');
             localStorage.removeItem('retailMediaToken');
-            localStorage.removeItem('last_active_service'); // Clear redirect service target on logout
             sessionStorage.clear();
         } else if (!urlParams.has('bypass_redirect')) {
             const loggedOut = localStorage.getItem('logged_out') === 'true';
@@ -26,8 +25,7 @@
             
             console.log("[F12 Debug] Checking auto-redirect. loggedOut:", loggedOut, "lastService:", lastService, "savedEmail:", savedEmail);
             
-            // Only auto-redirect if a saved email exists (indicating Remember Me was enabled)
-            if (lastService && !loggedOut && savedEmail) {
+            if (lastService && !loggedOut) {
                 if (lastService.includes('admin_portal.html') || lastService.includes('review.html')) {
                     console.log("[F12 Debug] Auto-redirect skipped because the last active service is an internal system (admin/review):", lastService);
                 } else {
@@ -40,7 +38,7 @@
                     window.location.href = lastService;
                 }
             } else {
-                console.log("[F12 Debug] Auto-redirect skipped. lastService:", lastService, "loggedOut:", loggedOut, "savedEmail:", savedEmail);
+                console.log("[F12 Debug] Auto-redirect skipped. lastService:", lastService, "loggedOut:", loggedOut);
             }
         }
     </script>
