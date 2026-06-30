@@ -114,6 +114,21 @@ app.use((req, res, next) => {
     next();
 });
 
+// 明示的な Content-Security-Policy (CSP) の設定により、AWS/ロードバランサーなどのデフォルトの厳しい制限を上書き・回避する
+app.use((req, res, next) => {
+    res.setHeader("Content-Security-Policy", 
+        "default-src 'self' https: http: 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareupsandbox.com https://js.squareup.com https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com https://unpkg.com https://cdn.jsdelivr.net https://pagead2.googlesyndication.com https://adservice.google.com https://adservice.google.co.jp https://googleads.g.doubleclick.net https://www.google.com; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://use.fontawesome.com https://cdn.jsdelivr.net; " +
+        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://use.fontawesome.com; " +
+        "img-src 'self' data: blob: https: http:; " +
+        "connect-src 'self' https: http: wss: ws:; " +
+        "frame-src 'self' https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com https://googleads.g.doubleclick.net https://www.google.com; " +
+        "manifest-src 'self' https://sandbox.web.squareupsandbox.com https://web.squareupsandbox.com;"
+    );
+    next();
+});
+
 // ルートディレクトリの静的ファイル（HTML, 画像, CSS 等）を配信
 app.use(express.static(__dirname));
 
