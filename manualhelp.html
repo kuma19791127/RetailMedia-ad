@@ -608,6 +608,7 @@
         }
 
         async function fetchManualChat() {
+            if (!currentUser) return; // Skip if not logged in to prevent 403 Forbidden
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/manualhelp/chat');
                 const data = await res.json();
@@ -630,7 +631,8 @@
             } catch(e) {}
         }
 
-                async function fetchManualState() {
+        async function fetchManualState() {
+            if (!currentUser) return; // Skip if not logged in to prevent 403 Forbidden
             try {
                 const res = await fetch(window.API_BASE_URL + '/api/manualhelp/state');
                 const data = await res.json();
@@ -837,6 +839,10 @@
             window.location.hash = '#' + role;
             checkRoute();
             renderChat();
+            
+            // Sync with backend upon successful login
+            fetchManualChat();
+            fetchManualState();
         }
 
         window.addEventListener('storage', function(e) {
