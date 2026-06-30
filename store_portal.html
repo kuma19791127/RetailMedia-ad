@@ -561,10 +561,7 @@
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('last_email');
-            if (savedEmail) {
-                localStorage.setItem('last_active_service', 'store_portal.html');
-            }
+            localStorage.setItem('last_active_service', 'store_portal.html');
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
                 document.querySelectorAll('h1, h2, h3, p, .subtitle, li').forEach(el => {

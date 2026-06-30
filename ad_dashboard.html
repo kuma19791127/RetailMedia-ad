@@ -1006,10 +1006,7 @@
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('last_email');
-            if (savedEmail) {
-                localStorage.setItem('last_active_service', 'ad_dashboard.html');
-            }
+            localStorage.setItem('last_active_service', 'ad_dashboard.html');
             if (typeof budoux !== 'undefined') {
                 const parser = budoux.loadDefaultJapaneseParser();
                 // Apply to standard text elements avoiding breaking components
