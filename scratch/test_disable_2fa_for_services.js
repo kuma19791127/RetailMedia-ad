@@ -127,10 +127,19 @@ async function runTest() {
         process.exitCode = 1;
     } finally {
         // Cleanup test user
-        await dbHelper.query.run('DELETE FROM users WHERE email = ? AND role = ?', [email, role]);
-        console.log("Cleaned up test user.");
-        serverProcess.kill();
-        console.log("Killed test server.");
+        try {
+            await dbHelper.query.run('DELETE FROM users WHERE email = ? AND role = ?', [email, role]);
+            console.log("Cleaned up test user.");
+        } catch (e) {
+            console.error("Cleanup failed:", e);
+        }
+        if (serverProcess) {
+            serverProcess.kill();
+            console.log("Killed test server.");
+        }
+        setTimeout(() => {
+            process.exit(process.exitCode || 0);
+        }, 1000);
     }
 }
 

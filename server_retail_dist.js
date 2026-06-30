@@ -1692,16 +1692,74 @@ app.post('/api/pos/cancel-request', async (req, res) => {
         const timestamp = Date.now();
         const itemsStr = JSON.stringify(items || []);
         
+        console.log(`[Auto Cancel] Automatically processing refund for txn: ${transactionId}, amount: ¥${amount}, store: ${storeId}`);
+        
+        let refundId = `demo_ref_${Date.now()}`;
+        
+        // 1. 返金API (デモ / Square) の実行
+        if (transactionId.startsWith('demo_tx_') || transactionId.startsWith('tx_') || transactionId.startsWith('TX')) {
+            console.log(`[Auto Cancel] Demo transaction refund bypassed.`);
+        } else {
+            // Square Refund API をコール
+            const customFetch = fetch;
+            const crypto = require('crypto');
+            const idempotencyKey = crypto.randomUUID();
+            const requestBody = {
+                payment_id: transactionId,
+                idempotency_key: idempotencyKey,
+                amount_money: { amount: Number(amount), currency: 'JPY' },
+                reason: type === 'PARTIAL' ? '顧客による一部商品キャンセル自動承認' : '顧客による全商品キャンセル自動承認'
+            };
+
+            const refundRes = await customFetch('https://connect.squareup.com/v2/refunds', {
+                method: 'POST',
+                headers: {
+                    'Square-Version': '2024-03-20',
+                    'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN || ''}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const refundData = await refundRes.json();
+            if (!refundRes.ok || refundData.errors) {
+                console.error(`[Square Auto Refund API Error]`, refundData.errors);
+                return res.status(400).json({ success: false, error: 'Squareでの自動返金処理に失敗しました。' });
+            }
+            refundId = refundData.refund.id;
+        }
+
+        // 2. 店舗売上データの減算 (インメモリ)
+        if (typeof storeData !== 'undefined' && storeData[storeId]) {
+            storeData[storeId].total_pos_sales = Math.max(0, storeData[storeId].total_pos_sales - Number(amount));
+        } else if (typeof storeData !== 'undefined' && storeData["default_store"]) {
+            storeData["default_store"].total_pos_sales = Math.max(0, storeData["default_store"].total_pos_sales - Number(amount));
+        }
+
+        // 3. 店舗売上データの減算 (SQLite/PostgreSQL)
+        try {
+            const store = await dbHelper.query.get('SELECT total_pos_sales FROM stores WHERE id = ?', [storeId]);
+            if (store) {
+                const newSales = Math.max(0, (store.total_pos_sales || 0) - Number(amount));
+                await dbHelper.query.run('UPDATE stores SET total_pos_sales = ? WHERE id = ?', [newSales, storeId]);
+            }
+        } catch (dbErr) {
+            console.error("Failed to update store sales in DB during auto cancel:", dbErr);
+        }
+
+        // 4. APPROVED ステータスでキャンセル申請を保存
         await dbHelper.query.run(
             'INSERT INTO cancel_requests (id, transaction_id, store_id, type, items, amount, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, transactionId, storeId, type, itemsStr, Number(amount), 'PENDING', timestamp]
+            [id, transactionId, storeId, type, itemsStr, Number(amount), 'APPROVED', timestamp]
         );
         
-        console.log(`[Cancel Request] Created: ${id} for transaction: ${transactionId}`);
-        res.json({ success: true, requestId: id });
+        if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: S3/JSON保存
+        
+        console.log(`[Auto Cancel] Successfully processed and approved: ${id} (refundId: ${refundId})`);
+        res.json({ success: true, requestId: id, refundId: refundId });
     } catch (e) {
-        console.error("Failed to create cancel request:", e);
-        res.status(500).json({ success: false, error: 'キャンセル申請の保存に失敗しました' });
+        console.error("Failed to execute auto cancel:", e);
+        res.status(500).json({ success: false, error: '自動キャンセル処理に失敗しました' });
     }
 });
 
@@ -1720,9 +1778,10 @@ app.get('/api/pos/cancel-requests', requireAuth, async (req, res) => {
             return res.status(403).json({ success: false, error: '他店舗のデータを取得する権限がありません' });
         }
         
+        const statusVal = req.query.status || 'APPROVED';
         const rows = await dbHelper.query.all(
-            'SELECT * FROM cancel_requests WHERE store_id = ? AND status = ? ORDER BY timestamp DESC',
-            [storeId, 'PENDING']
+            'SELECT * FROM cancel_requests WHERE store_id = ? AND status = ? ORDER BY timestamp DESC LIMIT 50',
+            [storeId, statusVal]
         );
         
         const formatted = rows.map(r => {
