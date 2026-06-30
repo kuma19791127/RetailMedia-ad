@@ -2618,12 +2618,15 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/auth/users', requireAuth, async (req, res) => {
-    // ロールチェック (管理者のみ許可)
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "管理者権限が必要です" });
-    }
     try {
-        const rows = await dbHelper.query.all('SELECT * FROM users');
+        let rows;
+        if (req.user.role === 'admin') {
+            rows = await dbHelper.query.all('SELECT * FROM users');
+        } else {
+            // 管理者以外は自分と同じ組織（org）のユーザーのみ取得可能にすることで安全に共有
+            const userOrg = req.user.org || 'Demo Corp';
+            rows = await dbHelper.query.all('SELECT * FROM users WHERE org = ?', [userOrg]);
+        }
         const userList = rows.map(user => ({
             email: user.email,
             name: user.name || user.email.split('@')[0],
