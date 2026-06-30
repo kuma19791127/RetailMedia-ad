@@ -180,6 +180,7 @@ const getCookieOptions = (req, maxAge = null) => {
 // Middleware: API Authentication
 const requireAuth = (req, res, next) => {
     let token = null;
+    const path = req.originalUrl || req.path || '';
     
     // 1. Prioritize Authorization header (Bearer token) from LocalStorage to support independent multi-session tabs
     const authHeader = req.headers.authorization;
@@ -189,7 +190,6 @@ const requireAuth = (req, res, next) => {
     
     // 2. Fallback to path-based role Cookie to isolate sessions across different portal tabs
     if (!token && req.cookies) {
-        const path = req.originalUrl || req.path || '';
         if (path.startsWith('/api/admin')) {
             token = req.cookies.token_admin;
         } else if (path.startsWith('/api/review') || path.startsWith('/api/kyc')) {
@@ -215,12 +215,16 @@ const requireAuth = (req, res, next) => {
         token = req.cookies.token;
     }
 
+    console.log(`[F12 Debug requireAuth] path: ${path}, resolved_token_len: ${token ? token.length : 0}, cookies:`, req.cookies ? Object.keys(req.cookies) : 'none');
+
     if (!token) return res.status(401).json({ error: "Unauthorized: No token provided" });
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         req.user = decoded; // { email, role }
+        console.log(`[F12 Debug requireAuth] JWT decodex ok. email: ${decoded.email}, role: ${decoded.role}`);
         next();
     } catch (err) {
+        console.error(`[F12 Debug requireAuth] Verify failed: ${err.message}`);
         res.status(403).json({ error: "Forbidden: Invalid or expired token" });
     }
 };
@@ -273,11 +277,11 @@ app.use((req, res, next) => {
         // Execute requireAuth validation logic
         let token = null;
         const authHeader = req.headers.authorization;
+        const path = req.originalUrl || req.path || '';
         if (authHeader && authHeader.startsWith('Bearer ')) {
             token = authHeader.substring(7);
         }
         if (!token && req.cookies) {
-            const path = req.originalUrl || req.path || '';
             if (path.startsWith('/api/admin')) {
                 token = req.cookies.token_admin;
             } else if (path.startsWith('/api/review') || path.startsWith('/api/kyc')) {
@@ -299,21 +303,27 @@ app.use((req, res, next) => {
             token = req.cookies.token;
         }
 
+        console.log(`[F12 Debug Reinforce] cleanPath: ${cleanPath}, originalUrl: ${path}, resolved_token_len: ${token ? token.length : 0}, cookies:`, req.cookies ? Object.keys(req.cookies) : 'none');
+
         if (!token) {
+            console.log(`[F12 Debug Reinforce] Denied: No token resolved`);
             return res.status(401).json({ error: "Unauthorized: No token provided" });
         }
         
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
             req.user = decoded; // { email, role }
+            console.log(`[F12 Debug Reinforce] JWT decodex ok. email: ${decoded.email}, role: ${decoded.role}`);
             
             // Reinforce role validation: must be 'admin'
             if (req.user.role !== 'admin') {
+                console.log(`[F12 Debug Reinforce] Denied: role is ${req.user.role} (not admin)`);
                 return res.status(403).json({ error: "管理者権限が必要です" });
             }
             
             next();
         } catch (err) {
+            console.error(`[F12 Debug Reinforce] Verify failed: ${err.message}`);
             return res.status(403).json({ error: "Forbidden: Invalid or expired token" });
         }
     } else {
