@@ -162,7 +162,8 @@ const getCookieOptions = (req, maxAge = null) => {
     const opts = {
         httpOnly: true,
         sameSite: isProd ? 'none' : 'lax',
-        secure: isProd
+        secure: isProd,
+        path: '/' // Enable cookie for all sub-paths (essential for sub-route APIs)
     };
     if (maxAge) opts.maxAge = maxAge;
 
@@ -188,7 +189,7 @@ const requireAuth = (req, res, next) => {
     
     // 2. Fallback to path-based role Cookie to isolate sessions across different portal tabs
     if (!token && req.cookies) {
-        const path = req.path || '';
+        const path = req.originalUrl || req.path || '';
         if (path.startsWith('/api/admin')) {
             token = req.cookies.token_admin;
         } else if (path.startsWith('/api/review') || path.startsWith('/api/kyc')) {
@@ -276,7 +277,7 @@ app.use((req, res, next) => {
             token = authHeader.substring(7);
         }
         if (!token && req.cookies) {
-            const path = req.path || '';
+            const path = req.originalUrl || req.path || '';
             if (path.startsWith('/api/admin')) {
                 token = req.cookies.token_admin;
             } else if (path.startsWith('/api/review') || path.startsWith('/api/kyc')) {
