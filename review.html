@@ -134,6 +134,7 @@
 
 <script>
         async function loadUnlockReq() {
+            if (document.getElementById('login-overlay').style.display !== 'none') return;
             console.log("[F12 Debug] loadUnlockReq initiated");
             try {
                 console.log("[F12 Debug] Fetching unlock requests from:", window.API_BASE_URL + '/api/review/unlock');
@@ -224,6 +225,7 @@
             });
         }
 async function loadKYCReq() {
+        if (document.getElementById('login-overlay').style.display !== 'none') return;
         console.log("[F12 Debug] loadKYCReq initiated");
         try {
             console.log("[F12 Debug] Fetching KYC requests from:", window.API_BASE_URL + '/api/kyc');
@@ -311,6 +313,7 @@ async function loadKYCReq() {
     }
 
     async function updateReviewBadges() {
+        if (document.getElementById('login-overlay').style.display !== 'none') return;
         console.log("[F12 Debug] updateReviewBadges initiated");
         try {
             const res = await fetch(window.API_BASE_URL + '/api/review/unread-counts');
@@ -329,6 +332,7 @@ async function loadKYCReq() {
     }
 
     async function loadReviewInquiries() {
+        if (document.getElementById('login-overlay').style.display !== 'none') return;
         console.log("[F12 Debug] loadReviewInquiries initiated");
         try {
             const res = await fetch(window.API_BASE_URL + '/api/review/contacts');
@@ -547,6 +551,10 @@ async function loadKYCReq() {
                 navigator.credentials.store(cred).catch(err => console.log('Credential store error:', err));
             }
             document.getElementById('login-overlay').style.display = 'none';
+            loadKYCReq();
+            loadUnlockReq();
+            loadReviewInquiries();
+            updateReviewBadges();
         }
 
         function logout() {
