@@ -8356,6 +8356,7 @@ app.get('/api/freee/connect', requireAuth, (req, res) => {
         httpOnly: true,
         secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
         sameSite: 'lax',
+        path: '/', // Ensure accessible across all routing sub-paths
         maxAge: 10 * 60 * 1000 // 10 minutes
     });
 
@@ -8446,7 +8447,7 @@ app.get('/api/freee/callback', async (req, res) => {
     const cookieState = req.cookies.freee_oauth_state;
     
     // Clear state cookie immediately
-    res.clearCookie('freee_oauth_state');
+    res.clearCookie('freee_oauth_state', { path: '/' });
 
     if (!queryState || !cookieState || queryState !== cookieState) {
         console.warn("[freee OAuth Error] CSRF state mismatch or expired. queryState:", queryState, "cookieState:", cookieState);
