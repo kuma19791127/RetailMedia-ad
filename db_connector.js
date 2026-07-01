@@ -262,6 +262,17 @@ if (process.env.DATABASE_URL) {
                 // If migration fails because it is already composite, ignore
             }
 
+            // Migration path: Create indexes for pos_live_logs and aml_alerts
+            try {
+                await client.query(`
+                    CREATE INDEX IF NOT EXISTS idx_pos_live_logs_source_time ON pos_live_logs (source, timestamp);
+                    CREATE INDEX IF NOT EXISTS idx_aml_alerts_timestamp ON aml_alerts (timestamp DESC);
+                `);
+                console.log('[DB] ✅ PostgreSQL POS/AML indexes created successfully.');
+            } catch (e) {
+                console.error('[DB] PostgreSQL POS/AML index creation error:', e.message);
+            }
+
             // Migration path: Add store_id column to face_sensor_logs if not exists
             try {
                 await client.query(`
@@ -765,6 +776,14 @@ if (process.env.DATABASE_URL) {
                         status TEXT DEFAULT 'pending',
                         timestamp INTEGER
                     )
+                `);
+
+                sqliteDb.run(`
+                    CREATE INDEX IF NOT EXISTS idx_pos_live_logs_source_time ON pos_live_logs (source, timestamp)
+                `);
+
+                sqliteDb.run(`
+                    CREATE INDEX IF NOT EXISTS idx_aml_alerts_timestamp ON aml_alerts (timestamp DESC)
                 `);
 
                 sqliteDb.run(`

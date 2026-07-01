@@ -7915,12 +7915,14 @@ app.get('/api/admin/aws-logs', requireAuth, async (req, res) => {
             message: maskSensitiveInfo(ev.message)
         }));
 
-        res.json({
+        logsCache = {
             success: true,
             source: "mock-fallback",
             errorInfo: e.message,
             events: maskedMockEvents
-        });
+        };
+        lastFetchedTime = now;
+        res.json(logsCache);
     }
 });
 
