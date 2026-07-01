@@ -3089,10 +3089,12 @@
                     const matchStatus = isRealTime 
                         ? `<span style="color:#a855f7; font-weight:bold;">動画検証中... (照合完了予定 月末)</span>` 
                         : `<span style="color:#64748b;">定期同期 (通常処理)</span>`;
+                    
+                    const dateStr = log.timestamp ? new Date(Number(log.timestamp)).toLocaleString('ja-JP') : escapeHtml(log.time);
 
                     return `
                     <tr class="log-row" style="border-bottom:1px solid #334155;">
-                        <td style="padding:10px; font-weight:bold; color:#cbd5e1;">${escapeHtml(log.time)}</td>
+                        <td style="padding:10px; font-weight:bold; color:#cbd5e1;">${dateStr}</td>
                         <td style="padding:10px; color:${sourceColor};">${escapeHtml(log.source)}</td>
                         <td style="padding:10px; color:#f8fafc; font-weight:bold; font-size:14px;">¥${log.amount.toLocaleString()}</td>
                         <td style="padding:10px; color:#94a3b8;"><div style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(log.items)}</div></td>

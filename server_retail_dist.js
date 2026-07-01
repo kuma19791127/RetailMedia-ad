@@ -2284,7 +2284,7 @@ async function savePosTransactionInternal(txData) {
     // --- POS Live Logging & AML Alert Detection (Database Mode) ---
     try {
         const timeStr = new Date(timestampVal).toLocaleTimeString('ja-JP');
-        const itemsStr = items.map(i => i.name || '商品').join(', ') || '商品';
+        const itemsStr = items.map(i => (i && typeof i === 'object') ? (i.name || '商品') : (i || '商品')).join(', ') || '商品';
         await dbHelper.query.run(
             'INSERT INTO pos_live_logs (time, source, amount, items, type, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
             [timeStr, storeId + 'レジ端末', amount, itemsStr, 'LIVE_SALE', timestampVal]
