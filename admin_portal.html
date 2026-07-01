@@ -560,9 +560,6 @@
                         <button onclick="syncGmoApi()" style="background:#14b8a6; color:#fff; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(20,184,166,0.2);">🏦 GMO銀行 自動振込</button>
                     </div>
                 </div>
-                <button onclick="setupAdmin2FA()" style="width: 100%; margin-bottom: 10px; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    🔐 2FA設定・再設定
-                </button>
                 <button onclick="logoutAdmin()" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;">
                     🚪 ログアウト
                 </button>
@@ -2774,89 +2771,6 @@
             
             // Auto-login which will trigger account creation and 2FA setup
             handleLogin();
-        }
-
-        async function setupAdmin2FA() {
-            const email = sessionStorage.getItem('adminUserEmail');
-            if (!email) {
-                return Swal.fire('エラー', 'ログインセッションが見つかりません。再ログインしてください。', 'error');
-            }
-
-            const confirmSetup = await Swal.fire({
-                title: '2FA設定・再設定',
-                text: '二段階認証（2FA）を設定・再設定しますか？現在の設定は上書きされます。',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'はい、設定する',
-                cancelButtonText: 'キャンセル',
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            });
-
-            if (!confirmSetup.isConfirmed) return;
-
-            try {
-                Swal.fire({ title: '2FA設定を準備中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                
-                // 既存の2FA設定をリセット
-                console.log("[Auth] Resetting admin 2FA from admin portal (already logged in)...");
-                const resetRes = await fetch(window.API_BASE_URL + '/api/auth/reset-2fa', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, role: 'admin' }),
-                    credentials: 'include'
-                });
-                const resetData = await resetRes.json();
-                
-                // 2FA設定情報を新規取得
-                const qrRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/setup', { 
-                    method: 'POST', 
-                    headers: {'Content-Type':'application/json'}, 
-                    body: JSON.stringify({email: email, role: 'admin'}),
-                    credentials: 'include'
-                });
-                const qrData = await qrRes.json();
-                
-                // Directly call Swal.fire to replace the loader to avoid modal race condition
-                const { value: totpCode } = await Swal.fire({
-                    title: '🔑 2段階認証の有効化',
-                    html: `
-                        <p style="font-size:0.9rem;">認証アプリで以下のQRコードをスキャンし、生成された6桁のコードを入力してください。</p>
-                        <img src="${qrData.qrcode}" style="margin: 15px auto; display:block; max-width:180px;">
-                        <p style="font-size:0.8rem; color:#888;">シークレットキー: <code>${qrData.secret}</code></p>
-                    `,
-                    input: 'text',
-                    inputPlaceholder: '6桁 of コード',
-                    showCancelButton: true,
-                    confirmButtonText: '有効化する',
-                    cancelButtonText: 'キャンセル',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    inputValidator: (value) => {
-                        if (!value || value.length !== 6) return '6桁の数字を入力してください';
-                    }
-                });
-
-                if (!totpCode) return;
-
-                Swal.fire({ title: '設定検証中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const verifyRes = await fetch(window.API_BASE_URL + '/api/auth/2fa/enable', { 
-                    method: 'POST', 
-                    headers: {'Content-Type':'application/json'}, 
-                    body: JSON.stringify({email: email, token: totpCode, secret: qrData.secret, role: 'admin'}),
-                    credentials: 'include'
-                });
-                const verifyData = await verifyRes.json();
-
-                if (verifyData.success) {
-                    Swal.fire('設定完了', '2段階認証（2FA）の設定が完了しました。次回ログイン時から有効になります。', 'success');
-                } else {
-                    Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
-                }
-            } catch (e) {
-                console.error(e);
-                Swal.fire('エラー', e.message || '通信エラーが発生しました。', 'error');
-            }
         }
 
         async function logoutAdmin() {
