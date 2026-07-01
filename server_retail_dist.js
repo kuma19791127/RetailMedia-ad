@@ -3522,9 +3522,18 @@ app.post('/api/retailer/bulk-email', requireAuth, async (req, res) => {
             });
         }
 
+        let successCount = 0;
+        let failureCount = 0;
+
         for (const item of list) {
-            const storeId = item.store;
-            const targetEmail = item.email;
+            try {
+                if (!item || !item.email) {
+                    console.warn("[Bulk Email] Invalid record in list, skipping.");
+                    failureCount++;
+                    continue;
+                }
+                const storeId = item.store;
+                const targetEmail = item.email;
             
             // Generate customized bat script content
             const targetUrl = `https://retail-ad.com/signage_player.html?storeId=${storeId}`;
@@ -3686,7 +3695,7 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
             const mailOptions = {
                 from: `"RetailMedia Portal" <${mailFrom}>`,
                 to: targetEmail,
-                cc: senderEmail || undefined,
+                cc: req.user.email, // ログイン中ユーザー自身のメールアドレスに強制（セキュリティ対策）
                 subject: `【リテアド】店舗サイネージ自動セットアップ資材の送付 (${storeId})`,
                 text: `各店舗スタッフ 様
 
@@ -3761,10 +3770,14 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
                 console.log(`- Attachment: android_instructions_${storeId}.txt (Content generated successfully)`);
                 console.log(`- Attachment: simple_start_${storeId}.txt (Content generated successfully)`);
                 console.log(`- Attachment: remove_android_signage_${storeId}.txt (Content generated successfully)`);
+                successCount++;
+            } catch (itemErr) {
+                console.error(`[Bulk Email Record Error] Failed to send setup mail to ${item?.email} for ${item?.store}:`, itemErr.message);
+                failureCount++;
             }
         }
 
-        res.json({ success: true, count: list.length });
+        res.json({ success: true, successCount, failureCount, total: list.length });
     } catch (e) {
         console.error("[Bulk Email Error]", e);
         res.status(500).json({ success: false, error: e.message });
