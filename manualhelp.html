@@ -609,7 +609,7 @@
 
         async function fetchManualChat() {
             if (!currentUser) {
-                console.warn("[F12 Debug Frontend] fetchManualChat skipped: currentUser is null");
+                console.log("[F12 Debug Frontend] fetchManualChat skipped: currentUser is null");
                 return; // Skip if not logged in to prevent 403 Forbidden
             }
             console.log("[F12 Debug Frontend] fetchManualChat starting. Current User:", currentUser);
@@ -763,12 +763,14 @@
         window.onload = async function() {
             checkRoute();
             // initSquarePayments is now delayed to actual payment trigger to prevent timeout errors on startup
-            await fetchManualChat();
-            await fetchManualState();
+            if (currentUser) {
+                await fetchManualChat();
+                await fetchManualState();
+            }
             
             // リアルタイム更新用ポーリング (5秒毎)
             setInterval(async () => {
-                if(window.location.hash.includes('chat')) {
+                if(window.location.hash.includes('chat') && currentUser) {
                     await fetchManualChat();
                     renderChat();
                 }
