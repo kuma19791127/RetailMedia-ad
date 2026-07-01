@@ -7952,6 +7952,7 @@ const CACHE_TTL = 60000; // 60 seconds
 // Mask secrets and sensitive strings to prevent leaks in logs (longest-first to prevent partial matches)
 function maskSensitiveInfo(text) {
     if (!text) return "";
+    let maskedText = (typeof text === 'string') ? text : String(text);
     const secrets = [
         process.env.AWS_SECRET_ACCESS_KEY,
         process.env.AWS_ACCESS_KEY_ID,
@@ -7966,8 +7967,6 @@ function maskSensitiveInfo(text) {
 
     // Remove duplicates and sort by string length descending
     const uniqueSecrets = [...new Set(secrets)].sort((a, b) => b.length - a.length);
-
-    let maskedText = text;
     for (const secret of uniqueSecrets) {
         if (secret.length > 5) {
             const escaped = secret.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -8117,6 +8116,8 @@ app.post('/api/admin/aml-alerts/clear', requireAuth, async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({ error: "変更権限がありません" });
     }
+    // セキュリティ監査ログの強制出力 (否認防止およびコンプライアンス維持)
+    console.warn(`[SECURITY AUDIT] User "${req.user.email}" initiated a complete purge of aml_alerts and pos_live_logs tables.`);
     try {
         await dbHelper.query.run('DELETE FROM aml_alerts');
         await dbHelper.query.run('DELETE FROM pos_live_logs');
