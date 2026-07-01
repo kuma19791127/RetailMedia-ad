@@ -65,6 +65,19 @@ try {
     console.warn('[AWS SDK Warning] Failed to initialize CloudWatchLogsClient. System logs will run in mock mode:', e.message);
 }
 
+// SES Client Initialization with fallback (Rule 5 & 7 compliance)
+let SESClient, SendEmailCommand;
+let sesClient = null;
+try {
+    const sesSdk = require('@aws-sdk/client-ses');
+    SESClient = sesSdk.SESClient;
+    SendEmailCommand = sesSdk.SendEmailCommand;
+    sesClient = new SESClient({ region: 'us-east-1' });
+    console.log('[AWS SDK] SESClient successfully initialized.');
+} catch (e) {
+    console.warn('[AWS SDK Warning] Failed to initialize SESClient. Email functions will run in mock mode:', e.message);
+}
+
 // Cost Explorer Client (SDK)
 let ceClient = null;
 if (typeof CostExplorerClient !== 'undefined' && CostExplorerClient) {
@@ -5925,10 +5938,11 @@ app.post("/api/admin/invite", requireAuth, async (req, res) => {
 });
 
 // --- AWS SES Email Integration ---
-const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
-const sesClient = new SESClient({ region: "us-east-1" }); // AWS App Runner automatically injects credentials via IAM Role
-
 async function sendSESEmail(toAddress, subject, bodyText) {
+    if (!sesClient || !SendEmailCommand) {
+        console.warn(`[SES Fallback] SES client or SendEmailCommand not initialized. Mocking email to: ${toAddress}, subject: "${subject}"`);
+        return true;
+    }
     const params = {
         Destination: { ToAddresses: [toAddress] },
         Message: {
@@ -6281,6 +6295,13 @@ app.post('/api/admin/payout/gmo-reversal', requireAuth, async (req, res) => {
         return res.status(400).json({ error: "無効な金額です。正の額面金額を指定してください。" });
     }
 
+    // Mutexロックの獲得 (二重送信・連打による反対仕訳多重挿入およびメール多重送信防止)
+    const lockKey = `reversal:${type}:${targetId}`;
+    const locked = await acquirePayoutLock(lockKey);
+    if (!locked) {
+        return res.status(409).json({ error: "現在、同じ対象への組戻し処理を実行中です。" });
+    }
+
     try {
         console.log(`[Reversal] 組戻し処理開始: type=${type}, targetId=${targetId}, amount=${valAmount}`);
         const todayStr = new Date().toISOString().split('T')[0];
@@ -6373,6 +6394,8 @@ app.post('/api/admin/payout/gmo-reversal', requireAuth, async (req, res) => {
     } catch (e) {
         console.error("[Reversal] ❌ 組戻し処理失敗:", e);
         res.status(500).json({ error: e.message });
+    } finally {
+        await releasePayoutLock(lockKey); // 確実なロック解除
     }
 });
 
