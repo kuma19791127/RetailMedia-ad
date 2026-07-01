@@ -4679,6 +4679,7 @@ app.post('/api/admin/agency-submit', requireAuth, async (req, res) => {
                 date = EXCLUDED.date`,
             [req.body.advertise, agencyEmail, priceVal, 'Pending', req.body.date]
         );
+        if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
         
         // Notify the admin via SES
         try {
@@ -4815,6 +4816,7 @@ app.post('/api/admin/agency-verify', requireAuth, async (req, res) => {
         );
         const updated = result.changes || result.rowCount;
         if (updated > 0) {
+            if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
             res.json({ success: true });
         } else {
             res.status(404).json({ error: "紹介データが見つかりませんでした" });
