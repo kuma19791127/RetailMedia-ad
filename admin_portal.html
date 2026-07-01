@@ -568,47 +568,102 @@
 
         <div class="main">
 
-            <!-- LIVE POS STREAM DASHBOARD -->
-            <div id="panel-livereg" class="panel">
+            <!-- ENGINEERING DASHBOARD (Consolidated logs & AML) -->
+            <div id="panel-engineering" class="panel">
                 <div class="header">
                     <div>
-                        <h1>📡 POSリアルタイム受信ログ</h1>
-                        <p style="color:#7f8c8d; margin-top:5px;">各店舗の「どこでもレジ」「ポータル同期」からAdminに届く生データを監視</p>
+                        <h1>⚙️ エンジニアリング・コンプライアンス</h1>
+                        <p style="color:#7f8c8d; margin-top:5px;">POSリアルタイム生ログ受信ストリームとAML不正取引検知の統合モニタリング</p>
                     </div>
-                    <div>
+                    <div style="display:flex; gap:10px;">
                         <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
+                        <button onclick="clearAmlLogs()" class="btn-action" style="background:#95a5a6;">🗑️ AMLログクリア</button>
+                        <button onclick="refreshEngineeringData()" class="btn-action">🔄 一括更新</button>
                     </div>
                 </div>
 
-                <div class="card" style="border-left: 4px solid #e74c3c;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>🔌 リアルタイム受信ストリーム</h3>
-                        <div style="background:#e74c3c; color:white; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; animation: pulse 1.5s infinite;">● 接続中 (Listening...)</div>
-                    </div>
-                    <p style="font-size:13px; color:#555;">※別タブで「どこでもレジ」を開き決済を行うと、そのデータが即座にここに流れてきます。また、Store Portalからの5分おき定期同期も自動で受信されます。</p>
+                <!-- Column Container (Left: AML, Right: Live Logs) -->
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; width: 100%;">
                     
-                    <style>
-                        @keyframes pulse { 0% { opacity:1; } 50% { opacity:0.5; } 100% { opacity:1; } }
-                        .log-row { animation: slideIn 0.3s ease-out; }
-                        @keyframes slideIn { from { transform: translateX(-20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
-                    </style>
+                    <!-- Left: AML Alert panel -->
+                    <div class="card" style="flex: 1; min-width: 450px; border-left: 4px solid #e74c3c; margin-top: 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="margin-top:0;">🛑 異常検知アラート (Square連携)</h3>
+                            <div style="background:#e74c3c; color:white; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; animation: pulse 1.5s infinite;">● 監視中 (Active)</div>
+                        </div>
+                        <p style="font-size:13px; color:#555; margin-bottom: 15px;">自動検知システムにより「高額決済（5万円以上）」または「異常な連続決済（5分間に5回以上）」と判定された異常検知です。</p>
 
-                    <div style="background:#1e293b; color:#f8fafc; padding:15px; border-radius:8px; height:400px; overflow-y:auto; margin-top:15px;">
-                        <table style="width:100%; border-collapse:collapse; font-size:13px; font-family:monospace; text-align:left;">
-                            <thead style="background:#0f172a; position:sticky; top:-15px;">
-                                <tr>
-                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">時刻</th>
-                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">ソース</th>
-                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">売上金額</th>
-                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">内容・対象商品</th>
-                                    <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">AI広告照合</th>
-                                </tr>
-                            </thead>
-                            <tbody id="live-pos-table">
-                                <!-- Data injected via localStorage listener -->
-                            </tbody>
-                        </table>
+                        <div style="background:#fff; border:1px solid #ddd; border-radius:8px; overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                                <thead style="background:#f8f9fa;">
+                                    <tr>
+                                        <th style="padding:10px;">検知日時</th>
+                                        <th style="padding:10px;">検知タイプ</th>
+                                        <th style="padding:10px;">店舗 / ソース</th>
+                                        <th style="padding:10px;">決済金額</th>
+                                        <th style="padding:10px;">ステータス</th>
+                                        <th style="padding:10px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="aml-table-body">
+                                    <!-- JS injected -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    <!-- Right: POS Live Logs panel -->
+                    <div class="card" style="flex: 1.2; min-width: 500px; border-left: 4px solid #e67e22; margin-top: 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="margin-top:0;">🔌 リアルタイム受信ストリーム</h3>
+                            <div style="background:#e74c3c; color:white; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; animation: pulse 1.5s infinite;">● 接続中 (Listening...)</div>
+                        </div>
+                        <p style="font-size:13px; color:#555; margin-bottom: 15px;">別タブの「どこでもレジ」決済データ、Store Portalからの5分おき定期同期ログがリアルタイムに流れてきます。</p>
+
+                        <style>
+                            @keyframes pulse { 0% { opacity:1; } 50% { opacity:0.5; } 100% { opacity:1; } }
+                            .log-row { animation: slideIn 0.3s ease-out; }
+                            @keyframes slideIn { from { transform: translateX(-20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+                        </style>
+
+                        <div style="background:#1e293b; color:#f8fafc; padding:15px; border-radius:8px; height:450px; overflow-y:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:12px; font-family:monospace; text-align:left;">
+                                <thead style="background:#0f172a; position:sticky; top:-15px;">
+                                    <tr>
+                                        <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">時刻</th>
+                                        <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">ソース</th>
+                                        <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">売上金額</th>
+                                        <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">内容・対象商品</th>
+                                        <th style="color:#94a3b8; padding:10px; border-bottom:1px solid #334155;">AI広告照合</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-pos-table">
+                                    <!-- Data injected via localStorage listener -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: AWS CloudWatch Logs Console -->
+                    <div class="card" style="width: 100%; border-left: 4px solid #3b82f6; margin-top: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <div>
+                                <h3 style="margin:0;">🖥️ AWS CloudWatch システムエラー監視</h3>
+                                <p style="font-size:12px; color:#64748b; margin:4px 0 0 0;" id="aws-log-subtitle">接続ロググループ: ロード中...</p>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span id="aws-logs-source-badge" style="background:#3b82f6; color:white; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">AWS Live</span>
+                                <button onclick="fetchAwsLogs()" class="btn-action" style="font-size:12px; padding:6px 12px; background:#3b82f6;">🔄 ログのみ更新</button>
+                            </div>
+                        </div>
+
+                        <div style="background:#0f172a; color:#f8fafc; padding:15px; border-radius:8px; height:320px; overflow-y:auto; font-family:monospace; font-size:12px; line-height:1.6; border:1px solid #1e293b;">
+                            <div id="aws-logs-console" style="white-space: pre-wrap;">
+                                <div style="color:#64748b; text-align:center; padding-top:100px;">ログデータを取得しています...</div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -784,48 +839,7 @@
         </div>
 
         
-        <!-- AML DASHBOARD -->
-        <div id="panel-aml" class="panel">
-            <div class="header">
-                <div>
-                    <h1>🚨 AML・不正取引監視</h1>
-                    <p style="color:#7f8c8d; margin-top:5px;">マネーローンダリングおよび不正決済のリアルタイムモニタリング</p>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="switchTab('payout')" class="btn-action" style="background:#475569;">📊 収益センター管理者に戻る</button>
-                    <button onclick="clearAmlLogs()" class="btn-action" style="background:#95a5a6;">🗑️ ログクリア</button>
-                    <button onclick="renderAmlLogs()" class="btn-action">🔄 データ更新</button>
-                </div>
-            </div>
 
-            <div class="card" style="border-left: 4px solid #e74c3c;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="margin-top:0;">🛑 異常検知アラート (Square連携)</h3>
-                    <div style="background:#e74c3c; color:white; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; animation: pulse 1.5s infinite;">● 監視中 (Active)</div>
-                </div>
-                <p style="font-size:13px; color:#555;">以下の取引は自動検知システムにより「高額決済（5万円以上）」または「異常な連続決済（5分間に5回以上）」と判定されたものです。<br>
-                内容を確認し、問題なければ「安全マーク」をつけてください。疑わしい場合はアカウントの停止措置をとります。</p>
-
-                <div style="background:#fff; border:1px solid #ddd; border-radius:8px; overflow-x:auto;">
-                    <table>
-                        <thead style="background:#f8f9fa;">
-                            <tr>
-                                <th>検知日時</th>
-                                <th>検知タイプ</th>
-                                <th>店舗 / ソース</th>
-                                <th>決済金額</th>
-                                <th>決済内容</th>
-                                <th>ステータス</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="aml-table-body">
-                            <!-- JS injected -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
 <!-- CREATOR MANAGEMENT DASHBOARD -->
         <div id="panel-creators" class="panel">
             <div class="header">
@@ -1158,6 +1172,94 @@
                     }
                 }
             
+
+        function refreshEngineeringData() {
+            if (typeof renderLiveLogs === 'function') renderLiveLogs();
+            if (typeof renderAmlLogs === 'function') renderAmlLogs();
+            if (typeof fetchAwsLogs === 'function') fetchAwsLogs();
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: '監視データを更新しました',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+
+        async function fetchAwsLogs() {
+            const consoleEl = document.getElementById('aws-logs-console');
+            const subtitleEl = document.getElementById('aws-log-subtitle');
+            const badgeEl = document.getElementById('aws-logs-source-badge');
+            if (!consoleEl) return;
+
+            try {
+                consoleEl.innerHTML = `<div style="color:#64748b; text-align:center; padding-top:100px;">CloudWatchログを取得中...</div>`;
+                const res = await fetch(window.API_BASE_URL + '/api/admin/aws-logs', { credentials: 'include' });
+                if (!res.ok) {
+                    throw new Error(`HTTP Error: ${res.status}`);
+                }
+                const data = await res.json();
+                
+                if (subtitleEl && data.logGroupName) {
+                    subtitleEl.innerText = `接続ロググループ: ${data.logGroupName}`;
+                }
+
+                if (badgeEl) {
+                    if (data.source === 'aws-cloudwatch') {
+                        badgeEl.innerText = '☁️ AWS Live';
+                        badgeEl.style.background = '#10b981';
+                    } else {
+                        badgeEl.innerText = '🔌 Fallback Mock';
+                        badgeEl.style.background = '#f59e0b';
+                    }
+                }
+
+                if (!data.events || data.events.length === 0) {
+                    consoleEl.innerHTML = `<div style="color:#64748b; text-align:center; padding-top:100px;">直近2時間以内に不審なログ(ERROR/WARN等)は検知されませんでした。</div>`;
+                    return;
+                }
+
+                let html = '';
+                data.events.forEach(event => {
+                    const dateStr = new Date(event.timestamp).toLocaleString('ja-JP');
+                    let msg = event.message || '';
+                    
+                    let color = '#f8fafc';
+                    let label = '⚙️ LOG';
+                    if (msg.includes('ERROR') || msg.includes('Fail')) {
+                        color = '#f87171';
+                        label = '🔴 ERROR';
+                    } else if (msg.includes('WARN')) {
+                        color = '#fbbf24';
+                        label = '🟡 WARN';
+                    } else if (msg.includes('Exception')) {
+                        color = '#f472b6';
+                        label = '🔥 EXCEPTION';
+                    } else if (msg.includes('INFO')) {
+                        color = '#60a5fa';
+                        label = '🔵 INFO';
+                    }
+
+                    html += `<div style="border-bottom:1px solid #1e293b; padding:8px 0; display:flex; flex-direction:column; gap:2px;">
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b;">
+                            <span>${dateStr} | Stream: ${event.logStreamName || 'N/A'}</span>
+                            <span style="font-weight:bold; color:${color};">${label}</span>
+                        </div>
+                        <div style="color:${color}; font-size:12px; word-break:break-all; font-family:monospace; white-space:pre-wrap;">${msg}</div>
+                    </div>`;
+                });
+
+                consoleEl.innerHTML = html;
+
+            } catch (e) {
+                console.error("[F12 Debug Frontend] Failed to fetch AWS logs:", e);
+                consoleEl.innerHTML = `<div style="color:#ef4444; text-align:center; padding-top:100px;">
+                    ログデータの取得に失敗しました。<br>
+                    <span style="font-size:11px; color:#94a3b8;">エラー内容: ${e.message}</span>
+                </div>`;
+            }
+        }
 
         // --- AML Monitoring Logic ---
         let recentTransactions = [];
@@ -1866,7 +1968,11 @@
 
             if (tabId === 'agency') loadAgencyData();
             if (tabId === 'creators') loadCreatorData();
-            if (tabId === 'livereg') renderLiveLogs();
+            if (tabId === 'engineering') {
+                if (typeof renderLiveLogs === 'function') renderLiveLogs();
+                if (typeof renderAmlLogs === 'function') renderAmlLogs();
+                if (typeof fetchAwsLogs === 'function') fetchAwsLogs();
+            }
             if (tabId === 'inquiries') loadContactInquiries();
             if (tabId === 'advertisers') {
                 if (typeof checkForGmoDeposits === 'function') {

@@ -14,6 +14,20 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const { CostExplorerClient, GetCostAndUsageCommand } = require('@aws-sdk/client-cost-explorer');
 
+// CloudWatch Logs Client Initialization with fallback (Rule 5 & 7 compliance)
+let CloudWatchLogsClient, FilterLogEventsCommand;
+let cwLogsClient = null;
+try {
+    const cwLogs = require('@aws-sdk/client-cloudwatch-logs');
+    CloudWatchLogsClient = cwLogs.CloudWatchLogsClient;
+    FilterLogEventsCommand = cwLogs.FilterLogEventsCommand;
+    const awsRegion = process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
+    cwLogsClient = new CloudWatchLogsClient({ region: awsRegion });
+    console.log('[AWS SDK] CloudWatchLogsClient successfully initialized.');
+} catch (e) {
+    console.warn('[AWS SDK Warning] Failed to initialize CloudWatchLogsClient. System logs will run in mock mode:', e.message);
+}
+
 // Cost Explorer Client (SDK)
 let ceClient;
 try {
@@ -7736,6 +7750,128 @@ app.post('/api/bank/transfer', requireAuth, async (req, res) => {
         res.json(result);
     } catch (e) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+
+// ==========================================
+// CloudWatch Logs Integration API (Engineering Console)
+// ==========================================
+let logsCache = null;
+let lastFetchedTime = 0;
+const CACHE_TTL = 60000; // 60 seconds
+
+// Mask secrets and sensitive strings to prevent leaks in logs
+function maskSensitiveInfo(text) {
+    if (!text) return "";
+    const secrets = [
+        process.env.AWS_SECRET_ACCESS_KEY,
+        process.env.AWS_ACCESS_KEY_ID,
+        process.env.FREEE_CLIENT_SECRET,
+        process.env.GMO_API_KEY
+    ].filter(Boolean);
+
+    let maskedText = text;
+    for (const secret of secrets) {
+        if (secret.length > 5) {
+            const escaped = secret.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(escaped, 'g');
+            maskedText = maskedText.replace(regex, '[MASKED]');
+        }
+    }
+    return maskedText;
+}
+
+app.get('/api/admin/aws-logs', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "管理者権限が必要です" });
+    }
+
+    const now = Date.now();
+    if (logsCache && (now - lastFetchedTime < CACHE_TTL)) {
+        console.log("[AWS CW Logs] Returning cached CloudWatch logs events.");
+        return res.json(logsCache);
+    }
+
+    const logGroupName = process.env.AWS_LOG_GROUP_NAME || '/aws/apprunner/retailmedia-ad/application';
+
+    try {
+        if (!cwLogsClient || !FilterLogEventsCommand) {
+            throw new Error("CloudWatch Logs SDK (client-cloudwatch-logs) is not initialized.");
+        }
+
+        console.log(`[AWS CW Logs] Requesting live logs from group: ${logGroupName}`);
+        const startTime = now - (2 * 60 * 60 * 1000); // 2 hours ago
+
+        const command = new FilterLogEventsCommand({
+            logGroupName: logGroupName,
+            startTime: startTime,
+            limit: 60,
+            filterPattern: "?ERROR ?Exception ?WARN ?500 ?Fail"
+        });
+
+        const response = await cwLogsClient.send(command);
+        const events = (response.events || []).map(event => {
+            return {
+                timestamp: event.timestamp,
+                message: maskSensitiveInfo(event.message),
+                logStreamName: event.logStreamName,
+                eventId: event.eventId
+            };
+        }).sort((a, b) => b.timestamp - a.timestamp);
+
+        logsCache = {
+            success: true,
+            source: "aws-cloudwatch",
+            logGroupName: logGroupName,
+            events: events
+        };
+        lastFetchedTime = now;
+        res.json(logsCache);
+
+    } catch (e) {
+        console.warn("[AWS CW Logs] API execution failed, falling back to mock logs mode:", e.message);
+        
+        // Rule 5: Fallback to mock logs in case of API failure / local environment
+        const mockEvents = [
+            {
+                timestamp: now - 15000,
+                message: `[ERROR] [gmo-bank] GMO connection info not configured. Failing transfer.`,
+                logStreamName: "apprunner-service-log-01",
+                eventId: "mock-1"
+            },
+            {
+                timestamp: now - 300000,
+                message: `[WARN] [freee-sync] OAuth token expired. Attempting automatic token refresh...`,
+                logStreamName: "apprunner-service-log-01",
+                eventId: "mock-2"
+            },
+            {
+                timestamp: now - 1200000,
+                message: `[Exception] [database] SQLite pool connection warning: Busy. Retrying query.`,
+                logStreamName: "apprunner-service-log-02",
+                eventId: "mock-3"
+            },
+            {
+                timestamp: now - 2400000,
+                message: `[INFO] [server-start] RetailMedia server successfully initialized on port 8080.`,
+                logStreamName: "apprunner-service-log-02",
+                eventId: "mock-4"
+            }
+        ];
+
+        const maskedMockEvents = mockEvents.map(ev => ({
+            ...ev,
+            message: maskSensitiveInfo(ev.message)
+        }));
+
+        res.json({
+            success: true,
+            source: "mock-fallback",
+            logGroupName: logGroupName,
+            errorInfo: e.message,
+            events: maskedMockEvents
+        });
     }
 });
 
