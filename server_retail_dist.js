@@ -7812,7 +7812,7 @@ app.post('/api/agent/shift-manual-sync', requireAuth, async (req, res) => {
 
         // Read shift data and manuals dynamically using the user's organization key
         const shifts = (shiftState[org] && shiftState[org].staff) ? shiftState[org].staff : [];
-        const manuals = (manualhelpState[org] && manualhelpState[org].manuals) ? manualhelpState[org].manuals : [];
+        const manuals = (manualhelpState[org] && manualhelpState[org].manuals) ? manualhelpState[org].manuals.filter(m => m && typeof m === 'object') : [];
 
         // Simple mock of detecting a "newbie" (e.g. someone scheduled tomorrow)
         // In reality, filter by employee start date or shift count.
@@ -7832,7 +7832,8 @@ Return ONLY a JSON object:
 }
 `;
 
-        const responseText = await callGeminiAPI(prompt, "application/json");
+        let responseText = await callGeminiAPI(prompt, "application/json");
+        responseText = responseText.replace(/^\s*`(?:json)?\s*/i, '').replace(/\s*`\s*$/, '');
         const result = JSON.parse(responseText);
 
         // Add to notifications in shiftState[org]
