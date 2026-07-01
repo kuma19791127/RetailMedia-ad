@@ -29,13 +29,34 @@
                 if (lastService.includes('admin_portal.html') || lastService.includes('review.html')) {
                     console.log("[F12 Debug] Auto-redirect skipped because the last active service is an internal system (admin/review):", lastService);
                 } else {
-                    console.log("[F12 Debug] Auto-redirecting to last active service:", lastService);
-                    const roleStr = localStorage.getItem('retailMediaSavedRole') || '';
-                    sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: savedEmail, role: roleStr }));
-                    if (savedEmail) {
-                        sessionStorage.setItem('retailUserEmail', savedEmail);
-                    }
-                    window.location.href = lastService;
+                    // 非同期でAPIセッション検証を行い、有効な場合のみ自動遷移させる
+                    console.log("[F12 Debug] Verifying active session via backend /api/user/me...");
+                    
+                    // index.htmlのCSS等がロードされる前にリダイレクトを試みるため、DOM構築を邪魔しない即時関数で行う
+                    (async () => {
+                        try {
+                            const checkUrl = window.API_BASE_URL + '/api/user/me';
+                            const response = await fetch(checkUrl, { credentials: 'include' });
+                            console.log("[F12 Debug] Session check response HTTP status:", response.status);
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.success && data.user) {
+                                    console.log("[F12 Debug] Valid active session confirmed. Auto-redirecting to last active service:", lastService);
+                                    const roleStr = localStorage.getItem('retailMediaSavedRole') || data.user.role || '';
+                                    sessionStorage.setItem('retailMediaAuth', JSON.stringify({ authenticated: true, email: data.user.email, role: roleStr }));
+                                    sessionStorage.setItem('retailUserEmail', data.user.email);
+                                    window.location.href = lastService;
+                                    return;
+                                }
+                            }
+                            throw new Error("Invalid session");
+                        } catch (err) {
+                            console.warn("[F12 Debug] Session verification failed (unauthenticated or error). Clearing auto-redirect info:", err.message);
+                            localStorage.setItem('logged_out', 'true'); // ログインし直すまで自動遷移させない
+                            sessionStorage.clear();
+                        }
+                    })();
                 }
             } else {
                 console.log("[F12 Debug] Auto-redirect skipped. lastService:", lastService, "loggedOut:", loggedOut);
