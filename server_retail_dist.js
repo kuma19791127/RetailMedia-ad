@@ -957,6 +957,7 @@ app.post('/api/kyc/:id/status', requireAuth, async (req, res) => {
         );
         const updated = result.changes || result.rowCount;
         if (updated > 0) {
+            if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
             console.log(`[KYC] Request ${reqId} status updated to ${status} by admin ${req.user.email} in DB`);
             res.json({ success: true });
         } else {
