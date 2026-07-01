@@ -4930,6 +4930,7 @@ app.post('/api/creator/bank', requireAuth, requireRole(['creator', 'admin']), as
                 invoice_number = EXCLUDED.invoice_number`,
             [email, bankName, branchName, accountNum, holderName, idBase64, Date.now(), invoiceNumber || null]
         );
+        if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
         console.log(`[Creator] Bank Info Updated & KYC Passed in DB for: ${email}`);
         res.json({ success: true, message: "本人確認（KYC）を通過し、口座情報を保存しました" });
     } catch (e) {
@@ -7455,17 +7456,35 @@ Return ONLY a JSON object:
 `;
         const userInput = `The creator asked: "${message}"`;
 
-        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
-        const result = JSON.parse(responseText);
+        const fallbackResult = {
+            analysis: "動画の最初の3秒以内に店舗名や対象商品のロゴが配置されていません。また、文字のコントラストが低く、通路を歩く買い物客の目を引きにくい状態です。",
+            improvementPlan: "1. 冒頭の3秒間で最もアピールしたい商品カットと、大きなテキスト（太字・高コントラスト）を提示してください。\n2. BGMのテンポを上げ、音声合成での価格読み上げとテロップを完全に同期させてください。",
+            encouragement: "少しの編集で劇的に視認性が上がります。素晴らしい動画になることを期待しています！"
+        };
 
-        const responseHtml = `
-            <strong><i class="fas fa-lightbulb" style="color:#a855f7;"></i> AIアシスタントからのアドバイス</strong><br><br>
-            <strong>📊 過去の傾向分析</strong><br>${result.analysis}<br><br>
-            <strong>🛠 改善の具体案</strong><br>${result.improvementPlan}<br><br>
-            <em>${result.encouragement}</em>
-        `;
+        try {
+            let responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+            responseText = responseText.replace(/^\s*`(?:json)?\s*/i, '').replace(/\s*`\s*$/, '');
+            const result = JSON.parse(responseText);
 
-        res.json({ success: true, message: responseHtml });
+            const responseHtml = `
+                <strong><i class="fas fa-lightbulb" style="color:#a855f7;"></i> AIアシスタントからのアドバイス</strong><br><br>
+                <strong>📊 過去の傾向分析</strong><br>${result.analysis}<br><br>
+                <strong>🛠 改善の具体案</strong><br>${result.improvementPlan}<br><br>
+                <em>${result.encouragement}</em>
+            `;
+
+            res.json({ success: true, message: responseHtml });
+        } catch (apiErr) {
+            console.warn("[Creator Agent] Gemini API or parse failed, using fallback mock advice.", apiErr.message);
+            const responseHtmlFallback = `
+                <strong><i class="fas fa-lightbulb" style="color:#a855f7;"></i> AIアシスタントからのアドバイス (デモ用フォールバック動作)</strong><br><br>
+                <strong>📊 過去の傾向分析 (フォールバック)</strong><br>${fallbackResult.analysis}<br><br>
+                <strong>🛠 改善の具体案 (フォールバック)</strong><br>${fallbackResult.improvementPlan}<br><br>
+                <em>${fallbackResult.encouragement}</em>
+            `;
+            res.json({ success: true, message: responseHtmlFallback, fallback: true });
+        }
     } catch (e) {
         console.error('Creator Agent Error:', e);
         res.status(500).json({ error: e.message });
