@@ -965,6 +965,123 @@
             </div>
 
             <script>
+                function convertHalfToFullKana(str) {
+                    if (!str) return '';
+                    const map = {
+                        'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ',
+                        'ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
+                        'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ',
+                        'ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
+                        'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ',
+                        'ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
+                        'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ',
+                        'ﾔ':'ヤ','ﾕ':'ユ','ヨ':'ヨ','ﾖ':'ヨ',
+                        'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ',
+                        'ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン',
+                        'ﾞ':'゛','ﾟ':'゜','ｰ':'ー',
+                        'ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ',
+                        'ｯ':'ッ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ'
+                    };
+                    let result = '';
+                    for (let i = 0; i < str.length; i++) {
+                        let char = str[i];
+                        let nextChar = str[i + 1];
+                        if (nextChar === 'ﾞ' || nextChar === 'ﾟ') {
+                            const combined = char + nextChar;
+                            const mapCombined = {
+                                'ｶﾞ':'ガ','ｷﾞ':'ギ','ｸﾞ':'グ','ｹﾞ':'ゲ','ｺﾞ':'ゴ',
+                                'ｻﾞ':'ザ','ｼﾞ':'ジ','ｽﾞ':'ズ','ｾﾞ':'ゼ','ｿﾞ':'ゾ',
+                                'ﾀﾞ':'ダ','ﾁﾞ':'ヂ','ﾂﾞ':'ヅ','ﾃﾞ':'デ','ﾄﾞ':'ド',
+                                'ﾊﾞ':'バ','ﾋﾞ':'ビ','ﾌﾞ':'ブ','ﾍﾞ':'ベ','ﾎﾞ':'ボ',
+                                'ﾊﾟ':'パ','ﾋﾟ':'ピ','ﾌﾟ':'プ','ﾍﾟ':'ペ','ﾎﾟ':'ポ'
+                            };
+                            if (mapCombined[combined]) {
+                                result += mapCombined[combined];
+                                i++;
+                                continue;
+                            }
+                        }
+                        result += map[char] || char;
+                    }
+                    // 法人格の略語（ｶ) や ﾕ)）などを除去して綺麗にする
+                    return result.replace(/^[カユトコド]）/i, '').replace(/^[カユトコド]\)/i, '').trim();
+                }
+
+                async function checkForGmoDeposits() {
+                    console.log("[F12 Debug] Checking for new GMO deposits via API /api/bank/deposits...");
+                    try {
+                        const url = window.API_BASE_URL + '/api/bank/deposits?accountId=101011234567';
+                        const res = await fetch(url, { credentials: 'include' });
+                        if (!res.ok) {
+                            console.warn("[F12 Debug] Failed to fetch GMO deposits. Status:", res.status);
+                            return;
+                        }
+                        const data = await res.json();
+                        if (!data || !data.paymentArrivals || data.paymentArrivals.length === 0) {
+                            console.log("[F12 Debug] No recent deposits found in GMO transactions.");
+                            return;
+                        }
+
+                        // 最も新しい入金明細を取り出す
+                        const item = data.paymentArrivals[0];
+                        const lastProcessedKey = localStorage.getItem('gmo_last_processed_item_key');
+
+                        console.log("[F12 Debug] Recent GMO deposit detected:", item.remarks, item.amount, "itemKey:", item.itemKey, "lastProcessed:", lastProcessedKey);
+
+                        // 既にポップアップで処理済みの場合はスキップ
+                        if (lastProcessedKey === item.itemKey) {
+                            console.log("[F12 Debug] Deposit transaction is already processed/dismissed.");
+                            return;
+                        }
+
+                        // 半角カナを全角カタカナにし、法人格略称を除いた企業名を生成
+                        const cleanBrandName = convertHalfToFullKana(item.remarks);
+
+                        // ポップアップを提示
+                        const result = await Swal.fire({
+                            title: '🔔 GMO銀行の入金を検知',
+                            html: `
+                                <p style="font-size:13px; text-align:left; color:#64748b; margin-bottom:12px;">GMO銀行APIより、直近の入金が検知されました。<br>この情報を使って新規広告主アカウントを発行しますか？</p>
+                                <div style="background:#f1f5f9; padding:15px; border-radius:8px; text-align:left; font-size:13px; line-height:1.6; border:1px solid #cbd5e1;">
+                                    <b>振込名義:</b> ${item.remarks} (変換: ${cleanBrandName})<br>
+                                    <b>入金金額:</b> <span style="font-size:16px; font-weight:bold; color:#10b981;">¥${Number(item.amount).toLocaleString()}</span><br>
+                                    <b>入金日付:</b> ${item.transactionDate}
+                                </div>
+                            `,
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'フォームに自動入力',
+                            cancelButtonText: 'スルーする',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        });
+
+                        if (result.isConfirmed) {
+                            // フォームに自動セット
+                            document.getElementById('adv-name').value = cleanBrandName;
+                            document.getElementById('adv-budget').value = item.amount;
+                            
+                            // メールアドレスにフォーカスを移動して入力しやすくする
+                            document.getElementById('adv-email').focus();
+                            
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: '入金情報を自動入力しました',
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+                        }
+
+                        // 承認・拒否に関わらず、同じ件のポップアップ重複を避けるためにitemKeyを記憶
+                        localStorage.setItem('gmo_last_processed_item_key', item.itemKey);
+
+                    } catch (e) {
+                        console.error("[F12 Debug] Error checking for GMO deposits:", e);
+                    }
+                }
+
                 async function createAdvertiserAccount() {
                     const name = document.getElementById('adv-name').value;
                     const email = document.getElementById('adv-email').value;
@@ -1751,6 +1868,11 @@
             if (tabId === 'creators') loadCreatorData();
             if (tabId === 'livereg') renderLiveLogs();
             if (tabId === 'inquiries') loadContactInquiries();
+            if (tabId === 'advertisers') {
+                if (typeof checkForGmoDeposits === 'function') {
+                    checkForGmoDeposits();
+                }
+            }
             
             // お問い合わせや入金処理後はバッジを更新する
             if (typeof updateNotificationBadges === 'function') {
