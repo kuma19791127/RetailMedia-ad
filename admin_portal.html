@@ -947,8 +947,8 @@
                         <input type="number" id="adv-budget" placeholder="100000" class="login-input" style="margin-top:5px; margin-bottom:0; font-size:18px; font-weight:bold;">
                     </div>
                     <div>
-                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">代理店CCメールアドレス (任意)</label>
-                        <input type="email" id="adv-agency-email" placeholder="agency@example.com" class="login-input" style="margin-top:5px; margin-bottom:0;">
+                        <label style="font-size:12px; font-weight:bold; color:#7f8c8d;">CCメール送信先 (セキュリティ固定)</label>
+                        <input type="text" id="adv-agency-email" placeholder="ログイン中の管理者宛てに自動CC送信されます" class="login-input" style="margin-top:5px; margin-bottom:0;" disabled>
                     </div>
                 </div>
 
@@ -1100,8 +1100,6 @@
                     const name = document.getElementById('adv-name').value;
                     const email = document.getElementById('adv-email').value;
                     const budget = document.getElementById('adv-budget').value;
-                    const ccEmailEl = document.getElementById('adv-agency-email');
-                    const ccEmail = ccEmailEl ? ccEmailEl.value : '';
                     
                     if (!name || !email || !budget) {
                         return Swal.fire('エラー', 'すべての項目を入力してください', 'error');
@@ -1111,7 +1109,7 @@
                         title: 'アカウント発行確認',
                         html: `<div style="text-align:left; font-size:14px; background:#f8fafc; padding:15px; border-radius:8px;">
                             対象企業: <b>${name}</b> 様<br>
-                            CC宛先: <b>${ccEmail || "なし"}</b><br>
+                            CC宛先: <b>管理者（あなた）宛に自動CC送信されます</b><br>
                             アドレス: <b>${email}</b><br>
                             チャージ: <b style="color:#e74c3c; font-size:18px;">¥${Number(budget).toLocaleString()}</b>
                             </div><br>上記の内容でアカウントを作成し、システム利用開始の案内メールを自動送信します。<br>よろしいですか？`,
@@ -1132,7 +1130,7 @@
                     });
 
                     try {
-                        const payload = { name, email, budget: Number(budget), ccEmail };
+                        const payload = { name, email, budget: Number(budget) };
                         console.log("[F12 Debug Frontend] Creating advertiser account with payload:", payload);
                         
                         const res = await fetch(window.API_BASE_URL + '/api/admin/invite', {
@@ -1160,7 +1158,6 @@
                             document.getElementById('adv-name').value = '';
                             document.getElementById('adv-email').value = '';
                             document.getElementById('adv-budget').value = '';
-                            if (ccEmailEl) ccEmailEl.value = '';
 
                             Swal.fire('成功', 'アカウント発行・予算チャージが完了し、企業様（および代理店様）へのご案内メールが送信されました！', 'success');
                         } else {
