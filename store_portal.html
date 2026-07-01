@@ -2686,7 +2686,6 @@
                 html: `
                     <div style="display:grid; grid-template-columns:1fr; gap:10px;">
                         <button onclick="showPanel('inventory'); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#2980b9;">📦 在庫連携</button>
-                        <button onclick="showPanel('revenue'); setTimeout(() => { const el = document.getElementById('block-signages'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150); Swal.close();" class="swal2-confirm swal2-styled" style="width:100%; margin:0; background:#8e44ad;">📺 サイネージ管理</button>
                         <button onclick="executeLogout()" class="swal2-cancel swal2-styled" style="width:100%; margin:0; background:#e74c3c;">🚪 ログアウト</button>
                     </div>
                 `,
@@ -2694,7 +2693,6 @@
                 showCloseButton: true
             });
         }
-
     </script>
 
 <!-- Context-Agnostic Profile Edit Modal -->
