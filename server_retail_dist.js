@@ -898,6 +898,7 @@ app.post('/api/kyc', requireAuth, async (req, res) => {
                 'pending'
             ]
         );
+        if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
 
         console.log(`[KYC] New request from ${req.user.email} saved to DB. AI Score: ${aiScore}%`);
         res.json({ success: true, id: newReqId, aiScore: aiScore });
@@ -6287,6 +6288,7 @@ app.post('/api/admin/payout/gmo-transfer', requireAuth, async (req, res) => {
         }
         // キューの非同期処理をキック
         processFreeeSyncQueue().catch(err => console.error("[freee Queue Kicker] Error:", err.message));
+        if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
         
         res.json({ success: true, message: "GMO銀行送金が完了し、支払状況を更新しました。" });
     } catch (e) {
@@ -6341,6 +6343,7 @@ app.post('/api/admin/payout/gmo-reversal', requireAuth, async (req, res) => {
             "INSERT INTO freee_sync_queue (id, payout_type, target_id, amount, payout_date, status, attempts) VALUES (?, ?, ?, ?, ?, 'pending', 0)",
             [queueId, type, targetId, negativeAmount, todayStr]
         );
+        if (typeof saveFinanceDB === 'function') saveFinanceDB(); // 必須ルール1: 金融DBのS3同期保存
         console.log(`[freee Queue] Reversal payout task added for ${targetId}, amount: ${negativeAmount}`);
 
         // 3. 管理者および対象者（店舗/クリエイター）へのメール通知
