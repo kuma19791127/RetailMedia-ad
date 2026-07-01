@@ -266,6 +266,7 @@ if (process.env.DATABASE_URL) {
             try {
                 await client.query(`
                     CREATE INDEX IF NOT EXISTS idx_pos_live_logs_source_time ON pos_live_logs (source, timestamp);
+                    CREATE INDEX IF NOT EXISTS idx_pos_live_logs_timestamp ON pos_live_logs (timestamp DESC);
                     CREATE INDEX IF NOT EXISTS idx_aml_alerts_timestamp ON aml_alerts (timestamp DESC);
                 `);
                 console.log('[DB] ✅ PostgreSQL POS/AML indexes created successfully.');
@@ -780,6 +781,10 @@ if (process.env.DATABASE_URL) {
 
                 sqliteDb.run(`
                     CREATE INDEX IF NOT EXISTS idx_pos_live_logs_source_time ON pos_live_logs (source, timestamp)
+                `);
+
+                sqliteDb.run(`
+                    CREATE INDEX IF NOT EXISTS idx_pos_live_logs_timestamp ON pos_live_logs (timestamp DESC)
                 `);
 
                 sqliteDb.run(`

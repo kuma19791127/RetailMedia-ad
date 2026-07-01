@@ -1321,7 +1321,7 @@
                         <td style="padding:10px; font-size:12px; color:#94a3b8;"><div style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(log.items)}</div></td>
                         <td style="padding:10px;">${statusBadge}</td>
                         <td style="padding:10px;">
-                            ${!isSafe ? `<button onclick="markAmlSafe('${log.id}')" class="btn-action" style="background:#10b981; padding:5px 10px; font-size:11px;">✅ 安全マーク</button>` : ''}
+                            ${!isSafe ? `<button onclick="markAmlSafe('${escapeHtml(log.id)}')" class="btn-action" style="background:#10b981; padding:5px 10px; font-size:11px;">✅ 安全マーク</button>` : ''}
                         </td>
                     </tr>
                     `;
