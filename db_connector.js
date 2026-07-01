@@ -228,6 +228,27 @@ if (process.env.DATABASE_URL) {
                     attempts INT DEFAULT 0,
                     last_attempt BIGINT
                 );
+
+                CREATE TABLE IF NOT EXISTS pos_live_logs (
+                    id SERIAL PRIMARY KEY,
+                    time VARCHAR(100),
+                    source VARCHAR(255),
+                    amount INT,
+                    items TEXT,
+                    type VARCHAR(50),
+                    timestamp BIGINT
+                );
+
+                CREATE TABLE IF NOT EXISTS aml_alerts (
+                    id VARCHAR(255) PRIMARY KEY,
+                    time VARCHAR(100),
+                    type VARCHAR(100),
+                    source VARCHAR(255),
+                    amount INT,
+                    items TEXT,
+                    status VARCHAR(50) DEFAULT 'pending',
+                    timestamp BIGINT
+                );
             `);
 
             // Migration path: Drop existing primary key constraint and recreate as composite if not already done
@@ -718,6 +739,31 @@ if (process.env.DATABASE_URL) {
                         target_store_id TEXT,
                         advertiser TEXT,
                         status TEXT DEFAULT 'pending'
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS pos_live_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        time TEXT,
+                        source TEXT,
+                        amount INTEGER,
+                        items TEXT,
+                        type TEXT,
+                        timestamp INTEGER
+                    )
+                `);
+
+                sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS aml_alerts (
+                        id TEXT PRIMARY KEY,
+                        time TEXT,
+                        type TEXT,
+                        source TEXT,
+                        amount INTEGER,
+                        items TEXT,
+                        status TEXT DEFAULT 'pending',
+                        timestamp INTEGER
                     )
                 `);
 

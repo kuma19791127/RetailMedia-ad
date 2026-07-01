@@ -2193,6 +2193,49 @@ async function savePosTransactionInternal(txData) {
         saveDatabase();
     }
 
+    // --- POS Live Logging & AML Alert Detection (Database Mode) ---
+    try {
+        const timeStr = new Date(timestampVal).toLocaleTimeString('ja-JP');
+        const itemsStr = items.map(i => i.name || '商品').join(', ') || '商品';
+        await dbHelper.query.run(
+            'INSERT INTO pos_live_logs (time, source, amount, items, type, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+            [timeStr, storeId + 'レジ端末', amount, itemsStr, 'LIVE_SALE', timestampVal]
+        );
+
+        let alertTriggered = false;
+        let alertType = '';
+
+        // Rule 1: High Value (50k JPY)
+        if (amount >= 50000) {
+            alertTriggered = true;
+            alertType = 'high_value';
+        }
+
+        // Rule 2: High Frequency (>= 5 times in 5 minutes)
+        const fiveMinsAgo = timestampVal - (5 * 60 * 1000);
+        const freqResult = await dbHelper.query.get(
+            'SELECT COUNT(*) as count FROM pos_live_logs WHERE source = ? AND timestamp >= ?',
+            [storeId + 'レジ端末', fiveMinsAgo]
+        );
+        const count = freqResult ? Number(freqResult.count) : 0;
+        if (count >= 5) {
+            alertTriggered = true;
+            alertType = 'high_frequency';
+        }
+
+        if (alertTriggered) {
+            const alertId = `aml_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+            const dateStr = new Date(timestampVal).toLocaleString('ja-JP');
+            await dbHelper.query.run(
+                'INSERT INTO aml_alerts (id, time, type, source, amount, items, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [alertId, dateStr, alertType, storeId + 'レジ端末', amount, itemsStr, 'alert', timestampVal]
+            );
+            console.log(`[AML ALERT TRIGGERED] Type: ${alertType}, Store: ${storeId}, Amount: ${amount}`);
+        }
+    } catch (logErr) {
+        console.error("[POS Live Log & AML Error]", logErr.message);
+    }
+
     return { success: true, transaction_id: transactionId };
 }
 
@@ -7881,6 +7924,61 @@ app.get('/api/admin/aws-logs', requireAuth, async (req, res) => {
     }
 });
 
+// --- POS & AML Database REST APIs ---
+app.get('/api/admin/pos-logs', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "閲覧権限がありません" });
+    }
+    try {
+        const rows = await dbHelper.query.all('SELECT * FROM pos_live_logs ORDER BY timestamp DESC LIMIT 50');
+        res.json({ success: true, logs: rows });
+    } catch (e) {
+        console.error("[API pos-logs GET Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.get('/api/admin/aml-alerts', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "閲覧権限がありません" });
+    }
+    try {
+        const rows = await dbHelper.query.all('SELECT * FROM aml_alerts ORDER BY timestamp DESC LIMIT 50');
+        res.json({ success: true, alerts: rows });
+    } catch (e) {
+        console.error("[API aml-alerts GET Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.post('/api/admin/aml-alerts/safe', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "変更権限がありません" });
+    }
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: "IDが必要です" });
+    try {
+        await dbHelper.query.run('UPDATE aml_alerts SET status = ? WHERE id = ?', ['safe', id]);
+        res.json({ success: true, message: "Marked alert as safe" });
+    } catch (e) {
+        console.error("[API aml-alerts safe POST Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.post('/api/admin/aml-alerts/clear', requireAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "変更権限がありません" });
+    }
+    try {
+        await dbHelper.query.run('DELETE FROM aml_alerts');
+        await dbHelper.query.run('DELETE FROM pos_live_logs');
+        res.json({ success: true, message: "Cleared all POS and AML logs" });
+    } catch (e) {
+        console.error("[API aml-alerts clear POST Error]", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 
 // ==========================================
 // freee API Integration Routes (OAuth & Data Sync)
