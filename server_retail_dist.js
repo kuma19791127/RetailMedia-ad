@@ -6686,11 +6686,11 @@ app.post('/api/manualhelp/translate-steps', requireAuth, async (req, res) => {
             console.warn("[ManualHelp AI] Invalid texts array format for translation");
             return res.status(400).json({ error: "texts must be an array" });
         }
-        const apiKey = process.env.GCP_API_KEY || "INSERT_API_KEY_HERE_AFTER_CLONING";
+        const apiKey = process.env.GCP_API_KEY;
         
         console.log(`[ManualHelp AI] Translating ${texts.length} steps to ${target} via Google Cloud Translation API`);
         
-        if (!apiKey || apiKey.includes("INSERT_API_KEY_HERE")) {
+        if (!apiKey) {
             console.log("[ManualHelp Translation] Translation API Key missing. Falling back to Demo mock translation.");
             const mockTranslations = texts.map(t => ({ translatedText: `${t} [${target === 'en' ? 'Translated' : '翻訳済'}]` }));
             return res.json({ data: { translations: mockTranslations } });

@@ -1478,14 +1478,22 @@
             visibleMessages.forEach(msg => {
                 let mHtml = '';
                 const isMyMessage = (msg.sender === myName);
-                if(msg.file) mHtml = msg.file.type === 'video' ? `<video src="${msg.file.url}" class="attached-media" controls></video>` : `<img src="${msg.file.url}" class="attached-media">`;
-                let textReplaced = msg.text.replace(/(@[^\s]+)/g, '<span class="mention-text">$1</span>');
+                if(msg.file) {
+                    const safeFileUrl = escapeHtml(msg.file.url);
+                    mHtml = msg.file.type === 'video' 
+                        ? `<video src="${safeFileUrl}" class="attached-media" controls></video>` 
+                        : `<img src="${safeFileUrl}" class="attached-media">`;
+                }
+                const escapedText = escapeHtml(msg.text || '');
+                const textReplaced = escapedText.replace(/(@[^\s]+)/g, '<span class="mention-text">$1</span>');
+                const escapedSender = escapeHtml(msg.sender || '');
+                const escapedAvatar = escapeHtml(msg.avatar || '?');
                 box.innerHTML += `
                 <div class="msg ${isMyMessage ? 'me' : ''}">
-                    <div class="chat-avatar" style="background:${msg.color||'#6366f1'}; cursor:pointer;" onclick="switchChannel('${msg.sender}')" title="クリックして ${msg.sender} と個別会話(DM)を開始">${msg.avatar||'?'}</div>
+                    <div class="chat-avatar" style="background:${msg.color||'#6366f1'}; cursor:pointer;" onclick="switchChannel('${escapedSender}')" title="クリックして ${escapedSender} と個別会話(DM)を開始">${escapedAvatar}</div>
                     <div style="width:100%;">
-                        <div style="font-size:0.75rem; color:#cbd5e1; text-align:${isMyMessage?'right':'left'}; cursor:pointer; display:inline-block;" onclick="switchChannel('${msg.sender}')" title="クリックして ${msg.sender} と個別会話(DM)を開始">
-                            ${msg.sender}
+                        <div style="font-size:0.75rem; color:#cbd5e1; text-align:${isMyMessage?'right':'left'}; cursor:pointer; display:inline-block;" onclick="switchChannel('${escapedSender}')" title="クリックして ${escapedSender} と個別会話(DM)を開始">
+                            ${escapedSender}
                         </div>
                         <div class="msg-content">${textReplaced}${mHtml?'<br>'+mHtml:''}</div>
                     </div>
