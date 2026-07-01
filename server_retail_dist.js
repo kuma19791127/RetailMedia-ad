@@ -2116,6 +2116,9 @@ async function savePosTransactionInternal(txData) {
                     status: 'completed',
                     timestamp: timestampVal
                 });
+                while (posTransactions.length > 500) {
+                    posTransactions.shift();
+                }
             }
             return { success: true, transaction_id: transactionId, message: "Already synced (DB)" };
         }
@@ -2124,22 +2127,26 @@ async function savePosTransactionInternal(txData) {
     }
 
     // 3. DynamoDB への保存処理 (失敗しても決済全体を落とさないよう個別 try-catch)
-    try {
-        const params = {
-            TableName: 'RetailMediaTransactions',
-            Item: {
-                store_id: storeId,
-                timestamp: timestampVal.toString(),
-                transaction_id: transactionId,
-                total_amount: amount,
-                items: items,
-                created_at: new Date(timestampVal).toISOString()
-            }
-        };
-        await docClient.send(new PutCommand(params));
-        console.log(`[DynamoDB] 保存成功: ${transactionId} (store: ${storeId})`);
-    } catch (dynamoErr) {
-        console.error("[DynamoDB Error] 保存失敗 (フォールバックしてローカルDBに保存します):", dynamoErr.message);
+    if (typeof docClient !== 'undefined' && docClient && typeof PutCommand !== 'undefined') {
+        try {
+            const params = {
+                TableName: 'RetailMediaTransactions',
+                Item: {
+                    store_id: storeId,
+                    timestamp: timestampVal.toString(),
+                    transaction_id: transactionId,
+                    total_amount: amount,
+                    items: items,
+                    created_at: new Date(timestampVal).toISOString()
+                }
+            };
+            await docClient.send(new PutCommand(params));
+            console.log(`[DynamoDB] 保存成功: ${transactionId} (store: ${storeId})`);
+        } catch (dynamoErr) {
+            console.error("[DynamoDB Error] 保存失敗 (フォールバックしてローカルDBに保存します):", dynamoErr.message);
+        }
+    } else {
+        console.log("[POS Sync] DynamoDB SDK is not initialized. Skipping cloud sync.");
     }
 
     // 4. メモリ (posTransactions) への追加
@@ -2165,7 +2172,10 @@ async function savePosTransactionInternal(txData) {
     };
     if (typeof posTransactions !== 'undefined' && Array.isArray(posTransactions)) {
         posTransactions.push(newTx);
-        console.log("[POS Memory] トランザクションを追加しました:", transactionId);
+        while (posTransactions.length > 500) {
+            posTransactions.shift();
+        }
+        console.log("[POS Memory] トランザクションを追加しました (メモリ保持数制限適用):", transactionId);
     }
 
     // 5. ローカルデータベース (SQLite / PostgreSQL) への保存
