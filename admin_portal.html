@@ -529,7 +529,7 @@
             </div>
 
             <div class="nav-section">📊 リアルタイム監視</div>
-            <div class="nav-item" onclick="switchTab('livereg')">
+            <div class="nav-item" onclick="switchTab('engineering')">
                 📡 POS受診ログ (Live)
             </div>
 
@@ -541,7 +541,7 @@
 
             
             <div class="nav-section">🚨 コンプライアンス</div>
-            <div class="nav-item" id="nav-aml" onclick="switchTab('aml')">
+            <div class="nav-item" id="nav-aml" onclick="switchTab('engineering')">
                 🚨 AML・不正取引監視
             </div>
 
@@ -1205,7 +1205,15 @@
 
             try {
                 consoleEl.innerHTML = `<div style="color:#64748b; text-align:center; padding-top:100px;">CloudWatchログを取得中...</div>`;
-                const res = await fetch(window.API_BASE_URL + '/api/admin/aws-logs', { credentials: 'include' });
+                const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const res = await fetch(window.API_BASE_URL + '/api/admin/aws-logs', {
+                    headers: headers,
+                    credentials: 'include'
+                });
                 if (!res.ok) {
                     throw new Error(`HTTP Error: ${res.status}`);
                 }
@@ -1278,7 +1286,14 @@
             if(!tbody) return;
             
             try {
-                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/aml-alerts');
+                const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/aml-alerts', {
+                    headers: headers
+                });
                 if (!res.ok) return;
                 const data = await res.json();
                 
@@ -1318,9 +1333,14 @@
 
         async function markAmlSafe(alertId) {
             try {
+                const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
                 const res = await fetch((window.API_BASE_URL || '') + '/api/admin/aml-alerts/safe', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify({ id: alertId })
                 });
                 const data = await res.json();
@@ -1348,9 +1368,14 @@
             if (!confirmClear.isConfirmed) return;
 
             try {
+                const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
                 const res = await fetch((window.API_BASE_URL || '') + '/api/admin/aml-alerts/clear', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: headers
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -1374,9 +1399,14 @@
 
         // freee同期エラーバナーの更新
         async function updateFreeeErrorBanner() {
-            if (sessionStorage.getItem('retailMediaAuth') !== 'true') return;
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+            if (!token) return;
             try {
-                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue');
+                const headers = {};
+                headers['Authorization'] = 'Bearer ' + token;
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/freee/sync-queue', {
+                    headers: headers
+                });
                 if (!res.ok) return;
                 const data = await res.json();
                 if (data.success && Array.isArray(data.queue)) {
@@ -3037,7 +3067,14 @@
             if(!tbody) return;
             
             try {
-                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/pos-logs');
+                const token = localStorage.getItem('adminToken') || localStorage.getItem('reviewToken');
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const res = await fetch((window.API_BASE_URL || '') + '/api/admin/pos-logs', {
+                    headers: headers
+                });
                 if (!res.ok) return;
                 const data = await res.json();
 
