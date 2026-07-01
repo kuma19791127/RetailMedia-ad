@@ -649,7 +649,7 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <div>
                                 <h3 style="margin:0;">🖥️ AWS CloudWatch システムエラー監視</h3>
-                                <p style="font-size:12px; color:#64748b; margin:4px 0 0 0;" id="aws-log-subtitle">接続ロググループ: ロード中...</p>
+                                <p style="font-size:12px; color:#64748b; margin:4px 0 0 0;" id="aws-log-subtitle">接続状態: 準備中...</p>
                             </div>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span id="aws-logs-source-badge" style="background:#3b82f6; color:white; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">AWS Live</span>
@@ -1187,6 +1187,16 @@
             });
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         async function fetchAwsLogs() {
             const consoleEl = document.getElementById('aws-logs-console');
             const subtitleEl = document.getElementById('aws-log-subtitle');
@@ -1201,8 +1211,8 @@
                 }
                 const data = await res.json();
                 
-                if (subtitleEl && data.logGroupName) {
-                    subtitleEl.innerText = `接続ロググループ: ${data.logGroupName}`;
+                if (subtitleEl) {
+                    subtitleEl.innerText = `接続状態: AWS App Runner 稼働ログストリーム (SSL暗号化)`;
                 }
 
                 if (badgeEl) {
@@ -1223,27 +1233,28 @@
                 let html = '';
                 data.events.forEach(event => {
                     const dateStr = new Date(event.timestamp).toLocaleString('ja-JP');
-                    let msg = event.message || '';
+                    const rawMsg = event.message || '';
+                    const msg = escapeHtml(rawMsg);
                     
                     let color = '#f8fafc';
                     let label = '⚙️ LOG';
-                    if (msg.includes('ERROR') || msg.includes('Fail')) {
+                    if (rawMsg.includes('ERROR') || rawMsg.includes('Fail')) {
                         color = '#f87171';
                         label = '🔴 ERROR';
-                    } else if (msg.includes('WARN')) {
+                    } else if (rawMsg.includes('WARN')) {
                         color = '#fbbf24';
                         label = '🟡 WARN';
-                    } else if (msg.includes('Exception')) {
+                    } else if (rawMsg.includes('Exception')) {
                         color = '#f472b6';
                         label = '🔥 EXCEPTION';
-                    } else if (msg.includes('INFO')) {
+                    } else if (rawMsg.includes('INFO')) {
                         color = '#60a5fa';
                         label = '🔵 INFO';
                     }
 
                     html += `<div style="border-bottom:1px solid #1e293b; padding:8px 0; display:flex; flex-direction:column; gap:2px;">
                         <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b;">
-                            <span>${dateStr} | Stream: ${event.logStreamName || 'N/A'}</span>
+                            <span>${dateStr} | Stream: ${escapeHtml(event.logStreamName || 'N/A')}</span>
                             <span style="font-weight:bold; color:${color};">${label}</span>
                         </div>
                         <div style="color:${color}; font-size:12px; word-break:break-all; font-family:monospace; white-space:pre-wrap;">${msg}</div>
@@ -1256,7 +1267,7 @@
                 console.error("[F12 Debug Frontend] Failed to fetch AWS logs:", e);
                 consoleEl.innerHTML = `<div style="color:#ef4444; text-align:center; padding-top:100px;">
                     ログデータの取得に失敗しました。<br>
-                    <span style="font-size:11px; color:#94a3b8;">エラー内容: ${e.message}</span>
+                    <span style="font-size:11px; color:#94a3b8;">エラー内容: ${escapeHtml(e.message)}</span>
                 </div>`;
             }
         }

@@ -7761,18 +7761,26 @@ let logsCache = null;
 let lastFetchedTime = 0;
 const CACHE_TTL = 60000; // 60 seconds
 
-// Mask secrets and sensitive strings to prevent leaks in logs
+// Mask secrets and sensitive strings to prevent leaks in logs (longest-first to prevent partial matches)
 function maskSensitiveInfo(text) {
     if (!text) return "";
     const secrets = [
         process.env.AWS_SECRET_ACCESS_KEY,
         process.env.AWS_ACCESS_KEY_ID,
         process.env.FREEE_CLIENT_SECRET,
-        process.env.GMO_API_KEY
+        process.env.FREEE_CLIENT_ID,
+        process.env.GMO_API_KEY,
+        process.env.DB_PASSWORD,
+        process.env.DATABASE_URL,
+        process.env.JWT_SECRET,
+        process.env.SESSION_SECRET
     ].filter(Boolean);
 
+    // Remove duplicates and sort by string length descending
+    const uniqueSecrets = [...new Set(secrets)].sort((a, b) => b.length - a.length);
+
     let maskedText = text;
-    for (const secret of secrets) {
+    for (const secret of uniqueSecrets) {
         if (secret.length > 5) {
             const escaped = secret.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
             const regex = new RegExp(escaped, 'g');
@@ -7823,7 +7831,6 @@ app.get('/api/admin/aws-logs', requireAuth, async (req, res) => {
         logsCache = {
             success: true,
             source: "aws-cloudwatch",
-            logGroupName: logGroupName,
             events: events
         };
         lastFetchedTime = now;
@@ -7868,7 +7875,6 @@ app.get('/api/admin/aws-logs', requireAuth, async (req, res) => {
         res.json({
             success: true,
             source: "mock-fallback",
-            logGroupName: logGroupName,
             errorInfo: e.message,
             events: maskedMockEvents
         });
