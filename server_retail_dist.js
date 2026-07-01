@@ -129,6 +129,15 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get('/api/debug-version', (req, res) => {
+    res.json({
+        version: "2026-07-01-temp-debug",
+        commit: "e6e06b0-updated",
+        message: "Checking if deployment actually succeeded",
+        time: new Date().toISOString()
+    });
+});
+
 // ルートディレクトリの静的ファイル（HTML, 画像, CSS 等）を配信
 app.use(express.static(__dirname));
 
