@@ -3770,8 +3770,9 @@ https://retail-ad.com/signage_player.html?storeId=${storeId}
                 console.log(`- Attachment: android_instructions_${storeId}.txt (Content generated successfully)`);
                 console.log(`- Attachment: simple_start_${storeId}.txt (Content generated successfully)`);
                 console.log(`- Attachment: remove_android_signage_${storeId}.txt (Content generated successfully)`);
-                successCount++;
-            } catch (itemErr) {
+            }
+            successCount++;
+        } catch (itemErr) {
                 console.error(`[Bulk Email Record Error] Failed to send setup mail to ${item?.email} for ${item?.store}:`, itemErr.message);
                 failureCount++;
             }
@@ -7684,7 +7685,8 @@ Return ONLY a JSON object:
 `;
         const userInput = `The advertiser requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+        let responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+        responseText = responseText.replace(/^\s*`(?:json)?\s*/i, '').replace(/\s*`\s*$/, '');
         const result = JSON.parse(responseText);
 
         // Auto-register the campaign into the database
@@ -7790,7 +7792,8 @@ Return ONLY a JSON object (no markdown) with the following format:
 `;
         const userInput = `The user requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+        let responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+        responseText = responseText.replace(/^\s*`(?:json)?\s*/i, '').replace(/\s*`\s*$/, '');
         const result = JSON.parse(responseText);
 
         // Here we would normally execute the tools (create video, schedule campaign)
