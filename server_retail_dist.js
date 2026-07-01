@@ -5936,7 +5936,7 @@ app.post("/api/admin/invite", requireAuth, async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({ error: "管理者権限が必要です" });
     }
-    const { name, email, budget, ccEmail } = req.body;
+    const { name, email, budget } = req.body;
     const tempPassword = Math.random().toString(36).slice(-8); // 8-char random password
     
     try {
@@ -5945,11 +5945,18 @@ app.post("/api/admin/invite", requireAuth, async (req, res) => {
             'INSERT OR REPLACE INTO users (email, password, role, name, org) VALUES (?, ?, ?, ?, ?)',
             [email, hashedPassword, "advertiser", name, name]
         );
+        if (typeof saveDatabase === 'function') saveDatabase(); // 必須ルール1: システムデータ(users)のS3同期保存
+        
         const dateStr = new Date().toISOString().split("T")[0];
         const subject = `【リテアド】広告主アカウント発行・チャージ完了のご案内 (${dateStr})`;
         const body = `${name} 様\n\nリテアドのアカウントが発行され、ご入金いただいた予算がシステムに反映されました。\n\n--------------------------------\n[アカウント情報]\nログインID (Email): ${email}\n初期パスワード: ${tempPassword}\nログインURL: https://admin-portal-demo.com/login\n\n[チャージ残高]\n利用可能ご予算: ¥${Number(budget).toLocaleString()}\n--------------------------------\n\n早速システムにログインし、広告キャンペーンを作成してください。\nご不明な点がございましたら、当メールにそのままご返信ください。`;
         await sendSESEmail(email, subject, body);
-        if (ccEmail) { await sendSESEmail(ccEmail, subject, body); }
+        
+        // スパム踏み台脆弱性の排除: CCはログイン中の管理者本人（req.user.email）に固定
+        if (req.user.email) {
+            await sendSESEmail(req.user.email, subject, body);
+        }
+        
         res.json({ success: true, message: "Account created and email sent via SES" });
     } catch (e) {
         res.status(500).json({ error: e.message });
