@@ -2629,6 +2629,7 @@
                     if (verifyData.success) {
                         Swal.close();
                         data.success = true;
+                        data.token = verifyData.token; // Capture token from 2FA enable response
                     } else {
                         Swal.fire('設定エラー', verifyData.error || '認証コードが違います。設定をやり直してください。', 'error');
                         return;
@@ -2670,6 +2671,7 @@
                         if (verifyData.success) {
                             Swal.close();
                             data.success = true;
+                            data.token = verifyData.token; // Capture token from 2FA verify response
                         } else {
                             Swal.fire('認証エラー', verifyData.error || '認証コードが違います。', 'error');
                             return;
@@ -2711,11 +2713,19 @@
                     if (rememberMe) {
                         localStorage.setItem('last_email', user);
                         localStorage.setItem('last_password', pass);
+                        if (data.token) {
+                            localStorage.setItem('retailMediaToken', data.token);
+                        }
                     } else {
                         localStorage.removeItem('last_email');
                         localStorage.removeItem('last_password');
+                        localStorage.removeItem('retailMediaToken');
                     }
                     localStorage.removeItem('last_active_service'); // 社内システムのため自動遷移対象から除外
+
+                    if (data.token) {
+                        sessionStorage.setItem('retailMediaToken', data.token);
+                    }
 
                     if (window.PasswordCredential) {
                         const cred = new PasswordCredential({
