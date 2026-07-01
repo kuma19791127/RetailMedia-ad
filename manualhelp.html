@@ -705,7 +705,6 @@
         const SQUARE_LOCATION_ID = "LZYJ3X6XZQ8ZN";
 
         document.addEventListener('DOMContentLoaded', () => {
-            localStorage.setItem('last_active_service', 'manualhelp.html');
             const savedEmail = localStorage.getItem('last_email');
             const savedPass = localStorage.getItem('last_password');
             if (savedEmail) document.getElementById('login-email').value = savedEmail;
@@ -763,7 +762,7 @@
 
         window.onload = async function() {
             checkRoute();
-            initSquarePayments();
+            // initSquarePayments is now delayed to actual payment trigger to prevent timeout errors on startup
             await fetchManualChat();
             await fetchManualState();
             
@@ -963,10 +962,16 @@
             } catch (e) { console.error("Square Init Error", e); }
         }
 
-        function triggerSquarePayment(actionType, title) {
+        let isSquareInitialized = false;
+        async function triggerSquarePayment(actionType, title) {
             pendingAction = actionType;
             document.getElementById('pay-title').innerHTML = `<i class="fa-brands fa-square"></i> セキュア決済`;
             document.getElementById('payment-modal').style.display = 'flex';
+            
+            if (!isSquareInitialized) {
+                isSquareInitialized = true;
+                await initSquarePayments();
+            }
         }
 
         function closePayment() { document.getElementById('payment-modal').style.display = 'none'; }
