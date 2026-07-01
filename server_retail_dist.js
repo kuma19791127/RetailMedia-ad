@@ -1852,7 +1852,7 @@ app.post('/api/payment/square-refund', requireAuth, async (req, res) => {
 
 
 // --- CANCEL REQUEST APIs ---
-app.post('/api/pos/cancel-request', async (req, res) => {
+app.post('/api/pos/cancel-request', requireAuth, async (req, res) => {
     try {
         const transactionId = req.body.transactionId || req.body.transaction_id;
         const storeId = req.body.storeId || req.body.store_id;
@@ -7334,20 +7334,16 @@ app.post('/api/agent/regi', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Invalid message content (Prompt Injection Blocked)' });
     }
 
-    try {
-        const rawKey = process.env.GEMINI_API_KEY || '';
-        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
-        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+    // Store-specific POS Data simulation (Morning Cache)
+    const posDataContext = "本日のPOS特売・お買い得食材リスト: '豚バラ肉 (Pork Belly)', 'キャベツ (Cabbage)'";
+    
+    const scannedItems = req.body.scannedItems || [];
+    let itemsContext = "No items scanned yet.";
+    if (scannedItems && scannedItems.length > 0) {
+        itemsContext = "Items currently in cart: " + scannedItems.map(i => (i && typeof i === 'object') ? (i.name || i) : i).join(', ');
+    }
 
-        // Store-specific POS Data simulation (Morning Cache)
-        const posDataContext = "本日のPOS特売・お買い得食材リスト: '豚バラ肉 (Pork Belly)', 'キャベツ (Cabbage)'";
-        
-        let itemsContext = "No items scanned yet.";
-        if (scannedItems && scannedItems.length > 0) {
-            itemsContext = "Items currently in cart: " + scannedItems.map(i => i.name || i).join(', ');
-        }
-
-        const systemInstruction = `
+    const systemInstruction = `
 You are a friendly Supermarket AI Assistant helping a customer at the register.
 You must analyze this request using the store's current specials and the customer's cart.
 本日のPOS特売・お買い得食材: ${posDataContext}
@@ -7364,9 +7360,22 @@ Return ONLY a JSON object:
     "friendlyMessage": "A warm greeting and summary (Japanese)"
 }
 `;
-        const userInput = `The customer requested: "${message}"`;
+    const userInput = `The customer requested: "${message}"`;
 
-        const responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+    const fallbackResult = {
+        suggestedIngredients: "キャベツ (Cabbage), 豚バラ肉 (Pork Belly)",
+        recipeTitle: "豚バラとキャベツのスタミナ塩こうじ炒め (Bargain Pork Belly & Cabbage Stir-Fry)",
+        recipeSteps: "1. 豚バラ肉とキャベツを一口大に切ります。\n2. フライパンで肉を炒め、脂が出てきたらキャベツを加えます。\n3. 塩コショウまたは塩こうじで味を調え、強火でサッと炒め合わせます。",
+        friendlyMessage: "本日の特売品「豚バラ肉」と「キャベツ」を使った、お財布に優しい絶品スピードおかずをご提案します！"
+    };
+
+    try {
+        const rawKey = process.env.GEMINI_API_KEY || '';
+        const GEMINI_API_KEY = rawKey.replace(/^['"]+|['"]+$/g, '').trim();
+        if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
+
+        let responseText = await callGeminiAPI(userInput, "application/json", systemInstruction);
+        responseText = responseText.replace(/^\s*`(?:json)?\s*/i, '').replace(/\s*`\s*$/, '');
         const result = JSON.parse(responseText);
 
         const responseHtml = `
@@ -7374,14 +7383,22 @@ Return ONLY a JSON object:
             <strong>🛒 本日のお買い得推奨</strong><br>${result.suggestedIngredients}<br><br>
             <strong>🍲 AIおすすめレシピ</strong><br>${result.recipeTitle}<br><br>
             <div style="font-size:0.9em; margin-top:5px; padding:10px; background:rgba(255,255,255,0.5); border-radius:5px;">
-                ${result.recipeSteps.replace(/\n/g, '<br>')}
+                ${(result.recipeSteps || '').replace(/\n/g, '<br>')}
             </div>
         `;
 
         res.json({ success: true, plan: result, message: responseHtml });
-    } catch (e) {
-        console.error('Regi Agent Error:', e);
-        res.status(500).json({ error: e.message });
+    } catch (apiErr) {
+        console.warn("[Regi Agent] Gemini API or parse failed, using fallback mock recipe.", apiErr.message);
+        const responseHtml = `
+            <strong><i class="fas fa-magic" style="color:#eab308;"></i> ${fallbackResult.friendlyMessage}</strong><br><br>
+            <strong>🛒 本日のお買い得推奨 (フォールバック)</strong><br>${fallbackResult.suggestedIngredients}<br><br>
+            <strong>🍲 AIおすすめレシピ (フォールバック)</strong><br>${fallbackResult.recipeTitle}<br><br>
+            <div style="font-size:0.9em; margin-top:5px; padding:10px; background:rgba(255,255,255,0.5); border-radius:5px;">
+                ${fallbackResult.recipeSteps.replace(/\n/g, '<br>')}
+            </div>
+        `;
+        res.json({ success: true, plan: fallbackResult, message: responseHtml, fallback: true });
     }
 });
 
